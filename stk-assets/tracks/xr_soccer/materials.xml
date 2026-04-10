@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<materials>
+  <material name="acid_lake.jpg" gloss-map="acid_glow.png"/>
+  <material name="ball.png" gloss-map="ball_gloss.png"/>
+  <material name="barrier_grid.png" shader="alphatest" gloss-map="grid_glow.png"/>
+  <material name="glassWindows.png" shader="alphatest"/>
+  <material name="goal.png" shader="alphablend"/>
+  <material name="ground_pattern.png" shader="alphatest" ignore="Y"/>
+  <material name="light.png" shader="additive"/>
+  <material name="light_goal.png" shader="additive"/>
+  <material name="road_dirt_red.jpg">
+    <particles base="smoke_red.xml" condition="skid drive"/>
+  </material>
+  <material name="sandred.jpg">
+    <particles base="smoke_red.xml" condition="skid drive"/>
+  </material>
+  <material name="stkflag_mandaravaMotors_a.png" gloss-map="gfxGlow_softScreen_a.png"/>
+  <material name="stktex_tvVan_a.png" gloss-map="stktex_tvVan_a_gloss.png"/>
+</materials>

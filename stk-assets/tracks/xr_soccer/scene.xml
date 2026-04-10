@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<scene>
+  <track model="xr_soccer_track.spm" x="0" y="0" z="0"/>
+  <object type="movable" id="soccerball" xyz="-0.10 7.00 -0.10" hpr="0.0 -0.0 0.0" scale="1.00 1.00 1.00"
+          shape="sphere" mass="20.0" model="soccer_ball.spm" glow="18 255 0" soccer_ball="true" restitution="0.6" skeletal-animation="false"/>
+  <object id="field_lining" type="animation" xyz="0.00 0.00 0.00" hpr="0.0 -0.0 0.0" scale="1.00 1.00 1.00" interaction="ghost" model="field_lining.spm" skeletal-animation="false">
+  </object>
+  <object id="barrier" type="animation" xyz="0.00 0.00 0.00" hpr="0.0 -0.0 0.0" scale="1.00 1.00 1.00" interaction="physicsonly" shape="exact" model="barrier.spm" shadow-pass="false" skeletal-animation="false">
+  </object>
+  <sun  fog="true" fog-color="66 11 14" fog-max="0.5" fog-start="15.00" fog-end="500.00" xyz="307.58 165.76 -34.37" sun-diffuse="208 175 119" ambient="84 68 67"/>
+  <sky-box texture="SKY0006.png sandred.jpg SKY0002.png SKY0004.png SKY0005.png SKY0003.png" sh-texture="sandred.jpg sandred.jpg SKY0002.png SKY0002.png SKY0002.png SKY0002.png"/>
+  <camera far="1000.0"/>
+  <checks>
+    <check-line kind="lap" p1="-1.00 0.00" p2="1.00 0.00"
+                min-height="0.00"  />
+    <goal p1="10.46 0.07 64.50" p2="-10.51 0.07 64.50"  first_goal="true" />
+    <goal p1="-10.45 0.07 -64.50" p2="10.45 0.07 -64.50" />
+  </checks>
+  <tv-cameras>
+    <camera type="tv-camera" xyz="-32.50 7.50 32.50" min-delta="1.000" cooldown="0.800"/> <!-- TV.005 -->
+    <camera type="tv-camera" xyz="-32.50 7.50 -32.50" min-delta="1.000" cooldown="0.800"/> <!-- TV.004 -->
+    <camera type="tv-camera" xyz="32.50 7.50 -32.50" min-delta="1.000" cooldown="0.800"/> <!-- TV.003 -->
+    <camera type="tv-camera" xyz="32.50 7.50 32.50" min-delta="1.000" cooldown="0.800"/> <!-- TV.002 -->
+    <camera type="tv-camera" xyz="0.00 6.00 64.65" min-delta="3.000" cooldown="0.400"/> <!-- TV.001 -->
+    <camera type="tv-camera" xyz="0.00 6.00 -64.65" min-delta="3.000" cooldown="0.400"/> <!-- TV -->
+  </tv-cameras>
+  <item id="Item.002" x="-33.50" y="5.00" z="0.00" />
+  <item id="Item.000" x="0.00" y="5.00" z="23.50" />
+  <item id="Item.001" x="0.00" y="5.00" z="-23.50" />
+  <item id="Item.003" x="33.50" y="5.00" z="0.00" />
+  <big-nitro id="BigNitro.000" x="41.50" y="5.00" z="0.00" />
+  <big-nitro id="BigNitro.001" x="-41.50" y="5.00" z="0.00" />
+  <small-nitro id="Nitro.000" x="33.50" y="5.00" z="17.50" />
+  <small-nitro id="Nitro.001" x="33.50" y="5.00" z="-17.50" />
+  <small-nitro id="Nitro.002" x="-33.50" y="5.00" z="-17.50" />
+  <small-nitro id="Nitro.003" x="-33.50" y="5.00" z="17.50" />
+  <small-nitro id="Nitro.004" x="0.00" y="5.00" z="59.10" />
+  <small-nitro id="Nitro.005" x="0.00" y="5.00" z="-59.10" />
+  <light xyz="48.60 88.00 377.56" id="stadium_lights" distance="100.00" energy="15.00" color="127 255 255" type="point">
+  </light>
+  <light xyz="13.50 2.25 63.92" id="goal_lights.003" distance="50.00" energy="10.00" color="0 43 255" type="point">
+  </light>
+  <light xyz="13.50 2.25 -63.92" id="goal_lights.001" distance="50.00" energy="10.00" color="255 0 0" type="point">
+  </light>
+  <light xyz="-13.50 2.25 -63.92" id="goal_lights.000" distance="50.00" energy="10.00" color="255 0 0" type="point">
+  </light>
+  <light xyz="0.00 2.50 -131.89" id="acid_light.000" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="0.00 2.50 131.89" id="acid_light.001" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="131.89 2.50 0.00" id="acid_light.002" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="-131.89 2.50 0.00" id="acid_light.003" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="92.00 2.50 91.58" id="acid_light.004" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="-92.00 2.50 91.58" id="acid_light.005" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="-92.00 2.50 -91.58" id="acid_light.006" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="92.00 2.50 -91.58" id="acid_light.007" distance="100.00" energy="15.00" color="11 60 0" type="point">
+  </light>
+  <light xyz="-13.50 2.25 63.92" id="goal_lights.002" distance="50.00" energy="10.00" color="0 43 255" type="point">
+  </light>
+  <light xyz="-48.60 88.00 377.56" id="stadium_lights.001" distance="100.00" energy="15.00" color="127 255 255" type="point">
+  </light>
+  <light xyz="-48.60 88.00 -377.56" id="stadium_lights.002" distance="100.00" energy="15.00" color="127 255 255" type="point">
+  </light>
+  <light xyz="48.60 88.00 -377.56" id="stadium_lights.003" distance="100.00" energy="15.00" color="127 255 255" type="point">
+  </light>
+  <default-start karts-per-row     ="3"
+                 forwards-distance ="1.50"
+                 sidewards-distance="1.80"
+                 upwards-distance  ="1.10"/>
+  <start x="-0.05" y="0.10" z="52.18" h="180.00"/>
+  <start x="-0.01" y="0.10" z="-53.06" h="0.00"/>
+  <start x="4.77" y="0.10" z="52.18" h="180.00"/>
+  <start x="-4.38" y="0.10" z="-53.18" h="0.00"/>
+  <start x="2.91" y="0.10" z="55.14" h="180.00"/>
+  <start x="-2.37" y="0.10" z="-56.06" h="0.00"/>
+  <start x="-1.91" y="0.10" z="55.07" h="180.00"/>
+  <start x="1.75" y="0.10" z="-56.06" h="0.00"/>
+  <start x="-4.68" y="0.10" z="52.18" h="180.00"/>
+  <start x="4.12" y="0.10" z="-53.06" h="0.00"/>
+  <start x="-6.54" y="0.10" z="55.07" h="180.00"/>
+  <start x="5.39" y="0.10" z="-56.06" h="0.00"/>
+  <start x="6.62" y="0.10" z="55.14" h="180.00"/>
+  <start x="-6.74" y="0.10" z="-56.04" h="0.00"/>
+</scene>
