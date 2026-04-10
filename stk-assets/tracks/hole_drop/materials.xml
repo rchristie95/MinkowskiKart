@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<materials>
+  <material name="gfxGlow_White_a.png">
+    <particles base="water.xml" condition="skid drive"/>
+  </material>
+  <material name="puck.png" gloss-map="puck_gloss.png"/>
+  <material name="softLight.png" gloss-map="softLightGloss.png"/>
+  <material name="stk_blueTurbine_a.png" shader="alphatest" reset="Y"/>
+  <material name="stk_darkGrayMetal_a.png" gloss-map="stk_greyMetal_a_gloss.png">
+    <particles base="water.xml" condition="skid drive"/>
+  </material>
+  <material name="stk_genericMetal_a_dark.png" gloss-map="stk_genericMetal_a_glossy.png">
+    <particles base="water.xml" condition="skid drive"/>
+  </material>
+  <material name="stk_genericMetal_a_light.png" gloss-map="stk_genericMetal_a_glossy.png">
+    <particles base="water.xml" condition="skid drive"/>
+  </material>
+  <material name="stk_glassPanel_a.png" shader="alphablend"/>
+  <material name="stk_greyMetal_a.png" gloss-map="stk_genericMetal_a_glossy.png"/>
+  <material name="stk_lightGrayMetal_a.png" gloss-map="stk_greyMetal_a_gloss.png">
+    <particles base="water.xml" condition="skid drive"/>
+  </material>
+  <material name="stk_lightGrayMetal_a_reset.png" gloss-map="stk_genericMetal_a_glossy.png" reset="Y"/>
+  <material name="windowLight.png" gloss-map="softLightGloss.png"/>
+</materials>
