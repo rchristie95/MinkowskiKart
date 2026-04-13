@@ -312,6 +312,12 @@ void SPShaderManager::loadPassInfo(const XMLNode* pass, PassInfo& pi)
     pass->get("vertex-shader", &pi.m_vertex_shader);
     pi.m_vertex_shader = getShaderFullPath(pi.m_vertex_shader);
 
+    pass->get("tess-control-shader", &pi.m_tess_control_shader);
+    pi.m_tess_control_shader = getShaderFullPath(pi.m_tess_control_shader);
+
+    pass->get("tess-evaluation-shader", &pi.m_tess_evaluation_shader);
+    pi.m_tess_evaluation_shader = getShaderFullPath(pi.m_tess_evaluation_shader);
+
     pass->get("fragment-shader", &pi.m_fragment_shader);
     pi.m_fragment_shader = getShaderFullPath(pi.m_fragment_shader);
 
@@ -399,9 +405,29 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
                 pou->addAssignerFunction(p.first, p.second);
             }
 
-            shader->addShaderFile(skinned ?
-                pi[0].m_skinned_mesh_shader : pi[0].m_vertex_shader,
-                GL_VERTEX_SHADER, RP_1ST);
+            bool use_tessellation = !pi[0].m_tess_control_shader.empty() &&
+                                   !pi[0].m_tess_evaluation_shader.empty() &&
+#ifndef USE_GLES2
+                                   CVS->getGLSLVersion() >= 400;
+#else
+                                   false;
+#endif
+
+            if (use_tessellation)
+            {
+                shader->addShaderFile("sp_tess.vert", GL_VERTEX_SHADER, RP_1ST);
+                shader->addShaderFile(pi[0].m_tess_control_shader,
+                    GL_TESS_CONTROL_SHADER, RP_1ST);
+                shader->addShaderFile(pi[0].m_tess_evaluation_shader,
+                    GL_TESS_EVALUATION_SHADER, RP_1ST);
+            }
+            else
+            {
+                shader->addShaderFile(skinned ?
+                    pi[0].m_skinned_mesh_shader : pi[0].m_vertex_shader,
+                    GL_VERTEX_SHADER, RP_1ST);
+            }
+
             if (!pi[0].m_fragment_shader.empty())
             {
                 shader->addShaderFile(pi[0].m_fragment_shader,
@@ -437,6 +463,18 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
             shader->addShaderFile(skinned ?
                 pi[1].m_skinned_mesh_shader : pi[1].m_vertex_shader,
                 GL_VERTEX_SHADER, RP_SHADOW);
+#ifndef USE_GLES2
+            if (!pi[1].m_tess_control_shader.empty())
+            {
+                shader->addShaderFile(pi[1].m_tess_control_shader,
+                    GL_TESS_CONTROL_SHADER, RP_SHADOW);
+            }
+            if (!pi[1].m_tess_evaluation_shader.empty())
+            {
+                shader->addShaderFile(pi[1].m_tess_evaluation_shader,
+                    GL_TESS_EVALUATION_SHADER, RP_SHADOW);
+            }
+#endif
             if (!pi[1].m_fragment_shader.empty())
             {
                 shader->addShaderFile(pi[1].m_fragment_shader,

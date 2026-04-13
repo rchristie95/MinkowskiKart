@@ -24,8 +24,12 @@
 #include "karts/kart_properties.hpp"
 #include "modes/world.hpp"
 #include "network/network_config.hpp"
+#include "physics/triangle_mesh.hpp"
 #include "race/race_manager.hpp"
+#include "relativity/observer_snapshot.hpp"
 #include "relativity/relativistic_state.hpp"
+#include "tracks/track.hpp"
+#include "tracks/track_object_manager.hpp"
 #include "utils/log.hpp"
 
 #include <assert.h>
@@ -41,6 +45,9 @@ const float DEFAULT_REFERENCE_BOOST_SPEED = 40.0f;
 const float MIN_ADJUSTABLE_LIGHT_SPEED_BETA = 0.95f;
 const float MAX_ADJUSTABLE_LIGHT_SPEED_MULTIPLIER = 100.0f;
 const float DEFAULT_WARP_BUBBLE_RADIUS = 3.5f;
+const float VISUAL_STABILITY_RADIUS = 0.45f;
+const float VISUAL_STABILITY_FADE_WIDTH = 0.65f;
+const float APPARENT_NORMAL_SAMPLE_DISTANCE = 0.20f;
 
 unsigned int g_velocity_clamp_count = 0;
 unsigned int g_response_scale_count = 0;
@@ -51,6 +58,93 @@ bool isFiniteVector(const btVector3& v)
            std::isfinite((double)v.y()) &&
            std::isfinite((double)v.z());
 }   // isFiniteVector
+
+float clamp01(float value)
+{
+    if (!std::isfinite((double)value))
+        return 0.0f;
+    if (value <= 0.0f)
+        return 0.0f;
+    if (value >= 1.0f)
+        return 1.0f;
+    return value;
+}   // clamp01
+
+float smoothstep01(float value)
+{
+    const float t = clamp01(value);
+    return t * t * (3.0f - 2.0f * t);
+}   // smoothstep01
+
+btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
+{
+    if (!isFiniteVector(v))
+        return fallback;
+
+    const btScalar length2 = v.length2();
+    if (length2 <= btScalar(1.0e-8f))
+        return fallback;
+
+    return v / btSqrt(length2);
+}   // normalizedOrDefault
+
+btVector3 worldDirectionToObserverDirection(const btVector3& world_direction,
+                                            const btVector3& beta_vector,
+                                            float gamma)
+{
+    if (!isFiniteVector(world_direction) || !isFiniteVector(beta_vector))
+        return world_direction;
+
+    const btScalar beta2 = beta_vector.length2();
+    if (beta2 <= btScalar(1.0e-6f) || gamma <= 1.0f)
+        return normalizedOrDefault(world_direction, btVector3(0.0f, 0.0f, 1.0f));
+
+    const btVector3 direction =
+        normalizedOrDefault(world_direction, btVector3(0.0f, 0.0f, 1.0f));
+    const btScalar beta_dot = beta_vector.dot(direction);
+    const btScalar denominator = btScalar(1.0f) + beta_dot;
+    if (fabsf((float)denominator) < 1.0e-5f)
+        return direction;
+
+    btVector3 observer_direction =
+        direction / gamma +
+        ((((gamma / (gamma + 1.0f)) * beta_dot) + btScalar(1.0f))
+         * beta_vector);
+    observer_direction /= denominator;
+    return normalizedOrDefault(observer_direction, direction);
+}   // worldDirectionToObserverDirection
+
+btVector3 getRelativisticEmissionRelativePosition(
+    const btVector3& relative, const btVector3& object_velocity,
+    float speed_of_light)
+{
+    if (!isFiniteVector(relative) || !isFiniteVector(object_velocity) ||
+        !std::isfinite((double)speed_of_light) || speed_of_light <= 1.0e-6f)
+    {
+        return relative;
+    }
+
+    const btScalar speed2 = object_velocity.length2();
+    if (speed2 <= btScalar(1.0e-8f))
+        return relative;
+
+    const btScalar c2 = speed_of_light * speed_of_light;
+    const btScalar a = speed2 - c2;
+    if (fabsf((float)a) < 1.0e-6f)
+        return relative;
+
+    const btScalar b = relative.dot(object_velocity);
+    const btScalar c = relative.dot(relative);
+    const btScalar discriminant = b * b - a * c;
+    if (discriminant < btScalar(0.0f))
+        return relative;
+
+    const btScalar emission_dt = (-b + btSqrt(discriminant)) / a;
+    if (emission_dt > btScalar(0.0f) || emission_dt < btScalar(-1000.0f))
+        return relative;
+
+    return relative + object_velocity * emission_dt;
+}   // getRelativisticEmissionRelativePosition
 
 double clampAbsBeta(double beta)
 {
@@ -118,6 +212,17 @@ void getAdjustableSpeedOfLightBounds(float* min_speed_of_light,
 namespace Relativity
 {
 
+ApparentSurfaceHit::ApparentSurfaceHit()
+    : m_hit(false),
+      m_world_point(0.0f, 0.0f, 0.0f),
+      m_world_normal(0.0f, 1.0f, 0.0f),
+      m_apparent_point(0.0f, 0.0f, 0.0f),
+      m_apparent_normal(0.0f, 1.0f, 0.0f),
+      m_visual_fade(0.0f),
+      m_material(NULL)
+{
+}   // ApparentSurfaceHit
+
 bool isEnabled()
 {
     if (!stk_config || !stk_config->m_relativity_enabled)
@@ -165,7 +270,7 @@ float getConfiguredSpeedOfLight()
         !std::isfinite((double)stk_config->m_relativity_speed_of_light) ||
         stk_config->m_relativity_speed_of_light <= 0.0f)
     {
-        return 80.0f;
+        return 1000.0f;
     }
     return stk_config->m_relativity_speed_of_light;
 }   // getConfiguredSpeedOfLight
@@ -261,6 +366,22 @@ float getMaxCoordinateSpeed()
 {
     return getConfiguredSpeedOfLight() * getConfiguredMaxBeta();
 }   // getMaxCoordinateSpeed
+
+// ----------------------------------------------------------------------------
+int getRecommendedPhysicsSubsteps(float max_beta)
+{
+    if (!std::isfinite((double)max_beta) || max_beta <= 0.25f)
+        return 1;
+    if (max_beta <= 0.50f)
+        return 2;
+    if (max_beta <= 0.70f)
+        return 3;
+    if (max_beta <= 0.82f)
+        return 4;
+    if (max_beta <= 0.90f)
+        return 5;
+    return 6;
+}   // getRecommendedPhysicsSubsteps
 
 // ----------------------------------------------------------------------------
 double betaForSpeed(double speed, double speed_of_light)
@@ -407,6 +528,80 @@ btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
 }   // scalePreferredFrameResponse
 
 // ----------------------------------------------------------------------------
+float getDirectionalEffectiveMass(float rest_mass,
+                                  const btVector3& coordinate_velocity,
+                                  const btVector3& response_direction,
+                                  float speed_of_light)
+{
+    if (!std::isfinite((double)rest_mass) || rest_mass <= 0.0f)
+        return 0.0f;
+
+    const btVector3 direction = normalizedOrDefault(
+        response_direction, btVector3(1.0f, 0.0f, 0.0f));
+    const btScalar speed = coordinate_velocity.length();
+    if (speed <= btScalar(1.0e-6f))
+        return rest_mass;
+
+    const btVector3 velocity_direction = coordinate_velocity / speed;
+    const btScalar parallel = direction.dot(velocity_direction);
+    const btScalar parallel2 = parallel * parallel;
+    const btScalar perpendicular2 = btScalar(1.0f) - parallel2;
+    const double gamma = gammaForSpeed((double)speed, speed_of_light);
+    if (!std::isfinite(gamma) || gamma <= 1.0 + MIN_GAMMA_RESPONSE_DELTA)
+        return rest_mass;
+
+    const double inv_effective_mass =
+        (parallel2 / (gamma * gamma * gamma * rest_mass)) +
+        (perpendicular2 / (gamma * rest_mass));
+    if (!std::isfinite(inv_effective_mass) || inv_effective_mass <= 0.0)
+        return rest_mass;
+
+    return (float)(1.0 / inv_effective_mass);
+}   // getDirectionalEffectiveMass
+
+// ----------------------------------------------------------------------------
+float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
+                                       const btVector3& velocity_a,
+                                       float mass_a,
+                                       const btVector3& velocity_b,
+                                       float mass_b,
+                                       float restitution,
+                                       float speed_of_light)
+{
+    if (mass_a <= 0.0f && mass_b <= 0.0f)
+        return 0.0f;
+
+    const btVector3 normal = normalizedOrDefault(
+        collision_normal, btVector3(1.0f, 0.0f, 0.0f));
+    const btVector3 relative_velocity = velocity_b - velocity_a;
+    const btScalar relative_normal_speed = relative_velocity.dot(normal);
+    if (relative_normal_speed >= btScalar(-1.0e-4f))
+        return 0.0f;
+
+    const float effective_mass_a = getDirectionalEffectiveMass(
+        mass_a, velocity_a, normal, speed_of_light);
+    const float effective_mass_b = getDirectionalEffectiveMass(
+        mass_b, velocity_b, normal, speed_of_light);
+
+    double effective_inverse_mass = 0.0;
+    if (effective_mass_a > 0.0f)
+        effective_inverse_mass += 1.0 / effective_mass_a;
+    if (effective_mass_b > 0.0f)
+        effective_inverse_mass += 1.0 / effective_mass_b;
+    if (effective_inverse_mass <= 0.0)
+        return 0.0f;
+
+    const double clamped_restitution =
+        std::max(0.0, std::min(1.0, (double)restitution));
+    const double impulse =
+        -(1.0 + clamped_restitution) *
+        (double)relative_normal_speed / effective_inverse_mass;
+    if (!std::isfinite(impulse) || impulse <= 0.0)
+        return 0.0f;
+    return (float)impulse;
+}   // computeCollisionImpulseMagnitude
+
+// ----------------------------------------------------------------------------
 unsigned int getVelocityClampCount()
 {
     return g_velocity_clamp_count;
@@ -424,6 +619,190 @@ void resetDebugCounters()
     g_velocity_clamp_count = 0;
     g_response_scale_count = 0;
 }   // resetDebugCounters
+
+// ----------------------------------------------------------------------------
+float getVisualFadeForWorldPosition(const btVector3& world_position,
+                                    const btVector3& observer_position)
+{
+    if (!Relativity::isEnabled() || !isFiniteVector(world_position) ||
+        !isFiniteVector(observer_position))
+    {
+        return 0.0f;
+    }
+
+    const btScalar observer_distance =
+        (world_position - observer_position).length();
+    const float fade_t = ((float)observer_distance - VISUAL_STABILITY_RADIUS) /
+                         VISUAL_STABILITY_FADE_WIDTH;
+    return smoothstep01(fade_t);
+}   // getVisualFadeForWorldPosition
+
+// ----------------------------------------------------------------------------
+float getVisualShellOffset(const AbstractKart* observer_kart,
+                           const btVector3& observer_position,
+                           const btVector3& world_position,
+                           const btVector3& world_normal,
+                           const btVector3& object_velocity)
+{
+    if (!Relativity::isEnabled() || !isFiniteVector(world_position) ||
+        !isFiniteVector(world_normal))
+    {
+        return 0.0f;
+    }
+
+    const ObserverVisualState observer_state =
+        buildObserverVisualState(observer_kart, observer_position);
+    if (!observer_state.m_valid)
+        return 0.0f;
+
+    const float visual_fade = getVisualFadeForWorldPosition(
+        world_position, observer_state.m_observer_position);
+    if (visual_fade <= 1.0e-4f)
+        return 0.0f;
+
+    const btVector3 normal = normalizedOrDefault(
+        world_normal, btVector3(0.0f, 1.0f, 0.0f));
+    const btVector3 apparent_point = applyVisualPosition(
+        world_position, observer_state, object_velocity, visual_fade);
+    const float shell = (float)((apparent_point - world_position).dot(normal));
+    if (!std::isfinite((double)shell) || shell <= 0.0f)
+        return 0.0f;
+    return shell;
+}   // getVisualShellOffset
+
+// ----------------------------------------------------------------------------
+btVector3 applyVisualPosition(const btVector3& world_position,
+                              const ObserverVisualState& observer_state,
+                              const btVector3& object_velocity,
+                              float visual_fade)
+{
+    if (!Relativity::isEnabled() || !observer_state.m_valid ||
+        !isFiniteVector(world_position))
+    {
+        return world_position;
+    }
+
+    if (visual_fade < 0.0f)
+    {
+        visual_fade = getVisualFadeForWorldPosition(world_position,
+                                                    observer_state.m_observer_position);
+    }
+    if (visual_fade <= 1.0e-4f)
+        return world_position;
+
+    btVector3 relative = world_position - observer_state.m_observer_position;
+    if (relative.length2() <= btScalar(1.0e-6f))
+        return observer_state.m_observer_position;
+
+    relative = getRelativisticEmissionRelativePosition(
+        relative, object_velocity, getConfiguredSpeedOfLight());
+    if (relative.length2() <= btScalar(1.0e-6f))
+        return observer_state.m_observer_position;
+
+    const btScalar distance = relative.length();
+    const btVector3 world_direction = relative / distance;
+    const btVector3 observer_direction =
+        worldDirectionToObserverDirection(world_direction,
+                                          observer_state.m_beta_vector,
+                                          observer_state.m_gamma);
+    const btVector3 observer_relative = observer_direction * distance;
+    const btVector3 blended_relative =
+        relative.lerp(observer_relative, clamp01(visual_fade));
+    return observer_state.m_observer_position + blended_relative;
+}   // applyVisualPosition
+
+// ----------------------------------------------------------------------------
+btVector3 applyVisualNormal(const btVector3& world_position,
+                            const btVector3& world_normal,
+                            const ObserverVisualState& observer_state,
+                            float visual_fade)
+{
+    if (!Relativity::isEnabled() || !observer_state.m_valid ||
+        !isFiniteVector(world_position) || !isFiniteVector(world_normal))
+    {
+        return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
+    }
+
+    if (visual_fade < 0.0f)
+    {
+        visual_fade = getVisualFadeForWorldPosition(world_position,
+                                                    observer_state.m_observer_position);
+    }
+    if (visual_fade <= 1.0e-4f)
+        return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
+
+    const btVector3 base = applyVisualPosition(world_position, observer_state,
+                                               btVector3(0.0f, 0.0f, 0.0f),
+                                               visual_fade);
+    const btVector3 tip = applyVisualPosition(
+        world_position +
+            normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f)) *
+                APPARENT_NORMAL_SAMPLE_DISTANCE,
+        observer_state, btVector3(0.0f, 0.0f, 0.0f), visual_fade);
+    return normalizedOrDefault(tip - base, btVector3(0.0f, 1.0f, 0.0f));
+}   // applyVisualNormal
+
+// ----------------------------------------------------------------------------
+bool castApparentDriveableRay(const AbstractKart* observer_kart,
+                              const btVector3& observer_position,
+                              const btVector3& from,
+                              const btVector3& to,
+                              ApparentSurfaceHit* hit,
+                              bool interpolate_normal)
+{
+    if (hit)
+        *hit = ApparentSurfaceHit();
+
+    Track* track = Track::getCurrentTrack();
+    if (!track)
+        return false;
+
+    btVector3 world_hit_point(0.0f, 0.0f, 0.0f);
+    btVector3 world_normal(0.0f, 1.0f, 0.0f);
+    const Material* material = NULL;
+
+    const TriangleMesh& triangle_mesh = track->getTriangleMesh();
+    bool found = triangle_mesh.castRay(from, to, &world_hit_point, &material,
+                                       &world_normal, interpolate_normal);
+    TrackObjectManager* object_manager = track->getTrackObjectManager();
+    if (object_manager)
+    {
+        found = object_manager->castRay(from, to, &world_hit_point, &material,
+                                        &world_normal, interpolate_normal) || found;
+    }
+
+    if (!found)
+        return false;
+
+    if (!hit)
+        return true;
+
+    hit->m_hit = true;
+    hit->m_world_point = world_hit_point;
+    hit->m_world_normal =
+        normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
+    hit->m_material = material;
+
+    const ObserverVisualState observer_state =
+        buildObserverVisualState(observer_kart, observer_position);
+    if (!observer_state.m_valid)
+    {
+        hit->m_apparent_point = world_hit_point;
+        hit->m_apparent_normal = hit->m_world_normal;
+        hit->m_visual_fade = 0.0f;
+        return true;
+    }
+
+    hit->m_visual_fade = getVisualFadeForWorldPosition(
+        world_hit_point, observer_state.m_observer_position);
+    hit->m_apparent_point = applyVisualPosition(
+        world_hit_point, observer_state, btVector3(0.0f, 0.0f, 0.0f),
+        hit->m_visual_fade);
+    hit->m_apparent_normal = applyVisualNormal(
+        world_hit_point, hit->m_world_normal, observer_state,
+        hit->m_visual_fade);
+    return true;
+}   // castApparentDriveableRay
 
 namespace KartAdapter
 {
@@ -506,6 +885,37 @@ void unitTesting()
     (void)scaled_response;
     assert(std::fabs((double)scaled_response.getX() - 40.96) < 0.01);
     assert(std::fabs((double)scaled_response.getY() - 32.0) < 0.01);
+
+    assert(getRecommendedPhysicsSubsteps(0.10f) == 1);
+    assert(getRecommendedPhysicsSubsteps(0.65f) == 3);
+    assert(getRecommendedPhysicsSubsteps(0.95f) == 6);
+
+    const float effective_mass_parallel = getDirectionalEffectiveMass(
+        200.0f, btVector3(48.0f, 0.0f, 0.0f), btVector3(1.0f, 0.0f, 0.0f),
+        (float)c);
+    const float effective_mass_perpendicular = getDirectionalEffectiveMass(
+        200.0f, btVector3(48.0f, 0.0f, 0.0f), btVector3(0.0f, 1.0f, 0.0f),
+        (float)c);
+    (void)effective_mass_parallel;
+    (void)effective_mass_perpendicular;
+    assert(effective_mass_parallel > effective_mass_perpendicular);
+
+    const float collision_impulse = computeCollisionImpulseMagnitude(
+        btVector3(1.0f, 0.0f, 0.0f), btVector3(20.0f, 0.0f, 0.0f), 200.0f,
+        btVector3(0.0f, 0.0f, 0.0f), 200.0f, 0.1f, (float)c);
+    (void)collision_impulse;
+    assert(collision_impulse > 0.0f);
+
+    ObserverVisualState test_observer;
+    test_observer.m_valid = true;
+    test_observer.m_observer_position = btVector3(0.0f, 0.0f, 0.0f);
+    test_observer.m_beta_vector = btVector3(0.6f, 0.0f, 0.0f);
+    test_observer.m_gamma = (float)gammaForSpeed(0.6f * c, c);
+    test_observer.m_inverse_gamma = 1.0f / test_observer.m_gamma;
+    const btVector3 warped = applyVisualPosition(
+        btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f),
+        1.0f);
+    assert(warped.x() > 5.0f);
 }   // unitTesting
 
 }   // namespace Relativity

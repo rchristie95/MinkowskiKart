@@ -1,4 +1,4 @@
-//
+﻿//
 //  SuperTuxKart - a fun racing game with go-kart
 //  Copyright (C) 2006-2015 Joerg Henrichs
 //
@@ -371,4 +371,16 @@ std::shared_ptr<Rewinder>
     m_active_projectiles[uid] = f;
     return f;
 }   // addProjectileFromNetworkState
+
+
+bool ProjectileManager::hasActiveProjectile(const AbstractKart* kart) const
+{
+    for (auto const& it : m_active_projectiles)
+    {
+        if (it.second->getOwner() == kart)
+            return true;
+    }
+    return false;
+}
+
 

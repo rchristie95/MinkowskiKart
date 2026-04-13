@@ -49,13 +49,26 @@ float CameraNormal::m_tv_cooldown_default = 0.4f;  // time to change camera
 namespace
 {
 
-const float RELATIVITY_CLOSE_CHASE_DEFAULT_NEAR_PLANE = 0.05f;
-const float RELATIVITY_CLOSE_CHASE_MIN_NEAR_PLANE = 0.02f;
+// Near-plane probe (shared by old and new pipelines)
+const float RELATIVITY_CLOSE_CHASE_DEFAULT_NEAR_PLANE       = 0.05f;
+const float RELATIVITY_CLOSE_CHASE_MIN_NEAR_PLANE           = 0.02f;
 const float RELATIVITY_CLOSE_CHASE_NEAR_PLANE_PROBE_DISTANCE = 0.75f;
-const float RELATIVITY_UPHILL_FULL_PITCH = 14.0f * DEGREE_TO_RAD;
-const float RELATIVITY_UPHILL_MAX_EXTRA_HEIGHT = 0.32f;
-const float RELATIVITY_UPHILL_MAX_EXTRA_PULLBACK = 0.42f;
-const float RELATIVITY_UPHILL_MAX_EXTRA_ANGLE = 5.0f * DEGREE_TO_RAD;
+
+// Relativity close-chase camera geometry. This is a hood/driver camera, so
+// keep it anchored slightly in front of the kart centre and never let
+// automatic clipping correction drag it behind the driver.
+const float RC_FORWARD_OFFSET = -0.50f;  // 50cm behind kart centre
+const float RC_HEIGHT         = 0.85f;   // 85cm above kart centre
+const float RC_CLEARANCE      = 0.34f;   // minimum distance from apparent road
+const float RC_TARGET_FORWARD = 3.10f;   // 3.1m ahead of kart for look-at point
+const float RC_TARGET_HEIGHT  = 0.56f;   // 56cm above kart for look-at point
+const float RC_FORWARD_TC     = 0.10f;   // support-frame forward smooth tc (s)
+const float RC_UP_TC          = 0.08f;   // support-frame up smooth tc (s)
+const float RC_STEEP_EXTRA    = 0.36f;   // extra clearance on steep normals (m)
+const float RC_SWEEP_SUBSTEP  = 0.08f;   // sweep step length (m)
+const int   RC_SWEEP_MAX_STEPS = 16;
+const float RC_MIN_FORWARD_OFFSET = -0.80f;
+const float RC_MIN_UP_OFFSET      = 0.60f;
 
 float clamp01(float value)
 {
@@ -79,6 +92,16 @@ core::vector3df normalizedOrDefault(const core::vector3df& v,
         return fallback;
 
     core::vector3df result(v);
+    result.normalize();
+    return result;
+}   // normalizedOrDefault
+
+btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
+{
+    if (v.length2() <= btScalar(1.0e-6f))
+        return fallback;
+
+    btVector3 result(v);
     result.normalize();
     return result;
 }   // normalizedOrDefault
@@ -118,47 +141,34 @@ bool castDriveableSurfaceRay(const btVector3& from, const btVector3& to,
     return true;
 }   // castDriveableSurfaceRay
 
-float getRelativityUphillCorrection(const Kart* kart)
+bool castCameraSurfaceRay(const Kart* observer_kart,
+                          const btVector3& observer_position,
+                          const btVector3& from,
+                          const btVector3& to,
+                          btVector3* hit_point,
+                          btVector3* hit_normal)
 {
-    if (!kart || !kart->isOnGround())
-        return 0.0f;
+    if (Relativity::isEnabled() && observer_kart)
+    {
+        Relativity::ApparentSurfaceHit hit;
+        if (!Relativity::castApparentDriveableRay(observer_kart,
+            observer_position, from, to, &hit, true))
+        {
+            return false;
+        }
 
-    const float uphill_pitch =
-        std::max(0.0f, kart->getTerrainPitch(kart->getHeading()));
-    if (uphill_pitch <= 0.0f)
-        return 0.0f;
+        if (hit_point)
+            *hit_point = hit.m_apparent_point;
+        if (hit_normal)
+        {
+            *hit_normal = normalizedOrDefault(
+                hit.m_apparent_normal, btVector3(0.0f, 1.0f, 0.0f));
+        }
+        return true;
+    }
 
-    const float beta = clamp01(
-        static_cast<float>(kart->getRelativisticState().m_beta));
-    if (beta <= 0.01f)
-        return 0.0f;
-
-    const float max_speed = std::max(1.0f,
-        kart->getKartProperties()->getEngineMaxSpeed());
-    const float speed_factor =
-        clamp01(fabsf(kart->getSpeed()) / max_speed);
-    const float pitch_factor =
-        clamp01(uphill_pitch / RELATIVITY_UPHILL_FULL_PITCH);
-
-    return pitch_factor * std::max(beta, speed_factor * beta);
-}   // getRelativityUphillCorrection
-
-void applyRelativityCloseChaseSlopeAdjustment(const Kart* kart,
-                                              float* above_kart,
-                                              float* cam_angle,
-                                              float* distance)
-{
-    const float effect = getRelativityUphillCorrection(kart);
-    if (effect <= 0.0f)
-        return;
-
-    if (above_kart)
-        *above_kart += RELATIVITY_UPHILL_MAX_EXTRA_HEIGHT * effect;
-    if (cam_angle)
-        *cam_angle += RELATIVITY_UPHILL_MAX_EXTRA_ANGLE * effect;
-    if (distance)
-        *distance -= RELATIVITY_UPHILL_MAX_EXTRA_PULLBACK * effect;
-}   // applyRelativityCloseChaseSlopeAdjustment
+    return castDriveableSurfaceRay(from, to, hit_point, hit_normal);
+}   // castCameraSurfaceRay
 
 float getSurfaceAwareNearPlane(const core::vector3df& eye_position,
                                const core::vector3df& view_direction)
@@ -179,27 +189,181 @@ float getSurfaceAwareNearPlane(const core::vector3df& eye_position,
                              hit_distance * 0.5f));
 }   // getSurfaceAwareNearPlane
 
-float getRelativityCloseChaseDistance(float base_distance)
+float getCameraSurfaceAwareNearPlane(const Kart* observer_kart,
+                                     const btVector3& eye_position,
+                                     const btVector3& view_direction)
 {
-    const float scaled_distance = base_distance * 0.06f;
-    return -std::max(0.14f, std::min(scaled_distance, 0.22f));
-}   // getRelativityCloseChaseDistance
+    const btVector3 direction =
+        normalizedOrDefault(view_direction, btVector3(0.0f, 0.0f, 1.0f));
+    const btVector3 to = eye_position +
+        direction * RELATIVITY_CLOSE_CHASE_NEAR_PLANE_PROBE_DISTANCE;
 
-float getRelativityCloseChaseHeight()
+    btVector3 hit_point;
+    btVector3 hit_normal;
+    if (!castCameraSurfaceRay(observer_kart, eye_position, eye_position, to,
+                              &hit_point, &hit_normal))
+    {
+        return RELATIVITY_CLOSE_CHASE_DEFAULT_NEAR_PLANE;
+    }
+
+    const float hit_distance = (hit_point - eye_position).length();
+    return std::max(RELATIVITY_CLOSE_CHASE_MIN_NEAR_PLANE,
+                    std::min(RELATIVITY_CLOSE_CHASE_DEFAULT_NEAR_PLANE,
+                             hit_distance * 0.5f));
+}   // getCameraSurfaceAwareNearPlane
+
+float getSmoothAlpha(float dt, float time_constant)
 {
-    return 0.76f;
-}   // getRelativityCloseChaseHeight
+    if (time_constant <= 1.0e-4f)
+        return 1.0f;
+    return clamp01(1.0f - expf(-dt / time_constant));
+}   // getSmoothAlpha
 
-float getRelativityCloseChaseAngle()
+btVector3 getKartSupportUp(const Kart* kart)
 {
-    return 3.0f * DEGREE_TO_RAD;
-}   // getRelativityCloseChaseAngle
+    if (!kart)
+        return btVector3(0.0f, 1.0f, 0.0f);
 
-Vec3 getCameraTargetOffset(Camera::Mode mode, float above_kart)
+    btVector3 chassis_up =
+        normalizedOrDefault(kart->getSmoothedTrans().getBasis().getColumn(1),
+                            btVector3(0.0f, 1.0f, 0.0f));
+    btVector3 support_up(0.0f, 0.0f, 0.0f);
+
+    btKart* vehicle = kart->getVehicle();
+    if (vehicle)
+    {
+        for (int i = 0; i < vehicle->getNumWheels(); i++)
+        {
+            const btWheelInfo& wheel = vehicle->getWheelInfo(i);
+            if (!wheel.m_raycastInfo.m_isInContact)
+                continue;
+
+            btVector3 normal =
+                normalizedOrDefault(wheel.m_raycastInfo.m_contactNormalWS,
+                                    chassis_up);
+            if (normal.dot(chassis_up) < 0.0f)
+                normal = -normal;
+            support_up += normal;
+        }
+    }
+
+    return normalizedOrDefault(support_up, chassis_up);
+}   // getKartSupportUp
+
+void buildKartSupportBasis(const Kart* kart,
+                           const btVector3& previous_forward,
+                           const btVector3& previous_up,
+                           float dt,
+                           btVector3* support_forward,
+                           btVector3* support_right,
+                           btVector3* support_up)
 {
-    if (useRelativityCloseChase(mode))
-        return Vec3(0.0f, above_kart - 0.10f, 2.75f);
+    const btVector3 default_up(0.0f, 1.0f, 0.0f);
+    btVector3 desired_up = getKartSupportUp(kart);
+    btVector3 smoothed_up = desired_up;
+    if (previous_up.length2() > btScalar(1.0e-6f))
+    {
+        smoothed_up = previous_up.lerp(desired_up, getSmoothAlpha(dt, RC_UP_TC));
+        smoothed_up = normalizedOrDefault(smoothed_up, desired_up);
+    }
 
+    btVector3 raw_forward(0.0f, 0.0f, 1.0f);
+    if (kart)
+    {
+        btRigidBody* body = kart->getVehicle() ? kart->getVehicle()->getRigidBody() : NULL;
+        if (body)
+            raw_forward = body->getLinearVelocity();
+
+        if (raw_forward.length2() <= btScalar(1.0f))
+            raw_forward = kart->getSmoothedTrans().getBasis().getColumn(2);
+
+        if (raw_forward.length2() <= btScalar(1.0e-6f))
+        {
+            const float heading = kart->getHeading();
+            raw_forward = btVector3(sinf(heading), 0.0f, cosf(heading));
+        }
+    }
+
+    btVector3 desired_forward = raw_forward - smoothed_up * raw_forward.dot(smoothed_up);
+    desired_forward = normalizedOrDefault(
+        desired_forward,
+        previous_forward.length2() > btScalar(1.0e-6f) ? previous_forward
+                                                        : btVector3(0.0f, 0.0f, 1.0f));
+
+    btVector3 smoothed_forward = desired_forward;
+    if (previous_forward.length2() > btScalar(1.0e-6f))
+    {
+        smoothed_forward = previous_forward.lerp(
+            desired_forward, getSmoothAlpha(dt, RC_FORWARD_TC));
+        smoothed_forward = normalizedOrDefault(smoothed_forward, desired_forward);
+    }
+
+    btVector3 right = smoothed_up.cross(smoothed_forward);
+    right = normalizedOrDefault(right, btVector3(1.0f, 0.0f, 0.0f));
+    smoothed_forward = normalizedOrDefault(right.cross(smoothed_up),
+                                           desired_forward);
+    smoothed_up = normalizedOrDefault(smoothed_up, default_up);
+
+    if (support_forward)
+        *support_forward = smoothed_forward;
+    if (support_right)
+        *support_right = right;
+    if (support_up)
+        *support_up = smoothed_up;
+}   // buildKartSupportBasis
+
+void enforceRelativityCameraClearance(const Kart* observer_kart,
+                                      const btVector3& kart_anchor,
+                                      const btVector3& support_forward,
+                                      const btVector3& support_right,
+                                      const btVector3& support_up,
+                                      btVector3* position)
+{
+    if (!observer_kart || !position)
+        return;
+
+    btVector3 hit_point;
+    btVector3 hit_normal;
+    if (castCameraSurfaceRay(observer_kart, *position, kart_anchor, *position,
+                             &hit_point, &hit_normal))
+    {
+        const float normal_y = fabsf(hit_normal.getY());
+        const float steepness = 1.0f - clamp01(normal_y);
+        const float clearance = RC_CLEARANCE + RC_STEEP_EXTRA * steepness;
+        const float support_clearance = ((*position) - hit_point).dot(support_up);
+        if (support_clearance < clearance)
+            *position += support_up * (clearance - support_clearance);
+    }
+
+    const btVector3 from = *position + support_up * 0.08f;
+    const std::array<btVector3, 5> probes = {{
+        -support_up * 2.1f,
+        support_forward * 0.55f - support_up * 1.6f,
+        support_forward * 0.25f + support_right * 0.40f - support_up * 1.5f,
+        support_forward * 0.25f - support_right * 0.40f - support_up * 1.5f,
+        -support_forward * 0.20f - support_up * 1.3f
+    }};
+
+    for (size_t i = 0; i < probes.size(); i++)
+    {
+        if (!castCameraSurfaceRay(observer_kart, *position, from,
+                                  *position + probes[i],
+                                  &hit_point, &hit_normal))
+        {
+            continue;
+        }
+
+        const float normal_y = fabsf(hit_normal.getY());
+        const float steepness = 1.0f - clamp01(normal_y);
+        const float clearance = RC_CLEARANCE + RC_STEEP_EXTRA * steepness;
+        const float support_clearance = ((*position) - hit_point).dot(support_up);
+        if (support_clearance < clearance)
+            *position += support_up * (clearance - support_clearance);
+    }
+}   // enforceRelativityCameraClearance
+
+Vec3 getCameraTargetOffset(float above_kart)
+{
     return Vec3(0.0f, above_kart, 0.0f);
 }   // getCameraTargetOffset
 
@@ -218,6 +382,112 @@ Vec3 clampOffsetToRelativityBubble(const Vec3& offset)
 }   // clampOffsetToRelativityBubble
 
 }   // anonymous namespace
+
+// ============================================================================
+/** Relativity close-chase camera — v2 rebuilt for turning-uphill clipping.
+ *
+ *  Five anti-clipping measures layered together:
+ *
+ *  1. SMOOTHED HEADING — The camera placement heading is smoothed
+ *     independently so turns don't cause the desired position to snap to a
+ *     new location.  Without this, the exp-smooth takes a straight-line
+ *     shortcut through the inside of the turn — right through rising terrain.
+ *
+ *  2. FAN-OF-RAYS terrain probe — Five rays spread from the kart toward the
+ *     camera region (centre, left, right, high-left, high-right).  On a
+ *     curved uphill the road surface may flank the direct kart→camera line;
+ *     a single ray misses it, but the fan catches it.
+ *
+ *  3. SURFACE-NORMAL-AWARE clearance — On steep terrain, the fixed Y-axis
+ *     clearance is supplemented by a component along the surface normal.
+ *     This scales clearance with slope steepness so the camera lifts higher
+ *     on steeper uphills where clipping risk is greatest.
+ *
+ *  4. SWEPT-PATH collision (CCD for the camera) — After smoothing, a ray is
+ *     cast from the previous frame's camera position to the new one.  If
+ *     terrain lies on this path the camera is pushed above the hit point.
+ *     This is equivalent to the report's Continuous Collision Detection
+ *     applied to camera movement.
+ *
+ *  5. VOLUMETRIC post-smooth probe — After smoothing, rays are cast not just
+ *     downward but also forward-down and to each side-down.  On a curved
+ *     section the terrain can be beside or ahead of the camera, not below it.
+ */
+void CameraNormal::updateRelativityCamera(float dt)
+{
+    if (!m_kart) return;
+    Kart* kart = dynamic_cast<Kart*>(m_kart);
+    if (!kart) return;
+
+    const btVector3 kart_pos = kart->getSmoothedTrans().getOrigin();
+    const btVector3 previous_forward =
+        m_rc_initialized ? m_rc_forward
+                         : kart->getSmoothedTrans().getBasis().getColumn(2);
+    const btVector3 previous_up =
+        m_rc_initialized ? m_rc_up
+                         : kart->getSmoothedTrans().getBasis().getColumn(1);
+
+    btVector3 support_forward;
+    btVector3 support_right;
+    btVector3 support_up;
+    buildKartSupportBasis(kart, previous_forward, previous_up, dt,
+                          &support_forward, &support_right, &support_up);
+    m_rc_forward = support_forward;
+    m_rc_up = support_up;
+
+    btVector3 desired = kart_pos
+        + support_forward * RC_FORWARD_OFFSET
+        + support_up * RC_HEIGHT;
+    btVector3 desired_tgt = kart_pos
+        + support_forward * RC_TARGET_FORWARD
+        + support_up * RC_TARGET_HEIGHT;
+    const btVector3 kart_anchor =
+        kart_pos + support_up * 0.28f + support_forward * 0.08f;
+
+    btVector3 next_pos = desired;
+    if (!m_rc_initialized)
+    {
+        enforceRelativityCameraClearance(kart, kart_anchor, support_forward,
+                                         support_right, support_up, &next_pos);
+        m_rc_initialized = true;
+    }
+    else
+    {
+        const btVector3 prev_pos = m_rc_pos;
+        const btVector3 delta = desired - prev_pos;
+        int steps = (int)ceil(delta.length() / RC_SWEEP_SUBSTEP);
+        steps = std::max(1, std::min(steps, RC_SWEEP_MAX_STEPS));
+        next_pos = prev_pos;
+        for (int i = 1; i <= steps; i++)
+        {
+            btVector3 step_pos = prev_pos.lerp(desired, (float)i / (float)steps);
+            enforceRelativityCameraClearance(kart, kart_anchor, support_forward,
+                                             support_right, support_up, &step_pos);
+            next_pos = step_pos;
+        }
+    }
+
+    const float forward_offset = (next_pos - kart_pos).dot(support_forward);
+    if (forward_offset < RC_MIN_FORWARD_OFFSET)
+        next_pos += support_forward * (RC_MIN_FORWARD_OFFSET - forward_offset);
+
+    const float up_offset = (next_pos - kart_pos).dot(support_up);
+    if (up_offset < RC_MIN_UP_OFFSET)
+        next_pos += support_up * (RC_MIN_UP_OFFSET - up_offset);
+
+    enforceRelativityCameraClearance(kart, kart_anchor, support_forward,
+                                     support_right, support_up, &next_pos);
+
+    m_rc_pos = next_pos;
+    m_rc_target = desired_tgt;
+
+    m_camera->setPosition(core::vector3df(
+        m_rc_pos.getX(), m_rc_pos.getY(), m_rc_pos.getZ()));
+    m_camera->setTarget(core::vector3df(
+        m_rc_target.getX(), m_rc_target.getY(), m_rc_target.getZ()));
+    m_camera->setUpVector(core::vector3df(
+        support_up.getX(), support_up.getY(), support_up.getZ()));
+}   // updateRelativityCamera
 
 // ============================================================================
 /** Constructor for the normal camera. This is the only camera constructor
@@ -248,9 +518,15 @@ CameraNormal::CameraNormal(Camera::CameraType type,  int camera_index,
     m_target_speed   = 10.0f;
     m_rotation_range = 0.4f;
     m_rotation_range = 0.0f;
-    m_kart_position = btVector3(0, 0, 0);
-    m_kart_rotation = btQuaternion(0, 0, 0, 1);
+    m_kart_position  = btVector3(0, 0, 0);
+    m_kart_rotation  = btQuaternion(0, 0, 0, 1);
     m_last_smooth_mode = Mode::CM_NORMAL;
+    m_rc_pos         = btVector3(0, 0, 0);
+    m_rc_target      = btVector3(0, 0, 0);
+    m_rc_heading     = 0.0f;
+    m_rc_forward     = btVector3(0, 0, 1);
+    m_rc_up          = btVector3(0, 1, 0);
+    m_rc_initialized = false;
     reset();
     m_camera->setNearValue(1.0f);
 
@@ -292,33 +568,34 @@ void CameraNormal::moveCamera(float dt, bool smooth, float above_kart,
     float skid_angle = asinf(skid_factor);
     if (useRelativityCloseChase(getMode()))
         skid_angle *= 0.15f;
-    float ratio = current_speed / max_speed_without_zipper;
-
-    ratio = ratio > -0.12f ? ratio : -0.12f;
-    if (Relativity::isEnabled())
-        ratio = std::min(ratio, 0.0f);
 
     // distance of camera from kart in x and z plane
-    float camera_distance = -2.8f - 5.6f * ratio;
-    if (useRelativityCloseChase(getMode()))
+    float camera_distance = distance;
+    if (!useRelativityCloseChase(getMode()))
     {
-        camera_distance = distance;
-    }
-    else
-    {
+        camera_distance = -2.8f - 5.6f * (current_speed / max_speed_without_zipper);
+        camera_distance = std::max(camera_distance, -0.12f);
+        if (Relativity::isEnabled())
+            camera_distance = std::min(camera_distance, 0.0f);
         camera_distance *= sqrtf(UserConfigParams::m_camera_forward_smooth_position);
+        float min_distance = (distance * 2.0f);
+        if (distance > 0) camera_distance += distance + 1;
+        if (camera_distance > min_distance) camera_distance = min_distance;
     }
-    float min_distance = (distance * 2.0f);
-    if (distance > 0) camera_distance += distance + 1; // note that distance < 0
-    if (camera_distance > min_distance) camera_distance = min_distance; // don't get too close to the kart
 
     float tan_up = 0;
     if (cam_angle > 0) tan_up = tanf(cam_angle) * distance;
 
     // Defines how far camera should be from player kart.
-    float vertical_offset = (0.85f + ratio / 2.5f) - tan_up;
-    if (useRelativityCloseChase(getMode()))
+    float vertical_offset = 0.85f - tan_up;
+    if (!useRelativityCloseChase(getMode()))
+    {
+        vertical_offset += current_speed / max_speed_without_zipper / 2.5f;
+    }
+    else
+    {
         vertical_offset = fabsf(camera_distance) * tan_up + above_kart;
+    }
 
     Vec3 wanted_camera_offset(camera_distance * sinf(skid_angle / 2),
         vertical_offset,
@@ -349,15 +626,9 @@ void CameraNormal::moveCamera(float dt, bool smooth, float above_kart,
     m_camera_offset = clampOffsetToRelativityBubble(m_camera_offset);
 
     // next target
-    Vec3 current_target = btt(getCameraTargetOffset(getMode(), above_kart));
+    Vec3 current_target = btt(getCameraTargetOffset(above_kart));
     // new required position of camera
     current_position = kart_camera_position_with_offset.toIrrVector();
-
-    //Log::info("CAM_DEBUG", "OFFSET: %f %f %f TRANSFORMED %f %f %f TARGET %f %f %f",
-    //    wanted_camera_offset.x(), wanted_camera_offset.y(), wanted_camera_offset.z(),
-    //    kart_camera_position_with_offset.x(), kart_camera_position_with_offset.y(),
-    //    kart_camera_position_with_offset.z(), current_target.x(), current_target.y(),
-    //    current_target.z());
 
     if (smooth)
     {
@@ -385,17 +656,8 @@ void CameraNormal::restart()
 
         if (useRelativityCloseChase(getMode()))
         {
-            float above_kart = getRelativityCloseChaseHeight();
-            float cam_angle = getRelativityCloseChaseAngle();
-            float distance = getRelativityCloseChaseDistance(m_distance);
-            applyRelativityCloseChaseSlopeAdjustment(
-                dynamic_cast<Kart*>(m_kart), &above_kart, &cam_angle,
-                &distance);
-            const float vertical_offset =
-                fabsf(distance) * tanf(cam_angle) + above_kart;
-            m_camera_offset = irr::core::vector3df(0.0f, vertical_offset,
-                                                   distance);
-            m_camera_offset = clampOffsetToRelativityBubble(m_camera_offset);
+            // New pipeline seeds itself on first update(); just reset the flag.
+            m_rc_initialized = false;
             return;
         }
 
@@ -427,23 +689,12 @@ void CameraNormal::getCameraSettings(Mode mode,
             *above_kart = 0.75f;
             *cam_angle = UserConfigParams::m_camera_forward_up_angle * DEGREE_TO_RAD;
             *distance = -m_distance;
-            if (useRelativityCloseChase(mode))
-            {
-                *above_kart = getRelativityCloseChaseHeight();
-                *cam_angle = getRelativityCloseChaseAngle();
-                *distance = getRelativityCloseChaseDistance(m_distance);
-                applyRelativityCloseChaseSlopeAdjustment(
-                    dynamic_cast<Kart*>(m_kart), above_kart, cam_angle,
-                    distance);
-            }
             float steering = m_kart->getSteerPercent()
                            * (1.0f + (m_kart->getSkidding()->getSkidFactor()
                                       - 1.0f)/2.3f );
             // quadratically to dampen small variations (but keep sign)
             float dampened_steer = fabsf(steering) * steering;
             *sideway             = -m_rotation_range*dampened_steer*0.5f;
-            if (useRelativityCloseChase(mode))
-                *sideway = 0.0f;
             *smoothing           = UserConfigParams::m_camera_forward_smooth_position != 0.
                                 || UserConfigParams::m_camera_forward_smooth_rotation != 0.;
             *cam_roll_angle      = 0.0f;
@@ -553,6 +804,21 @@ void CameraNormal::update(float dt)
 
     m_camera->setNearValue(1.0f);
 
+    // Relativity close-chase uses a dedicated pipeline that bypasses all
+    // the legacy offset/smoothing machinery (which causes jitter and clipping).
+    if (useRelativityCloseChase(getMode()))
+    {
+        ExplosionAnimation* ea =
+            dynamic_cast<ExplosionAnimation*>(m_kart->getKartAnimation());
+        if (!ea || ea->hasResetAlready())
+            updateRelativityCamera(dt);
+        m_camera->setNearValue(getCameraSurfaceAwareNearPlane(
+            dynamic_cast<Kart*>(m_kart), toBt(m_camera->getPosition()),
+            toBt(m_camera->getTarget() - m_camera->getPosition())));
+        m_camera->setFOV(getBaseFov());
+        return;
+    }
+
     float above_kart, cam_angle, side_way, distance, cam_roll_angle;
     bool  smoothing;
 
@@ -573,8 +839,7 @@ void CameraNormal::update(float dt)
         // Note: this code is replicated from smoothMoveCamera so that
         // the camera keeps on pointing to the same spot.
         Vec3 current_target =
-            m_kart->getSmoothedTrans()(getCameraTargetOffset(getMode(),
-                                                             above_kart));
+            m_kart->getSmoothedTrans()(getCameraTargetOffset(above_kart));
         m_camera->setTarget(current_target.toIrrVector());
     }
     else // no kart animation
@@ -594,14 +859,7 @@ void CameraNormal::update(float dt)
                                               &distance, &smoothing, &cam_roll_angle);
         moveCamera(dt, false, above_kart, cam_angle, distance);
     }
-    float near_value = 1.0f;
-    if (useRelativityCloseChase(getMode()))
-    {
-        near_value = getSurfaceAwareNearPlane(
-            m_camera->getPosition(),
-            m_camera->getTarget() - m_camera->getPosition());
-    }
-    m_camera->setNearValue(near_value);
+    m_camera->setNearValue(1.0f);
     m_camera->setFOV(getBaseFov());
 }   // update
 
@@ -619,7 +877,7 @@ void CameraNormal::positionCamera(float dt, float above_kart, float cam_angle,
 {
     Vec3 wanted_position;
     Vec3 wanted_target = m_kart->getSmoothedTrans()
-        (getCameraTargetOffset(getMode(), above_kart));
+        (getCameraTargetOffset(above_kart));
 
     float tan_up = tanf(cam_angle);
 
@@ -824,3 +1082,4 @@ void CameraNormal::clearTVCameras()
         }
     }
 } // clearTVCameras
+

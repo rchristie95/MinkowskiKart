@@ -27,6 +27,7 @@
 #include "items/projectile_manager.hpp"
 #include "items/rubber_ball.hpp"
 #include "karts/abstract_kart.hpp"
+#include "karts/max_speed.hpp"
 #include "karts/controller/controller.hpp"
 #include "karts/kart_properties.hpp"
 #include "modes/world.hpp"
@@ -367,6 +368,12 @@ void Powerup::use()
                                            + m_kart->getShieldTime()       ) );
                 }
             }
+
+            // Add 7.5 m/s max speed increase for Warp Bubble (BubbleGum shield)
+            m_kart->increaseMaxSpeed(MaxSpeed::MS_INCREASE_WARP_BUBBLE,
+                                     7.5f, 0.0f,
+                                     stk_config->time2Ticks(kp->getBubblegumShieldDuration()),
+                                     stk_config->time2Ticks(0.5f));
 
             if (!has_played_sound)
             {

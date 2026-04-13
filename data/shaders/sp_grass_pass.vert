@@ -33,14 +33,13 @@ void main()
     vec3 test = sin(wind_direction * (i_position.y * 0.1));
     test += cos(wind_direction) * 0.7;
 
-    vec3 raw_world_offset = rotateVector(i_rotation, i_position * i_scale.xyz);
-    vec4 raw_world_position = vec4(i_origin + test * i_color.r +
-        raw_world_offset, 1.0);
+    vec3 raw_world_offset = rotateVector(i_rotation, i_position * i_scale.xyz) + test * i_color.r;
+    vec4 raw_world_position = vec4(i_origin + raw_world_offset, 1.0);
     float relativity_fade = getRelativisticVisualFade(raw_world_position.xyz,
-        i_velocity);
+        i_velocity, i_scale.w);
     vec3 world_offset = applyRelativisticDisplacement(raw_world_offset,
         relativity_fade);
-    vec4 world_position = vec4(i_origin + test * i_color.r + world_offset, 1.0);
+    vec4 world_position = vec4(i_origin + world_offset, 1.0);
     vec3 world_normal = applyRelativisticNormalTransform(
         rotateVector(i_rotation, i_normal.xyz), relativity_fade);
     world_position = applyRelativisticVisualPosition(world_position,

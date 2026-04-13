@@ -43,6 +43,9 @@ struct ObserverSnapshot
 struct ObserverVisualState
 {
     bool      m_valid;
+    bool      m_item_active;
+    bool      m_doppler_active;
+    float     m_speed_of_light;
     float     m_beta;
     float     m_gamma;
     float     m_inverse_gamma;

@@ -101,7 +101,7 @@ void STKTextBillboard::updateAbsolutePosition()
         m_instanced_data =
             SP::SPInstancedData(AbsoluteTransformation,
                                 core::vector3df(0.0f, 0.0f, 0.0f),
-                                0, 0, 0, 0);
+                                0, 0, 0, 0, false);
     }
 }   // updateAbsolutePosition
 

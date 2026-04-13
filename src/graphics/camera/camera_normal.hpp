@@ -53,6 +53,16 @@ private:
 
     Mode            m_last_smooth_mode;
 
+    // Relativity close-chase camera state (world-space, bypasses the
+    // kart-local offset pipeline to avoid pitch-induced clipping).
+    btVector3       m_rc_pos;           // smoothed world-space camera position
+    btVector3       m_rc_target;        // smoothed world-space look-at target
+    float           m_rc_heading;       // smoothed heading to prevent turn-snap
+    btVector3       m_rc_forward;       // smoothed support-frame forward
+    btVector3       m_rc_up;            // smoothed support-frame up/road normal
+    bool            m_rc_initialized;   // false until first update seeds the state
+
+    void updateRelativityCamera(float dt);
     void moveCamera(float dt, bool smooth, float above_kart,
                     float cam_angle, float distance);
 

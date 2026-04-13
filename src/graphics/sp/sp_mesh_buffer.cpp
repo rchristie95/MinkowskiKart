@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "graphics/sp/sp_mesh_buffer.hpp"
+#include "graphics/sp/sp_shader.hpp"
 #include "graphics/sp/sp_texture.hpp"
 #include "graphics/central_settings.hpp"
 #include "graphics/graphics_restrictions.hpp"
@@ -515,5 +516,39 @@ void SPMeshBuffer::setSTKMaterial(Material* m)
     if (!m_shaders[1])
         m_shaders[1] = SPShaderManager::get()->getSPShader("solid_skinned");
 }   // setSTKMaterial
+
+// ----------------------------------------------------------------------------
+void SPMeshBuffer::draw(DrawCallType dct, int material_id) const
+{
+#ifndef SERVER_ONLY
+    glBindVertexArray(m_vao[dct]);
+    GLenum mode = GL_TRIANGLES;
+    SPShader* shader = m_skinned ? m_shaders[1].get() : m_shaders[0].get();
+    RenderPass rp = (dct >= DCT_SHADOW1 && dct <= DCT_SHADOW4) ? RP_SHADOW : RP_1ST;
+    if (shader && shader->hasTessellation(rp))
+    {
+        mode = GL_PATCHES;
+        glPatchParameteri(GL_PATCH_VERTICES, 3);
+    }
+
+    if (material_id == -1)
+    {
+        // Draw whole mesh buffer, usually in shadow pass
+        glDrawElementsInstanced(mode, getIndexCount(),
+            GL_UNSIGNED_SHORT, 0, (unsigned)m_ins_dat[dct].size());
+    }
+    else
+    {
+        unsigned idx_count = std::get<1>(m_stk_material[material_id]);
+        if (idx_count == 0)
+            return;
+        glDrawElementsInstanced(mode,
+            idx_count,
+            GL_UNSIGNED_SHORT,
+            (void*)(size_t)(std::get<0>(m_stk_material[material_id]) << 1),
+            (unsigned)m_ins_dat[dct].size());
+    }
+#endif
+}   // draw
 
 }

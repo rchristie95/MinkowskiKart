@@ -59,7 +59,8 @@ SPDynamicDrawCall::SPDynamicDrawCall(scene::E_PRIMITIVE_TYPE pt,
     glBufferData(GL_ARRAY_BUFFER, SPInstancedData::getStride(), NULL,
         GL_DYNAMIC_DRAW);
     SPInstancedData id = SPInstancedData(
-        m_trans, core::vector3df(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.0f, 0);
+        m_trans, core::vector3df(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.0f, 0,
+        false);
     glBufferSubData(GL_ARRAY_BUFFER, 0, SPInstancedData::getStride(),
         id.getData());
     SPTextureManager::get()->increaseGLCommandFunctionCount(1);

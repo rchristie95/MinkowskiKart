@@ -2,6 +2,8 @@ uniform samplerCube tex;
 
 out vec4 FragColor;
 
+#stk_include "utils/relativity_visual.vert"
+
 void main(void)
 {
     vec3 eyedir = vec3(mod(gl_FragCoord.xy, u_screen) / u_screen, 1.);
@@ -9,6 +11,7 @@ void main(void)
     vec4 tmp = (u_inverse_projection_matrix * vec4(eyedir, 1.));
     tmp /= tmp.w;
     eyedir = normalize((u_inverse_view_matrix * vec4(tmp.xyz, 0.)).xyz);
+    eyedir = transformObserverRayToWorldDirection(eyedir);
     vec4 color = texture(tex, eyedir);
     FragColor = vec4(color.xyz, 1.);
 }

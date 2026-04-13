@@ -49,6 +49,10 @@ public:
 
         std::string m_vertex_shader;
 
+        std::string m_tess_control_shader;
+
+        std::string m_tess_evaluation_shader;
+
         std::string m_fragment_shader;
 
         std::string m_skinned_mesh_shader;
