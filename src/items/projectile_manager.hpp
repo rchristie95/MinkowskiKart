@@ -98,9 +98,11 @@ public:
     void addByUID(const std::string& uid, std::shared_ptr<Flyable> f)
                                              { m_active_projectiles[uid] = f; }
     // ------------------------------------------------------------------------
-    void removeByUID(const std::string& uid)
+    void             removeByUID(const std::string& uid)
                                            { m_active_projectiles.erase(uid); }
-};
+    // ------------------------------------------------------------------------
+    bool             hasActiveProjectile(const AbstractKart* kart) const;
+    };
 
 #endif
 

@@ -22,16 +22,93 @@
 #include "LinearMath/btIDebugDraw.h"
 #include "BulletDynamics/ConstraintSolver/btContactConstraint.h"
 
+#include "graphics/camera/camera.hpp"
 #include "graphics/material.hpp"
 #include "karts/kart.hpp"
 #include "karts/kart_model.hpp"
 #include "karts/kart_properties.hpp"
+#include "modes/world.hpp"
 #include "physics/triangle_mesh.hpp"
+#include "race/race_manager.hpp"
+#include "relativity/observer_snapshot.hpp"
 #include "relativity/relativity_math.hpp"
 #include "tracks/terrain_info.hpp"
 #include "tracks/track.hpp"
 
 #define ROLLING_INFLUENCE_FIX
+
+namespace
+{
+
+const btScalar APPARENT_SURFACE_SHELL_LIMIT = btScalar(0.40f);
+
+btVector3 getWeightedGroundNormal(const btAlignedObjectArray<btWheelInfo>& wheels,
+                                  int wheels_on_ground)
+{
+    if (wheels_on_ground <= 0)
+        return btVector3(0.0f, 1.0f, 0.0f);
+
+    btVector3 normal_sum(0.0f, 0.0f, 0.0f);
+    btScalar total_weight = btScalar(0.0f);
+    for (int i = 0; i < wheels.size(); i++)
+    {
+        const btWheelInfo& wheel = wheels[i];
+        if (!wheel.m_raycastInfo.m_isInContact)
+            continue;
+
+        btScalar weight = wheel.m_wheelsSuspensionForce;
+        if (weight <= btScalar(0.0f))
+            weight = btScalar(1.0f);
+        normal_sum += wheel.m_raycastInfo.m_contactNormalWS * weight;
+        total_weight += weight;
+    }
+
+    if (total_weight <= btScalar(0.0f) || normal_sum.length2() <= btScalar(1.0e-6f))
+        return btVector3(0.0f, 1.0f, 0.0f);
+
+    normal_sum /= total_weight;
+    normal_sum.normalize();
+    return normal_sum;
+}   // getWeightedGroundNormal
+
+void projectVelocityOntoGround(btRigidBody* body,
+                               const btAlignedObjectArray<btWheelInfo>& wheels,
+                               int wheels_on_ground)
+{
+    if (!body || wheels_on_ground < 2)
+        return;
+
+    const btVector3 ground_normal =
+        getWeightedGroundNormal(wheels, wheels_on_ground);
+    const btVector3 velocity = body->getLinearVelocity();
+    const btScalar into_ground_speed = velocity.dot(ground_normal);
+    if (into_ground_speed >= btScalar(0.0f))
+        return;
+
+    btVector3 tangent_velocity = velocity - ground_normal * into_ground_speed;
+    if (tangent_velocity.length2() <= btScalar(1.0e-8f))
+        tangent_velocity = btVector3(0.0f, 0.0f, 0.0f);
+
+    body->setLinearVelocity(tangent_velocity);
+    body->setInterpolationLinearVelocity(tangent_velocity);
+}   // projectVelocityOntoGround
+
+btScalar getApparentSurfaceShellAlongNormal(const Kart* observer_kart,
+                                            const btVector3& observer_position,
+                                            const btVector3& world_point,
+                                            const btVector3& world_normal)
+{
+    if (!observer_kart || !Relativity::isEnabled())
+        return btScalar(0.0f);
+
+    const float shell = Relativity::getVisualShellOffset(
+        observer_kart, observer_position, world_point, world_normal);
+    if (!std::isfinite((double)shell) || shell <= 0.0f)
+        return btScalar(0.0f);
+    return std::min((btScalar)shell, APPARENT_SURFACE_SHELL_LIMIT);
+}   // getApparentSurfaceShellAlongNormal
+
+}   // anonymous namespace
 
 // ============================================================================
 btKart::btKart(btRigidBody* chassis, btVehicleRaycaster* raycaster,
@@ -536,6 +613,13 @@ void btKart::updateVehicle( btScalar step )
         m_ticks_additional_rotation--;
     }
     adjustSpeed(m_min_speed, m_max_speed);
+    if (Relativity::isEnabled())
+    {
+        // Keep grounded relativistic motion tangent to the support surface so
+        // the observer velocity does not point into inclined road geometry.
+        projectVelocityOntoGround(m_chassisBody, m_wheelInfo,
+                                  m_num_wheels_on_ground);
+    }
 }   // updateVehicle
 
 // ----------------------------------------------------------------------------

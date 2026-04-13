@@ -20,6 +20,7 @@
 
 #include "karts/abstract_kart.hpp"
 #include "karts/kart.hpp"
+#include "items/attachment.hpp"
 #include "relativity/relativity_math.hpp"
 
 #include <algorithm>
@@ -165,6 +166,9 @@ ObserverSnapshot::ObserverSnapshot()
 // ----------------------------------------------------------------------------
 ObserverVisualState::ObserverVisualState()
     : m_valid(false),
+      m_item_active(false),
+      m_doppler_active(false),
+      m_speed_of_light(1000.0f),
       m_beta(0.0f),
       m_gamma(1.0f),
       m_inverse_gamma(1.0f),
@@ -234,12 +238,30 @@ ObserverVisualState buildObserverVisualState(
         return visual_state;
 
     const RelativisticState& state = kart->getRelativisticState();
-    const float speed_of_light = Relativity::getConfiguredSpeedOfLight();
+    
+    // Core rules item active check
+    bool item_active = kart->isAnyPowerupActive();
+    bool doppler_active = false;
+    
+    if (kart->isSquashed() || kart->getBlockedByPlungerTicks() > 0)
+    {
+        doppler_active = true;
+    }
+    if (kart->getAttachment() && (
+        kart->getAttachment()->getType() == Attachment::ATTACH_PARACHUTE ||
+        kart->getAttachment()->getType() == Attachment::ATTACH_ANVIL ||
+        kart->getAttachment()->getType() == Attachment::ATTACH_BOMB))
+    {
+        doppler_active = true;
+    }
+    
+    float speed_of_light = item_active ? 30.0f : 1000.0f;
+    
     if (!std::isfinite((double)speed_of_light) || speed_of_light <= 0.0f)
         return visual_state;
 
-    const float beta = std::min(std::max((float)state.m_beta, 0.0f), 0.999f);
-    const float gamma = std::max((float)state.m_gamma, 1.0f);
+    const float beta = std::min(std::max((float)state.m_coordinate_velocity.length() / speed_of_light, 0.0f), 0.999f);
+    const float gamma = 1.0f / sqrt(1.0f - beta * beta);
     btVector3 beta_vector = state.m_coordinate_velocity / speed_of_light;
 
     if (!std::isfinite((double)beta_vector.x()) ||
@@ -267,6 +289,9 @@ ObserverVisualState buildObserverVisualState(
     }
 
     visual_state.m_valid = true;
+    visual_state.m_item_active = item_active;
+    visual_state.m_doppler_active = doppler_active;
+    visual_state.m_speed_of_light = speed_of_light;
     visual_state.m_beta = beta;
     visual_state.m_gamma = gamma;
     visual_state.m_inverse_gamma = 1.0f / gamma;

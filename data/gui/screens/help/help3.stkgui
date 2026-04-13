@@ -34,7 +34,7 @@
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/bubblegum-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="BubbleGum - protect yourself with a shield, or use while looking back to leave a sticky pink puddle behind you."/>
+                    <bubble proportion="1" height="100%" text="Warp Bubble: Wrap your kart in a local spacetime bubble. Blocks one incoming hit, clears attached hazards, and ignores sticky track traps."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
@@ -47,44 +47,44 @@
                     <icon align="center" width="8%" height="100%" icon="gui/icons/cake-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
-                            text="Cake - thrown at the closest rival, best on short ranges and long straights. It also affects other karts close to the explosion."/>
+                            text="Geodesic Missile: A guided projectile that curves through spacetime and chases down racers even if they change speed."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/plunger-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Plunger - throw straight to pull an opponent back, or throw while looking back to make one lose sight."/>
+                    <bubble proportion="1" height="100%" text="Cosmic String: Fire a spacetime filament. Hook racers or walls ahead, or fling a blackboard of equations behind you to ruin someone's view."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/bowling-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
-                            text="Bowling Ball - goes straight until it strikes, it can bounce off walls. If you are looking back, it will be thrown backwards."/>
+                            text="Pocket Black Hole: Throw a tiny unstable singularity that curves out and back. Great if you aim it well. Terrible if you do not."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/parachute-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Parachute - slows down all karts in a better position."/>
+                    <bubble proportion="1" height="100%" text="Time-Dilation Field: Trap a racer ahead in a relativistic slowdown zone. Their speed and acceleration drop while the world smears around them."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/swap-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Swapper - gift boxes are transformed into bananas, nitro cans into bubblegums, and vice versa for a short time."/>
+                    <bubble proportion="1" height="100%" text="Frame Shift: The track gets reinterpreted in another reference frame. Pickups and hazards swap into new forms."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                      <icon align="center" width="8%" height="100%" icon="gui/icons/rubber_ball-icon.png"/>
                      <spacer width="3%" height="100%"/>
-                     <bubble proportion="1" height="100%" text="Basket Ball - bounces after the leader, and might squash and slow down karts down on the way."/>
+                     <bubble proportion="1" height="100%" text="Neutron Star: Hit a racer with a chunk of absurd density and watch their momentum disappear."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                      <icon align="center" width="8%" height="100%" icon="gui/icons/swatter-icon.png"/>
                      <spacer width="3%" height="100%"/>
-                     <bubble proportion="1" height="100%" text="Swatter - will squash karts close by, slowing them down. Can also be used to remove parachutes and bombs."/>
+                     <bubble proportion="1" height="100%" text="Tidal Arm: Release a short-range tidal-force slap that swats nearby racers and knocks attached bombs away."/>
                 </div>
 
             </box>

@@ -46,7 +46,8 @@ public:
     SPInstancedData(const core::matrix4& model_mat,
                     const core::vector3df& velocity,
                     float texture_trans_x, float texture_trans_y, float hue,
-                    short skinning_offset)
+                    short skinning_offset,
+                    bool disable_relativity_visual = false)
     {
         using namespace MiniGLM;
         float position[3] = { model_mat[12], model_mat[13], model_mat[14] };
@@ -71,7 +72,8 @@ public:
         memcpy(m_data, position, 12);
         memcpy(m_data + 12, &rotation, 16);
         short s[4] = { toFloat16(scale.X), toFloat16(scale.Y),
-            toFloat16(scale.Z), 0 };
+            toFloat16(scale.Z),
+            toFloat16(disable_relativity_visual ? 1.0f : 0.0f) };
         memcpy(m_data + 28, s, 8);
         short tm[2] =
             {

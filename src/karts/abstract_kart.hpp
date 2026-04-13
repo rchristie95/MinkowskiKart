@@ -417,6 +417,12 @@ public:
      */
     virtual bool isOnMinNitroTime() const = 0;
     // ------------------------------------------------------------------------
+    /** Returns true if nitro is currently being used. */
+    virtual bool isUsingNitro() const = 0;
+    // ------------------------------------------------------------------------
+    /** Returns true if any powerup is currently active for this kart. */
+    virtual bool isAnyPowerupActive() const = 0;
+    // ------------------------------------------------------------------------
     /** Returns the current material the kart is on. */
     virtual const Material *getMaterial() const = 0;
     // ------------------------------------------------------------------------

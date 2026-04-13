@@ -1243,7 +1243,13 @@ void World::update(int ticks)
                 Relativity::KartAdapter::clampVelocity(
                     body->getLinearVelocity(), &was_clamped);
             if (was_clamped)
+            {
                 body->setLinearVelocity(velocity);
+                body->setInterpolationLinearVelocity(velocity);
+            }
+
+            if (Kart* kart = dynamic_cast<Kart*>(m_karts[i].get()))
+                kart->syncPostPhysicsState(ticks);
         }
         PROFILER_POP_CPU_MARKER();
     }

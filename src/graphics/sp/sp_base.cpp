@@ -72,6 +72,8 @@ using namespace GE;
 namespace SP
 {
 
+extern unsigned sp_cur_player;
+
 namespace
 {
 const size_t SP_MATRIX_UBO_BASE_FLOATS = 16 * 9 + 2;
@@ -146,6 +148,37 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
     return state.m_velocity;
 }   // estimateNodeVelocity
 
+bool nodeHasAncestor(const scene::ISceneNode* node,
+                     const scene::ISceneNode* ancestor)
+{
+    if (!node || !ancestor)
+        return false;
+
+    const scene::ISceneNode* current = node;
+    while (current)
+    {
+        if (current == ancestor)
+            return true;
+        current = current->getParent();
+    }
+    return false;
+}   // nodeHasAncestor
+
+bool shouldDisableRelativityVisualsForNode(const scene::ISceneNode* node)
+{
+    if (!Relativity::isEnabled() || !node ||
+        sp_cur_player >= Camera::getNumCameras())
+    {
+        return false;
+    }
+
+    Camera* camera = Camera::getCamera(sp_cur_player);
+    AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
+    const scene::ISceneNode* observer_root =
+        observer_kart ? observer_kart->getNode() : nullptr;
+    return nodeHasAncestor(node, observer_root);
+}   // shouldDisableRelativityVisualsForNode
+
 std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     unsigned player_index)
 {
@@ -166,14 +199,14 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     if (!visual_state.m_valid)
         return tail;
 
-    tail[2] = 1.0f;
-    tail[3] = visual_state.m_beta;
+    tail[2] = visual_state.m_item_active ? 1.0f : 0.0f;
+    tail[3] = visual_state.m_doppler_active ? 1.0f : 0.0f;
     tail[4] = visual_state.m_gamma;
     tail[5] = visual_state.m_inverse_gamma;
     tail[6] = visual_state.m_beta_vector.x();
     tail[7] = visual_state.m_beta_vector.y();
     tail[8] = visual_state.m_beta_vector.z();
-    tail[9] = Relativity::getConfiguredSpeedOfLight();
+    tail[9] = visual_state.m_speed_of_light;
     tail[10] = visual_state.m_observer_position.x();
     tail[11] = visual_state.m_observer_position.y();
     tail[12] = visual_state.m_observer_position.z();
@@ -181,7 +214,7 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[14] = bubble_center.getX();
     tail[15] = bubble_center.getY();
     tail[16] = bubble_center.getZ();
-        tail[17] = Relativity::getWarpBubbleRadius();
+    tail[17] = Relativity::getWarpBubbleRadius();
     return tail;
 }   // buildRelativityUBOTail
 
@@ -905,6 +938,8 @@ void addObject(SPMeshNode* node)
                                         model_matrix[14]);
     const core::vector3df node_velocity =
         estimateNodeVelocity(node, node_position);
+    const bool disable_relativity_visual =
+        shouldDisableRelativityVisualsForNode(node);
     bool added_for_skinning = false;
     for (unsigned m = 0; m < node->getSPM()->getMeshBufferCount(); m++)
     {
@@ -993,7 +1028,7 @@ void addObject(SPMeshNode* node)
         SPInstancedData id = SPInstancedData
             (node->getAbsoluteTransformation(), node_velocity,
             node->getTextureMatrix(m)[0], node->getTextureMatrix(m)[1], hue,
-            (short)node->getSkinningOffset());
+            (short)node->getSkinningOffset(), disable_relativity_visual);
 
         for (int dc_type = 0; dc_type < (handle_shadow ? 5 : 1); dc_type++)
         {
