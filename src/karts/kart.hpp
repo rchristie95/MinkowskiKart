@@ -319,6 +319,7 @@ public:
     virtual void   startEngineSFX   () OVERRIDE;
     virtual void  collectedItem(ItemState *item) OVERRIDE;
     virtual float getStartupBoostFromStartTicks(int ticks) const OVERRIDE;
+    void         syncPostPhysicsState(int ticks);
     virtual float getStartupBoost() const OVERRIDE  { return m_startup_boost; }
     virtual void setStartupBoost(float val) OVERRIDE { m_startup_boost = val; }
     virtual const Material *getMaterial() const OVERRIDE;
@@ -420,6 +421,10 @@ public:
      *  pressed due to minimal use time requirements
      */
     virtual bool isOnMinNitroTime() const OVERRIDE { return m_min_nitro_ticks > 0; }
+    // ----------------------------------------------------------------------------------------
+    virtual bool isUsingNitro() const OVERRIDE;
+    // ----------------------------------------------------------------------------------------
+    virtual bool isAnyPowerupActive() const OVERRIDE;
 
     // ========================================================================================
     // POWERUP related functions.

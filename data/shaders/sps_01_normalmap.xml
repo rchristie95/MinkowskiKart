@@ -1,6 +1,7 @@
 <spshader>
     <shader-info name="normalmap" fallback-shader="solid" use-tangents="Y"/>
     <first-pass vertex-shader="sp_pass.vert"
+        tess-control-shader="sp_tess.tesc" tess-evaluation-shader="sp_tess.tese"
         fragment-shader="sp_normal_map.frag"
         skinned-mesh-shader="sp_skinning.vert">
     </first-pass>

@@ -161,7 +161,7 @@
        "preferred-frame-dynamics".
        -->
   <relativity enabled="true"
-              speed-of-light="1750.0"
+              speed-of-light="1000.0"
               max-beta="0.95"
               mode="preferred-frame-dynamics"/>
 

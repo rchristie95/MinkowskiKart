@@ -110,6 +110,8 @@ private:
 
     const std::array<bool, 6> m_srgb;
 
+    bool m_has_tessellation[RP_COUNT];
+
 public:
     // ------------------------------------------------------------------------
     static bool m_sp_shader_debug;
@@ -129,6 +131,9 @@ public:
     }
     // ------------------------------------------------------------------------
     bool hasShader(RenderPass rp)                { return m_program[rp] != 0; }
+    // ------------------------------------------------------------------------
+    bool hasTessellation(RenderPass rp = RP_1ST) const
+                                                { return m_has_tessellation[rp]; }
     // ------------------------------------------------------------------------
     GLuint getShaderProgram(RenderPass rp)            { return m_program[rp]; }
     // ------------------------------------------------------------------------

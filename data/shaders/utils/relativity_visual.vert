@@ -21,6 +21,15 @@ float getRelativisticVisualFade(vec3 world_position, vec3 object_velocity)
         RELATIVITY_OBSERVER_STABILITY_FADE_WIDTH, observer_distance);
 }
 
+float getRelativisticVisualFade(vec3 world_position, vec3 object_velocity,
+                                float disable_relativity_visual)
+{
+    if (disable_relativity_visual > 0.5)
+        return 0.0;
+
+    return getRelativisticVisualFade(world_position, object_velocity);
+}
+
 vec3 getRelativityBetaVector()
 {
     return u_relativity_beta.xyz;

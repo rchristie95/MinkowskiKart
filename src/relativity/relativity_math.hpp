@@ -21,10 +21,27 @@
 
 #include "LinearMath/btVector3.h"
 
+class AbstractKart;
+class Material;
+
 namespace Relativity
 {
 
 struct RelativisticState;
+struct ObserverVisualState;
+
+struct ApparentSurfaceHit
+{
+    bool             m_hit;
+    btVector3        m_world_point;
+    btVector3        m_world_normal;
+    btVector3        m_apparent_point;
+    btVector3        m_apparent_normal;
+    float            m_visual_fade;
+    const Material*  m_material;
+
+    ApparentSurfaceHit();
+};   // struct ApparentSurfaceHit
 
 bool isEnabled();
 bool isPropulsionLimited();
@@ -42,6 +59,7 @@ bool scaleConfiguredSpeedOfLight(float factor,
                                  float* applied_speed_of_light = 0);
 float getConfiguredMaxBeta();
 float getMaxCoordinateSpeed();
+int getRecommendedPhysicsSubsteps(float max_beta);
 
 double betaForSpeed(double speed, double speed_of_light);
 double gammaForSpeed(double speed, double speed_of_light);
@@ -62,10 +80,45 @@ float scaleLongitudinalForce(float force, float signed_speed,
 btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
                                       const btVector3& coordinate_velocity,
                                       float speed_of_light);
+float getDirectionalEffectiveMass(float rest_mass,
+                                  const btVector3& coordinate_velocity,
+                                  const btVector3& response_direction,
+                                  float speed_of_light);
+float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
+                                       const btVector3& velocity_a,
+                                       float mass_a,
+                                       const btVector3& velocity_b,
+                                       float mass_b,
+                                       float restitution,
+                                       float speed_of_light);
 
 unsigned int getVelocityClampCount();
 unsigned int getResponseScaleCount();
 void resetDebugCounters();
+
+float getVisualFadeForWorldPosition(const btVector3& world_position,
+                                    const btVector3& observer_position);
+float getVisualShellOffset(const AbstractKart* observer_kart,
+                           const btVector3& observer_position,
+                           const btVector3& world_position,
+                           const btVector3& world_normal,
+                           const btVector3& object_velocity =
+                               btVector3(0.0f, 0.0f, 0.0f));
+btVector3 applyVisualPosition(const btVector3& world_position,
+                              const ObserverVisualState& observer_state,
+                              const btVector3& object_velocity =
+                                  btVector3(0.0f, 0.0f, 0.0f),
+                              float visual_fade = -1.0f);
+btVector3 applyVisualNormal(const btVector3& world_position,
+                            const btVector3& world_normal,
+                            const ObserverVisualState& observer_state,
+                            float visual_fade = -1.0f);
+bool castApparentDriveableRay(const AbstractKart* observer_kart,
+                              const btVector3& observer_position,
+                              const btVector3& from,
+                              const btVector3& to,
+                              ApparentSurfaceHit* hit,
+                              bool interpolate_normal = true);
 
 namespace KartAdapter
 {

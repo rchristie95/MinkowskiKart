@@ -1850,6 +1850,38 @@ void Kart::updateSpeed()
 }   // updateSpeed
 
 //-----------------------------------------------------------------------------
+bool Kart::isUsingNitro() const
+{
+    return (m_controls.getNitro() || m_min_nitro_ticks > 0) && m_collected_energy > 0;
+}
+
+//-----------------------------------------------------------------------------
+bool Kart::isAnyPowerupActive() const
+{
+    if (isShielded() || isSquashed() || isInvulnerable() || getBlockedByPlungerTicks() > 0)
+        return true;
+    
+    if (getAttachment() && getAttachment()->getType() != Attachment::ATTACH_NOTHING)
+        return true;
+        
+    if (isUsingNitro())
+        return true;
+        
+    if (m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_ZIPPER) ||
+        m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_WARP_BUBBLE))
+        return true;
+        
+    if (ProjectileManager::get() && ProjectileManager::get()->hasActiveProjectile(this))
+        return true;
+        
+    if (Track::getCurrentTrack() && Track::getCurrentTrack()->getItemManager() &&
+        Track::getCurrentTrack()->getItemManager()->areItemsSwitched())
+        return true;
+        
+    return false;
+}
+
+//-----------------------------------------------------------------------------
 /** Updates preferred-frame relativistic diagnostics for this kart.
  */
 void Kart::updateRelativisticState(int ticks)
@@ -1857,9 +1889,20 @@ void Kart::updateRelativisticState(int ticks)
     const double dt = Relativity::isEnabled()
         ? (double)stk_config->ticks2Time(ticks)
         : 0.0;
+        
+    bool item_active = isAnyPowerupActive();
+    float speed_of_light = item_active ? 30.0f : Relativity::getConfiguredSpeedOfLight();
+    
     Relativity::updateState(&m_relativistic_state, getVelocity(), m_speed, dt,
-                            Relativity::getConfiguredSpeedOfLight());
+                            speed_of_light);
 }   // updateRelativisticState
+
+//-----------------------------------------------------------------------------
+void Kart::syncPostPhysicsState(int ticks)
+{
+    updateSpeed();
+    updateRelativisticState(ticks);
+}   // syncPostPhysicsState
 
 //-----------------------------------------------------------------------------
 /** Show fire to go with a zipper.

@@ -112,29 +112,7 @@ public:
     // ------------------------------------------------------------------------
     ~SPMeshBuffer();
     // ------------------------------------------------------------------------
-    virtual void draw(DrawCallType dct = DCT_NORMAL, int material_id = -1) const
-    {
-#ifndef SERVER_ONLY
-        glBindVertexArray(m_vao[dct]);
-        if (material_id == -1)
-        {
-            // Draw whole mesh buffer, usually in shadow pass
-            glDrawElementsInstanced(GL_TRIANGLES, getIndexCount(),
-                GL_UNSIGNED_SHORT, 0, (unsigned)m_ins_dat[dct].size());
-        }
-        else
-        {
-            unsigned idx_count = std::get<1>(m_stk_material[material_id]);
-            if (idx_count == 0)
-                return;
-            glDrawElementsInstanced(GL_TRIANGLES,
-                idx_count,
-                GL_UNSIGNED_SHORT,
-                (void*)(std::get<0>(m_stk_material[material_id]) << 1),
-                (unsigned)m_ins_dat[dct].size());
-        }
-#endif
-    }
+    virtual void draw(DrawCallType dct = DCT_NORMAL, int material_id = -1) const;
     // ------------------------------------------------------------------------
     virtual void uploadGLMesh();
     // ------------------------------------------------------------------------
