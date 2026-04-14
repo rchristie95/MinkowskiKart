@@ -185,16 +185,16 @@ std::shared_ptr<Flyable>
     std::shared_ptr<Flyable> f;
     switch(type)
     {
-        case PowerupManager::POWERUP_BOWLING:
+        case PowerupManager::POWERUP_BLACK_HOLE:
             f = std::make_shared<Bowling>(kart);
             break;
-        case PowerupManager::POWERUP_PLUNGER:
+        case PowerupManager::POWERUP_COSMIC_STRING:
             f = std::make_shared<Plunger>(kart);
             break;
-        case PowerupManager::POWERUP_CAKE:
+        case PowerupManager::POWERUP_NEUTRON_STAR:
             f = std::make_shared<Cake>(kart);
             break;
-        case PowerupManager::POWERUP_RUBBERBALL:
+        case PowerupManager::POWERUP_GEODESIC_MISSILE:
             f = std::make_shared<RubberBall>(kart);
             break;
         default:
@@ -270,7 +270,7 @@ std::vector<Vec3> ProjectileManager::getBasketballPositions()
     {
         if (!i->second->hasServerState())
             continue;
-        if (i->second->getType() == PowerupManager::POWERUP_RUBBERBALL)
+        if (i->second->getType() == PowerupManager::POWERUP_GEODESIC_MISSILE)
             positions.emplace_back(i->second->getXYZ());
     } // loop over projectiles
 
@@ -283,22 +283,22 @@ std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
     BareNetworkString uid;
     switch (t)
     {
-        case PowerupManager::POWERUP_BOWLING:
+        case PowerupManager::POWERUP_BLACK_HOLE:
         {
             uid.addUInt8(RN_BOWLING);
             break;
         }
-        case PowerupManager::POWERUP_PLUNGER:
+        case PowerupManager::POWERUP_COSMIC_STRING:
         {
             uid.addUInt8(RN_PLUNGER);
             break;
         }
-        case PowerupManager::POWERUP_CAKE:
+        case PowerupManager::POWERUP_NEUTRON_STAR:
         {
             uid.addUInt8(RN_CAKE);
             break;
         }
-        case PowerupManager::POWERUP_RUBBERBALL:
+        case PowerupManager::POWERUP_GEODESIC_MISSILE:
         {
             uid.addUInt8(RN_RUBBERBALL);
             break;

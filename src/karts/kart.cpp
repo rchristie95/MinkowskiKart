@@ -1279,8 +1279,8 @@ bool Kart::isShielded() const
     if(getAttachment() != NULL)
     {
         Attachment::AttachmentType type = getAttachment()->getType();
-        return type == Attachment::ATTACH_BUBBLEGUM_SHIELD ||
-               type == Attachment::ATTACH_NOLOK_BUBBLEGUM_SHIELD;
+        return type == Attachment::ATTACH_WARP_BUBBLE ||
+               type == Attachment::ATTACH_NOLOK_WARP_BUBBLE;
     }
     else
     {
@@ -2821,7 +2821,7 @@ float Kart::applyAirFriction(float engine_power)
     // Apply parachute physics
     // Currently, all karts have the same base friction
     // If this is changed, a compensation needs to be added here
-    if(m_attachment->getType()==Attachment::ATTACH_PARACHUTE)
+    if(m_attachment->getType()==Attachment::ATTACH_TIME_DILATION)
         friction_intensity *= m_kart_properties->getParachuteFriction();
 
     if (friction_intensity < 0.0f) friction_intensity = 0.0f;

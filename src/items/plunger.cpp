@@ -21,6 +21,7 @@
 
 #include "items/plunger.hpp"
 
+#include "graphics/relativistic_vfx.hpp"
 #include "audio/sfx_manager.hpp"
 #include "io/xml_node.hpp"
 #include "items/rubber_band.hpp"
@@ -40,7 +41,7 @@
 
 // -----------------------------------------------------------------------------
 Plunger::Plunger(AbstractKart *kart)
-       : Flyable(kart, PowerupManager::POWERUP_PLUNGER)
+       : Flyable(kart, PowerupManager::POWERUP_COSMIC_STRING)
 {
     m_has_locally_played_sound = false;
     m_moved_to_infinity = false;
@@ -135,7 +136,7 @@ void Plunger::onFireFlyable()
 // ----------------------------------------------------------------------------
 void Plunger::init(const XMLNode &node, scene::IMesh *plunger_model)
 {
-    Flyable::init(node, plunger_model, PowerupManager::POWERUP_PLUNGER);
+    Flyable::init(node, plunger_model, PowerupManager::POWERUP_COSMIC_STRING);
 }   // init
 
 // ----------------------------------------------------------------------------
@@ -203,6 +204,14 @@ bool Plunger::hit(AbstractKart *kart, PhysicalObject *obj)
         if(kart)
         {
             kart->blockViewWithPlunger();
+            // Cosmic String backward mode: slam blackboard over victim's view
+            if (relativistic_vfx_manager)
+            {
+                const float duration =
+                    kart->getKartProperties()->getPlungerInFaceTime();
+                relativistic_vfx_manager->triggerBlackboard(
+                    kart->getWorldKartId(), duration);
+            }
             if (kart->getController()->isLocalPlayerController() &&
                 !m_has_locally_played_sound)
             {

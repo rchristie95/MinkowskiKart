@@ -126,17 +126,20 @@ private:
     std::map<std::string, std::vector<WeightsData*> > m_all_weights;
 
 public:
-    // The anvil and parachute must be at the end of the enum, and the
-    // zipper just before them (see Powerup::hitBonusBox).
+    /* Relativistic powerup remapping for Minkowski Kart: */
     enum PowerupType {POWERUP_NOTHING,
                       POWERUP_FIRST,
-                      POWERUP_BUBBLEGUM = POWERUP_FIRST,
-                      POWERUP_CAKE,
-                      POWERUP_BOWLING, POWERUP_ZIPPER, POWERUP_PLUNGER,
-                      POWERUP_SWITCH, POWERUP_SWATTER, POWERUP_RUBBERBALL,
-                      POWERUP_PARACHUTE,
-                      POWERUP_ANVIL,      //powerup.cpp assumes these two come last
-                      POWERUP_LAST=POWERUP_ANVIL,
+                      POWERUP_WARP_BUBBLE = POWERUP_FIRST,  // was BUBBLEGUM - shield
+                      POWERUP_NEUTRON_STAR,                  // was CAKE - thrown projectile
+                      POWERUP_BLACK_HOLE,                    // was BOWLING - heavy projectile
+                      POWERUP_ZIPPER,                        // speed boost (unchanged)
+                      POWERUP_COSMIC_STRING,                 // was PLUNGER - grapple/blackboard
+                      POWERUP_FRAME_SHIFT,                   // was SWITCH - item swap
+                      POWERUP_TIDAL_ARM,                     // was SWATTER - melee
+                      POWERUP_GEODESIC_MISSILE,              // was RUBBERBALL - homing
+                      POWERUP_TIME_DILATION,                 // was PARACHUTE - slowdown
+                      POWERUP_MASS_SPIKE,                    // was ANVIL - weight
+                      POWERUP_LAST=POWERUP_MASS_SPIKE,
                       POWERUP_MAX
     };
 

@@ -62,7 +62,7 @@ float RubberBall::m_st_max_offset_distance;
 #undef PRINT_BALL_REMOVE_INFO
 
 RubberBall::RubberBall(AbstractKart *kart)
-          : Flyable(kart, PowerupManager::POWERUP_RUBBERBALL, 0.0f /* mass */),
+          : Flyable(kart, PowerupManager::POWERUP_GEODESIC_MISSILE, 0.0f /* mass */),
             TrackSector()
 {
     // For debugging purpose: pre-fix each debugging line with the id of
@@ -363,7 +363,7 @@ void RubberBall::init(const XMLNode &node, scene::IMesh *rubberball)
         m_st_max_offset_distance = m_st_min_offset_distance + 10.0f;
     }
 
-    Flyable::init(node, rubberball, PowerupManager::POWERUP_RUBBERBALL);
+    Flyable::init(node, rubberball, PowerupManager::POWERUP_GEODESIC_MISSILE);
 }   // init
 
 // ----------------------------------------------------------------------------

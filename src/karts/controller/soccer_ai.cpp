@@ -195,7 +195,7 @@ void SoccerAI::findTarget()
     m_overtake_ball = false;
 
     if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_NOTHING &&
-        m_kart->getAttachment()->getType() != Attachment::ATTACH_SWATTER)
+        m_kart->getAttachment()->getType() != Attachment::ATTACH_TIDAL_ARM)
     {
         tryCollectItem(&m_target_point , &m_target_node);
     }

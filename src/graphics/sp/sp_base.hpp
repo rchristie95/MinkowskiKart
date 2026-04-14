@@ -99,6 +99,8 @@ extern bool sp_apitrace;
 extern unsigned sp_cur_player;
 extern unsigned sp_cur_buf_id[MAX_PLAYER_COUNT];
 extern irr::core::vector3df sp_wind_dir;
+extern irr::core::vector3df sp_black_hole_world_pos;
+extern bool sp_black_hole_active;
 // ----------------------------------------------------------------------------
 void init();
 // ----------------------------------------------------------------------------

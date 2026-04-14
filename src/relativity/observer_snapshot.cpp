@@ -248,8 +248,8 @@ ObserverVisualState buildObserverVisualState(
         doppler_active = true;
     }
     if (kart->getAttachment() && (
-        kart->getAttachment()->getType() == Attachment::ATTACH_PARACHUTE ||
-        kart->getAttachment()->getType() == Attachment::ATTACH_ANVIL ||
+        kart->getAttachment()->getType() == Attachment::ATTACH_TIME_DILATION ||
+        kart->getAttachment()->getType() == Attachment::ATTACH_MASS_SPIKE ||
         kart->getAttachment()->getType() == Attachment::ATTACH_BOMB))
     {
         doppler_active = true;

@@ -31,7 +31,7 @@
 float Cake::m_st_max_distance_squared;
 float Cake::m_gravity;
 
-Cake::Cake (AbstractKart *kart) : Flyable(kart, PowerupManager::POWERUP_CAKE)
+Cake::Cake (AbstractKart *kart) : Flyable(kart, PowerupManager::POWERUP_NEUTRON_STAR)
 {
     m_target = NULL;
 }   // Cake
@@ -43,7 +43,7 @@ Cake::Cake (AbstractKart *kart) : Flyable(kart, PowerupManager::POWERUP_CAKE)
  */
 void Cake::init(const XMLNode &node, scene::IMesh *cake_model)
 {
-    Flyable::init(node, cake_model, PowerupManager::POWERUP_CAKE);
+    Flyable::init(node, cake_model, PowerupManager::POWERUP_NEUTRON_STAR);
     float max_distance        = 80.0f;
     m_gravity                 = 9.8f;
 

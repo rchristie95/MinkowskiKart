@@ -164,7 +164,7 @@ void BattleAI::findTarget()
 
     // Find a suitable target to drive to, either powerup or kart
     if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_NOTHING &&
-        m_kart->getAttachment()->getType() != Attachment::ATTACH_SWATTER &&
+        m_kart->getAttachment()->getType() != Attachment::ATTACH_TIDAL_ARM &&
         !find_sta)
         tryCollectItem(&m_target_point , &m_target_node);
     else

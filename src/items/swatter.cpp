@@ -115,7 +115,7 @@ void Swatter::updateGraphics(float dt)
             m_scene_node = m_kart->getAttachment()->getNode();
             m_scene_node->setPosition(SWAT_POS_OFFSET);
             m_scene_node->setMesh(attachment_manager
-                ->getMesh(Attachment::ATTACH_SWATTER_ANIM));
+                ->getMesh(Attachment::ATTACH_TIDAL_ARM_ANIM));
             m_scene_node->setRotation(core::vector3df(0.0, -180.0, 0.0));
             m_scene_node->setAnimationSpeed(0.9f);
             m_scene_node->setCurrentFrame(0.0f);
@@ -178,7 +178,7 @@ void Swatter::updateGraphics(float dt)
             else
             {
                 m_scene_node->setMesh(attachment_manager
-                    ->getMesh(Attachment::ATTACH_SWATTER));
+                    ->getMesh(Attachment::ATTACH_TIDAL_ARM));
             }
             m_scene_node->setPosition(SWAT_POS_OFFSET);
             m_scene_node->setLoopMode(false);

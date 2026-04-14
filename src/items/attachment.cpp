@@ -18,6 +18,7 @@
 
 #include "items/attachment.hpp"
 
+#include "graphics/relativistic_vfx.hpp"
 #include <algorithm>
 #include "achievements/achievements_status.hpp"
 #include "audio/sfx_base.hpp"
@@ -125,7 +126,7 @@ void Attachment::set(AttachmentType type, int ticks,
     // the associated behavior
     switch(type)
     {
-    case ATTACH_SWATTER:
+    case ATTACH_TIDAL_ARM:
         m_plugin =
             new Swatter(m_kart, was_bomb ? prev_ticks : -1, ticks, this);
         break;
@@ -139,12 +140,35 @@ void Attachment::set(AttachmentType type, int ticks,
     m_scaling_end_ticks = World::getWorld()->getTicksSinceStart() +
         stk_config->time2Ticks(0.7f);
 
+    // Activate relativistic VFX for new attachment
+    if (relativistic_vfx_manager)
+    {
+        unsigned int kid = m_kart->getWorldKartId();
+        switch (type)
+        {
+        case ATTACH_WARP_BUBBLE:
+        case ATTACH_NOLOK_WARP_BUBBLE:
+            relativistic_vfx_manager->activateWarpBubble(kid);
+            break;
+        case ATTACH_TIME_DILATION:
+            relativistic_vfx_manager->activateTimeDilation(kid);
+            break;
+        case ATTACH_MASS_SPIKE:
+            relativistic_vfx_manager->activateMassSpike(kid);
+            break;
+        case ATTACH_TIDAL_ARM:
+            relativistic_vfx_manager->activateTidalArm(kid);
+            break;
+        default: break;
+        }
+    }
+
     m_initial_speed = 0;
     // A parachute can be attached as result of the usage of an item. In this
     // case we have to save the current kart speed so that it can be detached
     // by slowing down.
     // if set by rewind the parachute ticks is already correct
-    if (m_type == ATTACH_PARACHUTE && !set_by_rewind_parachute)
+    if (m_type == ATTACH_TIME_DILATION && !set_by_rewind_parachute)
     {
         const KartProperties *kp = m_kart->getKartProperties();
         float speed_mult;
@@ -178,6 +202,29 @@ void Attachment::set(AttachmentType type, int ticks,
  */
 void Attachment::clear()
 {
+    // Deactivate relativistic VFX
+    if (relativistic_vfx_manager && m_kart)
+    {
+        unsigned int kid = m_kart->getWorldKartId();
+        switch (m_type)
+        {
+        case ATTACH_WARP_BUBBLE:
+        case ATTACH_NOLOK_WARP_BUBBLE:
+            relativistic_vfx_manager->deactivateWarpBubble(kid);
+            break;
+        case ATTACH_TIME_DILATION:
+            relativistic_vfx_manager->deactivateTimeDilation(kid);
+            break;
+        case ATTACH_MASS_SPIKE:
+            relativistic_vfx_manager->deactivateMassSpike(kid);
+            break;
+        case ATTACH_TIDAL_ARM:
+            relativistic_vfx_manager->deactivateTidalArm(kid);
+            break;
+        default: break;
+        }
+    }
+
     if (m_plugin)
     {
         delete m_plugin;
@@ -209,7 +256,7 @@ void Attachment::saveState(BareNetworkString *buffer) const
     buffer->addUInt16(m_ticks_left);
     if (m_type==ATTACH_BOMB && m_previous_owner)
         buffer->addUInt8(m_previous_owner->getWorldKartId());
-    if (m_type == ATTACH_PARACHUTE)
+    if (m_type == ATTACH_TIME_DILATION)
         buffer->addUInt16(m_initial_speed);
     if (m_plugin)
         m_plugin->saveState(buffer);
@@ -240,7 +287,7 @@ void Attachment::rewindTo(BareNetworkString *buffer)
         m_previous_owner = NULL;
     }
 
-    if (new_type == ATTACH_PARACHUTE)
+    if (new_type == ATTACH_TIME_DILATION)
         m_initial_speed = buffer->getUInt16();
     else
         m_initial_speed = 0;
@@ -276,8 +323,8 @@ void Attachment::hitBanana(ItemState *item_state)
             PlayerManager::increaseAchievement(AchievementsStatus::BANANA_1RACE, 1);
     }
     //Bubble gum shield effect:
-    if(m_type == ATTACH_BUBBLEGUM_SHIELD ||
-       m_type == ATTACH_NOLOK_BUBBLEGUM_SHIELD)
+    if(m_type == ATTACH_WARP_BUBBLE ||
+       m_type == ATTACH_NOLOK_WARP_BUBBLE)
     {
         m_ticks_left = 0;
         return;
@@ -334,14 +381,14 @@ void Attachment::hitBanana(ItemState *item_state)
         item_state->setTicksTillReturn(ticks);
         break;
         }
-    case ATTACH_ANVIL:
+    case ATTACH_MASS_SPIKE:
         // if the kart already has an anvil, attach a new anvil,
         // and increase the overall time
-        new_attachment = ATTACH_ANVIL;
+        new_attachment = ATTACH_MASS_SPIKE;
         leftover_ticks  = m_ticks_left;
         break;
-    case ATTACH_PARACHUTE:
-        new_attachment = ATTACH_PARACHUTE;
+    case ATTACH_TIME_DILATION:
+        new_attachment = ATTACH_TIME_DILATION;
         leftover_ticks  = m_ticks_left;
         break;
     default:
@@ -359,11 +406,11 @@ void Attachment::hitBanana(ItemState *item_state)
     {
         switch (new_attachment)
         {
-        case ATTACH_PARACHUTE:
+        case ATTACH_TIME_DILATION:
         {
             int parachute_ticks = stk_config->time2Ticks(
                 kp->getParachuteDuration()) + leftover_ticks;
-            set(ATTACH_PARACHUTE, parachute_ticks);
+            set(ATTACH_TIME_DILATION, parachute_ticks);
             int initial_speed_round = (int)(m_kart->getSpeed() * 100.0f);
             initial_speed_round =
                 irr::core::clamp(initial_speed_round, -32768, 32767);
@@ -373,8 +420,8 @@ void Attachment::hitBanana(ItemState *item_state)
             if (m_initial_speed <= 150) m_initial_speed = 150;
             break;
         }
-        case ATTACH_ANVIL:
-            set(ATTACH_ANVIL, stk_config->time2Ticks(kp->getAnvilDuration())
+        case ATTACH_MASS_SPIKE:
+            set(ATTACH_MASS_SPIKE, stk_config->time2Ticks(kp->getAnvilDuration())
                 + leftover_ticks                                      );
             // if ( m_kart == m_kart[0] )
             //   sound -> playSfx ( SOUND_SHOOMF ) ;
@@ -481,7 +528,7 @@ void Attachment::update(int ticks)
 
     switch (m_type)
     {
-    case ATTACH_PARACHUTE:
+    case ATTACH_TIME_DILATION:
         {
         // Partly handled in Kart::updatePhysics
         // Otherwise: disable if a certain percantage of
@@ -503,19 +550,19 @@ void Attachment::update(int ticks)
         }
         }
         break;
-    case ATTACH_ANVIL:     // handled in Kart::updatePhysics
+    case ATTACH_MASS_SPIKE:     // handled in Kart::updatePhysics
     case ATTACH_NOTHING:   // Nothing to do, but complete all cases for switch
     case ATTACH_MAX:
         m_initial_speed = 0;
         break;
-    case ATTACH_SWATTER:
+    case ATTACH_TIDAL_ARM:
         // Everything is done in the plugin.
         m_initial_speed = 0;
         break;
     case ATTACH_NOLOKS_SWATTER:
-    case ATTACH_SWATTER_ANIM:
+    case ATTACH_TIDAL_ARM_ANIM:
         // Should never be called, these symbols are only used as an index for
-        // the model, Nolok's attachment type is ATTACH_SWATTER
+        // the model, Nolok's attachment type is ATTACH_TIDAL_ARM
         assert(false);
         break;
     case ATTACH_BOMB:
@@ -542,8 +589,8 @@ void Attachment::update(int ticks)
         }
         break;
     }
-    case ATTACH_BUBBLEGUM_SHIELD:
-    case ATTACH_NOLOK_BUBBLEGUM_SHIELD:
+    case ATTACH_WARP_BUBBLE:
+    case ATTACH_NOLOK_WARP_BUBBLE:
         m_initial_speed = 0;
         if (m_ticks_left <= 0)
         {
@@ -581,7 +628,7 @@ void Attachment::updateGraphics(float dt)
         {
         case ATTACH_NOTHING:
             break;
-        case ATTACH_SWATTER:
+        case ATTACH_TIDAL_ARM:
             // Graphical model set in swatter class
             break;
         default:
@@ -595,7 +642,7 @@ void Attachment::updateGraphics(float dt)
             m_node->setCurrentFrame(0);
         }
         if (UserConfigParams::m_particles_effects > 1 &&
-            m_type == ATTACH_PARACHUTE)
+            m_type == ATTACH_TIME_DILATION)
         {
             // .blend was created @25 (<10 real, slow computer), make it faster
             m_node->setAnimationSpeed(50);
@@ -609,15 +656,15 @@ void Attachment::updateGraphics(float dt)
     if (m_type != ATTACH_NOTHING)
     {
         m_node->setVisible(true);
-        bool is_shield = m_type == ATTACH_BUBBLEGUM_SHIELD ||
-                        m_type == ATTACH_NOLOK_BUBBLEGUM_SHIELD;
+        bool is_shield = m_type == ATTACH_WARP_BUBBLE ||
+                        m_type == ATTACH_NOLOK_WARP_BUBBLE;
         float wanted_node_scale = is_shield ?
             std::max(1.0f, m_kart->getHighestPoint() * 1.1f) : 1.0f;
         float scale_ratio = stk_config->ticks2Time(m_scaling_end_ticks -
             World::getWorld()->getTicksSinceStart()) / 0.7f;
         if (scale_ratio > 0.0f)
         {
-            if (m_type == ATTACH_PARACHUTE)
+            if (m_type == ATTACH_TIME_DILATION)
             {
                 const float progress = 1.0f - scale_ratio;
 
@@ -709,7 +756,7 @@ void Attachment::updateGraphics(float dt)
  */
 float Attachment::weightAdjust() const
 {
-    return m_type == ATTACH_ANVIL
+    return m_type == ATTACH_MASS_SPIKE
            ? m_kart->getKartProperties()->getAnvilWeight()
           : 0.0f;
 }   // weightAdjust

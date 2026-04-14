@@ -281,6 +281,7 @@ extern "C" {
 #include "states_screens/dialogs/init_android_dialog.hpp"
 #include "states_screens/dialogs/message_dialog.hpp"
 #include "tips/tips_manager.hpp"
+#include "graphics/relativistic_vfx.hpp"
 #include "tracks/arena_graph.hpp"
 #include "tracks/track.hpp"
 #include "tracks/track_manager.hpp"
@@ -2045,6 +2046,7 @@ void initRest()
     track_manager           = new TrackManager         ();
     kart_properties_manager = new KartPropertiesManager();
     ProjectileManager::create();
+    RelativisticVFXManager::create();
     powerup_manager         = new PowerupManager       ();
     attachment_manager      = new AttachmentManager    ();
     highscore_manager       = new HighscoreManager     ();
@@ -2784,6 +2786,7 @@ static void cleanSuperTuxKart()
     ItemManager::removeTextures();
     if(powerup_manager)         delete powerup_manager;
     ProjectileManager::destroy();
+    RelativisticVFXManager::destroy();
     if(kart_properties_manager) delete kart_properties_manager;
     if(track_manager)           delete track_manager;
     if(material_manager)        delete material_manager;

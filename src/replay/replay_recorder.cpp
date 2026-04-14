@@ -490,11 +490,11 @@ int ReplayRecorder::enumToCode (Attachment::AttachmentType type)
 {
     int code =
         (type == Attachment::ATTACH_NOTHING)          ? 0 :
-        (type == Attachment::ATTACH_PARACHUTE)        ? 1 :
-        (type == Attachment::ATTACH_ANVIL)            ? 2 :
+        (type == Attachment::ATTACH_TIME_DILATION)        ? 1 :
+        (type == Attachment::ATTACH_MASS_SPIKE)            ? 2 :
         (type == Attachment::ATTACH_BOMB)             ? 3 :
-        (type == Attachment::ATTACH_SWATTER)          ? 4 :
-        (type == Attachment::ATTACH_BUBBLEGUM_SHIELD) ? 5 :
+        (type == Attachment::ATTACH_TIDAL_ARM)          ? 4 :
+        (type == Attachment::ATTACH_WARP_BUBBLE) ? 5 :
                                                        -1 ;
 
     return code;
@@ -507,15 +507,15 @@ int ReplayRecorder::enumToCode (PowerupManager::PowerupType type)
 {
     int code =
         (type == PowerupManager::POWERUP_NOTHING)    ? 0 :
-        (type == PowerupManager::POWERUP_BUBBLEGUM)  ? 1 :
-        (type == PowerupManager::POWERUP_CAKE)       ? 2 :
-        (type == PowerupManager::POWERUP_BOWLING)    ? 3 :
+        (type == PowerupManager::POWERUP_WARP_BUBBLE)  ? 1 :
+        (type == PowerupManager::POWERUP_NEUTRON_STAR)       ? 2 :
+        (type == PowerupManager::POWERUP_BLACK_HOLE)    ? 3 :
         (type == PowerupManager::POWERUP_ZIPPER)     ? 4 :
-        (type == PowerupManager::POWERUP_PLUNGER)    ? 5 :
-        (type == PowerupManager::POWERUP_SWITCH)     ? 6 :
-        (type == PowerupManager::POWERUP_SWATTER)    ? 7 :
-        (type == PowerupManager::POWERUP_RUBBERBALL) ? 8 :
-        (type == PowerupManager::POWERUP_PARACHUTE)  ? 9 :
+        (type == PowerupManager::POWERUP_COSMIC_STRING)    ? 5 :
+        (type == PowerupManager::POWERUP_FRAME_SHIFT)     ? 6 :
+        (type == PowerupManager::POWERUP_TIDAL_ARM)    ? 7 :
+        (type == PowerupManager::POWERUP_GEODESIC_MISSILE) ? 8 :
+        (type == PowerupManager::POWERUP_TIME_DILATION)  ? 9 :
                                                       -1 ;
 
     return code;
@@ -526,11 +526,11 @@ Attachment::AttachmentType ReplayRecorder::codeToEnumAttach (int code)
 {
     Attachment::AttachmentType type =
         (code == 0) ? Attachment::ATTACH_NOTHING          :
-        (code == 1) ? Attachment::ATTACH_PARACHUTE        :
-        (code == 2) ? Attachment::ATTACH_ANVIL            :
+        (code == 1) ? Attachment::ATTACH_TIME_DILATION        :
+        (code == 2) ? Attachment::ATTACH_MASS_SPIKE            :
         (code == 3) ? Attachment::ATTACH_BOMB             :
-        (code == 4) ? Attachment::ATTACH_SWATTER          :
-        (code == 5) ? Attachment::ATTACH_BUBBLEGUM_SHIELD :
+        (code == 4) ? Attachment::ATTACH_TIDAL_ARM          :
+        (code == 5) ? Attachment::ATTACH_WARP_BUBBLE :
                       Attachment::ATTACH_NOTHING ;
 
     return type;
@@ -541,15 +541,15 @@ PowerupManager::PowerupType ReplayRecorder::codeToEnumItem (int code)
 {
     PowerupManager::PowerupType type =
         (code == 0) ? PowerupManager::POWERUP_NOTHING    :
-        (code == 1) ? PowerupManager::POWERUP_BUBBLEGUM  :
-        (code == 2) ? PowerupManager::POWERUP_CAKE       :
-        (code == 3) ? PowerupManager::POWERUP_BOWLING    :
+        (code == 1) ? PowerupManager::POWERUP_WARP_BUBBLE  :
+        (code == 2) ? PowerupManager::POWERUP_NEUTRON_STAR       :
+        (code == 3) ? PowerupManager::POWERUP_BLACK_HOLE    :
         (code == 4) ? PowerupManager::POWERUP_ZIPPER     :
-        (code == 5) ? PowerupManager::POWERUP_PLUNGER    :
-        (code == 6) ? PowerupManager::POWERUP_SWITCH     :
-        (code == 7) ? PowerupManager::POWERUP_SWATTER    :
-        (code == 8) ? PowerupManager::POWERUP_RUBBERBALL :
-        (code == 9) ? PowerupManager::POWERUP_PARACHUTE  :
+        (code == 5) ? PowerupManager::POWERUP_COSMIC_STRING    :
+        (code == 6) ? PowerupManager::POWERUP_FRAME_SHIFT     :
+        (code == 7) ? PowerupManager::POWERUP_TIDAL_ARM    :
+        (code == 8) ? PowerupManager::POWERUP_GEODESIC_MISSILE :
+        (code == 9) ? PowerupManager::POWERUP_TIME_DILATION  :
                       PowerupManager::POWERUP_NOTHING ;
 
     return type;

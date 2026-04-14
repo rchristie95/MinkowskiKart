@@ -60,17 +60,17 @@ public:
         // It is important that parachute, bomb and anvil stay in this order,
         // since the attachment type is mapped to a random integer (and bomb
         // must be last, since a bomb will not be given in battle mode).
-        ATTACH_PARACHUTE = 0,
-        ATTACH_ANVIL = 1,
+        ATTACH_TIME_DILATION = 0,   // was ATTACH_PARACHUTE
+        ATTACH_MASS_SPIKE = 1,      // was ATTACH_ANVIL
         ATTACH_BOMB = 2,
         // End of fixed order attachments, the rest can be changed.
-        ATTACH_SWATTER,
+        ATTACH_TIDAL_ARM,           // was ATTACH_SWATTER
         // Note that the next 2 symbols are only used as an index into the mesh
         // array; it will NEVER be actually assigned as an attachment type
         ATTACH_NOLOKS_SWATTER,
-        ATTACH_SWATTER_ANIM,
-        ATTACH_BUBBLEGUM_SHIELD,
-        ATTACH_NOLOK_BUBBLEGUM_SHIELD,
+        ATTACH_TIDAL_ARM_ANIM,      // was ATTACH_SWATTER_ANIM
+        ATTACH_WARP_BUBBLE,         // was ATTACH_BUBBLEGUM_SHIELD
+        ATTACH_NOLOK_WARP_BUBBLE,   // was ATTACH_NOLOK_BUBBLEGUM_SHIELD
         ATTACH_MAX,
         ATTACH_NOTHING
     };
