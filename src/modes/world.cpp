@@ -37,6 +37,7 @@
 #include "input/device_manager.hpp"
 #include "input/keyboard_device.hpp"
 #include "items/projectile_manager.hpp"
+#include "graphics/relativistic_vfx.hpp"
 #include "karts/controller/battle_ai.hpp"
 #include "karts/ghost_kart.hpp"
 #include "karts/controller/end_controller.hpp"
@@ -306,6 +307,9 @@ void World::init()
     const unsigned int kart_amount = (unsigned int)m_karts.size();
     for (unsigned int i = 0; i < kart_amount; i++)
         initTeamArrows(m_karts[i].get());
+
+    if (relativistic_vfx_manager)
+        relativistic_vfx_manager->init(kart_amount);
 
     main_loop->renderGUI(7300);
 }   // init
@@ -631,6 +635,9 @@ World::~World()
         irr_driver->onUnloadWorld();
 
     ProjectileManager::get()->cleanup();
+
+    if (relativistic_vfx_manager)
+        relativistic_vfx_manager->reset();
 
     // In case that a race is aborted (e.g. track not found) track is 0.
     if (m_process_type == PT_MAIN)
@@ -1149,6 +1156,8 @@ void World::updateGraphics(float dt)
         script_engine->update(dt);
 
     ProjectileManager::get()->updateGraphics(dt);
+    if (relativistic_vfx_manager)
+        relativistic_vfx_manager->updateGraphics(dt);
     Track::getCurrentTrack()->updateGraphics(dt);
 }   // updateGraphics
 
@@ -1224,6 +1233,9 @@ void World::update(int ticks)
     PROFILER_PUSH_CPU_MARKER("World::update (projectiles)", 0xa0, 0x7F, 0x00);
     ProjectileManager::get()->update(ticks);
     PROFILER_POP_CPU_MARKER();
+
+    if (relativistic_vfx_manager)
+        relativistic_vfx_manager->update(stk_config->ticks2Time(ticks));
 
     PROFILER_PUSH_CPU_MARKER("World::update (physics)", 0xa0, 0x7F, 0x00);
     Physics::get()->update(ticks);

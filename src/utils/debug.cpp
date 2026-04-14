@@ -120,15 +120,15 @@ enum DebugMenuCommand
     DEBUG_SAVE_HISTORY,
     DEBUG_SAVE_SCREENSHOT,
     DEBUG_DUMP_RTT,
-    DEBUG_POWERUP_ANVIL,
-    DEBUG_POWERUP_BOWLING,
-    DEBUG_POWERUP_BUBBLEGUM,
-    DEBUG_POWERUP_CAKE,
-    DEBUG_POWERUP_PARACHUTE,
-    DEBUG_POWERUP_PLUNGER,
-    DEBUG_POWERUP_RUBBERBALL,
-    DEBUG_POWERUP_SWATTER,
-    DEBUG_POWERUP_SWITCH,
+    DEBUG_POWERUP_MASS_SPIKE,
+    DEBUG_POWERUP_BLACK_HOLE,
+    DEBUG_POWERUP_WARP_BUBBLE,
+    DEBUG_POWERUP_NEUTRON_STAR,
+    DEBUG_POWERUP_TIME_DILATION,
+    DEBUG_POWERUP_COSMIC_STRING,
+    DEBUG_POWERUP_GEODESIC_MISSILE,
+    DEBUG_POWERUP_TIDAL_ARM,
+    DEBUG_POWERUP_FRAME_SHIFT,
     DEBUG_POWERUP_ZIPPER,
     DEBUG_POWERUP_NITRO,
     DEBUG_POWERUP_NOTHING,
@@ -220,7 +220,7 @@ void addAttachment(Attachment::AttachmentType type)
            continue;
         //if (!kart->getController()->isLocalPlayerController())
         //    continue;
-        if (type == Attachment::ATTACH_ANVIL)
+        if (type == Attachment::ATTACH_MASS_SPIKE)
         {
             kart->getAttachment()
                 ->set(type,
@@ -228,7 +228,7 @@ void addAttachment(Attachment::AttachmentType type)
                                                  ->getAnvilDuration()) );
             kart->adjustSpeed(kart->getKartProperties()->getAnvilSpeedFactor());
         }
-        else if (type == Attachment::ATTACH_PARACHUTE)
+        else if (type == Attachment::ATTACH_TIME_DILATION)
         {
             kart->getAttachment()
                 ->set(type, stk_config->time2Ticks(
@@ -602,32 +602,32 @@ bool handleContextMenuAction(s32 cmd_id)
         if (!world) return false;
         history->Save();
         break;
-    case DEBUG_POWERUP_ANVIL:
-        addPowerup(PowerupManager::POWERUP_ANVIL, 255);
+    case DEBUG_POWERUP_MASS_SPIKE:
+        addPowerup(PowerupManager::POWERUP_MASS_SPIKE, 255);
         break;
-    case DEBUG_POWERUP_BOWLING:
-        addPowerup(PowerupManager::POWERUP_BOWLING, 255);
+    case DEBUG_POWERUP_BLACK_HOLE:
+        addPowerup(PowerupManager::POWERUP_BLACK_HOLE, 255);
         break;
-    case DEBUG_POWERUP_BUBBLEGUM:
-        addPowerup(PowerupManager::POWERUP_BUBBLEGUM, 255);
+    case DEBUG_POWERUP_WARP_BUBBLE:
+        addPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 255);
         break;
-    case DEBUG_POWERUP_CAKE:
-        addPowerup(PowerupManager::POWERUP_CAKE, 255);
+    case DEBUG_POWERUP_NEUTRON_STAR:
+        addPowerup(PowerupManager::POWERUP_NEUTRON_STAR, 255);
         break;
-    case DEBUG_POWERUP_PARACHUTE:
-        addPowerup(PowerupManager::POWERUP_PARACHUTE, 255);
+    case DEBUG_POWERUP_TIME_DILATION:
+        addPowerup(PowerupManager::POWERUP_TIME_DILATION, 255);
         break;
-    case DEBUG_POWERUP_PLUNGER:
-        addPowerup(PowerupManager::POWERUP_PLUNGER, 255);
+    case DEBUG_POWERUP_COSMIC_STRING:
+        addPowerup(PowerupManager::POWERUP_COSMIC_STRING, 255);
         break;
-    case DEBUG_POWERUP_RUBBERBALL:
-        addPowerup(PowerupManager::POWERUP_RUBBERBALL, 255);
+    case DEBUG_POWERUP_GEODESIC_MISSILE:
+        addPowerup(PowerupManager::POWERUP_GEODESIC_MISSILE, 255);
         break;
-    case DEBUG_POWERUP_SWATTER:
-        addPowerup(PowerupManager::POWERUP_SWATTER, 255);
+    case DEBUG_POWERUP_TIDAL_ARM:
+        addPowerup(PowerupManager::POWERUP_TIDAL_ARM, 255);
         break;
-    case DEBUG_POWERUP_SWITCH:
-        addPowerup(PowerupManager::POWERUP_SWITCH, 255);
+    case DEBUG_POWERUP_FRAME_SHIFT:
+        addPowerup(PowerupManager::POWERUP_FRAME_SHIFT, 255);
         break;
     case DEBUG_POWERUP_ZIPPER:
         addPowerup(PowerupManager::POWERUP_ZIPPER, 255);
@@ -671,13 +671,13 @@ bool handleContextMenuAction(s32 cmd_id)
         break;
     }
     case DEBUG_ATTACHMENT_ANVIL:
-        addAttachment(Attachment::ATTACH_ANVIL);
+        addAttachment(Attachment::ATTACH_MASS_SPIKE);
         break;
     case DEBUG_ATTACHMENT_BOMB:
         addAttachment(Attachment::ATTACH_BOMB);
         break;
     case DEBUG_ATTACHMENT_PARACHUTE:
-        addAttachment(Attachment::ATTACH_PARACHUTE);
+        addAttachment(Attachment::ATTACH_TIME_DILATION);
         break;
      case DEBUG_ATTACHMENT_SQUASH:
         for (unsigned int i = 0; i < RaceManager::get()->getNumLocalPlayers(); i++)
@@ -1313,15 +1313,15 @@ bool onEvent(const SEvent &event)
 
             mnu->addItem(L"Items >",-1,true,true);
             sub = mnu->getSubMenu(3);
-            sub->addItem(L"Anchor (F1)", DEBUG_POWERUP_ANVIL );
-            sub->addItem(L"Basketball (F2)", DEBUG_POWERUP_RUBBERBALL );
-            sub->addItem(L"Bowling ball (F3)", DEBUG_POWERUP_BOWLING );
-            sub->addItem(L"Bubblegum (F4)", DEBUG_POWERUP_BUBBLEGUM );
-            sub->addItem(L"Cake (F5)", DEBUG_POWERUP_CAKE );
-            sub->addItem(L"Parachute (F6)", DEBUG_POWERUP_PARACHUTE );
-            sub->addItem(L"Plunger (F7)", DEBUG_POWERUP_PLUNGER );
-            sub->addItem(L"Swatter (F8)", DEBUG_POWERUP_SWATTER );
-            sub->addItem(L"Switch (F9)", DEBUG_POWERUP_SWITCH );
+            sub->addItem(L"Anchor (F1)", DEBUG_POWERUP_MASS_SPIKE );
+            sub->addItem(L"Basketball (F2)", DEBUG_POWERUP_GEODESIC_MISSILE );
+            sub->addItem(L"Bowling ball (F3)", DEBUG_POWERUP_BLACK_HOLE );
+            sub->addItem(L"Bubblegum (F4)", DEBUG_POWERUP_WARP_BUBBLE );
+            sub->addItem(L"Cake (F5)", DEBUG_POWERUP_NEUTRON_STAR );
+            sub->addItem(L"Parachute (F6)", DEBUG_POWERUP_TIME_DILATION );
+            sub->addItem(L"Plunger (F7)", DEBUG_POWERUP_COSMIC_STRING );
+            sub->addItem(L"Swatter (F8)", DEBUG_POWERUP_TIDAL_ARM );
+            sub->addItem(L"Switch (F9)", DEBUG_POWERUP_FRAME_SHIFT );
             sub->addItem(L"Zipper (F10)", DEBUG_POWERUP_ZIPPER );
             sub->addItem(L"Nitro (Insert)", DEBUG_POWERUP_NITRO );
 
@@ -1493,7 +1493,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_ANVIL);
+                    handleContextMenuAction(DEBUG_POWERUP_MASS_SPIKE);
                 }
                 break;
             }
@@ -1509,7 +1509,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_RUBBERBALL);
+                    handleContextMenuAction(DEBUG_POWERUP_GEODESIC_MISSILE);
                 }
                 break;
             }
@@ -1525,7 +1525,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_BOWLING);
+                    handleContextMenuAction(DEBUG_POWERUP_BLACK_HOLE);
                 }
                 break;
             }
@@ -1541,7 +1541,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_BUBBLEGUM);
+                    handleContextMenuAction(DEBUG_POWERUP_WARP_BUBBLE);
                 }
                 break;
             }
@@ -1557,7 +1557,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_CAKE);
+                    handleContextMenuAction(DEBUG_POWERUP_NEUTRON_STAR);
                 }
                 break;
             }
@@ -1573,7 +1573,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_PARACHUTE);
+                    handleContextMenuAction(DEBUG_POWERUP_TIME_DILATION);
                 }
                 break;
             }
@@ -1589,7 +1589,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_PLUNGER);
+                    handleContextMenuAction(DEBUG_POWERUP_COSMIC_STRING);
                 }
                 break;
             }
@@ -1605,7 +1605,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_SWATTER);
+                    handleContextMenuAction(DEBUG_POWERUP_TIDAL_ARM);
                 }
                 break;
             }
@@ -1621,7 +1621,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_SWITCH);
+                    handleContextMenuAction(DEBUG_POWERUP_FRAME_SHIFT);
                 }
                 break;
             }

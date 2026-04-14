@@ -77,9 +77,9 @@ extern unsigned sp_cur_player;
 namespace
 {
 const size_t SP_MATRIX_UBO_BASE_FLOATS = 16 * 9 + 2;
-const size_t SP_MATRIX_UBO_FLOATS = 164;
+const size_t SP_MATRIX_UBO_FLOATS = 168;   // +4 for u_black_hole vec4
 const size_t SP_RELATIVITY_UBO_FLOAT_OFFSET = 146;
-const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 18;
+const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 22; // +4 for u_black_hole
 
 struct RelativityMotionState
 {
@@ -215,6 +215,11 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[15] = bubble_center.getY();
     tail[16] = bubble_center.getZ();
     tail[17] = Relativity::getWarpBubbleRadius();
+    // u_black_hole: world-space position (xyz) + active flag (w)
+    tail[18] = sp_black_hole_world_pos.X;
+    tail[19] = sp_black_hole_world_pos.Y;
+    tail[20] = sp_black_hole_world_pos.Z;
+    tail[21] = sp_black_hole_active ? 1.0f : 0.0f;
     return tail;
 }   // buildRelativityUBOTail
 
@@ -224,6 +229,11 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
 ShaderBasedRenderer* g_stk_sbr = NULL;
 // ----------------------------------------------------------------------------
 std::array<float, 16>* g_joint_ptr = NULL;
+// ----------------------------------------------------------------------------
+// Black hole world position for gravitational lensing in tonemap.frag
+// Set by Bowling projectile each frame; cleared when no black hole is live.
+irr::core::vector3df sp_black_hole_world_pos(0.0f, 0.0f, 0.0f);
+bool sp_black_hole_active = false;
 // ----------------------------------------------------------------------------
 bool sp_culling = true;
 // ----------------------------------------------------------------------------

@@ -21,12 +21,19 @@
 #include "audio/sfx_base.hpp"
 #include "audio/sfx_manager.hpp"
 #include "graphics/hit_sfx.hpp"
+#include "ge_render_info.hpp"
+#include "graphics/irr_driver.hpp"
 #include "graphics/material.hpp"
+#include "graphics/sp/sp_base.hpp"
+#include "guiengine/engine.hpp"
 #include "io/xml_node.hpp"
 #include "karts/abstract_kart.hpp"
 #include "modes/linear_world.hpp"
 
 #include "utils/log.hpp" //TODO: remove after debugging is done
+
+#include <ISceneNode.h>
+#include <SColor.h>
 
 float Bowling::m_st_max_distance;   // maximum distance for a bowling ball to be attracted
 float Bowling::m_st_max_distance_squared;
@@ -34,13 +41,30 @@ float Bowling::m_st_force_to_target;
 
 // -----------------------------------------------------------------------------
 Bowling::Bowling(AbstractKart *kart)
-        : Flyable(kart, PowerupManager::POWERUP_BOWLING, 50.0f /* mass */)
+        : Flyable(kart, PowerupManager::POWERUP_BLACK_HOLE, 50.0f /* mass */)
 {
     m_has_hit_kart = false;
     m_roll_sfx = SFXManager::get()->createSoundSource("bowling_roll");
     fixSFXSplitscreen(m_roll_sfx);
     m_roll_sfx->play();
     m_roll_sfx->setLoop(true);
+
+#ifndef SERVER_ONLY
+    if (!GUIEngine::isNoGraphics() && getNode())
+    {
+        // Make the sphere pitch black via the GE vertex-colour multiplier.
+        // The solid GE shader computes: output = tex_colour * vertex_colour,
+        // so (0,0,0) here makes the ball appear perfectly black regardless
+        // of the bowling.png texture.
+        scene::ISceneNode* node = getNode();
+        for (u32 i = 0; i < node->getMaterialCount(); i++)
+        {
+            auto ri = node->getMaterial(i).getRenderInfo();
+            if (ri)
+                ri->getVertexColor() = video::SColor(255, 0, 0, 0);
+        }
+    }
+#endif
 }   // Bowling
 
 // ----------------------------------------------------------------------------
@@ -48,9 +72,9 @@ Bowling::Bowling(AbstractKart *kart)
  */
 Bowling::~Bowling()
 {
-    // This will stop the sfx and delete the object.
+    SP::sp_black_hole_active = false;
     removeRollSfx();
-}   // ~RubberBall
+}   // ~Bowling
 
 // -----------------------------------------------------------------------------
 /** Initialises this object with data from the power.xml file.
@@ -59,7 +83,7 @@ Bowling::~Bowling()
  */
 void Bowling::init(const XMLNode &node, scene::IMesh *bowling)
 {
-    Flyable::init(node, bowling, PowerupManager::POWERUP_BOWLING);
+    Flyable::init(node, bowling, PowerupManager::POWERUP_BLACK_HOLE);
     m_st_max_distance         = 20.0f;
     m_st_max_distance_squared = 20.0f * 20.0f;
     m_st_force_to_target      = 10.0f;
@@ -78,9 +102,15 @@ void Bowling::init(const XMLNode &node, scene::IMesh *bowling)
  */
 bool Bowling::updateAndDelete(int ticks)
 {
+    // Keep the lensing uniform pointing at this ball each frame
+    const Vec3& bhpos = getXYZ();
+    SP::sp_black_hole_world_pos =
+        irr::core::vector3df(bhpos.getX(), bhpos.getY(), bhpos.getZ());
+
     bool can_be_deleted = Flyable::updateAndDelete(ticks);
     if (can_be_deleted)
     {
+        SP::sp_black_hole_active = false;
         removeRollSfx();
         return true;
     }
@@ -157,6 +187,7 @@ bool Bowling::hit(AbstractKart* kart, PhysicalObject* obj)
     bool was_real_hit = Flyable::hit(kart, obj);
     if(was_real_hit)
     {
+        SP::sp_black_hole_active = false;
         if(kart && kart->isShielded())
         {
             kart->decreaseShieldTime();
@@ -203,6 +234,8 @@ void Bowling::onFireFlyable()
     Flyable::onFireFlyable();
 
     m_has_hit_kart = false;
+    // Register this black hole for screen-space lensing in tonemap.frag
+    SP::sp_black_hole_active = true;
     float y_offset = 0.5f*m_owner->getKartLength() + m_extend.getZ()*0.5f;
 
     // if the kart is looking backwards, release from the back

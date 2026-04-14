@@ -449,11 +449,11 @@ void ArenaAI::useItems(const float dt)
 
     switch(m_kart->getPowerup()->getType())
     {
-    case PowerupManager::POWERUP_BUBBLEGUM:
+    case PowerupManager::POWERUP_WARP_BUBBLE:
         {
             Attachment::AttachmentType type = m_kart->getAttachment()->getType();
             // Don't use shield when we have a swatter.
-            if (type == Attachment::ATTACH_SWATTER)
+            if (type == Attachment::ATTACH_TIDAL_ARM)
                 break;
 
             // Check if a flyable (cake, ...) is close or a kart nearby
@@ -464,7 +464,7 @@ void ArenaAI::useItems(const float dt)
                                     m_ai_properties->m_shield_incoming_radius)  ) ||
                  (dist_to_kart < 15.0f &&
                   (m_closest_kart->getAttachment()->
-                                       getType() == Attachment::ATTACH_SWATTER)  )    )
+                                       getType() == Attachment::ATTACH_TIDAL_ARM)  )    )
             {
                 m_controls->setFire(true);
                 m_controls->setLookBack(false);
@@ -483,9 +483,9 @@ void ArenaAI::useItems(const float dt)
                 break;
             }
 
-            break;   // POWERUP_BUBBLEGUM
+            break;   // POWERUP_WARP_BUBBLE
         }
-    case PowerupManager::POWERUP_CAKE:
+    case PowerupManager::POWERUP_NEUTRON_STAR:
         {
             // if the kart has a shield, do not break it by using a cake.
             if (m_kart->getShieldTime() > min_bubble_time)
@@ -503,9 +503,9 @@ void ArenaAI::useItems(const float dt)
             }
 
             break;
-        }   // POWERUP_CAKE
+        }   // POWERUP_NEUTRON_STAR
 
-    case PowerupManager::POWERUP_BOWLING:
+    case PowerupManager::POWERUP_BLACK_HOLE:
         {
             // if the kart has a shield, do not break it by using a bowling ball.
             if (m_kart->getShieldTime() > min_bubble_time)
@@ -524,9 +524,9 @@ void ArenaAI::useItems(const float dt)
             }
 
             break;
-        }   // POWERUP_BOWLING
+        }   // POWERUP_BLACK_HOLE
 
-    case PowerupManager::POWERUP_SWATTER:
+    case PowerupManager::POWERUP_TIDAL_ARM:
         {
             // Squared distance for which the swatter works
             float d2 = m_kart->getKartProperties()->getSwatterDistance();
@@ -549,17 +549,17 @@ void ArenaAI::useItems(const float dt)
     case PowerupManager::POWERUP_ZIPPER:
         break;   // POWERUP_ZIPPER
 
-    case PowerupManager::POWERUP_PLUNGER:
-        break;   // POWERUP_PLUNGER
+    case PowerupManager::POWERUP_COSMIC_STRING:
+        break;   // POWERUP_COSMIC_STRING
 
-    case PowerupManager::POWERUP_SWITCH: // Don't handle switch
+    case PowerupManager::POWERUP_FRAME_SHIFT: // Don't handle switch
         m_controls->setFire(true);       // (use it no matter what) for now
-        break;   // POWERUP_SWITCH
+        break;   // POWERUP_FRAME_SHIFT
 
-    case PowerupManager::POWERUP_PARACHUTE:
-        break;   // POWERUP_PARACHUTE
+    case PowerupManager::POWERUP_TIME_DILATION:
+        break;   // POWERUP_TIME_DILATION
 
-    case PowerupManager::POWERUP_RUBBERBALL:
+    case PowerupManager::POWERUP_GEODESIC_MISSILE:
         break;
 
     default:

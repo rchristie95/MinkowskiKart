@@ -202,15 +202,15 @@ namespace Scripting
             // TODO: document enum in doxygen-generated scripting docs
             engine->SetDefaultNamespace("Kart");
             engine->RegisterEnum("PowerupType");
-            engine->RegisterEnumValue("PowerupType", "ANVIL", PowerupManager::PowerupType::POWERUP_ANVIL);
-            engine->RegisterEnumValue("PowerupType", "BOWLING", PowerupManager::PowerupType::POWERUP_BOWLING);
-            engine->RegisterEnumValue("PowerupType", "BUBBLEGUM", PowerupManager::PowerupType::POWERUP_BUBBLEGUM);
-            engine->RegisterEnumValue("PowerupType", "CAKE", PowerupManager::PowerupType::POWERUP_CAKE);
-            engine->RegisterEnumValue("PowerupType", "PARACHUTE", PowerupManager::PowerupType::POWERUP_PARACHUTE);
-            engine->RegisterEnumValue("PowerupType", "PLUNGER", PowerupManager::PowerupType::POWERUP_PLUNGER);
-            engine->RegisterEnumValue("PowerupType", "RUBBERBALL", PowerupManager::PowerupType::POWERUP_RUBBERBALL);
-            engine->RegisterEnumValue("PowerupType", "SWATTER", PowerupManager::PowerupType::POWERUP_SWATTER);
-            engine->RegisterEnumValue("PowerupType", "SWITCH", PowerupManager::PowerupType::POWERUP_SWITCH);
+            engine->RegisterEnumValue("PowerupType", "ANVIL", PowerupManager::PowerupType::POWERUP_MASS_SPIKE);
+            engine->RegisterEnumValue("PowerupType", "BOWLING", PowerupManager::PowerupType::POWERUP_BLACK_HOLE);
+            engine->RegisterEnumValue("PowerupType", "BUBBLEGUM", PowerupManager::PowerupType::POWERUP_WARP_BUBBLE);
+            engine->RegisterEnumValue("PowerupType", "CAKE", PowerupManager::PowerupType::POWERUP_NEUTRON_STAR);
+            engine->RegisterEnumValue("PowerupType", "PARACHUTE", PowerupManager::PowerupType::POWERUP_TIME_DILATION);
+            engine->RegisterEnumValue("PowerupType", "PLUNGER", PowerupManager::PowerupType::POWERUP_COSMIC_STRING);
+            engine->RegisterEnumValue("PowerupType", "RUBBERBALL", PowerupManager::PowerupType::POWERUP_GEODESIC_MISSILE);
+            engine->RegisterEnumValue("PowerupType", "SWATTER", PowerupManager::PowerupType::POWERUP_TIDAL_ARM);
+            engine->RegisterEnumValue("PowerupType", "SWITCH", PowerupManager::PowerupType::POWERUP_FRAME_SHIFT);
             engine->RegisterEnumValue("PowerupType", "ZIPPER", PowerupManager::PowerupType::POWERUP_ZIPPER);
         }
     }

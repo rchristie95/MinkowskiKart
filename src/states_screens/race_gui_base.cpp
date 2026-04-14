@@ -1211,7 +1211,7 @@ void RaceGUIBase::drawPlayerIcon(AbstractKart *kart, int x, int y, int w,
     if (kart->getBlockedByPlungerTicks()>0)
     {
         video::ITexture *icon_plunger =
-        powerup_manager->getIcon(PowerupManager::POWERUP_PLUNGER)->getTexture();
+        powerup_manager->getIcon(PowerupManager::POWERUP_COSMIC_STRING)->getTexture();
         if (icon_plunger != NULL)
         {
             const core::rect<s32> rect(core::position2d<s32>(0,0),
