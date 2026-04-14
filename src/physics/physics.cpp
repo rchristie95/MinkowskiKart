@@ -524,7 +524,7 @@ void Physics::update(int ticks)
             // not invulnerable
             AbstractKart* target_kart = p->getUserPointer(1)->getPointerKart();
             PowerupManager::PowerupType type = p->getUserPointer(0)->getPointerFlyable()->getType();
-            if(type != PowerupManager::POWERUP_BOWLING || !target_kart->isInvulnerable())
+            if(type != PowerupManager::POWERUP_BLACK_HOLE || !target_kart->isInvulnerable())
             {
                 Flyable *f = p->getUserPointer(0)->getPointerFlyable();
                 f->hit(target_kart);
@@ -540,7 +540,7 @@ void Physics::update(int ticks)
                 // only the current player can get achievements.
                 if (target_kart != kart && lpc && lpc->canGetAchievements())
                 {
-                    if (type == PowerupManager::POWERUP_BOWLING)
+                    if (type == PowerupManager::POWERUP_BLACK_HOLE)
                     {
                         PlayerManager::increaseAchievement(AchievementsStatus::BOWLING_HIT, 1);
                         if (RaceManager::get()->isLinearRaceMode())

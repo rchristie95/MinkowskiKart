@@ -173,7 +173,7 @@ void GhostKart::update(int ticks)
     Attachment::AttachmentType attach_type =
         ReplayRecorder::codeToEnumAttach(m_all_bonus_info[idx].m_attachment);
     int16_t attach_ticks = 0;
-    if (attach_type == Attachment::ATTACH_BUBBLEGUM_SHIELD)
+    if (attach_type == Attachment::ATTACH_WARP_BUBBLE)
         attach_ticks = (int16_t)stk_config->time2Ticks(10);
     else if (attach_type == Attachment::ATTACH_BOMB)
         attach_ticks = (int16_t)stk_config->time2Ticks(30);

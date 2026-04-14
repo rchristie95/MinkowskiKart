@@ -247,27 +247,27 @@ void SkiddingAI::update(int ticks)
                 if (r == 0 || r == 1)
                     m_kart->setPowerup(PowerupManager::POWERUP_ZIPPER, 1);
                 else if (r == 2 || r == 3)
-                    m_kart->setPowerup(PowerupManager::POWERUP_BUBBLEGUM, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 1);
                 else
-                    m_kart->setPowerup(PowerupManager::POWERUP_SWATTER, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_TIDAL_ARM, 1);
             }
-            else if (m_kart->getAttachment()->getType() == Attachment::ATTACH_SWATTER)
+            else if (m_kart->getAttachment()->getType() == Attachment::ATTACH_TIDAL_ARM)
             {
                 int r = rand() % 4;
                 if (r < 3)
-                    m_kart->setPowerup(PowerupManager::POWERUP_BUBBLEGUM, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 1);
                 else
-                    m_kart->setPowerup(PowerupManager::POWERUP_BOWLING, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_BLACK_HOLE, 1);
             }
             else
             {
                 int r = rand() % 5;
                 if (r == 0 || r == 1)
-                    m_kart->setPowerup(PowerupManager::POWERUP_BUBBLEGUM, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 1);
                 else if (r == 2 || r == 3)
-                    m_kart->setPowerup(PowerupManager::POWERUP_SWATTER, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_TIDAL_ARM, 1);
                 else
-                    m_kart->setPowerup(PowerupManager::POWERUP_BOWLING, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_BLACK_HOLE, 1);
             }
 
             // also give him some free nitro
@@ -1158,12 +1158,12 @@ void SkiddingAI::handleItems(const float dt)
     if (m_superpower == RaceManager::SUPERPOWER_NOLOK_BOSS)
     {
         m_controls->setLookBack(m_kart->getPowerup()->getType() ==
-                                   PowerupManager::POWERUP_BOWLING   );
+                                   PowerupManager::POWERUP_BLACK_HOLE   );
 
         if( m_time_since_last_shot > 3.0f )
         {
             m_controls->setFire(true);
-            if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_SWATTER)
+            if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_TIDAL_ARM)
                 m_time_since_last_shot = 3.0f;
             else
             {
@@ -1196,11 +1196,11 @@ void SkiddingAI::handleItems(const float dt)
 
     switch( m_kart->getPowerup()->getType() )
     {
-    case PowerupManager::POWERUP_BUBBLEGUM:
+    case PowerupManager::POWERUP_WARP_BUBBLE:
         {
             Attachment::AttachmentType type = m_kart->getAttachment()->getType();
             // Don't use shield when we have a swatter.
-            if( type == Attachment::ATTACH_SWATTER)
+            if( type == Attachment::ATTACH_TIDAL_ARM)
                 break;
 
             // Check if a flyable (cake, ...) is close. If so, use bubblegum
@@ -1242,9 +1242,9 @@ void SkiddingAI::handleItems(const float dt)
                 m_controls->setLookBack(true);
                 break;
             }
-            break;   // POWERUP_BUBBLEGUM
+            break;   // POWERUP_WARP_BUBBLE
         }
-    case PowerupManager::POWERUP_CAKE:
+    case PowerupManager::POWERUP_NEUTRON_STAR:
         {
             // if the kart has a shield, do not break it by using a cake.
             if(m_kart->getShieldTime() > min_bubble_time)
@@ -1290,9 +1290,9 @@ void SkiddingAI::handleItems(const float dt)
             if(m_controls->getFire())
                 m_controls->setLookBack(fire_backwards);
             break;
-        }   // POWERUP_CAKE
+        }   // POWERUP_NEUTRON_STAR
 
-    case PowerupManager::POWERUP_BOWLING:
+    case PowerupManager::POWERUP_BLACK_HOLE:
         {
             // if the kart has a shield, do not break it by using a bowling ball.
             if(m_kart->getShieldTime() > min_bubble_time)
@@ -1342,14 +1342,14 @@ void SkiddingAI::handleItems(const float dt)
             if(m_controls->getFire())
                 m_controls->setLookBack(fire_backwards);
             break;
-        }   // POWERUP_BOWLING
+        }   // POWERUP_BLACK_HOLE
 
     case PowerupManager::POWERUP_ZIPPER:
         // Do nothing. Further up a zipper is used if nitro should be selected,
         // saving the (potential more valuable nitro) for later
         break;   // POWERUP_ZIPPER
 
-    case PowerupManager::POWERUP_PLUNGER:
+    case PowerupManager::POWERUP_COSMIC_STRING:
         {
             // if the kart has a shield, do not break it by using a plunger.
             if(m_kart->getShieldTime() > min_bubble_time)
@@ -1371,9 +1371,9 @@ void SkiddingAI::handleItems(const float dt)
             if(m_controls->getFire())
                 m_controls->setLookBack(fire_backwards);
             break;
-        }   // POWERUP_PLUNGER
+        }   // POWERUP_COSMIC_STRING
 
-    case PowerupManager::POWERUP_SWITCH:
+    case PowerupManager::POWERUP_FRAME_SHIFT:
         // For now don't use a switch if this kart is first (since it's more
         // likely that this kart then gets a good iteam), otherwise use it
         // after a waiting an appropriate time
@@ -1381,15 +1381,15 @@ void SkiddingAI::handleItems(const float dt)
             m_time_since_last_shot
             > stk_config->ticks2Time(stk_config->m_item_switch_ticks)+2.0f)
             m_controls->setFire(true);
-        break;   // POWERUP_SWITCH
+        break;   // POWERUP_FRAME_SHIFT
 
-    case PowerupManager::POWERUP_PARACHUTE:
+    case PowerupManager::POWERUP_TIME_DILATION:
         // Wait one second more than a previous parachute
         if(m_time_since_last_shot > m_kart->getKartProperties()->getParachuteDurationOther() + 1.0f)
             m_controls->setFire(true);
-        break;   // POWERUP_PARACHUTE
+        break;   // POWERUP_TIME_DILATION
 
-    case PowerupManager::POWERUP_ANVIL:
+    case PowerupManager::POWERUP_MASS_SPIKE:
         // Wait one second more than a previous anvil
         if(m_time_since_last_shot < m_kart->getKartProperties()->getAnvilDuration() + 1.0f) break;
 
@@ -1403,9 +1403,9 @@ void SkiddingAI::handleItems(const float dt)
             m_controls->setFire(m_time_since_last_shot > 3.0f &&
                                 m_kart->getPosition()>1          );
         }
-        break;   // POWERUP_ANVIL
+        break;   // POWERUP_MASS_SPIKE
 
-    case PowerupManager::POWERUP_SWATTER:
+    case PowerupManager::POWERUP_TIDAL_ARM:
         {
             // Squared distance for which the swatter works
             float d2 = m_kart->getKartProperties()->getSwatterDistance();
@@ -1425,7 +1425,7 @@ void SkiddingAI::handleItems(const float dt)
                     m_controls->setFire(true);
             break;
         }
-    case PowerupManager::POWERUP_RUBBERBALL:
+    case PowerupManager::POWERUP_GEODESIC_MISSILE:
         // if the kart has a shield, do not break it by using a swatter.
         if(m_kart->getShieldTime() > min_bubble_time)
             break;
@@ -1671,8 +1671,8 @@ void SkiddingAI::handleNitroAndZipper()
     // If a parachute or anvil is attached, the nitro doesn't give much
     // benefit. Better wait till later.
     const bool has_slowdown_attachment =
-        m_kart->getAttachment()->getType()==Attachment::ATTACH_PARACHUTE ||
-        m_kart->getAttachment()->getType()==Attachment::ATTACH_ANVIL;
+        m_kart->getAttachment()->getType()==Attachment::ATTACH_TIME_DILATION ||
+        m_kart->getAttachment()->getType()==Attachment::ATTACH_MASS_SPIKE;
     if(has_slowdown_attachment) return;
 
     // If the kart is very slow (e.g. after rescue), use nitro

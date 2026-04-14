@@ -11,6 +11,7 @@ uniform vec4 u_relativity_params;
 uniform vec4 u_relativity_beta;
 uniform vec4 u_relativity_observer_pos;
 uniform vec4 u_relativity_bubble;
+uniform vec4 u_black_hole;
 
 uniform vec3 sun_direction;
 uniform vec3 sun_col;
@@ -34,6 +35,7 @@ layout (std140) uniform Matrices
     vec4 u_relativity_beta;
     vec4 u_relativity_observer_pos;
     vec4 u_relativity_bubble;
+    vec4 u_black_hole;
 };
 
 // Expand because of catalyst (14.12) not correctly associating array in UBO

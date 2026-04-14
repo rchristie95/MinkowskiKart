@@ -105,8 +105,8 @@ PowerupManager::PowerupType
     // Must match the order of PowerupType in powerup_manager.hpp!!
     static const std::string powerup_names[] = {
         "",            /* Nothing */
-        "bubblegum", "cake", "bowling", "zipper", "plunger", "switch",
-        "swatter", "rubber-ball", "parachute", "anchor"
+        "warp-bubble", "neutron-star", "black-hole", "zipper", "cosmic-string",
+        "frame-shift", "tidal-arm", "geodesic-missile", "time-dilation", "mass-spike"
     };
 
     for(unsigned int i=POWERUP_FIRST; i<=POWERUP_LAST; i++)
@@ -503,13 +503,13 @@ void PowerupManager::loadPowerup(PowerupType type, const XMLNode &node)
     }
     // Load special attributes for certain powerups
     switch (type) {
-        case POWERUP_BOWLING:
+        case POWERUP_BLACK_HOLE:
              Bowling::init(node, m_all_meshes[type]);    break;
-        case POWERUP_PLUNGER:
+        case POWERUP_COSMIC_STRING:
              Plunger::init(node, m_all_meshes[type]);    break;
-        case POWERUP_CAKE:
+        case POWERUP_NEUTRON_STAR:
              Cake::init(node, m_all_meshes[type]);       break;
-        case POWERUP_RUBBERBALL:
+        case POWERUP_GEODESIC_MISSILE:
              RubberBall::init(node, m_all_meshes[type]); break;
         default: break;
     }   // switch
@@ -620,8 +620,8 @@ PowerupManager::PowerupType PowerupManager::getRandomPowerup(unsigned int pos,
         stk_config->ticks2Time(World::getWorld()->getTicksSinceStart()) <
                                       stk_config->m_no_explosive_items_timeout)
     {
-        if (powerup == POWERUP_CAKE || powerup == POWERUP_RUBBERBALL)
-            powerup = POWERUP_BOWLING;
+        if (powerup == POWERUP_NEUTRON_STAR || powerup == POWERUP_GEODESIC_MISSILE)
+            powerup = POWERUP_BLACK_HOLE;
     }
     return (PowerupType)powerup;
 }   // getRandomPowerup
@@ -644,7 +644,7 @@ void PowerupManager::unitTesting()
     {
 #ifdef DEBUG
         unsigned int n;
-        assert( powerup_manager->getRandomPowerup(1, &n, i)==POWERUP_BOWLING );
+        assert( powerup_manager->getRandomPowerup(1, &n, i)==POWERUP_BLACK_HOLE );
         assert(n==3);
 #endif
     }

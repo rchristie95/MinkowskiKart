@@ -18,6 +18,7 @@
 
 #include "items/powerup.hpp"
 
+#include "graphics/relativistic_vfx.hpp"
 #include "audio/sfx_base.hpp"
 #include "audio/sfx_manager.hpp"
 #include "config/player_manager.hpp"
@@ -159,35 +160,35 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
     switch (m_type)
     {
         // No sound effect when arming the glove
-        case PowerupManager::POWERUP_SWATTER:
+        case PowerupManager::POWERUP_TIDAL_ARM:
             break;
 
         case PowerupManager::POWERUP_ZIPPER:
             break ;
 
-        case PowerupManager::POWERUP_BOWLING:
+        case PowerupManager::POWERUP_BLACK_HOLE:
             m_sound_use = SFXManager::get()->createSoundSource("bowling_shoot");
             break ;
 
-        case PowerupManager::POWERUP_ANVIL:
+        case PowerupManager::POWERUP_MASS_SPIKE:
             m_sound_use = SFXManager::get()->createSoundSource("anvil");
             break;
 
-        case PowerupManager::POWERUP_PARACHUTE:
+        case PowerupManager::POWERUP_TIME_DILATION:
             m_sound_use = SFXManager::get()->createSoundSource("parachute");
             break;
 
-        case PowerupManager::POWERUP_BUBBLEGUM:
+        case PowerupManager::POWERUP_WARP_BUBBLE:
             m_sound_use = SFXManager::get()->createSoundSource("goo");
             break ;
 
-        case PowerupManager::POWERUP_SWITCH:
+        case PowerupManager::POWERUP_FRAME_SHIFT:
             m_sound_use = SFXManager::get()->createSoundSource("swap");
             break;
 
         case PowerupManager::POWERUP_NOTHING:
-        case PowerupManager::POWERUP_CAKE:
-        case PowerupManager::POWERUP_PLUNGER:
+        case PowerupManager::POWERUP_NEUTRON_STAR:
+        case PowerupManager::POWERUP_COSMIC_STRING:
         default :
             m_sound_use = SFXManager::get()->createSoundSource("shoot");
             break ;
@@ -268,7 +269,7 @@ void Powerup::use()
 
     // Play custom kart sound when collectible is used //TODO: what about the bubble gum?
     if (m_type != PowerupManager::POWERUP_NOTHING &&
-        m_type != PowerupManager::POWERUP_SWATTER &&
+        m_type != PowerupManager::POWERUP_TIDAL_ARM &&
         m_type != PowerupManager::POWERUP_ZIPPER)
         m_kart->playCustomSFX(SFXManager::CUSTOM_SHOOT);
 
@@ -286,9 +287,12 @@ void Powerup::use()
     case PowerupManager::POWERUP_ZIPPER:
         m_kart->handleZipper(NULL, true);
         break ;
-    case PowerupManager::POWERUP_SWITCH:
+    case PowerupManager::POWERUP_FRAME_SHIFT:
         {
             im->switchItems();
+            // Trigger the sweeping Lorentz grid wave visual
+            if (relativistic_vfx_manager)
+                relativistic_vfx_manager->triggerFrameShift(m_kart->getXYZ());
             if (!has_played_sound)
             {
                 m_sound_use->setPosition(m_kart->getXYZ());
@@ -296,10 +300,10 @@ void Powerup::use()
             }
             break;
         }
-    case PowerupManager::POWERUP_CAKE:
-    case PowerupManager::POWERUP_RUBBERBALL:
-    case PowerupManager::POWERUP_BOWLING:
-    case PowerupManager::POWERUP_PLUNGER:
+    case PowerupManager::POWERUP_NEUTRON_STAR:
+    case PowerupManager::POWERUP_GEODESIC_MISSILE:
+    case PowerupManager::POWERUP_BLACK_HOLE:
+    case PowerupManager::POWERUP_COSMIC_STRING:
         if(stk_config->m_shield_restrict_weapons)
             m_kart->setShieldTime(0.0f); // make weapon usage destroy the shield
         if (!has_played_sound)
@@ -310,13 +314,13 @@ void Powerup::use()
         ProjectileManager::get()->newProjectile(m_kart, m_type);
         break ;
 
-    case PowerupManager::POWERUP_SWATTER:
+    case PowerupManager::POWERUP_TIDAL_ARM:
         m_kart->getAttachment()
-                ->set(Attachment::ATTACH_SWATTER,
+                ->set(Attachment::ATTACH_TIDAL_ARM,
                       stk_config->time2Ticks(kp->getSwatterDuration()));
         break;
 
-    case PowerupManager::POWERUP_BUBBLEGUM:
+    case PowerupManager::POWERUP_WARP_BUBBLE:
         // use the bubble gum the traditional way, if the kart is looking back
         if (m_kart->getControls().getLookBack())
         {
@@ -338,14 +342,14 @@ void Powerup::use()
                 if (m_kart->getIdent() == "nolok")
                 {
                     m_kart->getAttachment()
-                          ->set(Attachment::ATTACH_NOLOK_BUBBLEGUM_SHIELD,
+                          ->set(Attachment::ATTACH_NOLOK_WARP_BUBBLE,
                                 stk_config->
                                   time2Ticks(kp->getBubblegumShieldDuration()));
                 }
                 else
                 {
                     m_kart->getAttachment()
-                          ->set(Attachment::ATTACH_BUBBLEGUM_SHIELD,
+                          ->set(Attachment::ATTACH_WARP_BUBBLE,
                                 stk_config->
                                   time2Ticks(kp->getBubblegumShieldDuration()));
                 }
@@ -355,14 +359,14 @@ void Powerup::use()
                 if (m_kart->getIdent() == "nolok")
                 {
                     m_kart->getAttachment()
-                          ->set(Attachment::ATTACH_NOLOK_BUBBLEGUM_SHIELD,
+                          ->set(Attachment::ATTACH_NOLOK_WARP_BUBBLE,
                                 stk_config->
                                  time2Ticks(kp->getBubblegumShieldDuration()));
                 }
                 else
                 {
                     m_kart->getAttachment()
-                          ->set(Attachment::ATTACH_BUBBLEGUM_SHIELD,
+                          ->set(Attachment::ATTACH_WARP_BUBBLE,
                                 stk_config->
                                 time2Ticks(kp->getBubblegumShieldDuration()
                                            + m_kart->getShieldTime()       ) );
@@ -390,10 +394,10 @@ void Powerup::use()
                 m_sound_use->play();
             }
 
-        }   // end of PowerupManager::POWERUP_BUBBLEGUM
+        }   // end of PowerupManager::POWERUP_WARP_BUBBLE
         break;
 
-    case PowerupManager::POWERUP_ANVIL:
+    case PowerupManager::POWERUP_MASS_SPIKE:
         //Attach an anvil(twice as good as the one given
         //by the bananas) to the kart in the 1st position.
         for(unsigned int i = 0 ; i < world->getNumKarts(); ++i)
@@ -403,7 +407,7 @@ void Powerup::use()
             if(kart == m_kart) continue;
             if(kart->getPosition() == 1)
             {
-                kart->getAttachment()->set(Attachment::ATTACH_ANVIL,
+                kart->getAttachment()->set(Attachment::ATTACH_MASS_SPIKE,
                                            stk_config->
                                            time2Ticks(kp->getAnvilDuration()) );
                 kart->adjustSpeed(kp->getAnvilSpeedFactor() * 0.5f);
@@ -427,7 +431,7 @@ void Powerup::use()
 
         break;
 
-    case PowerupManager::POWERUP_PARACHUTE:
+    case PowerupManager::POWERUP_TIME_DILATION:
         {
             AbstractKart* player_kart = NULL;
             //Attach a parachute(that last 1,3 time as long as the
@@ -463,7 +467,7 @@ void Powerup::use()
                                      (kp->getParachuteDurationRankMult() - 1));
 
                     kart->getAttachment()
-                        ->set(Attachment::ATTACH_PARACHUTE,
+                        ->set(Attachment::ATTACH_TIME_DILATION,
                               stk_config->time2Ticks(kp->getParachuteDurationOther()*rank_mult) );
 
                     if(kart->getController()->isLocalPlayerController())

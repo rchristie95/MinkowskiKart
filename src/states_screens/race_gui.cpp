@@ -18,6 +18,7 @@
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "states_screens/race_gui.hpp"
+#include "graphics/relativistic_vfx.hpp"
 
 using namespace irr;
 
@@ -456,6 +457,8 @@ void RaceGUI::renderPlayerView(const Camera *camera, float dt)
     bool isSpectatorCam = Camera::getActiveCamera()->isSpectatorMode();
 
     if (!isSpectatorCam) drawPlungerInFace(camera, dt);
+    if (!isSpectatorCam && relativistic_vfx_manager)
+        relativistic_vfx_manager->renderBlackboards();
 
     // Scale race GUI along screen size
     scaling *= sqrtf(float(viewport.getWidth()) / 800.0f);
