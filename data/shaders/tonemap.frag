@@ -10,6 +10,8 @@ out vec4 FragColor;
 void main()
 {
     vec2 uv = gl_FragCoord.xy / u_screen;
+    bool in_event_horizon = false;  // Track if we're inside the black hole shadow
+    float distortion_strength = 0.0; // Track how strong the lensing is at this pixel
 
     // ---- Gravitational lensing from active black hole ----
     if (u_black_hole.w > 0.5)
@@ -25,8 +27,8 @@ void main()
             vec2  delta = gl_FragCoord.xy - bh_screen;
             float r     = length(delta);
 
-            // Einstein ring radius (pixels). Governs how wide the lens halo is.
-            const float R_E = 55.0;
+            // Einstein ring radius (pixels). Increased for more dramatic effect.
+            const float R_E = 75.0;
 
             if (r > 0.5 && r < R_E * 6.0)
             {
@@ -37,7 +39,10 @@ void main()
 
                 if (r_src <= 0.0)
                 {
-                    // Event horizon: all light absorbed.
+                    // Event horizon: all light absorbed → pure black
+                    // Mark this pixel as inside the event horizon so tone-mapping
+                    // doesn't add unwanted color/brightness back in.
+                    in_event_horizon = true;
                     uv = vec2(-1.0); // will clamp to black below
                 }
                 else
@@ -45,6 +50,11 @@ void main()
                     // Remap: sample scene from the direction the photon actually came from.
                     vec2 sample_pos = bh_screen + normalize(delta) * r_src;
                     uv = sample_pos / u_screen;
+
+                    // Track distortion strength for darkening effect
+                    // Closer to event horizon = stronger darkening
+                    distortion_strength = 1.0 - (r_src / (R_E * 3.0));
+                    distortion_strength = clamp(distortion_strength, 0.0, 1.0);
                 }
                 uv = clamp(uv, vec2(0.0), vec2(1.0));
             }
@@ -53,6 +63,58 @@ void main()
     // -------------------------------------------------------
 
     vec4 col = texture(tex, uv);
+
+    // Darken the distorted region near the black hole to emphasize gravitational pull
+    if (distortion_strength > 0.01)
+    {
+        col.rgb *= (1.0 - distortion_strength * 0.4);  // Darken by up to 40% near event horizon
+    }
+
+    // If inside event horizon, enforce pure black (no tone-mapping brightness leakage)
+    if (in_event_horizon)
+    {
+        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+
+    // Add accretion disk glow around black hole for dramatic effect
+    if (u_black_hole.w > 0.5)
+    {
+        vec4 bh_clip = u_projection_view_matrix * vec4(u_black_hole.xyz, 1.0);
+        if (bh_clip.w > 0.001 && bh_clip.z > 0.0)
+        {
+            vec2 bh_ndc    = bh_clip.xy / bh_clip.w;
+            vec2 bh_screen = (bh_ndc * 0.5 + 0.5) * u_screen;
+            vec2 delta = gl_FragCoord.xy - bh_screen;
+            float r = length(delta);
+
+            const float R_E = 55.0;
+            const float EVENT_HORIZON = R_E * 0.4;  // Inner black region
+            const float ACCRETION_INNER = R_E * 0.5;
+            const float ACCRETION_OUTER = R_E * 1.5;
+
+            // Accretion disk: bright orange/red glow just outside event horizon
+            if (r > EVENT_HORIZON && r < ACCRETION_OUTER)
+            {
+                // Radial falloff from inner to outer edge
+                float accretion_t = (r - ACCRETION_INNER) / (ACCRETION_OUTER - ACCRETION_INNER);
+                accretion_t = clamp(accretion_t, 0.0, 1.0);
+
+                // Strongest glow just outside event horizon, fades outward
+                float glow_strength = (1.0 - accretion_t) * (1.0 - accretion_t);
+
+                // Hot accretion disk color: orange to red (simulating superheated matter)
+                vec3 accretion_color = mix(
+                    vec3(1.0, 0.5, 0.1),  // Orange at inner edge
+                    vec3(0.8, 0.1, 0.05), // Red at outer edge
+                    accretion_t
+                );
+
+                // Blend accretion disk glow with scene color
+                col.rgb = mix(col.rgb, accretion_color * 2.0, glow_strength * 0.6);
+            }
+        }
+    }
 
     vec3 eyedir = vec3(uv * 2.0 - 1.0, 1.0);
     vec4 tmp = (u_inverse_projection_matrix * vec4(eyedir, 1.0));
