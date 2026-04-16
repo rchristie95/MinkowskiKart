@@ -73,6 +73,23 @@ vec3 applyRelativisticDisplacement(vec3 displacement, float visual_fade)
     return mix(displacement, contracted, clamp(visual_fade, 0.0, 1.0));
 }
 
+// Lorentz-contract a world-space position along the beta direction, using the
+// observer position as the reference point. This is the correct reference frame
+// for scene geometry (contraction is relative to the observer, not to each
+// instance's arbitrary authoring anchor). Using this avoids large batched
+// meshes (forests, monolithic track materials) appearing to pivot around their
+// instance origin as the beta direction changes.
+vec4 applyRelativisticContraction(vec4 world_position, float visual_fade)
+{
+    if (!relativityVisualsEnabled() || visual_fade <= 1e-4)
+        return world_position;
+
+    vec3 relative = world_position.xyz - u_relativity_observer_pos.xyz;
+    vec3 contracted = contractRelativisticDisplacement(relative);
+    vec3 blended = mix(relative, contracted, clamp(visual_fade, 0.0, 1.0));
+    return vec4(u_relativity_observer_pos.xyz + blended, 1.0);
+}
+
 vec3 transformRelativisticNormal(vec3 world_normal)
 {
     vec3 beta_vector = getRelativityBetaVector();
