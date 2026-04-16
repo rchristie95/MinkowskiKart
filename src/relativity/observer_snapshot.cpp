@@ -96,18 +96,23 @@ btVector3 getSmoothedVisualDirection(const AbstractKart* observer_kart,
 {
     VisualMotionFilterState& filter = g_visual_motion_filters[observer_kart];
 
-    btVector3 desired_direction(0.0f, 0.0f, 0.0f);
+    // The beta direction must come from the kart's physical velocity, not from
+    // camera-position deltas. A chase camera pans laterally when the player
+    // steers even though the kart's forward velocity is largely unchanged; if
+    // we fed that pan into the beta direction the Lorentz contraction axis
+    // would rotate with the steering input, making scenery appear to swing
+    // sideways. Observer-position tracking is kept only to detect teleports
+    // so the temporal smoothing filter can reset cleanly.
     btScalar observer_step_length2 = btScalar(0.0f);
     if (filter.m_has_position)
     {
         const btVector3 observer_step =
-            dampVerticalMotion(observer_position - filter.m_last_observer_position);
+            observer_position - filter.m_last_observer_position;
         observer_step_length2 = observer_step.length2();
-        desired_direction = normalizedOrZero(observer_step);
     }
 
-    if (desired_direction.length2() <= MIN_VISUAL_DIRECTION_LENGTH2)
-        desired_direction = normalizedOrZero(dampVerticalMotion(coordinate_velocity));
+    btVector3 desired_direction =
+        normalizedOrZero(dampVerticalMotion(coordinate_velocity));
 
     filter.m_last_observer_position = observer_position;
     filter.m_has_position = true;
