@@ -1508,8 +1508,6 @@ void RaceGUI::drawLap(const AbstractKart* kart,
         {
             const Relativity::RelativisticState& state =
                 sr_kart->getRelativisticState();
-            const double proper_lap_time =
-                getCurrentLapProperTime(kart, lap, state.m_proper_time_s);
 
             gui::ScalableFont* info_font = GUIEngine::getFont();
             info_font->setBlackBorder(true);
@@ -1521,7 +1519,7 @@ void RaceGUI::drawLap(const AbstractKart* kart,
 
             const core::stringw beta_line = formatFractionOfCLine(state.m_beta);
             const core::stringw proper_time_line =
-                formatProperLapTimeLine(proper_lap_time);
+                formatProperLapTimeLine(state.m_proper_time_s);
             const core::stringw speed_of_light_line =
                 formatSpeedOfLightLine(speed_of_light);
 
