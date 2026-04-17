@@ -126,8 +126,14 @@ core::stringw formatFractionOfCLine(double beta)
 
 core::stringw formatProperLapTimeLine(double proper_time_s)
 {
-    std::string text = "tau "
-        + StringUtils::timeToString((float)std::max(0.0, proper_time_s));
+    std::string time_str =
+        StringUtils::timeToString((float)std::max(0.0, proper_time_s));
+    size_t decimal_pos = time_str.find('.');
+    if (decimal_pos != std::string::npos)
+    {
+        time_str = time_str.substr(0, decimal_pos);
+    }
+    std::string text = "tau " + time_str;
     return core::stringw(text.c_str());
 }   // formatProperLapTimeLine
 
@@ -1503,15 +1509,13 @@ void RaceGUI::drawLap(const AbstractKart* kart,
         {
             const Relativity::RelativisticState& state =
                 sr_kart->getRelativisticState();
-            const double proper_lap_time =
-                getCurrentLapProperTime(kart, lap, state.m_proper_time_s);
 
             gui::ScalableFont* info_font = GUIEngine::getSmallFont();
             info_font->setBlackBorder(true);
 
             const core::stringw beta_line = formatFractionOfCLine(state.m_beta);
             const core::stringw proper_time_line =
-                formatProperLapTimeLine(proper_lap_time);
+                formatProperLapTimeLine(state.m_proper_time_s);
             const float speed_of_light = Relativity::getConfiguredSpeedOfLight();
             const core::stringw speed_of_light_line =
                 formatSpeedOfLightLine(speed_of_light);
