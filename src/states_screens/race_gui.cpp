@@ -126,8 +126,13 @@ core::stringw formatFractionOfCLine(double beta)
 
 core::stringw formatProperLapTimeLine(double proper_time_s)
 {
-    std::string text = "tau "
-        + StringUtils::timeToString((float)std::max(0.0, proper_time_s));
+    std::string time_str = StringUtils::timeToString((float)std::max(0.0, proper_time_s));
+    size_t decimal_pos = time_str.find('.');
+    if (decimal_pos != std::string::npos)
+    {
+        time_str = time_str.substr(0, decimal_pos);
+    }
+    std::string text = "tau " + time_str;
     return core::stringw(text.c_str());
 }   // formatProperLapTimeLine
 
@@ -1506,13 +1511,17 @@ void RaceGUI::drawLap(const AbstractKart* kart,
             const double proper_lap_time =
                 getCurrentLapProperTime(kart, lap, state.m_proper_time_s);
 
-            gui::ScalableFont* info_font = GUIEngine::getSmallFont();
+            gui::ScalableFont* info_font = GUIEngine::getFont();
             info_font->setBlackBorder(true);
+
+            const bool powerup_active = sr_kart->isAnyPowerupActive();
+            const float speed_of_light = powerup_active
+                ? (float)UserConfigParams::m_relativity_speed_powerup
+                : Relativity::getConfiguredSpeedOfLight();
 
             const core::stringw beta_line = formatFractionOfCLine(state.m_beta);
             const core::stringw proper_time_line =
                 formatProperLapTimeLine(proper_lap_time);
-            const float speed_of_light = Relativity::getConfiguredSpeedOfLight();
             const core::stringw speed_of_light_line =
                 formatSpeedOfLightLine(speed_of_light);
 
@@ -1523,12 +1532,9 @@ void RaceGUI::drawLap(const AbstractKart* kart,
             const core::dimension2du speed_of_light_dim =
                 info_font->getDimension(speed_of_light_line.c_str());
             const s32 vertical_gap = std::max(1, (int)(2.0f * scaling.Y));
-            const s32 slider_width = std::max((s32)(90.0f * scaling.X),
-                std::max((s32)beta_dim.Width,
-                         std::max((s32)proper_time_dim.Width,
-                                  (s32)speed_of_light_dim.Width)));
-            const s32 slider_height = std::max(4, (int)(6.0f * scaling.Y));
-            const s32 info_width = slider_width;
+            const s32 info_width = std::max((s32)beta_dim.Width,
+                std::max((s32)proper_time_dim.Width,
+                         (s32)speed_of_light_dim.Width));
             const s32 info_right = viewport.LowerRightCorner.X - 10
                 - (show_lap_counter ? icon_width : 0);
             const s32 info_top = show_lap_counter
@@ -1552,31 +1558,11 @@ void RaceGUI::drawLap(const AbstractKart* kart,
                                                info_right,
                                                speed_of_light_top +
                                                    (s32)speed_of_light_dim.Height);
-            const s32 slider_top =
-                speed_of_light_top + (s32)speed_of_light_dim.Height + vertical_gap;
-            const core::rect<s32> slider_rect(info_right - slider_width,
-                                              slider_top,
-                                              info_right,
-                                              slider_top + slider_height);
 
             info_font->draw(beta_line.c_str(), beta_pos, color);
             info_font->draw(proper_time_line.c_str(), proper_time_pos, color);
             info_font->draw(speed_of_light_line.c_str(), speed_of_light_pos,
                             color);
-            GL32_draw2DRectangle(video::SColor(110, 20, 20, 20), slider_rect);
-            const float slider_fraction =
-                Relativity::getSpeedOfLightSliderFraction(speed_of_light);
-            if (slider_fraction > 0.0f)
-            {
-                const s32 fill_width = std::max(1,
-                    (s32)((float)slider_width * slider_fraction));
-                core::rect<s32> slider_fill(slider_rect.UpperLeftCorner.X,
-                                            slider_rect.UpperLeftCorner.Y,
-                                            slider_rect.UpperLeftCorner.X +
-                                                fill_width,
-                                            slider_rect.LowerRightCorner.Y);
-                GL32_draw2DRectangle(color, slider_fill);
-            }
             info_font->setBlackBorder(false);
         }
     }
