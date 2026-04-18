@@ -70,7 +70,8 @@ void main()
 
     // Apply warping here!
     float relativity_fade = getRelativisticVisualFade(p, vel);
-    vec4 v_world_position = vec4(p, 1.0);
+    vec4 v_world_position = applyRelativisticContraction(vec4(p, 1.0),
+        relativity_fade);
     vec3 v_world_normal = applyRelativisticNormalTransform(n, relativity_fade);
     vec3 world_tangent = applyRelativisticDisplacement(t, relativity_fade);
     v_world_position = applyRelativisticVisualPosition(v_world_position, vel, relativity_fade);
