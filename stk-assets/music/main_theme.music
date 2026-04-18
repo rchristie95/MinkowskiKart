@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
-<music title    = "SuperTuxKart Theme"
-       composer = "Claude Werner"
-       file     = "menutheme.ogg"/>
+<music title    = "Custom Main Theme"
+       composer = "User supplied"
+       file     = "maintheme.ogg"/>
