@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            build
+            apple-build
           key: apple-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.platform }}-${{ github.run_number }}
           restore-keys: |
             ${{ env.cache_1 }}
@@ -87,14 +87,15 @@ jobs:
           fi
       - name: Configure bulid
         run: |
-          mkdir -p build
-          cd build
+          rm -rf apple-build
+          mkdir -p apple-build
+          cd apple-build
           cmake .. -DCCTOOLS_PREFIX=/opt/cctools -DCCTOOLS_ARCH=${{ matrix.arch }} -DCCTOOLS_PLATFORM=${{ matrix.platform }} \
           -DRT=/opt/cctools/darwin/libclang_rt.${{ env.rt }}.a -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cctools.cmake -DCHECK_ASSETS=OFF \
           -DBC7_ISPC=ON -DCMAKE_ISPC_COMPILER=/opt/ispc/bin/ispc
       - name: Build
         run: |
-          cd build
+          cd apple-build
           make -j4
           mv bin ../${{ steps.sysroot.outputs.lowercase }}-${{ matrix.arch }}
       - name: Upload binaries
