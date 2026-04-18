@@ -1350,6 +1350,22 @@ namespace UserConfigParams
                                                      &m_hw_report_group,
                                                     "If HW reports are enabled."));
 
+
+    // ---- Relativistic effects
+
+    PARAM_PREFIX GroupUserConfigParam       m_relativity_group
+            PARAM_DEFAULT( GroupUserConfigParam("Relativity",
+                                          "Relativistic effects settings") );
+
+    PARAM_PREFIX IntUserConfigParam        m_relativity_speed_normal
+            PARAM_DEFAULT( IntUserConfigParam(1000, "speed_normal",
+                                             &m_relativity_group,
+                                             "Speed of light during normal driving (30-1000)") );
+
+    PARAM_PREFIX IntUserConfigParam        m_relativity_speed_powerup
+            PARAM_DEFAULT( IntUserConfigParam(30, "speed_powerup",
+                                             &m_relativity_group,
+                                             "Speed of light when a powerup is active (30-1000)") );
     // ---- User management
 
     PARAM_PREFIX BoolUserConfigParam        m_always_show_login_screen
