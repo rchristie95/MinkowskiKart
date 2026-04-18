@@ -344,6 +344,40 @@ void observerSnapshotUnitTesting()
     visual_state.m_observer_position = btVector3(4.0f, 5.0f, 6.0f);
     assert(visual_state.m_beta_vector.length() > btScalar(0.79f));
     assert(std::fabs((double)visual_state.m_inverse_gamma - 0.6) < 0.0001);
+    // beta_vector length must equal beta
+    assert(std::fabs((double)visual_state.m_beta_vector.length()
+                     - visual_state.m_beta) < 0.001);
+
+    // Default-constructed ObserverSnapshot must report safe neutral values
+    ObserverSnapshot default_snapshot;
+    assert(!default_snapshot.m_valid);
+    assert(std::fabs((double)default_snapshot.m_beta) < 0.000001);
+    assert(std::fabs((double)default_snapshot.m_gamma - 1.0) < 0.000001);
+    assert(std::fabs((double)default_snapshot.m_view_alignment) < 0.000001);
+    assert(std::fabs((double)default_snapshot.m_forward_intensity) < 0.000001);
+    assert(std::fabs((double)default_snapshot.m_fov_scale - 1.0) < 0.000001);
+    assert(std::fabs((double)default_snapshot.m_camera_distance_scale - 1.0)
+           < 0.000001);
+    assert(!default_snapshot.m_trigger_motion_blur);
+
+    // Default-constructed ObserverVisualState must report safe neutral values
+    ObserverVisualState default_visual;
+    assert(!default_visual.m_valid);
+    assert(!default_visual.m_item_active);
+    assert(!default_visual.m_doppler_active);
+    assert(std::fabs((double)default_visual.m_beta) < 0.000001);
+    assert(std::fabs((double)default_visual.m_gamma - 1.0) < 0.000001);
+    assert(std::fabs((double)default_visual.m_inverse_gamma - 1.0) < 0.000001);
+    assert((double)default_visual.m_beta_vector.length2() < 0.000001);
+
+    // For the high-beta forward-facing snapshot constructed above, fov must
+    // widen and camera distance must decrease relative to their neutral values
+    assert(snapshot.m_fov_scale > 1.0f);
+    assert(snapshot.m_camera_distance_scale < 1.0f);
+    assert(snapshot.m_trigger_motion_blur);
+    // forward_intensity drives both effects, so they must be consistent
+    assert(snapshot.m_fov_scale - 1.0f > 0.0f);
+    assert(1.0f - snapshot.m_camera_distance_scale > 0.0f);
 }   // observerSnapshotUnitTesting
 
 }   // namespace Relativity
