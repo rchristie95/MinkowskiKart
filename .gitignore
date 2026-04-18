@@ -1,0 +1,16 @@
+# Build artifacts
+build/
+*.log
+
+# IDE / OS
+.vs/
+.vscode/
+Thumbs.db
+.DS_Store
+
+# Distribution tools (not needed for dev)
+tools/windows_installer/
+
+# Platform targets not used in this fork
+android/
+switch/
