@@ -31,12 +31,16 @@ This project uses **CMake** and **Ninja** for compilation.
 *   Ninja (bundled in `.build-tools/ninja`)
 
 ### Compilation
-1.  Ensure your `build/` directory contains a valid `build.ninja` and `CMakeCache.txt`.
-2.  Run the following command from the root directory:
+1.  Clone the repository with its tracked `build/`, `.build-tools/`, and `dependencies-win-x86_64/` directories intact.
+2.  From the repo root, run:
+    ```powershell
+    .\compile.bat
+    ```
+3.  If you prefer to invoke Ninja directly, this works too:
     ```powershell
     .build-tools\ninja\ninja.exe -C build
     ```
-3.  The binary will be generated at: `build\bin\supertuxkart.exe`
+4.  The binary will be generated at: `build\bin\supertuxkart.exe`
 
 ## 📜 Citations and Credits
 
