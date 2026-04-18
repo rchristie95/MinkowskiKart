@@ -916,6 +916,164 @@ void unitTesting()
         btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f),
         1.0f);
     assert(warped.x() > 5.0f);
+
+    // betaForSpeed direct tests
+    assert(std::fabs(betaForSpeed(0.0, c)) < 0.000001);
+    assert(std::fabs(betaForSpeed(0.6 * c, c) - 0.6) < 0.000001);
+    {
+        // Speed at exactly c must be clamped to just below 1.0
+        const double beta_at_c = betaForSpeed(c, c);
+        assert(beta_at_c > 0.9999 && beta_at_c < 1.0);
+        // Speed beyond c must also be clamped to just below 1.0
+        const double beta_twice_c = betaForSpeed(2.0 * c, c);
+        assert(beta_twice_c > 0.9999 && beta_twice_c < 1.0);
+        // speed_of_light below the minimum threshold must return 0
+        assert(std::fabs(betaForSpeed(0.5 * c, 0.0)) < 0.000001);
+    }
+
+    // properDt edge cases
+    assert(std::fabs(properDt(0.0, 2.0)) < 0.000001);     // zero dt -> 0
+    assert(std::fabs(properDt(-1.0, 2.0)) < 0.000001);    // negative dt -> 0
+    // gamma < 1.0 is physically invalid; returns coordinate_dt unchanged
+    assert(std::fabs(properDt(1.0, 0.5) - 1.0) < 0.000001);
+
+    // updateState
+    {
+        RelativisticState state;
+        // Null state pointer must not crash
+        updateState(NULL, btVector3(0.0f, 0.0f, 0.0f), 0.0, 1.0, c);
+
+        updateState(&state,
+                    btVector3((float)(0.6 * c), 0.0f, 0.0f),
+                    0.6 * c, 1.0, c);
+        assert(std::fabs(state.m_beta - 0.6) < 0.000001);
+        assert(std::fabs(state.m_gamma - 1.25) < 0.00001);
+        assert(std::fabs(state.m_coordinate_time_s - 1.0) < 0.000001);
+        // proper_time = coordinate_dt / gamma = 1.0 / 1.25 = 0.8
+        assert(std::fabs(state.m_proper_time_s - 0.8) < 0.00001);
+        assert(std::fabs((double)state.m_coordinate_velocity.getX() - 0.6 * c)
+               < 0.01);
+
+        // Negative dt must not advance either time accumulator
+        const double prev_coord_t = state.m_coordinate_time_s;
+        const double prev_proper_t = state.m_proper_time_s;
+        updateState(&state, btVector3(0.0f, 0.0f, 0.0f), 0.0, -1.0, c);
+        assert(std::fabs(state.m_coordinate_time_s - prev_coord_t) < 0.000001);
+        assert(std::fabs(state.m_proper_time_s - prev_proper_t) < 0.000001);
+    }
+
+    // clampVelocityToC additional tests
+    {
+        bool clamp_flag = false;
+        // Under-limit velocity must not be clamped
+        const btVector3 slow = clampVelocityToC(
+            btVector3(10.0f, 0.0f, 0.0f), 78.4f, &clamp_flag);
+        assert(!clamp_flag);
+        assert(std::fabs((double)slow.length() - 10.0) < 0.001);
+
+        // Zero velocity must not be clamped
+        const btVector3 zero_vel = clampVelocityToC(
+            btVector3(0.0f, 0.0f, 0.0f), 78.4f, &clamp_flag);
+        assert(!clamp_flag);
+        assert((double)zero_vel.length2() < 0.000001);
+
+        // Non-positive max speed returns velocity unclamped
+        const btVector3 neg_max = clampVelocityToC(
+            btVector3(100.0f, 0.0f, 0.0f), -1.0f, &clamp_flag);
+        assert(!clamp_flag);
+        assert(std::fabs((double)neg_max.length() - 100.0) < 0.001);
+    }
+
+    // scaleLongitudinalForce additional tests
+    // Zero force returns zero regardless of speed
+    assert(scaleLongitudinalForce(0.0f, 0.6f * (float)c, (float)c) == 0.0f);
+    // Decelerating force (positive speed, negative force) must not be scaled
+    assert(scaleLongitudinalForce(-100.0f, 0.6f * (float)c, (float)c) == -100.0f);
+    // Reverse decelerating force (negative speed, positive force) must not be scaled
+    assert(scaleLongitudinalForce(100.0f, -0.6f * (float)c, (float)c) == 100.0f);
+
+    // getRecommendedPhysicsSubsteps boundary values
+    assert(getRecommendedPhysicsSubsteps(-0.1f) == 1);  // negative -> 1
+    assert(getRecommendedPhysicsSubsteps(0.25f) == 1);  // at boundary -> 1
+    assert(getRecommendedPhysicsSubsteps(0.26f) == 2);  // just above -> 2
+    assert(getRecommendedPhysicsSubsteps(0.50f) == 2);  // at boundary -> 2
+    assert(getRecommendedPhysicsSubsteps(0.51f) == 3);  // just above -> 3
+    assert(getRecommendedPhysicsSubsteps(0.70f) == 3);  // at boundary -> 3
+    assert(getRecommendedPhysicsSubsteps(0.71f) == 4);  // just above -> 4
+    assert(getRecommendedPhysicsSubsteps(0.82f) == 4);  // at boundary -> 4
+    assert(getRecommendedPhysicsSubsteps(0.83f) == 5);  // just above -> 5
+    assert(getRecommendedPhysicsSubsteps(0.90f) == 5);  // at boundary -> 5
+    assert(getRecommendedPhysicsSubsteps(0.91f) == 6);  // just above -> 6
+
+    // getDirectionalEffectiveMass numerical verification
+    // At rest the effective mass equals the rest mass
+    assert(std::fabs((double)getDirectionalEffectiveMass(
+        200.0f, btVector3(0.0f, 0.0f, 0.0f),
+        btVector3(1.0f, 0.0f, 0.0f), (float)c) - 200.0) < 0.001);
+    // v = 0.6c -> gamma = 1.25; longitudinal mass: m*gamma^3 = 200*1.953125 ~= 390.625
+    assert(std::fabs((double)effective_mass_parallel - 390.625) < 0.5);
+    // transverse mass: m*gamma = 200*1.25 = 250.0
+    assert(std::fabs((double)effective_mass_perpendicular - 250.0) < 0.5);
+
+    // computeCollisionImpulseMagnitude additional tests
+    {
+        // Objects separating along the normal produce zero impulse
+        const float separating_impulse = computeCollisionImpulseMagnitude(
+            btVector3(1.0f, 0.0f, 0.0f),
+            btVector3(0.0f, 0.0f, 0.0f), 200.0f,
+            btVector3(20.0f, 0.0f, 0.0f), 200.0f,
+            0.0f, (float)c);
+        assert(std::fabs((double)separating_impulse) < 0.000001);
+
+        // Elastic restitution must give larger impulse than perfectly inelastic
+        const float elastic_impulse = computeCollisionImpulseMagnitude(
+            btVector3(1.0f, 0.0f, 0.0f),
+            btVector3(20.0f, 0.0f, 0.0f), 200.0f,
+            btVector3(0.0f, 0.0f, 0.0f), 200.0f,
+            1.0f, (float)c);
+        const float inelastic_impulse = computeCollisionImpulseMagnitude(
+            btVector3(1.0f, 0.0f, 0.0f),
+            btVector3(20.0f, 0.0f, 0.0f), 200.0f,
+            btVector3(0.0f, 0.0f, 0.0f), 200.0f,
+            0.0f, (float)c);
+        assert(elastic_impulse > inelastic_impulse);
+        assert(inelastic_impulse > 0.0f);
+    }
+
+    // Debug counter tests
+    {
+        resetDebugCounters();
+        assert(getVelocityClampCount() == 0u);
+        assert(getResponseScaleCount() == 0u);
+
+        bool dummy = false;
+        clampVelocityToC(btVector3(200.0f, 0.0f, 0.0f), 78.4f, &dummy);
+        assert(getVelocityClampCount() == 1u);
+
+        scalePreferredFrameResponse(btVector3(80.0f, 40.0f, 0.0f),
+                                    btVector3(48.0f, 0.0f, 0.0f), (float)c);
+        assert(getResponseScaleCount() == 1u);
+
+        resetDebugCounters();
+        assert(getVelocityClampCount() == 0u);
+        assert(getResponseScaleCount() == 0u);
+    }
+
+    // applyVisualNormal: returned vector must have unit length
+    {
+        ObserverVisualState normal_test_observer;
+        normal_test_observer.m_valid = true;
+        normal_test_observer.m_observer_position = btVector3(0.0f, 0.0f, 0.0f);
+        normal_test_observer.m_beta_vector = btVector3(0.6f, 0.0f, 0.0f);
+        normal_test_observer.m_gamma = (float)gammaForSpeed(0.6 * c, c);
+        normal_test_observer.m_inverse_gamma =
+            1.0f / normal_test_observer.m_gamma;
+        normal_test_observer.m_speed_of_light = (float)c;
+        const btVector3 apparent_normal = applyVisualNormal(
+            btVector3(5.0f, 1.0f, 0.0f), btVector3(0.0f, 1.0f, 0.0f),
+            normal_test_observer, 1.0f);
+        assert(std::fabs((double)apparent_normal.length() - 1.0) < 0.001);
+    }
 }   // unitTesting
 
 }   // namespace Relativity
