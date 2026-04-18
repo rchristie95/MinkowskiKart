@@ -11,7 +11,7 @@ set "COMPILER_BIN=%~dp0.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64
 set "PATH=%COMPILER_BIN%;%PATH%"
 
 echo Fixing hardcoded paths in build directory...
-powershell -NoProfile -Command "Get-ChildItem -Path build -Recurse -File | ForEach-Object { $content = Get-Content $_.FullName; $newContent = $content -replace 'C:/stk', '%PROJECT_ROOT%' -replace 'C$:/stk', '%PROJECT_ROOT%'; if ($content -ne $newContent) { $newContent | Set-Content $_.FullName } }"
+powershell -NoProfile -Command "Get-ChildItem -Path build -Recurse -File | ForEach-Object { $content = Get-Content $_.FullName -Raw; $newContent = $content -replace 'C:/stk', '%PROJECT_ROOT%' -replace 'C\$:/stk', '%PROJECT_ROOT%' -replace [regex]::Escape('C:\stk'), ('%PROJECT_ROOT%' -replace '/', '\'); if ($content -ne $newContent) { $newContent | Set-Content $_.FullName -NoNewline } }"
 
 echo Creating missing icon.rc...
 if not exist build\tmp mkdir build\tmp
