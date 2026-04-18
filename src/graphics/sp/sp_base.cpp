@@ -45,7 +45,10 @@
 #include "graphics/sp/sp_uniform_assigner.hpp"
 #include "guiengine/engine.hpp"
 #include "karts/abstract_kart.hpp"
+#include "karts/kart.hpp"
+#include "modes/world.hpp"
 #include "relativity/observer_snapshot.hpp"
+#include "relativity/relativistic_state.hpp"
 #include "relativity/relativity_math.hpp"
 #include "tracks/track.hpp"
 #include "utils/log.hpp"
@@ -91,6 +94,14 @@ struct RelativityMotionState
 
 std::unordered_map<const scene::ISceneNode*, RelativityMotionState>
     g_relativity_motion_states;
+
+// Per-frame cache: kart root scene node -> kart's physics coordinate velocity.
+// Built once per frame by prepareDrawCalls(); consumed by addObject() to assign
+// the same authoritative velocity to every scene node in a kart's subtree, so
+// wheels/headlights/hats/speed-weighted objects never drift apart from the
+// body under the light-cone emission offset in applyRelativisticVisualPosition.
+std::unordered_map<const scene::ISceneNode*, core::vector3df>
+    g_kart_root_velocities;
 
 bool isFiniteVector(const core::vector3df& v)
 {
@@ -147,6 +158,31 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
                        raw_velocity * blend;
     return state.m_velocity;
 }   // estimateNodeVelocity
+
+// If 'node' is a descendant of any kart's scene root, return the kart's
+// coordinate velocity from physics (not a graphics-delta estimate). This
+// avoids per-node smoothing divergence between a kart's body and its children
+// (wheels, headlights, hats, speed-weighted props), which would otherwise
+// produce visible detachment during acceleration through
+// applyRelativisticVisualPosition's light-cone offset.
+bool findKartVelocityForNode(const scene::ISceneNode* node,
+                             core::vector3df& out_velocity)
+{
+    if (g_kart_root_velocities.empty() || !node)
+        return false;
+    const scene::ISceneNode* current = node;
+    while (current)
+    {
+        auto it = g_kart_root_velocities.find(current);
+        if (it != g_kart_root_velocities.end())
+        {
+            out_velocity = it->second;
+            return true;
+        }
+        current = current->getParent();
+    }
+    return false;
+}   // findKartVelocityForNode
 
 bool nodeHasAncestor(const scene::ISceneNode* node,
                      const scene::ISceneNode* ancestor)
@@ -931,6 +967,34 @@ void prepareDrawCalls()
     }
     g_glow_meshes.clear();
     g_instances.clear();
+
+    g_kart_root_velocities.clear();
+    if (Relativity::isEnabled())
+    {
+        World* world = World::getWorld();
+        if (world)
+        {
+            const unsigned num_karts = world->getNumKarts();
+            for (unsigned i = 0; i < num_karts; i++)
+            {
+                AbstractKart* abstract_kart = world->getKart(i);
+                if (!abstract_kart)
+                    continue;
+                Kart* kart = dynamic_cast<Kart*>(abstract_kart);
+                if (!kart)
+                    continue;
+                scene::ISceneNode* root = kart->getNode();
+                if (!root)
+                    continue;
+                const btVector3& v =
+                    kart->getRelativisticState().m_coordinate_velocity;
+                core::vector3df cv((float)v.x(), (float)v.y(), (float)v.z());
+                if (!isFiniteVector(cv))
+                    cv = core::vector3df(0.0f, 0.0f, 0.0f);
+                g_kart_root_velocities[root] = cv;
+            }
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -946,8 +1010,11 @@ void addObject(SPMeshNode* node)
         Relativity::isEnabled() || !sp_culling;
     const core::vector3df node_position(model_matrix[12], model_matrix[13],
                                         model_matrix[14]);
-    const core::vector3df node_velocity =
-        estimateNodeVelocity(node, node_position);
+    core::vector3df node_velocity;
+    if (!findKartVelocityForNode(node, node_velocity))
+    {
+        node_velocity = estimateNodeVelocity(node, node_position);
+    }
     const bool disable_relativity_visual =
         shouldDisableRelativityVisualsForNode(node);
     bool added_for_skinning = false;

@@ -2,30 +2,37 @@
 setlocal
 
 set "PROJECT_ROOT=%~dp0"
-set "PROJECT_ROOT=%PROJECT_ROOT:\=/%"
-:: Remove trailing slash
-if "%PROJECT_ROOT:~-1%"=="/" set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
+if "%PROJECT_ROOT:~-1%"=="\" set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
 
-set "NINJA=%~dp0.build-tools\ninja\ninja.exe"
-set "COMPILER_BIN=%~dp0.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin"
-set "PATH=%COMPILER_BIN%;%PATH%"
+set "NINJA=%PROJECT_ROOT%\.build-tools\ninja\ninja.exe"
+set "COMPILER_BIN=%PROJECT_ROOT%\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin"
+set "DEPENDENCY_BIN=%PROJECT_ROOT%\dependencies-win-x86_64\bin"
+set "PATH=%COMPILER_BIN%;%DEPENDENCY_BIN%;%PATH%"
 
-echo Fixing hardcoded paths in build directory...
-powershell -NoProfile -Command "Get-ChildItem -Path build -Recurse -File | ForEach-Object { $content = Get-Content $_.FullName -Raw; $newContent = $content -replace 'C:/stk', '%PROJECT_ROOT%' -replace 'C\$:/stk', '%PROJECT_ROOT%' -replace [regex]::Escape('C:\stk'), ('%PROJECT_ROOT%' -replace '/', '\'); if ($content -ne $newContent) { $newContent | Set-Content $_.FullName -NoNewline } }"
-
-echo Creating missing icon.rc...
-if not exist build\tmp mkdir build\tmp
-echo 100 ICON \"%PROJECT_ROOT%/tools/windows_installer/icon.ico\" > build\tmp\icon.rc
-
-echo Starting compilation...
-"%NINJA%" -C build -j 4
-
-if %ERRORLEVEL% equ 0 (
-    echo.
-    echo Compilation successful! Executable is in build\bin\supertuxkart.exe
-) else (
-    echo.
-    echo Compilation failed!
+if not exist "%NINJA%" (
+    echo Missing bundled Ninja at "%NINJA%".
+    exit /b 1
 )
 
-pause
+if not exist "%PROJECT_ROOT%\build\build.ninja" (
+    echo Missing preconfigured build files in "%PROJECT_ROOT%\build".
+    exit /b 1
+)
+
+if not exist "%PROJECT_ROOT%\build\tmp" mkdir "%PROJECT_ROOT%\build\tmp"
+> "%PROJECT_ROOT%\build\tmp\icon.rc" echo 100 ICON "../tools/windows_installer/icon.ico"
+
+echo Starting compilation...
+pushd "%PROJECT_ROOT%"
+"%NINJA%" -C build -j 4
+set "BUILD_EXIT=%ERRORLEVEL%"
+popd
+
+if not "%BUILD_EXIT%"=="0" (
+    echo.
+    echo Compilation failed!
+    exit /b %BUILD_EXIT%
+)
+
+echo.
+echo Compilation successful! Executable is in build\bin\supertuxkart.exe
