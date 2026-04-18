@@ -24,6 +24,8 @@
                         I18N="Section in the settings menu" text="Controls"/>
                 <icon-button id="tab_language" width="128" height="128" icon="gui/icons/options_language.png"
                         I18N="Section in the settings menu" text="Language"/>
+                <icon-button id="tab_relativity" width="128" height="128" icon="gui/icons/time-dilation-icon.png"
+                        I18N="Section in the settings menu" text="Relativity"/>
             </vertical-tabs>
 
             <spacer width="2%" height="100%"/>

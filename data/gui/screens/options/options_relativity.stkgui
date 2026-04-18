@@ -2,7 +2,7 @@
 <stkgui>
     <icon-button id="back" x="1%" y="0" height="9%" icon="gui/icons/back.png"/>
     <div x="1%" y="1%" width="98%" height="98%" layout="vertical-row" >
-        <header width="80%" height="8%" align="center" text="SuperTuxKart Options" text_align="center"/>
+        <header width="80%" height="8%" align="center" text="MinkowskiKart Options" text_align="center"/>
         <spacer width="100%" height="1%"/>
 
         <div width="100%" height="91%" layout="horizontal-row" >
@@ -30,19 +30,31 @@
 
             <spacer width="2%" height="100%"/>
 
-            <box width="78%" height="100%" layout="vertical-row">
+            <div width="78%" height="100%" layout="vertical-row" >
 
-                <spacer width="5" height="3%"/>
-
-                <!-- ************ LANGUAGE CHOICE ************ -->
-
-                <box proportion="1" width="75%" align="center" layout="vertical-row" padding="8">
-                    <list id="language" x="0" y="0" width="100%" height="100%"/>
+                <box width="100%" height="55%" layout="vertical-row">
+                    <spacer width="5" height="4%"/>
+                    <label width="90%" height="fit" align="center"
+                           text="Speed of Light (normal)" text_align="center"/>
+                    <spacer width="5" height="3%"/>
+                    <div layout="horizontal-row" width="90%" height="fit" align="center">
+                        <spacer width="5%" height="100%"/>
+                        <spinner id="normal_speed_of_light" width="90%" height="fit"/>
+                        <spacer width="5%" height="100%"/>
+                    </div>
+                    <spacer width="5" height="6%"/>
+                    <label width="90%" height="fit" align="center"
+                           text="Speed of Light (with powerup)" text_align="center"/>
+                    <spacer width="5" height="3%"/>
+                    <div layout="horizontal-row" width="90%" height="fit" align="center">
+                        <spacer width="5%" height="100%"/>
+                        <spinner id="powerup_speed_of_light" width="90%" height="fit"/>
+                        <spacer width="5%" height="100%"/>
+                    </div>
+                    <spacer width="5" height="4%"/>
                 </box>
 
-                <spacer width="5" height="3%"/>
-
-            </box>
+            </div>
         </div>
     </div>
 </stkgui>
