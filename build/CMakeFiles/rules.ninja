@@ -17,7 +17,7 @@
 rule CXX_COMPILER__supertuxkart_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -27,7 +27,7 @@ rule CXX_COMPILER__supertuxkart_unscanned_RelWithDebInfo
 rule RC_COMPILER__supertuxkart_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\windres.exe -O coff $DEFINES $INCLUDES $FLAGS $in $out
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\windres.exe -O coff $DEFINES $INCLUDES $FLAGS $in $out
   description = Building RC object $out
 
 
@@ -35,7 +35,7 @@ rule RC_COMPILER__supertuxkart_unscanned_RelWithDebInfo
 # Rule for linking CXX executable.
 
 rule CXX_EXECUTABLE_LINKER__supertuxkart_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C " C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $FLAGS $LINK_FLAGS @$RSP_FILE -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C " ..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $FLAGS $LINK_FLAGS @$RSP_FILE -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 && $POST_BUILD"
   description = Linking CXX executable $TARGET_FILE
   rspfile = $RSP_FILE
   rspfile_content = $in $LINK_PATH $LINK_LIBRARIES
@@ -56,7 +56,7 @@ rule CUSTOM_COMMAND
 rule CXX_COMPILER__bulletmath_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -64,7 +64,7 @@ rule CXX_COMPILER__bulletmath_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__bulletmath_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   restat = $RESTAT
 
@@ -75,7 +75,7 @@ rule CXX_STATIC_LIBRARY_LINKER__bulletmath_RelWithDebInfo
 rule CXX_COMPILER__bulletcollision_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -83,7 +83,7 @@ rule CXX_COMPILER__bulletcollision_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__bulletcollision_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS @$RSP_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS @$RSP_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   rspfile = $RSP_FILE
   rspfile_content = $in $LINK_PATH $LINK_LIBRARIES
@@ -96,7 +96,7 @@ rule CXX_STATIC_LIBRARY_LINKER__bulletcollision_RelWithDebInfo
 rule CXX_COMPILER__bulletdynamics_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -104,7 +104,7 @@ rule CXX_COMPILER__bulletdynamics_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__bulletdynamics_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   restat = $RESTAT
 
@@ -115,7 +115,7 @@ rule CXX_STATIC_LIBRARY_LINKER__bulletdynamics_RelWithDebInfo
 rule C_COMPILER__enet_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building C object $out
 
 
@@ -123,7 +123,7 @@ rule C_COMPILER__enet_unscanned_RelWithDebInfo
 # Rule for linking C static library.
 
 rule C_STATIC_LIBRARY_LINKER__enet_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT
 
@@ -134,7 +134,7 @@ rule C_STATIC_LIBRARY_LINKER__enet_RelWithDebInfo
 rule CXX_COMPILER__squish_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -142,7 +142,7 @@ rule CXX_COMPILER__squish_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__squish_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   restat = $RESTAT
 
@@ -153,7 +153,7 @@ rule CXX_STATIC_LIBRARY_LINKER__squish_RelWithDebInfo
 rule C_COMPILER__graphics_engine_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building C object $out
 
 
@@ -163,7 +163,7 @@ rule C_COMPILER__graphics_engine_unscanned_RelWithDebInfo
 rule CXX_COMPILER__graphics_engine_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -171,7 +171,7 @@ rule CXX_COMPILER__graphics_engine_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__graphics_engine_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   restat = $RESTAT
 
@@ -182,7 +182,7 @@ rule CXX_STATIC_LIBRARY_LINKER__graphics_engine_RelWithDebInfo
 rule C_COMPILER__graphics_utils_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building C object $out
 
 
@@ -190,7 +190,7 @@ rule C_COMPILER__graphics_utils_unscanned_RelWithDebInfo
 # Rule for linking C static library.
 
 rule C_STATIC_LIBRARY_LINKER__graphics_utils_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT
 
@@ -201,7 +201,7 @@ rule C_STATIC_LIBRARY_LINKER__graphics_utils_RelWithDebInfo
 rule CXX_COMPILER__tinygettext_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -209,7 +209,7 @@ rule CXX_COMPILER__tinygettext_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__tinygettext_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   restat = $RESTAT
 
@@ -220,7 +220,7 @@ rule CXX_STATIC_LIBRARY_LINKER__tinygettext_RelWithDebInfo
 rule C_COMPILER__mcpp_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building C object $out
 
 
@@ -228,7 +228,7 @@ rule C_COMPILER__mcpp_unscanned_RelWithDebInfo
 # Rule for linking C static library.
 
 rule C_STATIC_LIBRARY_LINKER__mcpp_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT
 
@@ -239,7 +239,7 @@ rule C_STATIC_LIBRARY_LINKER__mcpp_RelWithDebInfo
 rule CXX_COMPILER__stkirrlicht_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -247,7 +247,7 @@ rule CXX_COMPILER__stkirrlicht_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__stkirrlicht_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS @$RSP_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS @$RSP_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   rspfile = $RSP_FILE
   rspfile_content = $in $LINK_PATH $LINK_LIBRARIES
@@ -260,7 +260,7 @@ rule CXX_STATIC_LIBRARY_LINKER__stkirrlicht_RelWithDebInfo
 rule CXX_COMPILER__angelscript_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -268,7 +268,7 @@ rule CXX_COMPILER__angelscript_unscanned_RelWithDebInfo
 # Rule for linking CXX static library.
 
 rule CXX_STATIC_LIBRARY_LINKER__angelscript_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   restat = $RESTAT
 
@@ -279,7 +279,7 @@ rule CXX_STATIC_LIBRARY_LINKER__angelscript_RelWithDebInfo
 rule C_COMPILER__sheenbidi_unscanned_RelWithDebInfo
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\clang.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building C object $out
 
 
@@ -287,7 +287,7 @@ rule C_COMPILER__sheenbidi_unscanned_RelWithDebInfo
 # Rule for linking C static library.
 
 rule C_STATIC_LIBRARY_LINKER__sheenbidi_RelWithDebInfo
-  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
+  command = C:\WINDOWS\system32\cmd.exe /C "cmd /c del /f /q $TARGET_FILE && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ar.exe" qc $TARGET_FILE $LINK_FLAGS $in && "..\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin\llvm-ranlib.exe" $TARGET_FILE && $POST_BUILD"
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT
 
@@ -305,7 +305,7 @@ rule RERUN_CMAKE
 # Rule for cleaning all built files.
 
 rule CLEAN
-  command = "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\ninja\ninja.exe" $FILE_ARG -t clean $TARGETS
+  command = "..\.build-tools\ninja\ninja.exe" $FILE_ARG -t clean $TARGETS
   description = Cleaning all built files...
 
 
@@ -313,6 +313,6 @@ rule CLEAN
 # Rule for printing all primary targets available.
 
 rule HELP
-  command = "C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartMain\.build-tools\ninja\ninja.exe" -t targets
+  command = "..\.build-tools\ninja\ninja.exe" -t targets
   description = All primary targets available:
 
