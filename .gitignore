@@ -1,5 +1,9 @@
-# Build artifacts
-build/
+# Build artifacts (keep build/ tracked — contains pre-configured CMake/Ninja files)
+build/bin/
+build/CMakeFiles/
+build/.ninja_deps
+build/.ninja_log
+build/libsupertuxkart.dll.a
 *.log
 
 # IDE / OS
