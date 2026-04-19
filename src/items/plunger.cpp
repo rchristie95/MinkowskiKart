@@ -21,7 +21,6 @@
 
 #include "items/plunger.hpp"
 
-#include "graphics/relativistic_vfx.hpp"
 #include "audio/sfx_manager.hpp"
 #include "io/xml_node.hpp"
 #include "items/rubber_band.hpp"
@@ -204,14 +203,6 @@ bool Plunger::hit(AbstractKart *kart, PhysicalObject *obj)
         if(kart)
         {
             kart->blockViewWithPlunger();
-            // Cosmic String backward mode: slam blackboard over victim's view
-            if (relativistic_vfx_manager)
-            {
-                const float duration =
-                    kart->getKartProperties()->getPlungerInFaceTime();
-                relativistic_vfx_manager->triggerBlackboard(
-                    kart->getWorldKartId(), duration);
-            }
             if (kart->getController()->isLocalPlayerController() &&
                 !m_has_locally_played_sound)
             {

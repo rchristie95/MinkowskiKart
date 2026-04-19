@@ -75,7 +75,7 @@ int getRelativisticSubsteps()
         return 1;
 
     float max_beta = 0.0f;
-    const float c = Relativity::getConfiguredSpeedOfLight();
+    const float c_light = Relativity::getCurrentCLight();
     for (unsigned int i = 0; i < world->getNumKarts(); i++)
     {
         AbstractKart* kart = world->getKart(i);
@@ -84,7 +84,7 @@ int getRelativisticSubsteps()
 
         const float speed = kart->getVelocity().length();
         max_beta = std::max(max_beta,
-            (float)Relativity::betaForSpeed((double)speed, (double)c));
+            (float)Relativity::betaForSpeed((double)speed, (double)c_light));
     }
 
     return Relativity::getRecommendedPhysicsSubsteps(max_beta);
@@ -700,23 +700,27 @@ void Physics::KartKartCollision(AbstractKart *kart_a,
     collision_normal = normalizedOrDefault(
         collision_normal, btVector3(1.0f, 0.0f, 0.0f));
 
-    const float c = Relativity::getConfiguredSpeedOfLight();
+    const float c_light = Relativity::getCurrentCLight();
     const float mass_a = std::max(1.0f, kart_a->getKartProperties()->getMass());
     const float mass_b = std::max(1.0f, kart_b->getKartProperties()->getMass());
     float impulse_magnitude = Relativity::computeCollisionImpulseMagnitude(
         collision_normal, kart_a->getBody()->getLinearVelocity(), mass_a,
-        kart_b->getBody()->getLinearVelocity(), mass_b, 0.05f, c);
+        kart_b->getBody()->getLinearVelocity(), mass_b, 0.05f, c_light);
     if (impulse_magnitude <= 0.0f)
         return;
 
     const float effective_mass_a = Relativity::getDirectionalEffectiveMass(
-        mass_a, kart_a->getBody()->getLinearVelocity(), collision_normal, c);
+        mass_a, kart_a->getBody()->getLinearVelocity(), collision_normal,
+        c_light);
     const float effective_mass_b = Relativity::getDirectionalEffectiveMass(
-        mass_b, kart_b->getBody()->getLinearVelocity(), collision_normal, c);
+        mass_b, kart_b->getBody()->getLinearVelocity(), collision_normal,
+        c_light);
     const float beta_a = (float)Relativity::betaForSpeed(
-        (double)kart_a->getBody()->getLinearVelocity().length(), (double)c);
+        (double)kart_a->getBody()->getLinearVelocity().length(),
+        (double)c_light);
     const float beta_b = (float)Relativity::betaForSpeed(
-        (double)kart_b->getBody()->getLinearVelocity().length(), (double)c);
+        (double)kart_b->getBody()->getLinearVelocity().length(),
+        (double)c_light);
     const float delta_v_limit = 3.0f + 6.0f * std::max(beta_a, beta_b);
     const float impulse_cap =
         delta_v_limit * std::min(effective_mass_a, effective_mass_b);

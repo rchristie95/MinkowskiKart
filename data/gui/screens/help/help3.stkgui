@@ -51,9 +51,9 @@
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/plunger-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/photon-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Cosmic String: Fire a spacetime filament. Hook racers or walls ahead, or fling a blackboard of equations behind you to ruin someone's view."/>
+                    <bubble proportion="1" height="100%" text="Photon: Fire an exchanged particle on a moving blue light-wave. Hook racers or walls ahead, or hit a racer behind you with a relativistic Doppler flare."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
