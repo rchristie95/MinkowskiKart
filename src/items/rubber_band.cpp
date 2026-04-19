@@ -32,18 +32,30 @@
 #include "modes/world.hpp"
 #include "physics/physics.hpp"
 #include "race/race_manager.hpp"
+#include "relativity/relativity_math.hpp"
 #include "utils/string_utils.hpp"
+
+#include <algorithm>
+#include <cmath>
 
 #ifndef SERVER_ONLY
 #include <array>
 #include <ge_main.hpp>
 #include <ge_material_manager.hpp>
 #include <ge_vulkan_dynamic_spm_buffer.hpp>
+#include <vector>
 #endif
 #include <IMeshSceneNode.h>
 #include <IVideoDriver.h>
 #include <SMesh.h>
 #include <SMeshBuffer.h>
+
+namespace
+{
+    constexpr int kPhotonWaveSegments = 14;
+    constexpr float kPhotonWaveCycles = 3.0f;
+    constexpr float kPhotonWaveHalfWidth = 0.035f;
+}
 
 /** RubberBand constructor. It creates a simple quad and attaches it to the
  *  root(!) of the graph. It's easier this way to get the right coordinates
@@ -54,7 +66,8 @@
  *  \param kart    Reference to the kart.
  */
 RubberBand::RubberBand(Plunger *plunger, AbstractKart *kart)
-          : m_plunger(plunger), m_owner(kart), m_node(NULL)
+          : m_wave_time(0.0f), m_plunger(plunger), m_owner(kart), m_node(NULL),
+            m_wave_node(NULL)
 {
     m_hit_kart = NULL;
     m_attached_state = RB_TO_PLUNGER;
@@ -63,67 +76,87 @@ RubberBand::RubberBand(Plunger *plunger, AbstractKart *kart)
     if (GUIEngine::isNoGraphics())
         return;
 
-    video::SColor color(255, 179, 0, 0);
+    video::SColor wave_color(255, 90, 175, 255);
     if (CVS->isGLSL())
     {
         if (CVS->isDeferredEnabled())
         {
-            color.setRed(GE::srgb255ToLinear(color.getRed()));
-            color.setGreen(GE::srgb255ToLinear(color.getGreen()));
-            color.setBlue(GE::srgb255ToLinear(color.getBlue()));
+            wave_color.setRed(GE::srgb255ToLinear(wave_color.getRed()));
+            wave_color.setGreen(GE::srgb255ToLinear(wave_color.getGreen()));
+            wave_color.setBlue(GE::srgb255ToLinear(wave_color.getBlue()));
         }
-        m_dy_dc = std::make_shared<SP::SPDynamicDrawCall>
-            (scene::EPT_TRIANGLE_STRIP, SP::SPShaderManager::get()->getSPShader
-            ("unlit"), material_manager->getDefaultSPMaterial("unlit"));
-        m_dy_dc->getVerticesVector().resize(4);
-        // Set the vertex colors properly, as the new pipeline doesn't use the
-        // old light values
-        for (unsigned i = 0; i < 4; i++)
+        m_wave_dy_dc = std::make_shared<SP::SPDynamicDrawCall>
+            (scene::EPT_TRIANGLE_STRIP,
+            SP::SPShaderManager::get()->getSPShader("additive"),
+            material_manager->getDefaultSPMaterial("additive"));
+        m_wave_dy_dc->getVerticesVector().resize((kPhotonWaveSegments + 1) * 2);
+        for (unsigned i = 0; i < m_wave_dy_dc->getVerticesVector().size(); i++)
         {
-            m_dy_dc->getSPMVertex()[i].m_color = color;
+            m_wave_dy_dc->getSPMVertex()[i].m_color = wave_color;
         }
-        SP::addDynamicDrawCall(m_dy_dc);
+        SP::addDynamicDrawCall(m_wave_dy_dc);
     }
     else
     {
-        std::array<uint16_t, 6> indices = {{ 0, 1, 2, 0, 2, 3 }};
-        scene::IMeshBuffer* buffer = NULL;
-        if (irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
+        auto create_colored_ribbon_node =
+            [this](unsigned vertex_count, const std::vector<uint16_t>& indices,
+                   const video::SColor& ribbon_color,
+                   const std::string& debug_suffix)->scene::IMeshSceneNode*
         {
-            buffer = new GE::GEVulkanDynamicSPMBuffer();
-            video::S3DVertexSkinnedMesh v;
-            v.m_normal = 0x1FF << 10;
-            v.m_color = color;
-            std::array<video::S3DVertexSkinnedMesh, 4> vertices =
-                {{ v, v, v, v }};
-            buffer->append(vertices.data(), vertices.size(), indices.data(),
-                indices.size());
-            buffer->getMaterial().MaterialType =
-                GE::GEMaterialManager::getIrrMaterialType("unlit");
-        }
-        else
+            scene::IMeshBuffer* buffer = NULL;
+            if (irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
+            {
+                buffer = new GE::GEVulkanDynamicSPMBuffer();
+                video::S3DVertexSkinnedMesh v;
+                v.m_normal = 0x1FF << 10;
+                v.m_color = ribbon_color;
+                std::vector<video::S3DVertexSkinnedMesh> vertices(vertex_count, v);
+                buffer->append(vertices.data(), vertices.size(), indices.data(),
+                    indices.size());
+                buffer->getMaterial().MaterialType =
+                    GE::GEMaterialManager::getIrrMaterialType("unlit");
+            }
+            else
+            {
+                buffer = new scene::SMeshBuffer();
+                video::S3DVertex v;
+                v.Normal = core::vector3df(0, 1, 0);
+                v.Color = ribbon_color;
+                std::vector<video::S3DVertex> vertices(vertex_count, v);
+                buffer->append(vertices.data(), vertices.size(), indices.data(),
+                    indices.size());
+            }
+            buffer->getMaterial().AmbientColor = ribbon_color;
+            buffer->getMaterial().DiffuseColor = ribbon_color;
+            buffer->getMaterial().EmissiveColor = ribbon_color;
+            buffer->getMaterial().BackfaceCulling = false;
+            buffer->setHardwareMappingHint(scene::EHM_STREAM);
+            buffer->recalculateBoundingBox();
+            scene::SMesh* mesh = new scene::SMesh();
+            mesh->addMeshBuffer(buffer);
+            mesh->setBoundingBox(buffer->getBoundingBox());
+            buffer->drop();
+            std::string debug_name = m_owner->getIdent() + debug_suffix;
+            auto* node = static_cast<scene::IMeshSceneNode*>(
+                irr_driver->addMesh(mesh, debug_name));
+            mesh->drop();
+            return node;
+        };
+
+        std::vector<uint16_t> wave_indices;
+        wave_indices.reserve(kPhotonWaveSegments * 6);
+        for (int i = 0; i < kPhotonWaveSegments; i++)
         {
-            buffer = new scene::SMeshBuffer();
-            video::S3DVertex v;
-            v.Normal = core::vector3df(0, 1, 0);
-            v.Color = color;
-            std::array<video::S3DVertex, 4> vertices = {{ v, v, v, v }};
-            buffer->append(vertices.data(), vertices.size(), indices.data(),
-                indices.size());
+            const uint16_t base = (uint16_t)(i * 2);
+            wave_indices.push_back(base);
+            wave_indices.push_back(base + 1);
+            wave_indices.push_back(base + 2);
+            wave_indices.push_back(base + 1);
+            wave_indices.push_back(base + 3);
+            wave_indices.push_back(base + 2);
         }
-        buffer->getMaterial().AmbientColor = color;
-        buffer->getMaterial().DiffuseColor = color;
-        buffer->getMaterial().EmissiveColor = color;
-        buffer->setHardwareMappingHint(scene::EHM_STREAM);
-        buffer->recalculateBoundingBox();
-        scene::SMesh* mesh = new scene::SMesh();
-        mesh->addMeshBuffer(buffer);
-        mesh->setBoundingBox(buffer->getBoundingBox());
-        buffer->drop();
-        std::string debug_name = m_owner->getIdent() + " (rubber-band)";
-        m_node = static_cast<scene::IMeshSceneNode*>(
-            irr_driver->addMesh(mesh, debug_name));
-        mesh->drop();
+        m_wave_node = create_colored_ribbon_node((kPhotonWaveSegments + 1) * 2,
+            wave_indices, wave_color, " (photon-wave)");
     }
 #endif
 }   // RubberBand
@@ -166,83 +199,70 @@ void RubberBand::updatePosition()
 void RubberBand::updateGraphics(float dt)
 {
 #ifndef SERVER_ONLY
-    if (m_node)
+    m_wave_time += dt;
+
+    const Vec3& k = m_owner->getXYZ();
+    const Vec3& p = m_end_position;
+    const core::vector3df start = p.toIrrVector();
+    const core::vector3df end = k.toIrrVector();
+    core::vector3df along = end - start;
+    const float line_length = along.getLength();
+    core::vector3df wave_axis(0.0f, 0.0f, 1.0f);
+    core::vector3df wave_width(1.0f, 0.0f, 0.0f);
+    if (line_length > 0.0001f)
     {
-        scene::IMesh* mesh = m_node->getMesh();
+        along /= line_length;
+        wave_axis = along.crossProduct(core::vector3df(0.0f, 1.0f, 0.0f));
+        if (wave_axis.getLengthSQ() < 0.0001f)
+            wave_axis = along.crossProduct(core::vector3df(1.0f, 0.0f, 0.0f));
+        if (wave_axis.getLengthSQ() >= 0.0001f)
+            wave_axis.normalize();
+        wave_width = along.crossProduct(wave_axis);
+        if (wave_width.getLengthSQ() >= 0.0001f)
+            wave_width.normalize();
+    }
+    const float amplitude = std::min(0.65f, std::max(0.12f, line_length * 0.06f));
+    const core::vector3df photon_offset = wave_width * kPhotonWaveHalfWidth;
+    float phase_speed = Relativity::getCurrentCLight();
+    if (!std::isfinite((double)phase_speed) || phase_speed <= 0.0f)
+        phase_speed = 1000.0f;
+    const float wavelength = std::max(0.5f, line_length / kPhotonWaveCycles);
+    const float phase_per_unit = core::PI * 2.0f / wavelength;
+    const float phase_shift = m_wave_time * phase_speed
+        * phase_per_unit * (m_plunger->isReverseMode() ? -1.0f : 1.0f);
+    if (m_wave_node)
+    {
+        scene::IMesh* mesh = m_wave_node->getMesh();
         scene::IMeshBuffer* buffer = mesh->getMeshBuffer(0);
-        // Update the rubber band positions
-        // --------------------------------
-        // Todo: make height dependent on length (i.e. rubber band gets
-        // thinner). And call explosion if the band is too long.
-        const Vec3& k = m_owner->getXYZ();
-        const float hh = .1f;  // half height of the band
-        const Vec3& p = m_end_position;  // for shorter typing
-        core::vector3df& v0 = buffer->getPosition(0);
-        core::vector3df& v1 = buffer->getPosition(1);
-        core::vector3df& v2 = buffer->getPosition(2);
-        core::vector3df& v3 = buffer->getPosition(3);
-        v0.X = p.getX() - hh; v0.Y = p.getY(); v0.Z = p.getZ() - hh;
-        v1.X = p.getX() + hh; v1.Y = p.getY(); v1.Z = p.getZ() + hh;
-        v2.X = k.getX() + hh; v2.Y = k.getY(); v2.Z = k.getZ() + hh;
-        v3.X = k.getX() - hh; v3.Y = k.getY(); v3.Z = k.getZ() - hh;
-        core::vector3df normal = (v1 - v0).crossProduct(v2 - v0);
-        core::vector3df kart_pos = Vec3(m_owner->getTrans()(
-            Vec3(0, 5.0f, -2.0f))).toIrrVector();
-        float dot_product = (v0 - kart_pos).dotProduct(normal);
-        // For avoiding cull face
-        if (dot_product >= 0.0f)
+        for (int i = 0; i <= kPhotonWaveSegments; i++)
         {
-            buffer->getIndices()[0] = 2;
-            buffer->getIndices()[1] = 1;
-            buffer->getIndices()[2] = 0;
-            buffer->getIndices()[3] = 3;
-            buffer->getIndices()[4] = 2;
-            buffer->getIndices()[5] = 0;
-        }
-        else
-        {
-            buffer->getIndices()[0] = 0;
-            buffer->getIndices()[1] = 1;
-            buffer->getIndices()[2] = 2;
-            buffer->getIndices()[3] = 0;
-            buffer->getIndices()[4] = 2;
-            buffer->getIndices()[5] = 3;
+            const float t = (float)i / (float)kPhotonWaveSegments;
+            const float phase = t * line_length * phase_per_unit + phase_shift;
+            core::vector3df center = start.getInterpolated(end, t)
+                + wave_axis * (std::sin(phase) * amplitude);
+            buffer->getPosition(i * 2) = center - photon_offset;
+            buffer->getPosition(i * 2 + 1) = center + photon_offset;
         }
         buffer->recalculateBoundingBox();
-        buffer->setDirtyOffset(0, irr::scene::EBT_VERTEX_AND_INDEX);
+        buffer->setDirtyOffset(0, irr::scene::EBT_VERTEX);
         mesh->setBoundingBox(buffer->getBoundingBox());
     }
-    else if (m_dy_dc)
+    if (m_wave_dy_dc)
     {
-        // Update the rubber band positions
-        // --------------------------------
-        // Todo: make height dependent on length (i.e. rubber band gets
-        // thinner). And call explosion if the band is too long.
-        const Vec3 &k = m_owner->getXYZ();
-        const float hh=.1f;  // half height of the band
-        const Vec3 &p=m_end_position;  // for shorter typing
-        auto& v = m_dy_dc->getVerticesVector();
-        v[0].m_position.X = p.getX()-hh; v[0].m_position.Y=p.getY(); v[0].m_position.Z = p.getZ()-hh;
-        v[1].m_position.X = p.getX()+hh; v[1].m_position.Y=p.getY(); v[1].m_position.Z = p.getZ()+hh;
-        v[2].m_position.X = k.getX()-hh; v[2].m_position.Y=k.getY(); v[2].m_position.Z = k.getZ()-hh;
-        v[3].m_position.X = k.getX()+hh; v[3].m_position.Y=k.getY(); v[3].m_position.Z = k.getZ()+hh;
-        v[0].m_normal = 0x1FF << 10;
-        v[1].m_normal = 0x1FF << 10;
-        v[2].m_normal = 0x1FF << 10;
-        v[3].m_normal = 0x1FF << 10;
-        core::vector3df normal = (v[1].m_position - v[0].m_position)
-            .crossProduct(v[2].m_position - v[0].m_position);
-        core::vector3df kart_pos = Vec3(m_owner->getTrans()(Vec3(0, 5.0f, -2.0f))).toIrrVector();
-        float dot_product = (v[0].m_position - kart_pos).dotProduct(normal);
-        // For avoiding cull face
-        if (dot_product >= 0.0f)
+        auto& v = m_wave_dy_dc->getVerticesVector();
+        for (int i = 0; i <= kPhotonWaveSegments; i++)
         {
-            video::S3DVertexSkinnedMesh tmp = v[1];
-            v[1] = v[2];
-            v[2] = tmp;
+            const float t = (float)i / (float)kPhotonWaveSegments;
+            const float phase = t * line_length * phase_per_unit + phase_shift;
+            core::vector3df center = start.getInterpolated(end, t)
+                + wave_axis * (std::sin(phase) * amplitude);
+            v[i * 2].m_position = center - photon_offset;
+            v[i * 2 + 1].m_position = center + photon_offset;
+            v[i * 2].m_normal = 0x1FF << 10;
+            v[i * 2 + 1].m_normal = 0x1FF << 10;
         }
-        m_dy_dc->setUpdateOffset(0);
-        m_dy_dc->recalculateBoundingBox();
+        m_wave_dy_dc->setUpdateOffset(0);
+        m_wave_dy_dc->recalculateBoundingBox();
     }
 #endif
 }   // updateGraphics
@@ -395,10 +415,20 @@ void RubberBand::remove()
         m_dy_dc->removeFromSP();
         m_dy_dc = nullptr;
     }
-    else if (m_node)
+    if (m_wave_dy_dc)
+    {
+        m_wave_dy_dc->removeFromSP();
+        m_wave_dy_dc = nullptr;
+    }
+    if (m_node)
     {
         irr_driver->removeNode(m_node);
         m_node = NULL;
+    }
+    if (m_wave_node)
+    {
+        irr_driver->removeNode(m_wave_node);
+        m_wave_node = NULL;
     }
 #endif
 }   // remove

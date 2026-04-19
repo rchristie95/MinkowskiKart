@@ -21,6 +21,7 @@
 #include "states_screens/options/options_screen_relativity.hpp"
 
 #include "config/stk_config.hpp"
+#include "relativity/relativity_math.hpp"
 
 #include <sstream>
 
@@ -28,30 +29,32 @@ using namespace GUIEngine;
 
 // -----------------------------------------------------------------------------
 
-static const int SOL_MIN = 30;
-static const int SOL_MAX = 1000;
-static const int SOL_STEP = 10;
+static const int C_LIGHT_MIN = 30;
+static const int C_LIGHT_MAX = 1000;
+static const int C_LIGHT_STEP = 10;
 
-static void populateSOLSpinner(SpinnerWidget* w)
+static void populateCLightSpinner(SpinnerWidget* w)
 {
     w->clearLabels();
-    for (int speed = SOL_MIN; speed <= SOL_MAX; speed += SOL_STEP)
+    for (int c_light = C_LIGHT_MIN; c_light <= C_LIGHT_MAX;
+         c_light += C_LIGHT_STEP)
     {
         std::ostringstream oss;
-        oss << speed;
+        oss << c_light;
         w->addLabel(core::stringw(oss.str().c_str()));
     }
 }
 
-static int speedToIndex(int speed)
+static int cLightToIndex(int c_light)
 {
-    speed = std::max(SOL_MIN, std::min(SOL_MAX, (speed / SOL_STEP) * SOL_STEP));
-    return (speed - SOL_MIN) / SOL_STEP;
+    c_light = std::max(C_LIGHT_MIN,
+        std::min(C_LIGHT_MAX, (c_light / C_LIGHT_STEP) * C_LIGHT_STEP));
+    return (c_light - C_LIGHT_MIN) / C_LIGHT_STEP;
 }
 
-static int indexToSpeed(int index)
+static int indexToCLight(int index)
 {
-    return SOL_MIN + index * SOL_STEP;
+    return C_LIGHT_MIN + index * C_LIGHT_STEP;
 }
 
 // -----------------------------------------------------------------------------
@@ -79,20 +82,19 @@ void OptionsScreenRelativity::init()
     ribbon->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
     ribbon->select("tab_relativity", PLAYER_ID_GAME_MASTER);
 
-    SpinnerWidget* normal_w = getWidget<SpinnerWidget>("normal_speed_of_light");
+    SpinnerWidget* normal_w = getWidget<SpinnerWidget>("normal_c_light");
     assert(normal_w != NULL);
-    populateSOLSpinner(normal_w);
-    normal_w->setValue(speedToIndex((int)UserConfigParams::m_relativity_speed_normal));
+    populateCLightSpinner(normal_w);
+    normal_w->setValue(cLightToIndex(
+        (int)UserConfigParams::m_relativity_normal_c_light));
 
-    SpinnerWidget* powerup_w = getWidget<SpinnerWidget>("powerup_speed_of_light");
+    SpinnerWidget* powerup_w = getWidget<SpinnerWidget>("powerup_c_light");
     assert(powerup_w != NULL);
-    populateSOLSpinner(powerup_w);
-    powerup_w->setValue(speedToIndex((int)UserConfigParams::m_relativity_speed_powerup));
+    populateCLightSpinner(powerup_w);
+    powerup_w->setValue(cLightToIndex(
+        (int)UserConfigParams::m_relativity_powerup_c_light));
 
-    // Apply the saved normal speed to the running config
-    if (stk_config)
-        stk_config->m_relativity_speed_of_light =
-            (float)UserConfigParams::m_relativity_speed_normal;
+    Relativity::getCurrentCLight();
 }   // init
 
 // -----------------------------------------------------------------------------
@@ -120,21 +122,21 @@ void OptionsScreenRelativity::eventCallback(Widget* widget,
     {
         StateManager::get()->escapePressed();
     }
-    else if (name == "normal_speed_of_light")
+    else if (name == "normal_c_light")
     {
         SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
         assert(w != NULL);
-        int speed = indexToSpeed(w->getValue());
-        UserConfigParams::m_relativity_speed_normal = speed;
-        if (stk_config)
-            stk_config->m_relativity_speed_of_light = (float)speed;
+        const int c_light = indexToCLight(w->getValue());
+        UserConfigParams::m_relativity_normal_c_light = c_light;
+        Relativity::getCurrentCLight();
     }
-    else if (name == "powerup_speed_of_light")
+    else if (name == "powerup_c_light")
     {
         SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
         assert(w != NULL);
-        int speed = indexToSpeed(w->getValue());
-        UserConfigParams::m_relativity_speed_powerup = speed;
+        const int c_light = indexToCLight(w->getValue());
+        UserConfigParams::m_relativity_powerup_c_light = c_light;
+        Relativity::getCurrentCLight();
     }
 }   // eventCallback
 

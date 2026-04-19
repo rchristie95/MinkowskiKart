@@ -47,58 +47,55 @@ bool isEnabled();
 bool isPropulsionLimited();
 bool isPreferredFrameDynamics();
 bool shouldUseFirstPersonObserverCamera();
+bool isPowerupCLightActive();
 
-float getConfiguredSpeedOfLight();
-float getMinimumAdjustableSpeedOfLight();
-float getMaximumAdjustableSpeedOfLight();
-float getSpeedOfLightSliderFraction(float speed_of_light);
+float getCurrentCLight();
+float getMinimumAdjustableCLight();
+float getMaximumAdjustableCLight();
+float getCLightSliderFraction(float c_light);
 float getWarpBubbleRadius();
-// Sets the configured speed of light, silently clamping to
-// [getMinimumAdjustableSpeedOfLight(), getMaximumAdjustableSpeedOfLight()].
-// If applied_speed_of_light is non-null it receives the post-clamp value, so
-// callers can detect clamping by comparing it to their requested input.
-// Returns false only for a non-finite input or a missing stk_config.
-bool setConfiguredSpeedOfLight(float speed_of_light,
-                               float* applied_speed_of_light = 0);
-// Multiplies the configured speed of light by the given factor, clamping
-// the result to the adjustable range. See setConfiguredSpeedOfLight for
-// the clamp/return-value semantics.
-bool scaleConfiguredSpeedOfLight(float factor,
-                                 float* applied_speed_of_light = 0);
+// Sets the active slider-backed c_light, clamped to the adjustable range.
+// The current runtime powerup state decides whether this writes to the normal
+// slider or the powerup slider. If applied_c_light is non-null it receives
+// the post-clamp runtime c_light.
+bool setCurrentCLight(float c_light,
+                      float* applied_c_light = 0);
+bool scaleCurrentCLight(float factor,
+                        float* applied_c_light = 0);
 float getConfiguredMaxBeta();
 float getMaxCoordinateSpeed();
 int getRecommendedPhysicsSubsteps(float max_beta);
 
-double betaForSpeed(double speed, double speed_of_light);
-double gammaForSpeed(double speed, double speed_of_light);
+double betaForSpeed(double speed, double c_light);
+double gammaForSpeed(double speed, double c_light);
 double properDt(double coordinate_dt, double gamma);
 
 void updateState(RelativisticState *state,
                  const btVector3& coordinate_velocity,
                  double signed_speed,
                  double coordinate_dt,
-                 double speed_of_light);
+                 double c_light);
 
 btVector3 clampVelocityToC(const btVector3& velocity,
                            float max_coordinate_speed,
                            bool *was_clamped = 0);
 
 float scaleLongitudinalForce(float force, float signed_speed,
-                             float speed_of_light);
+                             float c_light);
 btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
                                       const btVector3& coordinate_velocity,
-                                      float speed_of_light);
+                                      float c_light);
 float getDirectionalEffectiveMass(float rest_mass,
                                   const btVector3& coordinate_velocity,
                                   const btVector3& response_direction,
-                                  float speed_of_light);
+                                  float c_light);
 float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
                                        const btVector3& velocity_a,
                                        float mass_a,
                                        const btVector3& velocity_b,
                                        float mass_b,
                                        float restitution,
-                                       float speed_of_light);
+                                       float c_light);
 
 unsigned int getVelocityClampCount();
 unsigned int getResponseScaleCount();
