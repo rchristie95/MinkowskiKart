@@ -47,50 +47,51 @@ bool isEnabled();
 bool isPropulsionLimited();
 bool isPreferredFrameDynamics();
 bool shouldUseFirstPersonObserverCamera();
+bool isPowerupCLightActive();
 
-float getConfiguredSpeedOfLight();
-float getMinimumAdjustableSpeedOfLight();
-float getMaximumAdjustableSpeedOfLight();
-float getSpeedOfLightSliderFraction(float speed_of_light);
+float getCurrentCLight();
+float getMinimumAdjustableCLight();
+float getMaximumAdjustableCLight();
+float getCLightSliderFraction(float c_light);
 float getWarpBubbleRadius();
-bool setConfiguredSpeedOfLight(float speed_of_light,
-                               float* applied_speed_of_light = 0);
-bool scaleConfiguredSpeedOfLight(float factor,
-                                 float* applied_speed_of_light = 0);
+bool setCurrentCLight(float c_light,
+                      float* applied_c_light = 0);
+bool scaleCurrentCLight(float factor,
+                        float* applied_c_light = 0);
 float getConfiguredMaxBeta();
 float getMaxCoordinateSpeed();
 int getRecommendedPhysicsSubsteps(float max_beta);
 
-double betaForSpeed(double speed, double speed_of_light);
-double gammaForSpeed(double speed, double speed_of_light);
+double betaForSpeed(double speed, double c_light);
+double gammaForSpeed(double speed, double c_light);
 double properDt(double coordinate_dt, double gamma);
 
 void updateState(RelativisticState *state,
                  const btVector3& coordinate_velocity,
                  double signed_speed,
                  double coordinate_dt,
-                 double speed_of_light);
+                 double c_light);
 
 btVector3 clampVelocityToC(const btVector3& velocity,
                            float max_coordinate_speed,
                            bool *was_clamped = 0);
 
 float scaleLongitudinalForce(float force, float signed_speed,
-                             float speed_of_light);
+                             float c_light);
 btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
                                       const btVector3& coordinate_velocity,
-                                      float speed_of_light);
+                                      float c_light);
 float getDirectionalEffectiveMass(float rest_mass,
                                   const btVector3& coordinate_velocity,
                                   const btVector3& response_direction,
-                                  float speed_of_light);
+                                  float c_light);
 float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
                                        const btVector3& velocity_a,
                                        float mass_a,
                                        const btVector3& velocity_b,
                                        float mass_b,
                                        float restitution,
-                                       float speed_of_light);
+                                       float c_light);
 
 unsigned int getVelocityClampCount();
 unsigned int getResponseScaleCount();

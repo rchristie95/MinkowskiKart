@@ -12,7 +12,7 @@
         <tip text="The swatter can be used to remove bombs or parachutes."/>
         <tip text="Braking allows to get rid of parachutes quicker."/>
         <tip text="Be careful when close to other karts, they may attack you!"/>
-        <tip text="Basketballs can be destroyed using precise backward shots with a bowling ball, cake, or plunger."/>
+        <tip text="Basketballs can be destroyed using precise backward shots with a bowling ball, cake, or photon."/>
     </tipset>
     <tipset id="time-trial">
         <tip text="Short nitro boosts are more efficient."/>

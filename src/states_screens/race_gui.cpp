@@ -136,20 +136,20 @@ core::stringw formatProperLapTimeLine(double proper_time_s)
     return core::stringw(text.c_str());
 }   // formatProperLapTimeLine
 
-core::stringw formatSpeedOfLightLine(float speed_of_light)
+core::stringw formatCLightLine(float c_light)
 {
     std::ostringstream oss;
     oss.setf(std::ios::fixed, std::ios::floatfield);
     oss << "c ";
-    if (speed_of_light >= 100.0f)
+    if (c_light >= 100.0f)
         oss << std::setprecision(0);
-    else if (speed_of_light >= 10.0f)
+    else if (c_light >= 10.0f)
         oss << std::setprecision(1);
     else
         oss << std::setprecision(2);
-    oss << speed_of_light;
+    oss << c_light;
     return core::stringw(oss.str().c_str());
-}   // formatSpeedOfLightLine
+}   // formatCLightLine
 
 }   // namespace
 
@@ -1156,8 +1156,8 @@ void RaceGUI::drawSpeedEnergyRank(const AbstractKart* kart,
     // A is the center of the speedometer's circle
     // B2, C, D, E, F, G, H, I and J1 are points on the line
     // from A to their respective 1/8th threshold division
-    // B2 is 36,9° clockwise from the vertical (on bottom-left)
-    // J1 s 70,7° clockwise from the vertical (on upper-right)
+    // B2 is 36.9 degrees clockwise from the vertical (on bottom-left)
+    // J1 is 70.7 degrees clockwise from the vertical (on upper-right)
     // B1 and J2 are used for correct display of the 3D effect
     // They are 1,13* further than the speedometer farther position because
     // the lines between them would otherwise cut through the outside circle.
@@ -1512,27 +1512,24 @@ void RaceGUI::drawLap(const AbstractKart* kart,
             gui::ScalableFont* info_font = GUIEngine::getFont();
             info_font->setBlackBorder(true);
 
-            const bool powerup_active = sr_kart->isAnyPowerupActive();
-            const float speed_of_light = powerup_active
-                ? (float)UserConfigParams::m_relativity_speed_powerup
-                : Relativity::getConfiguredSpeedOfLight();
+            const float c_light = Relativity::getCurrentCLight();
 
             const core::stringw beta_line = formatFractionOfCLine(state.m_beta);
             const core::stringw proper_time_line =
                 formatProperLapTimeLine(state.m_proper_time_s);
-            const core::stringw speed_of_light_line =
-                formatSpeedOfLightLine(speed_of_light);
+            const core::stringw c_light_line =
+                formatCLightLine(c_light);
 
             const core::dimension2du beta_dim =
                 info_font->getDimension(beta_line.c_str());
             const core::dimension2du proper_time_dim =
                 info_font->getDimension(proper_time_line.c_str());
-            const core::dimension2du speed_of_light_dim =
-                info_font->getDimension(speed_of_light_line.c_str());
+            const core::dimension2du c_light_dim =
+                info_font->getDimension(c_light_line.c_str());
             const s32 vertical_gap = std::max(1, (int)(2.0f * scaling.Y));
             const s32 info_width = std::max((s32)beta_dim.Width,
                 std::max((s32)proper_time_dim.Width,
-                         (s32)speed_of_light_dim.Width));
+                         (s32)c_light_dim.Width));
             const s32 info_right = viewport.LowerRightCorner.X - 10
                 - (show_lap_counter ? icon_width : 0);
             const s32 info_top = show_lap_counter
@@ -1549,17 +1546,17 @@ void RaceGUI::drawLap(const AbstractKart* kart,
                                             info_right,
                                             proper_top +
                                                 (s32)proper_time_dim.Height);
-            const s32 speed_of_light_top =
+            const s32 c_light_top =
                 proper_top + (s32)proper_time_dim.Height + vertical_gap;
-            core::rect<s32> speed_of_light_pos(info_right - info_width,
-                                               speed_of_light_top,
+            core::rect<s32> c_light_pos(info_right - info_width,
+                                               c_light_top,
                                                info_right,
-                                               speed_of_light_top +
-                                                   (s32)speed_of_light_dim.Height);
+                                               c_light_top +
+                                                   (s32)c_light_dim.Height);
 
             info_font->draw(beta_line.c_str(), beta_pos, color);
             info_font->draw(proper_time_line.c_str(), proper_time_pos, color);
-            info_font->draw(speed_of_light_line.c_str(), speed_of_light_pos,
+            info_font->draw(c_light_line.c_str(), c_light_pos,
                             color);
             info_font->setBlackBorder(false);
         }

@@ -1000,7 +1000,7 @@ EventPropagation InputManager::input(const SEvent& event)
         }
         return true;
     };
-    auto adjust_relativity_speed_of_light = [](float factor) -> bool
+    auto adjust_relativity_c_light = [](float factor) -> bool
     {
         if (StateManager::get()->getGameState() != GUIEngine::GAME ||
             GUIEngine::ModalDialog::isADialogActive() ||
@@ -1010,9 +1010,9 @@ EventPropagation InputManager::input(const SEvent& event)
             return false;
         }
 
-        float new_speed_of_light = 0.0f;
-        if (!Relativity::scaleConfiguredSpeedOfLight(
-                factor, &new_speed_of_light))
+        float new_c_light = 0.0f;
+        if (!Relativity::scaleCurrentCLight(
+                factor, &new_c_light))
         {
             return false;
         }
@@ -1023,13 +1023,13 @@ EventPropagation InputManager::input(const SEvent& event)
             std::ostringstream oss;
             oss.setf(std::ios::fixed, std::ios::floatfield);
             oss << "c = ";
-            if (new_speed_of_light >= 100.0f)
+            if (new_c_light >= 100.0f)
                 oss << std::setprecision(0);
-            else if (new_speed_of_light >= 10.0f)
+            else if (new_c_light >= 10.0f)
                 oss << std::setprecision(1);
             else
                 oss << std::setprecision(2);
-            oss << new_speed_of_light;
+            oss << new_c_light;
 
             world->getRaceGUI()->addMessage(
                 core::stringw(oss.str().c_str()), NULL, 1.25f,
@@ -1114,12 +1114,12 @@ EventPropagation InputManager::input(const SEvent& event)
                 event.KeyInput.Char == '=' ||
                 event.KeyInput.Char == '+';
             if (is_relativity_decrease &&
-                adjust_relativity_speed_of_light(0.8f))
+                adjust_relativity_c_light(0.8f))
             {
                 return EVENT_BLOCK;
             }
             if (is_relativity_increase &&
-                adjust_relativity_speed_of_light(1.25f))
+                adjust_relativity_c_light(1.25f))
             {
                 return EVENT_BLOCK;
             }
