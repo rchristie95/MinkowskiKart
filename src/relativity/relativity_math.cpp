@@ -228,17 +228,19 @@ bool isEnabled()
     if (!stk_config || !stk_config->m_relativity_enabled)
         return false;
 
-    if (NetworkConfig::get()->isNetworking())
+    const bool networking = NetworkConfig::get()->isNetworking();
+    // Track the previously-observed networking state so the warning re-fires
+    // on every off->on transition rather than only once per process.
+    static bool s_last_networking_state = false;
+    if (networking && !s_last_networking_state)
     {
-        static bool warned = false;
-        if (!warned)
-        {
-            Log::warn("Relativity",
-                      "Relativistic mechanics are disabled for network games.");
-            warned = true;
-        }
-        return false;
+        Log::warn("Relativity",
+                  "Relativistic mechanics are disabled for network games.");
     }
+    s_last_networking_state = networking;
+
+    if (networking)
+        return false;
 
     return true;
 }   // isEnabled
@@ -762,13 +764,40 @@ bool castApparentDriveableRay(const AbstractKart* observer_kart,
     const Material* material = NULL;
 
     const TriangleMesh& triangle_mesh = track->getTriangleMesh();
-    bool found = triangle_mesh.castRay(from, to, &world_hit_point, &material,
-                                       &world_normal, interpolate_normal);
+    const bool mesh_hit = triangle_mesh.castRay(from, to, &world_hit_point,
+                                                &material, &world_normal,
+                                                interpolate_normal);
+    bool found = mesh_hit;
+
+    // Ask the object manager separately with its own output storage and pick
+    // the closer of the two. Chaining through a shared buffer relied on
+    // TrackObjectManager::castRay reading the prior distance from a non-null
+    // *material, which was unreliable when the triangle-mesh hit had no
+    // material assigned (in that case any farther object hit would overwrite
+    // the nearer mesh hit).
     TrackObjectManager* object_manager = track->getTrackObjectManager();
     if (object_manager)
     {
-        found = object_manager->castRay(from, to, &world_hit_point, &material,
-                                        &world_normal, interpolate_normal) || found;
+        btVector3 object_hit_point(0.0f, 0.0f, 0.0f);
+        btVector3 object_normal(0.0f, 1.0f, 0.0f);
+        const Material* object_material = NULL;
+        if (object_manager->castRay(from, to, &object_hit_point,
+                                    &object_material, &object_normal,
+                                    interpolate_normal))
+        {
+            const btScalar object_distance2 =
+                (object_hit_point - from).length2();
+            const btScalar mesh_distance2 = mesh_hit
+                ? (world_hit_point - from).length2()
+                : std::numeric_limits<btScalar>::max();
+            if (!mesh_hit || object_distance2 < mesh_distance2)
+            {
+                world_hit_point = object_hit_point;
+                world_normal    = object_normal;
+                material        = object_material;
+                found           = true;
+            }
+        }
     }
 
     if (!found)

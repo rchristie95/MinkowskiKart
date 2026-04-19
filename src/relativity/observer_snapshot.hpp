@@ -62,6 +62,12 @@ ObserverVisualState buildObserverVisualState(
     const AbstractKart* observer_kart,
     const btVector3& observer_position);
 
+// Prune per-kart visual-motion filter state. Call when a kart is destroyed,
+// and clearAllVisualMotionFilters() on race teardown, to avoid stale state
+// being inherited by a new kart whose memory reuses an old pointer.
+void clearVisualMotionFilterForKart(const AbstractKart* observer_kart);
+void clearAllVisualMotionFilters();
+
 void observerSnapshotUnitTesting();
 
 }   // namespace Relativity
