@@ -1517,7 +1517,13 @@ void RaceGUI::drawLap(const AbstractKart* kart,
                 ? (float)UserConfigParams::m_relativity_speed_powerup
                 : Relativity::getConfiguredSpeedOfLight();
 
-            const core::stringw beta_line = formatFractionOfCLine(state.m_beta);
+            // Recompute β against the currently-displayed c so the v/c line
+            // tracks the powerup slider. state.m_beta is evaluated against
+            // the baseline c only, which would otherwise leave v/c stale
+            // whenever a powerup is active.
+            const double display_beta = Relativity::betaForSpeed(
+                (double)state.m_speed, (double)speed_of_light);
+            const core::stringw beta_line = formatFractionOfCLine(display_beta);
             const core::stringw proper_time_line =
                 formatProperLapTimeLine(state.m_proper_time_s);
             const core::stringw speed_of_light_line =

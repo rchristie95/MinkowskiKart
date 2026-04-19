@@ -53,8 +53,16 @@ float getMinimumAdjustableSpeedOfLight();
 float getMaximumAdjustableSpeedOfLight();
 float getSpeedOfLightSliderFraction(float speed_of_light);
 float getWarpBubbleRadius();
+// Sets the configured speed of light, silently clamping to
+// [getMinimumAdjustableSpeedOfLight(), getMaximumAdjustableSpeedOfLight()].
+// If applied_speed_of_light is non-null it receives the post-clamp value, so
+// callers can detect clamping by comparing it to their requested input.
+// Returns false only for a non-finite input or a missing stk_config.
 bool setConfiguredSpeedOfLight(float speed_of_light,
                                float* applied_speed_of_light = 0);
+// Multiplies the configured speed of light by the given factor, clamping
+// the result to the adjustable range. See setConfiguredSpeedOfLight for
+// the clamp/return-value semantics.
 bool scaleConfiguredSpeedOfLight(float factor,
                                  float* applied_speed_of_light = 0);
 float getConfiguredMaxBeta();

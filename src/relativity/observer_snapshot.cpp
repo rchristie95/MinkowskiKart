@@ -18,14 +18,17 @@
 
 #include "relativity/observer_snapshot.hpp"
 
+#include "config/user_config.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/kart.hpp"
 #include "items/attachment.hpp"
+#include "modes/world.hpp"
 #include "relativity/relativity_math.hpp"
 
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
+#include <limits>
 #include <unordered_map>
 
 namespace
@@ -33,24 +36,29 @@ namespace
 
 const btScalar MIN_VISUAL_DIRECTION_LENGTH2 = btScalar(1.0e-6f);
 const btScalar MAX_VISUAL_TELEPORT_DISTANCE2 = btScalar(144.0f);
-const float VISUAL_VERTICAL_DAMPING = 0.25f;
 
 struct VisualMotionFilterState
 {
     bool      m_has_position;
     bool      m_has_direction;
+    int       m_last_tick;
     btVector3 m_last_observer_position;
     btVector3 m_filtered_direction;
 
     VisualMotionFilterState()
         : m_has_position(false),
           m_has_direction(false),
+          m_last_tick(std::numeric_limits<int>::min()),
           m_last_observer_position(0.0f, 0.0f, 0.0f),
           m_filtered_direction(0.0f, 0.0f, 1.0f)
     {
     }
 };   // struct VisualMotionFilterState
 
+// Keyed by kart pointer; entries are pruned when the kart is destroyed
+// (see clearVisualMotionFilterForKart) and the whole map is dropped on
+// race teardown (clearAllVisualMotionFilters) so a new kart can never
+// inherit stale filter state from an allocator-reused address.
 std::unordered_map<const AbstractKart*, VisualMotionFilterState>
     g_visual_motion_filters;
 
@@ -72,11 +80,6 @@ bool isFiniteVector(const btVector3& v)
            std::isfinite((double)v.z());
 }   // isFiniteVector
 
-btVector3 dampVerticalMotion(const btVector3& v)
-{
-    return btVector3(v.x(), v.y() * VISUAL_VERTICAL_DAMPING, v.z());
-}   // dampVerticalMotion
-
 btVector3 normalizedOrZero(const btVector3& v)
 {
     if (!isFiniteVector(v))
@@ -96,13 +99,32 @@ btVector3 getSmoothedVisualDirection(const AbstractKart* observer_kart,
 {
     VisualMotionFilterState& filter = g_visual_motion_filters[observer_kart];
 
-    // The beta direction must come from the kart's physical velocity, not from
-    // camera-position deltas. A chase camera pans laterally when the player
-    // steers even though the kart's forward velocity is largely unchanged; if
-    // we fed that pan into the beta direction the Lorentz contraction axis
-    // would rotate with the steering input, making scenery appear to swing
-    // sideways. Observer-position tracking is kept only to detect teleports
-    // so the temporal smoothing filter can reset cleanly.
+    // The beta direction comes directly from the kart's physical velocity.
+    // dampVerticalMotion was previously applied here, but scaling one axis
+    // before normalising tilts the Lorentz axis away from the true velocity
+    // direction, which contradicts the filter's stated purpose.
+    const btVector3 desired_direction = normalizedOrZero(coordinate_velocity);
+
+    // Only advance the temporal filter once per simulation tick. This function
+    // is called from rendering code, potentially many times per frame (once
+    // per warped object); advancing the blend on every call caused the
+    // "smoothing" to collapse to the instantaneous direction and made
+    // teleport detection dependent on scene complexity.
+    const World* world = World::getWorld();
+    const int current_tick = world ? world->getTicksSinceStart()
+                                   : std::numeric_limits<int>::min();
+    const bool new_tick = current_tick != filter.m_last_tick;
+
+    if (!new_tick)
+    {
+        if (filter.m_has_direction &&
+            isFiniteVector(filter.m_filtered_direction))
+        {
+            return filter.m_filtered_direction;
+        }
+        // Fall through and (re)initialise if the cached direction is unusable.
+    }
+
     btScalar observer_step_length2 = btScalar(0.0f);
     if (filter.m_has_position)
     {
@@ -111,11 +133,9 @@ btVector3 getSmoothedVisualDirection(const AbstractKart* observer_kart,
         observer_step_length2 = observer_step.length2();
     }
 
-    btVector3 desired_direction =
-        normalizedOrZero(dampVerticalMotion(coordinate_velocity));
-
     filter.m_last_observer_position = observer_position;
     filter.m_has_position = true;
+    filter.m_last_tick    = current_tick;
 
     if (desired_direction.length2() <= MIN_VISUAL_DIRECTION_LENGTH2)
     {
@@ -260,8 +280,22 @@ ObserverVisualState buildObserverVisualState(
         doppler_active = true;
     }
     
-    float speed_of_light = item_active ? 30.0f : 1000.0f;
-    
+    // The relativity options screen exposes two independent sliders:
+    //   * m_relativity_speed_normal  - baseline c used when no powerup/
+    //     attachment is active. This is mirrored into stk_config so
+    //     getConfiguredSpeedOfLight() returns it.
+    //   * m_relativity_speed_powerup - visual c used while a powerup or
+    //     attachment is active, for exaggerated aberration.
+    // Both sliders should drive the visual c directly; the previous code
+    // had a hardcoded 30 here which ignored the powerup slider entirely.
+    const float normal_c  =
+        (float)(int)UserConfigParams::m_relativity_speed_normal;
+    const float powerup_c =
+        (float)(int)UserConfigParams::m_relativity_speed_powerup;
+    float speed_of_light = item_active ? powerup_c : normal_c;
+    if (!std::isfinite((double)speed_of_light) || speed_of_light <= 0.0f)
+        speed_of_light = Relativity::getConfiguredSpeedOfLight();
+
     if (!std::isfinite((double)speed_of_light) || speed_of_light <= 0.0f)
         return visual_state;
 
@@ -304,6 +338,18 @@ ObserverVisualState buildObserverVisualState(
     visual_state.m_observer_position = observer_position;
     return visual_state;
 }   // buildObserverVisualState
+
+// ----------------------------------------------------------------------------
+void clearVisualMotionFilterForKart(const AbstractKart* observer_kart)
+{
+    g_visual_motion_filters.erase(observer_kart);
+}   // clearVisualMotionFilterForKart
+
+// ----------------------------------------------------------------------------
+void clearAllVisualMotionFilters()
+{
+    g_visual_motion_filters.clear();
+}   // clearAllVisualMotionFilters
 
 // ----------------------------------------------------------------------------
 void observerSnapshotUnitTesting()
