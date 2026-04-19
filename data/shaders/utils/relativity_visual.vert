@@ -35,7 +35,7 @@ vec3 getRelativityBetaVector()
     return u_relativity_beta.xyz;
 }
 
-float getRelativitySpeedOfLight()
+float getRelativityCLight()
 {
     return max(u_relativity_beta.w, 0.0);
 }
@@ -175,15 +175,15 @@ vec4 applyRelativisticVisualPosition(vec4 world_position)
 vec3 getRelativisticEmissionRelativePosition(vec3 relative,
                                              vec3 object_velocity)
 {
-    float speed_of_light = getRelativitySpeedOfLight();
-    if (!relativityVisualsEnabled() || speed_of_light <= 1e-6)
+    float c_light = getRelativityCLight();
+    if (!relativityVisualsEnabled() || c_light <= 1e-6)
         return relative;
 
     float speed2 = dot(object_velocity, object_velocity);
     if (speed2 <= 1e-8)
         return relative;
 
-    float c2 = speed_of_light * speed_of_light;
+    float c2 = c_light * c_light;
     float a = speed2 - c2;
     if (abs(a) < 1e-6)
         return relative;
