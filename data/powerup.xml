@@ -2,7 +2,7 @@
 <powerup>
   <!-- Minkowski Kart - Relativistic Powerups
        Order must match PowerupType enum in powerup_manager.hpp:
-       warp-bubble, neutron-star, black-hole, zipper, cosmic-string,
+       warp-bubble, neutron-star, black-hole, zipper, photon,
        frame-shift, tidal-arm, geodesic-missile, time-dilation, mass-spike -->
 
   <!-- WARP BUBBLE: shield sphere (was bubblegum) -->
@@ -24,8 +24,8 @@
   <!-- ZIPPER: speed boost (unchanged) -->
   <item name="zipper"          icon="zipper_collect.png" />
 
-  <!-- COSMIC STRING: grapple forward / blackboard backward (was plunger) -->
-  <item name="cosmic-string"   icon="cosmic-string-icon.png"
+  <!-- PHOTON: exchanged photon tether forward / Doppler flare backward -->
+  <item name="photon"          icon="photon-icon.png"
         model="plunger.spm"    speed="40"
         min-height="0.2"       max-height="1.0"
         force-updown="35"      force-to-target="15"

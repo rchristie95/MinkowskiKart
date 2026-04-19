@@ -105,7 +105,7 @@ PowerupManager::PowerupType
     // Must match the order of PowerupType in powerup_manager.hpp!!
     static const std::string powerup_names[] = {
         "",            /* Nothing */
-        "warp-bubble", "neutron-star", "black-hole", "zipper", "cosmic-string",
+        "warp-bubble", "neutron-star", "black-hole", "zipper", "photon",
         "frame-shift", "tidal-arm", "geodesic-missile", "time-dilation", "mass-spike"
     };
 

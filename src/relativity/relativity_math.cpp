@@ -19,6 +19,7 @@
 #include "relativity/relativity_math.hpp"
 
 #include "config/stk_config.hpp"
+#include "config/user_config.hpp"
 #include "guiengine/engine.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/kart_properties.hpp"
@@ -38,12 +39,13 @@
 
 namespace
 {
-const double MIN_LIGHT_SPEED = 0.001;
+const double MIN_C_LIGHT = 0.001;
 const double MAX_BETA_EPSILON = 1.0e-9;
 const double MIN_GAMMA_RESPONSE_DELTA = 1.0e-6;
-const float DEFAULT_REFERENCE_BOOST_SPEED = 40.0f;
-const float MIN_ADJUSTABLE_LIGHT_SPEED_BETA = 0.95f;
-const float MAX_ADJUSTABLE_LIGHT_SPEED_MULTIPLIER = 100.0f;
+const float DEFAULT_NORMAL_C_LIGHT = 1000.0f;
+const float DEFAULT_POWERUP_C_LIGHT = 30.0f;
+const float MIN_ADJUSTABLE_C_LIGHT = 30.0f;
+const float MAX_ADJUSTABLE_C_LIGHT = 1000.0f;
 const float DEFAULT_WARP_BUBBLE_RADIUS = 3.5f;
 const float VISUAL_STABILITY_RADIUS = 0.45f;
 const float VISUAL_STABILITY_FADE_WIDTH = 0.65f;
@@ -116,10 +118,10 @@ btVector3 worldDirectionToObserverDirection(const btVector3& world_direction,
 
 btVector3 getRelativisticEmissionRelativePosition(
     const btVector3& relative, const btVector3& object_velocity,
-    float speed_of_light)
+    float c_light)
 {
     if (!isFiniteVector(relative) || !isFiniteVector(object_velocity) ||
-        !std::isfinite((double)speed_of_light) || speed_of_light <= 1.0e-6f)
+        !std::isfinite((double)c_light) || c_light <= 1.0e-6f)
     {
         return relative;
     }
@@ -128,7 +130,7 @@ btVector3 getRelativisticEmissionRelativePosition(
     if (speed2 <= btScalar(1.0e-8f))
         return relative;
 
-    const btScalar c2 = speed_of_light * speed_of_light;
+    const btScalar c2 = c_light * c_light;
     const btScalar a = speed2 - c2;
     if (fabsf((float)a) < 1.0e-6f)
         return relative;
@@ -155,57 +157,36 @@ double clampAbsBeta(double beta)
     return beta;
 }   // clampAbsBeta
 
-float getReferenceBoostSpeed()
+float clampFiniteCLight(float c_light, float fallback)
 {
-    const KartProperties* kart_properties = NULL;
-    World* world = World::getWorld();
-    if (world)
-    {
-        AbstractKart* kart = NULL;
-        if (RaceManager::get() && RaceManager::get()->getNumLocalPlayers() > 0)
-            kart = world->getLocalPlayerKart(0);
-        if (!kart && world->getNumKarts() > 0)
-            kart = world->getKart(0);
-        if (kart)
-            kart_properties = kart->getKartProperties();
-    }
+    if (!std::isfinite((double)c_light) || c_light <= 0.0f)
+        c_light = fallback;
+    return std::max(MIN_ADJUSTABLE_C_LIGHT,
+                    std::min(MAX_ADJUSTABLE_C_LIGHT, c_light));
+}   // clampFiniteCLight
 
-    if (!kart_properties)
-        return DEFAULT_REFERENCE_BOOST_SPEED;
-
-    const float base_speed = kart_properties->getEngineMaxSpeed();
-    const float strongest_boost_increase = std::max(
-        kart_properties->getZipperMaxSpeedIncrease(),
-        std::max(kart_properties->getNitroMaxSpeedIncrease(),
-                 kart_properties->getSlipstreamMaxSpeedIncrease()));
-    const float reference_speed =
-        base_speed + std::max(0.0f, strongest_boost_increase);
-    if (!std::isfinite((double)reference_speed) || reference_speed <= 0.0f)
-        return DEFAULT_REFERENCE_BOOST_SPEED;
-
-    return reference_speed;
-}   // getReferenceBoostSpeed
-
-void getAdjustableSpeedOfLightBounds(float* min_speed_of_light,
-                                     float* max_speed_of_light)
+float getConfiguredNormalCLight()
 {
-    const float reference_boost_speed = getReferenceBoostSpeed();
-    float min_speed = reference_boost_speed / MIN_ADJUSTABLE_LIGHT_SPEED_BETA;
-    float max_speed = reference_boost_speed *
-                      MAX_ADJUSTABLE_LIGHT_SPEED_MULTIPLIER;
-    if (!std::isfinite((double)min_speed) || min_speed <= 0.0f)
-        min_speed = DEFAULT_REFERENCE_BOOST_SPEED /
-                    MIN_ADJUSTABLE_LIGHT_SPEED_BETA;
-    if (!std::isfinite((double)max_speed) || max_speed <= min_speed)
-        max_speed = std::max(min_speed * 2.0f,
-                             DEFAULT_REFERENCE_BOOST_SPEED *
-                                 MAX_ADJUSTABLE_LIGHT_SPEED_MULTIPLIER);
+    return clampFiniteCLight(
+        (float)UserConfigParams::m_relativity_normal_c_light,
+        DEFAULT_NORMAL_C_LIGHT);
+}   // getConfiguredNormalCLight
 
-    if (min_speed_of_light)
-        *min_speed_of_light = min_speed;
-    if (max_speed_of_light)
-        *max_speed_of_light = max_speed;
-}   // getAdjustableSpeedOfLightBounds
+float getConfiguredPowerupCLight()
+{
+    return clampFiniteCLight(
+        (float)UserConfigParams::m_relativity_powerup_c_light,
+        DEFAULT_POWERUP_C_LIGHT);
+}   // getConfiguredPowerupCLight
+
+void getAdjustableCLightBounds(float* min_c_light,
+                               float* max_c_light)
+{
+    if (min_c_light)
+        *min_c_light = MIN_ADJUSTABLE_C_LIGHT;
+    if (max_c_light)
+        *max_c_light = MAX_ADJUSTABLE_C_LIGHT;
+}   // getAdjustableCLightBounds
 
 }   // anonymous namespace
 
@@ -264,44 +245,60 @@ bool shouldUseFirstPersonObserverCamera()
 }   // shouldUseFirstPersonObserverCamera
 
 // ----------------------------------------------------------------------------
-float getConfiguredSpeedOfLight()
+bool isPowerupCLightActive()
 {
-    if (!stk_config ||
-        !std::isfinite((double)stk_config->m_relativity_speed_of_light) ||
-        stk_config->m_relativity_speed_of_light <= 0.0f)
+    if (!isEnabled())
+        return false;
+
+    World* world = World::getWorld();
+    if (!world)
+        return false;
+
+    for (unsigned int i = 0; i < world->getNumKarts(); i++)
     {
-        return 1000.0f;
+        AbstractKart* kart = world->getKart(i);
+        if (kart && kart->isAnyPowerupActive())
+            return true;
     }
-    return stk_config->m_relativity_speed_of_light;
-}   // getConfiguredSpeedOfLight
+    return false;
+}   // isPowerupCLightActive
 
 // ----------------------------------------------------------------------------
-float getMinimumAdjustableSpeedOfLight()
+float getCurrentCLight()
 {
-    float min_speed_of_light = DEFAULT_REFERENCE_BOOST_SPEED /
-                               MIN_ADJUSTABLE_LIGHT_SPEED_BETA;
-    getAdjustableSpeedOfLightBounds(&min_speed_of_light, NULL);
-    return min_speed_of_light;
-}   // getMinimumAdjustableSpeedOfLight
+    const float c_light = isPowerupCLightActive()
+        ? getConfiguredPowerupCLight()
+        : getConfiguredNormalCLight();
+    if (stk_config)
+        stk_config->m_relativity_c_light = c_light;
+    return c_light;
+}   // getCurrentCLight
 
 // ----------------------------------------------------------------------------
-float getMaximumAdjustableSpeedOfLight()
+float getMinimumAdjustableCLight()
 {
-    float max_speed_of_light = DEFAULT_REFERENCE_BOOST_SPEED *
-                               MAX_ADJUSTABLE_LIGHT_SPEED_MULTIPLIER;
-    getAdjustableSpeedOfLightBounds(NULL, &max_speed_of_light);
-    return max_speed_of_light;
-}   // getMaximumAdjustableSpeedOfLight
+    float min_c_light = MIN_ADJUSTABLE_C_LIGHT;
+    getAdjustableCLightBounds(&min_c_light, NULL);
+    return min_c_light;
+}   // getMinimumAdjustableCLight
 
 // ----------------------------------------------------------------------------
-float getSpeedOfLightSliderFraction(float speed_of_light)
+float getMaximumAdjustableCLight()
 {
-    const float min_speed_of_light = getMinimumAdjustableSpeedOfLight();
-    const float max_speed_of_light = getMaximumAdjustableSpeedOfLight();
-    const double clamped_speed = std::max((double)min_speed_of_light,
-        std::min((double)max_speed_of_light, (double)speed_of_light));
-    const double min_log = std::log((double)min_speed_of_light);
-    const double max_log = std::log((double)max_speed_of_light);
+    float max_c_light = MAX_ADJUSTABLE_C_LIGHT;
+    getAdjustableCLightBounds(NULL, &max_c_light);
+    return max_c_light;
+}   // getMaximumAdjustableCLight
+
+// ----------------------------------------------------------------------------
+float getCLightSliderFraction(float c_light)
+{
+    const float min_c_light = getMinimumAdjustableCLight();
+    const float max_c_light = getMaximumAdjustableCLight();
+    const double clamped_speed = std::max((double)min_c_light,
+        std::min((double)max_c_light, (double)c_light));
+    const double min_log = std::log((double)min_c_light);
+    const double max_log = std::log((double)max_c_light);
     if (!(max_log > min_log))
         return 0.0f;
 
@@ -311,7 +308,7 @@ float getSpeedOfLightSliderFraction(float speed_of_light)
         return 0.0f;
 
     return (float)std::max(0.0, std::min(1.0, fraction));
-}   // getSpeedOfLightSliderFraction
+}   // getCLightSliderFraction
 
 // ----------------------------------------------------------------------------
 float getWarpBubbleRadius()
@@ -320,32 +317,40 @@ float getWarpBubbleRadius()
 }   // getWarpBubbleRadius
 
 // ----------------------------------------------------------------------------
-bool setConfiguredSpeedOfLight(float speed_of_light,
-                               float* applied_speed_of_light)
+bool setCurrentCLight(float c_light,
+                      float* applied_c_light)
 {
-    if (!stk_config || !std::isfinite((double)speed_of_light))
+    if (!std::isfinite((double)c_light))
         return false;
 
-    const float min_speed_of_light = getMinimumAdjustableSpeedOfLight();
-    const float max_speed_of_light = getMaximumAdjustableSpeedOfLight();
-    const float clamped_speed = std::max(min_speed_of_light,
-        std::min(max_speed_of_light, speed_of_light));
-    stk_config->m_relativity_speed_of_light = clamped_speed;
-    if (applied_speed_of_light)
-        *applied_speed_of_light = clamped_speed;
+    const float min_c_light = getMinimumAdjustableCLight();
+    const float max_c_light = getMaximumAdjustableCLight();
+    const float clamped_c_light = std::max(min_c_light,
+        std::min(max_c_light, c_light));
+
+    if (isPowerupCLightActive())
+        UserConfigParams::m_relativity_powerup_c_light =
+            (int)std::lround((double)clamped_c_light);
+    else
+        UserConfigParams::m_relativity_normal_c_light =
+            (int)std::lround((double)clamped_c_light);
+
+    const float current_c_light = getCurrentCLight();
+    if (applied_c_light)
+        *applied_c_light = current_c_light;
     return true;
-}   // setConfiguredSpeedOfLight
+}   // setCurrentCLight
 
 // ----------------------------------------------------------------------------
-bool scaleConfiguredSpeedOfLight(float factor,
-                                 float* applied_speed_of_light)
+bool scaleCurrentCLight(float factor,
+                        float* applied_c_light)
 {
     if (!std::isfinite((double)factor) || factor <= 0.0f)
         return false;
 
-    return setConfiguredSpeedOfLight(getConfiguredSpeedOfLight() * factor,
-                                     applied_speed_of_light);
-}   // scaleConfiguredSpeedOfLight
+    return setCurrentCLight(getCurrentCLight() * factor,
+                                     applied_c_light);
+}   // scaleCurrentCLight
 
 // ----------------------------------------------------------------------------
 float getConfiguredMaxBeta()
@@ -364,7 +369,7 @@ float getConfiguredMaxBeta()
 // ----------------------------------------------------------------------------
 float getMaxCoordinateSpeed()
 {
-    return getConfiguredSpeedOfLight() * getConfiguredMaxBeta();
+    return getCurrentCLight() * getConfiguredMaxBeta();
 }   // getMaxCoordinateSpeed
 
 // ----------------------------------------------------------------------------
@@ -384,21 +389,21 @@ int getRecommendedPhysicsSubsteps(float max_beta)
 }   // getRecommendedPhysicsSubsteps
 
 // ----------------------------------------------------------------------------
-double betaForSpeed(double speed, double speed_of_light)
+double betaForSpeed(double speed, double c_light)
 {
-    if (!std::isfinite(speed) || speed_of_light < MIN_LIGHT_SPEED ||
-        !std::isfinite(speed_of_light))
+    if (!std::isfinite(speed) || c_light < MIN_C_LIGHT ||
+        !std::isfinite(c_light))
     {
         return 0.0;
     }
 
-    return clampAbsBeta(std::fabs(speed) / speed_of_light);
+    return clampAbsBeta(std::fabs(speed) / c_light);
 }   // betaForSpeed
 
 // ----------------------------------------------------------------------------
-double gammaForSpeed(double speed, double speed_of_light)
+double gammaForSpeed(double speed, double c_light)
 {
-    const double beta = betaForSpeed(speed, speed_of_light);
+    const double beta = betaForSpeed(speed, c_light);
     const double beta2 = beta * beta;
     return 1.0 / std::sqrt(1.0 - beta2);
 }   // gammaForSpeed
@@ -418,7 +423,7 @@ void updateState(RelativisticState *state,
                  const btVector3& coordinate_velocity,
                  double signed_speed,
                  double coordinate_dt,
-                 double speed_of_light)
+                 double c_light)
 {
     if (!state)
         return;
@@ -426,8 +431,8 @@ void updateState(RelativisticState *state,
     const double abs_speed = std::fabs(signed_speed);
     state->m_coordinate_velocity = coordinate_velocity;
     state->m_speed = signed_speed;
-    state->m_beta = betaForSpeed(abs_speed, speed_of_light);
-    state->m_gamma = gammaForSpeed(abs_speed, speed_of_light);
+    state->m_beta = betaForSpeed(abs_speed, c_light);
+    state->m_gamma = gammaForSpeed(abs_speed, c_light);
 
     if (coordinate_dt > 0.0 && std::isfinite(coordinate_dt))
     {
@@ -469,7 +474,7 @@ btVector3 clampVelocityToC(const btVector3& velocity,
 
 // ----------------------------------------------------------------------------
 float scaleLongitudinalForce(float force, float signed_speed,
-                             float speed_of_light)
+                             float c_light)
 {
     if (force == 0.0f || !std::isfinite((double)force) ||
         !std::isfinite((double)signed_speed))
@@ -485,7 +490,7 @@ float scaleLongitudinalForce(float force, float signed_speed,
     if (!force_increases_forward_speed && !force_increases_reverse_speed)
         return force;
 
-    const double gamma = gammaForSpeed(signed_speed, speed_of_light);
+    const double gamma = gammaForSpeed(signed_speed, c_light);
     const double scale = 1.0 / (gamma * gamma * gamma);
     return (float)(force * scale);
 }   // scaleLongitudinalForce
@@ -493,7 +498,7 @@ float scaleLongitudinalForce(float force, float signed_speed,
 // ----------------------------------------------------------------------------
 btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
                                       const btVector3& coordinate_velocity,
-                                      float speed_of_light)
+                                      float c_light)
 {
     if (!isFiniteVector(response_vector) || !isFiniteVector(coordinate_velocity))
         return response_vector;
@@ -505,7 +510,7 @@ btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
     if (speed <= btScalar(0.0))
         return response_vector;
 
-    const double gamma = gammaForSpeed((double)speed, speed_of_light);
+    const double gamma = gammaForSpeed((double)speed, c_light);
     if (!std::isfinite(gamma) || gamma <= 1.0 + MIN_GAMMA_RESPONSE_DELTA)
         return response_vector;
 
@@ -531,7 +536,7 @@ btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
 float getDirectionalEffectiveMass(float rest_mass,
                                   const btVector3& coordinate_velocity,
                                   const btVector3& response_direction,
-                                  float speed_of_light)
+                                  float c_light)
 {
     if (!std::isfinite((double)rest_mass) || rest_mass <= 0.0f)
         return 0.0f;
@@ -546,7 +551,7 @@ float getDirectionalEffectiveMass(float rest_mass,
     const btScalar parallel = direction.dot(velocity_direction);
     const btScalar parallel2 = parallel * parallel;
     const btScalar perpendicular2 = btScalar(1.0f) - parallel2;
-    const double gamma = gammaForSpeed((double)speed, speed_of_light);
+    const double gamma = gammaForSpeed((double)speed, c_light);
     if (!std::isfinite(gamma) || gamma <= 1.0 + MIN_GAMMA_RESPONSE_DELTA)
         return rest_mass;
 
@@ -566,7 +571,7 @@ float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
                                        const btVector3& velocity_b,
                                        float mass_b,
                                        float restitution,
-                                       float speed_of_light)
+                                       float c_light)
 {
     if (mass_a <= 0.0f && mass_b <= 0.0f)
         return 0.0f;
@@ -579,9 +584,9 @@ float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
         return 0.0f;
 
     const float effective_mass_a = getDirectionalEffectiveMass(
-        mass_a, velocity_a, normal, speed_of_light);
+        mass_a, velocity_a, normal, c_light);
     const float effective_mass_b = getDirectionalEffectiveMass(
-        mass_b, velocity_b, normal, speed_of_light);
+        mass_b, velocity_b, normal, c_light);
 
     double effective_inverse_mass = 0.0;
     if (effective_mass_a > 0.0f)
@@ -695,7 +700,7 @@ btVector3 applyVisualPosition(const btVector3& world_position,
         return observer_state.m_observer_position;
 
     relative = getRelativisticEmissionRelativePosition(
-        relative, object_velocity, getConfiguredSpeedOfLight());
+        relative, object_velocity, observer_state.m_c_light);
     if (relative.length2() <= btScalar(1.0e-6f))
         return observer_state.m_observer_position;
 
@@ -812,7 +817,7 @@ float scalePropulsiveForce(float force, float signed_speed)
     if (!Relativity::isPropulsionLimited())
         return force;
     return Relativity::scaleLongitudinalForce(
-        force, signed_speed, Relativity::getConfiguredSpeedOfLight());
+        force, signed_speed, Relativity::getCurrentCLight());
 }   // scalePropulsiveForce
 
 btVector3 clampVelocity(const btVector3& velocity, bool *was_clamped)
@@ -830,7 +835,7 @@ btVector3 scaleResponse(const btVector3& response_vector,
 
     return Relativity::scalePreferredFrameResponse(
         response_vector, coordinate_velocity,
-        Relativity::getConfiguredSpeedOfLight());
+        Relativity::getCurrentCLight());
 }   // scaleResponse
 
 }   // namespace KartAdapter
@@ -838,10 +843,10 @@ btVector3 scaleResponse(const btVector3& response_vector,
 // ----------------------------------------------------------------------------
 void unitTesting()
 {
-    const double c = 80.0;
-    const double gamma_06c = gammaForSpeed(0.6 * c, c);
+    const double c_light = 80.0;
+    const double gamma_06c = gammaForSpeed(0.6 * c_light, c_light);
     (void)gamma_06c;
-    assert(std::fabs(gammaForSpeed(0.0, c) - 1.0) < 0.000001);
+    assert(std::fabs(gammaForSpeed(0.0, c_light) - 1.0) < 0.000001);
     assert(std::fabs(gamma_06c - 1.25) < 0.000001);
     assert(std::fabs(properDt(1.0, 2.0) - 0.5) < 0.000001);
 
@@ -853,35 +858,38 @@ void unitTesting()
     assert(std::fabs((double)v.length() - 78.4) < 0.001);
 
     const float scaled_force =
-        scaleLongitudinalForce(100.0f, 0.6f * (float)c, (float)c);
+        scaleLongitudinalForce(100.0f, 0.6f * (float)c_light,
+                               (float)c_light);
     (void)scaled_force;
     assert(std::fabs((double)scaled_force - 51.2) < 0.001);
-    assert(scaleLongitudinalForce(-100.0f, 0.6f * (float)c, (float)c)
+    assert(scaleLongitudinalForce(-100.0f, 0.6f * (float)c_light,
+                                  (float)c_light)
            == -100.0f);
 
     if (stk_config)
     {
-        const float min_speed_of_light = getMinimumAdjustableSpeedOfLight();
-        const float max_speed_of_light = getMaximumAdjustableSpeedOfLight();
-        const float original_speed_of_light = getConfiguredSpeedOfLight();
+        const float min_c_light = getMinimumAdjustableCLight();
+        const float max_c_light = getMaximumAdjustableCLight();
+        const float original_c_light = getCurrentCLight();
         float adjusted_speed = 0.0f;
-        (void)min_speed_of_light;
-        (void)max_speed_of_light;
-        (void)original_speed_of_light;
+        (void)min_c_light;
+        (void)max_c_light;
+        (void)original_c_light;
         (void)adjusted_speed;
-        assert(setConfiguredSpeedOfLight(0.5f, &adjusted_speed));
-        assert(std::fabs((double)adjusted_speed - min_speed_of_light)
+        assert(setCurrentCLight(0.5f, &adjusted_speed));
+        assert(std::fabs((double)adjusted_speed - min_c_light)
                < 0.0001);
-        assert(std::fabs((double)getSpeedOfLightSliderFraction(
-            min_speed_of_light)) < 0.0001);
-        assert(std::fabs((double)getSpeedOfLightSliderFraction(
-            max_speed_of_light) - 1.0) < 0.0001);
-        assert(setConfiguredSpeedOfLight(original_speed_of_light));
+        assert(std::fabs((double)getCLightSliderFraction(
+            min_c_light)) < 0.0001);
+        assert(std::fabs((double)getCLightSliderFraction(
+            max_c_light) - 1.0) < 0.0001);
+        assert(setCurrentCLight(original_c_light));
     }
 
     btVector3 scaled_response =
         scalePreferredFrameResponse(btVector3(80.0f, 40.0f, 0.0f),
-                                    btVector3(48.0f, 0.0f, 0.0f), (float)c);
+                                    btVector3(48.0f, 0.0f, 0.0f),
+                                    (float)c_light);
     (void)scaled_response;
     assert(std::fabs((double)scaled_response.getX() - 40.96) < 0.01);
     assert(std::fabs((double)scaled_response.getY() - 32.0) < 0.01);
@@ -892,17 +900,17 @@ void unitTesting()
 
     const float effective_mass_parallel = getDirectionalEffectiveMass(
         200.0f, btVector3(48.0f, 0.0f, 0.0f), btVector3(1.0f, 0.0f, 0.0f),
-        (float)c);
+        (float)c_light);
     const float effective_mass_perpendicular = getDirectionalEffectiveMass(
         200.0f, btVector3(48.0f, 0.0f, 0.0f), btVector3(0.0f, 1.0f, 0.0f),
-        (float)c);
+        (float)c_light);
     (void)effective_mass_parallel;
     (void)effective_mass_perpendicular;
     assert(effective_mass_parallel > effective_mass_perpendicular);
 
     const float collision_impulse = computeCollisionImpulseMagnitude(
         btVector3(1.0f, 0.0f, 0.0f), btVector3(20.0f, 0.0f, 0.0f), 200.0f,
-        btVector3(0.0f, 0.0f, 0.0f), 200.0f, 0.1f, (float)c);
+        btVector3(0.0f, 0.0f, 0.0f), 200.0f, 0.1f, (float)c_light);
     (void)collision_impulse;
     assert(collision_impulse > 0.0f);
 
@@ -910,8 +918,9 @@ void unitTesting()
     test_observer.m_valid = true;
     test_observer.m_observer_position = btVector3(0.0f, 0.0f, 0.0f);
     test_observer.m_beta_vector = btVector3(0.6f, 0.0f, 0.0f);
-    test_observer.m_gamma = (float)gammaForSpeed(0.6f * c, c);
+    test_observer.m_gamma = (float)gammaForSpeed(0.6f * c_light, c_light);
     test_observer.m_inverse_gamma = 1.0f / test_observer.m_gamma;
+    test_observer.m_c_light = (float)c_light;
     const btVector3 warped = applyVisualPosition(
         btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f),
         1.0f);

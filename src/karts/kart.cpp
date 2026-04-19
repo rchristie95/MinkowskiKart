@@ -1890,11 +1890,10 @@ void Kart::updateRelativisticState(int ticks)
         ? (double)stk_config->ticks2Time(ticks)
         : 0.0;
         
-    bool item_active = isAnyPowerupActive();
-    float speed_of_light = item_active ? 30.0f : Relativity::getConfiguredSpeedOfLight();
-    
+    const float c_light = Relativity::getCurrentCLight();
+
     Relativity::updateState(&m_relativistic_state, getVelocity(), m_speed, dt,
-                            speed_of_light);
+                            c_light);
 }   // updateRelativisticState
 
 //-----------------------------------------------------------------------------

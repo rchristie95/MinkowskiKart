@@ -1121,9 +1121,9 @@ bool handleContextMenuAction(s32 cmd_id)
                             "* <F2> - Basketball powerup | + <Ctrl> - First person view | + <Shift> - Anchor attachment\n"
                             "* <F3> - Bowling ball powerup | + <Ctrl> - Top view | + <Shift> - Parachute attachment\n"
                             "* <F4> - Bubblegum powerup | + <Ctrl> - Behind wheel view | + <Shift> - Flatten kart\n"
-                            "* <F5> - Cake powerup | + <Ctrl> - Behind kart view | + <Shift> - Send plunger to kart front\n"
+                            "* <F5> - Cake powerup | + <Ctrl> - Behind kart view | + <Shift> - Send photon to kart front\n"
                             "* <F6> - Parachute powerup | + <Ctrl> - Right side of kart view | + <Shift> - Explode kart\n"
-                            "* <F7> - Plunger powerup | + <Ctrl> - Left side of kart view | + <Shift> - Scripting console\n"
+                            "* <F7> - Photon powerup | + <Ctrl> - Left side of kart view | + <Shift> - Scripting console\n"
                             "* <F8> - Swatter powerup | + <Ctrl> - Front of kart view | + <Shift> - Texture console\n"
                             "* <F9> - Switch powerup | + <Ctrl> - Kart number slider | + <Shift> - Run cutscene(s)\n"
                             "* <F10> - Zipper powerup | + <Ctrl> - Powerup amount slider | + <Shift> - Toggle GUI\n"
@@ -1319,7 +1319,7 @@ bool onEvent(const SEvent &event)
             sub->addItem(L"Bubblegum (F4)", DEBUG_POWERUP_WARP_BUBBLE );
             sub->addItem(L"Cake (F5)", DEBUG_POWERUP_NEUTRON_STAR );
             sub->addItem(L"Parachute (F6)", DEBUG_POWERUP_TIME_DILATION );
-            sub->addItem(L"Plunger (F7)", DEBUG_POWERUP_COSMIC_STRING );
+            sub->addItem(L"Photon (F7)", DEBUG_POWERUP_COSMIC_STRING );
             sub->addItem(L"Swatter (F8)", DEBUG_POWERUP_TIDAL_ARM );
             sub->addItem(L"Switch (F9)", DEBUG_POWERUP_FRAME_SHIFT );
             sub->addItem(L"Zipper (F10)", DEBUG_POWERUP_ZIPPER );
@@ -1331,7 +1331,7 @@ bool onEvent(const SEvent &event)
             sub->addItem(L"Anchor (Shift + F2)", DEBUG_ATTACHMENT_ANVIL);
             sub->addItem(L"Parachute (Shift + F3)", DEBUG_ATTACHMENT_PARACHUTE);
             sub->addItem(L"Flatten (Shift + F4)", DEBUG_ATTACHMENT_SQUASH);
-            sub->addItem(L"Plunger (Shift + F5)", DEBUG_ATTACHMENT_PLUNGER);
+            sub->addItem(L"Photon (Shift + F5)", DEBUG_ATTACHMENT_PLUNGER);
             sub->addItem(L"Explosion (Shift + F6)", DEBUG_ATTACHMENT_EXPLOSION);
 
             mnu->addItem(L"Modify kart items >",-1,true, true);

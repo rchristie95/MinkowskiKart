@@ -55,6 +55,8 @@ enum RubberBandTo
     RB_TO_TRACK        /**< Rubber band is attached to track.      */
 };
 private:
+    /** Animation time used to keep the photon wave moving. */
+    float               m_wave_time;
     /** If rubber band is attached to track, the coordinates. */
     Vec3                m_hit_position;
     /** The plunger the rubber band is attached to. */
@@ -66,8 +68,11 @@ private:
 
     /** The dynamic draw call of the rubber band. */
     std::shared_ptr<SP::SPDynamicDrawCall> m_dy_dc;
+    /** Dynamic draw call for the blue wavy photon trace. */
+    std::shared_ptr<SP::SPDynamicDrawCall> m_wave_dy_dc;
 
     irr::scene::IMeshSceneNode* m_node;
+    irr::scene::IMeshSceneNode* m_wave_node;
 
     /** The kart a plunger might have hit. */
     AbstractKart       *m_hit_kart;

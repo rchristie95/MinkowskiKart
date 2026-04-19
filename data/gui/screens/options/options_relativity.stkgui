@@ -24,7 +24,7 @@
                         I18N="Section in the settings menu" text="Controls"/>
                 <icon-button id="tab_language" width="128" height="128" icon="gui/icons/options_language.png"
                         I18N="Section in the settings menu" text="Language"/>
-                <icon-button id="tab_relativity" width="128" height="128" icon="gui/icons/time-dilation-icon.png"
+                <icon-button id="tab_relativity" width="128" height="128" icon="gui/icons/black-hole-icon.png"
                         I18N="Section in the settings menu" text="Relativity"/>
             </vertical-tabs>
 
@@ -35,20 +35,20 @@
                 <box width="100%" height="55%" layout="vertical-row">
                     <spacer width="5" height="4%"/>
                     <label width="90%" height="fit" align="center"
-                           text="Speed of Light (normal)" text_align="center"/>
+                           text="c_light (normal)" text_align="center"/>
                     <spacer width="5" height="3%"/>
                     <div layout="horizontal-row" width="90%" height="fit" align="center">
                         <spacer width="5%" height="100%"/>
-                        <spinner id="normal_speed_of_light" width="90%" height="fit"/>
+                        <spinner id="normal_c_light" width="90%" height="fit"/>
                         <spacer width="5%" height="100%"/>
                     </div>
                     <spacer width="5" height="6%"/>
                     <label width="90%" height="fit" align="center"
-                           text="Speed of Light (with powerup)" text_align="center"/>
+                           text="c_light (with powerup)" text_align="center"/>
                     <spacer width="5" height="3%"/>
                     <div layout="horizontal-row" width="90%" height="fit" align="center">
                         <spacer width="5%" height="100%"/>
-                        <spinner id="powerup_speed_of_light" width="90%" height="fit"/>
+                        <spinner id="powerup_c_light" width="90%" height="fit"/>
                         <spacer width="5%" height="100%"/>
                     </div>
                     <spacer width="5" height="4%"/>
