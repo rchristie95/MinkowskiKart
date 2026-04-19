@@ -64,6 +64,8 @@ public:
      */
     void setKeepAlive(int16_t ticks)                  { m_keep_alive = ticks; }
     // ------------------------------------------------------------------------
+    bool isReverseMode() const                        { return m_reverse_mode; }
+    // ------------------------------------------------------------------------
     /** No hit effect when it ends. */
     virtual HitEffect *getHitEffect() const OVERRIDE           { return NULL; }
     // ------------------------------------------------------------------------

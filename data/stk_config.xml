@@ -156,12 +156,12 @@
        This is disabled by default. It keeps one global preferred simulation
        frame, adds per-kart proper-time diagnostics, caps kart speed below c,
        and attenuates propulsive engine force as beta approaches max-beta.
-       speed-of-light is expressed in STK coordinate meters per second.
+       c-light is expressed in STK coordinate meters per second.
        mode can be "kinematics-only", "propulsion-limited", or
        "preferred-frame-dynamics".
        -->
   <relativity enabled="true"
-              speed-of-light="1000.0"
+              c-light="1000.0"
               max-beta="0.95"
               mode="preferred-frame-dynamics"/>
 

@@ -70,7 +70,7 @@ public:
     int   m_bonusbox_item_return_ticks;  /** Time until a bonus box collected by a kart returns */
     int   m_nitro_item_return_ticks;     /** Time until a nitro collected by a kart returns */
     int   m_banana_item_return_ticks;    /** Time until a banana collected by a kart return */
-    int   m_bubblegum_item_return_ticks; /** Time until a bubble gum collected bý a kart returns */
+    int   m_bubblegum_item_return_ticks; /** Time until a bubble gum collected by a kart returns */
 
     static float UNDEFINED;
     float m_bomb_time;                 /**<Time before a bomb explodes.        */
@@ -295,8 +295,8 @@ public:
     /** If true, use the prototype preferred-frame relativistic mechanics. */
     bool m_relativity_enabled;
 
-    /** Game-scale light speed, in STK coordinate meters per second. */
-    float m_relativity_speed_of_light;
+    /** Game-scale c_light, in STK coordinate meters per second. */
+    float m_relativity_c_light;
 
     /** Maximum beta allowed before the velocity safety clamp applies. */
     float m_relativity_max_beta;

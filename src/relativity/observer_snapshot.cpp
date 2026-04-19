@@ -173,7 +173,7 @@ ObserverVisualState::ObserverVisualState()
     : m_valid(false),
       m_item_active(false),
       m_doppler_active(false),
-      m_speed_of_light(1000.0f),
+      m_c_light(1000.0f),
       m_beta(0.0f),
       m_gamma(1.0f),
       m_inverse_gamma(1.0f),
@@ -244,8 +244,7 @@ ObserverVisualState buildObserverVisualState(
 
     const RelativisticState& state = kart->getRelativisticState();
     
-    // Core rules item active check
-    bool item_active = kart->isAnyPowerupActive();
+    const bool item_active = Relativity::isPowerupCLightActive();
     bool doppler_active = false;
     
     if (kart->isSquashed() || kart->getBlockedByPlungerTicks() > 0)
@@ -260,14 +259,14 @@ ObserverVisualState buildObserverVisualState(
         doppler_active = true;
     }
     
-    float speed_of_light = item_active ? 30.0f : 1000.0f;
+    const float c_light = Relativity::getCurrentCLight();
     
-    if (!std::isfinite((double)speed_of_light) || speed_of_light <= 0.0f)
+    if (!std::isfinite((double)c_light) || c_light <= 0.0f)
         return visual_state;
 
-    const float beta = std::min(std::max((float)state.m_coordinate_velocity.length() / speed_of_light, 0.0f), 0.999f);
+    const float beta = std::min(std::max((float)state.m_coordinate_velocity.length() / c_light, 0.0f), 0.999f);
     const float gamma = 1.0f / sqrt(1.0f - beta * beta);
-    btVector3 beta_vector = state.m_coordinate_velocity / speed_of_light;
+    btVector3 beta_vector = state.m_coordinate_velocity / c_light;
 
     if (!std::isfinite((double)beta_vector.x()) ||
         !std::isfinite((double)beta_vector.y()) ||
@@ -296,7 +295,7 @@ ObserverVisualState buildObserverVisualState(
     visual_state.m_valid = true;
     visual_state.m_item_active = item_active;
     visual_state.m_doppler_active = doppler_active;
-    visual_state.m_speed_of_light = speed_of_light;
+    visual_state.m_c_light = c_light;
     visual_state.m_beta = beta;
     visual_state.m_gamma = gamma;
     visual_state.m_inverse_gamma = 1.0f / gamma;

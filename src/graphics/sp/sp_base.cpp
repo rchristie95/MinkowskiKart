@@ -140,7 +140,7 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
     state.m_last_position = position;
 
     const float max_expected_speed = std::max(
-        60.0f, Relativity::getConfiguredSpeedOfLight() * 2.0f);
+        60.0f, Relativity::getCurrentCLight() * 2.0f);
     const float max_expected_delta = max_expected_speed * dt * 1.5f;
     if (!isFiniteVector(delta) || delta.getLengthSQ() >
         max_expected_delta * max_expected_delta)
@@ -242,7 +242,7 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[6] = visual_state.m_beta_vector.x();
     tail[7] = visual_state.m_beta_vector.y();
     tail[8] = visual_state.m_beta_vector.z();
-    tail[9] = visual_state.m_speed_of_light;
+    tail[9] = visual_state.m_c_light;
     tail[10] = visual_state.m_observer_position.x();
     tail[11] = visual_state.m_observer_position.y();
     tail[12] = visual_state.m_observer_position.z();
