@@ -76,6 +76,7 @@
 #include "physics/btKartRaycast.hpp"
 #include "physics/physics.hpp"
 #include "race/history.hpp"
+#include "relativity/observer_snapshot.hpp"
 #include "relativity/relativity_math.hpp"
 #include "tracks/terrain_info.hpp"
 #include "tracks/drive_graph.hpp"
@@ -306,6 +307,11 @@ Kart::~Kart()
         delete m_controller;
     if(m_saved_controller)
         delete m_saved_controller;
+
+    // Drop this kart's entry from the relativity visual-motion filter map so
+    // that a future kart allocated at the same address cannot inherit stale
+    // smoothing state.
+    Relativity::clearVisualMotionFilterForKart(this);
 }   // ~Kart
 
 //-----------------------------------------------------------------------------
@@ -1890,9 +1896,13 @@ void Kart::updateRelativisticState(int ticks)
         ? (double)stk_config->ticks2Time(ticks)
         : 0.0;
         
-    bool item_active = isAnyPowerupActive();
-    float speed_of_light = item_active ? 30.0f : Relativity::getConfiguredSpeedOfLight();
-    
+    // Use the single configured speed of light here so the per-tick state
+    // (β, γ, proper time) stays consistent with KartAdapter::clampVelocity
+    // and scalePropulsiveForce, both of which read getConfiguredSpeedOfLight
+    // directly. A previous version substituted 30 when a powerup was active,
+    // which made the tau HUD and γ counter diverge from actual physics.
+    const float speed_of_light = Relativity::getConfiguredSpeedOfLight();
+
     Relativity::updateState(&m_relativistic_state, getVelocity(), m_speed, dt,
                             speed_of_light);
 }   // updateRelativisticState
