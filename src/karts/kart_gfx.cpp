@@ -20,18 +20,22 @@
 
 #include "config/user_config.hpp"
 #include "io/file_manager.hpp"
+#include "graphics/camera/camera.hpp"
 #include "graphics/central_settings.hpp"
 #include "graphics/irr_driver.hpp"
+#include "graphics/light.hpp"
 #include "graphics/particle_emitter.hpp"
 #include "graphics/particle_kind.hpp"
 #include "graphics/particle_kind_manager.hpp"
 #include "guiengine/engine.hpp"
+#include "items/attachment.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/controller/controller.hpp"
 #include "karts/kart.hpp"
 #include "karts/kart_model.hpp"
 #include "karts/kart_properties.hpp"
 #include "karts/skidding.hpp"
+#include "modes/world.hpp"
 #include "physics/btKart.hpp"
 #include "utils/log.hpp"
 #include "race/race_manager.hpp"
@@ -46,6 +50,7 @@ KartGFX::KartGFX(const AbstractKart *kart, bool is_day)
     m_nitro_light = NULL;
     m_skidding_light_1 = NULL;
     m_skidding_light_2 = NULL;
+    m_doppler_light = NULL;
     m_kart = kart;
     m_wheel_toggle = 0;
     m_skid_level = 0;
@@ -89,6 +94,21 @@ KartGFX::KartGFX(const AbstractKart *kart, bool is_day)
         m_nitro_light->grab();
         m_skidding_light_1->grab();
         m_skidding_light_2->grab();
+
+        // Doppler tint light: created hidden at the kart centre. Shown and
+        // recoloured each frame by updateDopplerTint() whenever this kart is
+        // under a time-dilation attachment. Starts as a dim white light and
+        // is driven to red/blue from the local camera's relative velocity.
+        m_doppler_light =
+            irr_driver->addLight(core::vector3df(0.0f, 0.6f, 0.0f),
+                                 /*force*/ 1.0f, /*radius*/ 6.0f,
+                                 1.0f, 1.0f, 1.0f, false, node);
+        m_doppler_light->setVisible(false);
+        m_doppler_light->grab();
+#ifdef DEBUG
+        m_doppler_light->setName(("doppler tint (" + m_kart->getIdent()
+                                                   + ")").c_str());
+#endif
     }
 
     // Create particle effects
@@ -156,6 +176,8 @@ KartGFX::~KartGFX()
         m_nitro_light->drop();
         m_skidding_light_1->drop();
         m_skidding_light_2->drop();
+        if (m_doppler_light)
+            m_doppler_light->drop();
     }
 #endif
 
@@ -511,6 +533,99 @@ void KartGFX::updateSkidLight(unsigned int level)
     }
 #endif
 }   // updateSkidLight
+
+// ----------------------------------------------------------------------------
+/** Updates the per-kart Doppler tint light. Visible only while this kart is
+ *  carrying an ATTACH_TIME_DILATION attachment (i.e. it has been hit by
+ *  somebody else's time-dilation powerup). The colour is driven from the
+ *  local camera's relative velocity toward this kart: blue when approaching
+ *  (the camera is closing on the kart), red when receding. Intensity scales
+ *  with the absolute line-of-sight speed so a kart moving perpendicular to
+ *  the camera doesn't flash colour at all.
+ */
+void KartGFX::updateDopplerTint()
+{
+#ifndef SERVER_ONLY
+    if (GUIEngine::isNoGraphics() || !supportsLight() || !m_doppler_light)
+        return;
+
+    const Attachment* att = m_kart->getAttachment();
+    const bool active = att &&
+        att->getType() == Attachment::ATTACH_TIME_DILATION;
+    if (!active)
+    {
+        m_doppler_light->setVisible(false);
+        return;
+    }
+
+    // Find a local camera to use as the observer frame. In splitscreen, the
+    // first active local camera is a pragmatic choice: the tint is cosmetic
+    // and the alternative (a separate light per camera) would require a
+    // proper per-viewport shader pass.
+    Camera* cam = Camera::getActiveCamera();
+    if (!cam) cam = (Camera::getNumCameras() > 0) ? Camera::getCamera(0) : NULL;
+    if (!cam)
+    {
+        m_doppler_light->setVisible(false);
+        return;
+    }
+
+    const core::vector3df cam_pos = cam->getCameraSceneNode()->getPosition();
+    const Vec3 kart_pos = m_kart->getXYZ();
+
+    // Vector from camera to kart (observation line of sight).
+    core::vector3df los(kart_pos.getX() - cam_pos.X,
+                        kart_pos.getY() - cam_pos.Y,
+                        kart_pos.getZ() - cam_pos.Z);
+    const float los_len = los.getLength();
+    if (los_len < 0.001f)
+    {
+        m_doppler_light->setVisible(false);
+        return;
+    }
+    los /= los_len;
+
+    // Relative velocity along the line of sight. Positive = kart receding.
+    // Camera velocity is approximated by the observer kart's velocity when
+    // available; in camera-only modes this decays to just the target's radial
+    // speed, which still produces a sensible tint.
+    const AbstractKart* obs_kart = cam->getKart();
+    btVector3 obs_vel(0, 0, 0);
+    if (obs_kart && !obs_kart->isEliminated())
+        obs_vel = obs_kart->getVelocity();
+    const btVector3 target_vel = m_kart->getVelocity();
+    const btVector3 rel_vel = target_vel - obs_vel;
+    const float radial = rel_vel.x() * los.X + rel_vel.y() * los.Y
+                       + rel_vel.z() * los.Z;
+
+    // Map |radial| in m/s to 0..1 intensity. 25 m/s saturates the tint.
+    float intensity = std::min(1.0f, std::fabs(radial) / 25.0f);
+    // Ensure the tint is always at least faintly visible so the launcher can
+    // see which karts are debuffed even when they're not moving relative to
+    // the camera.
+    intensity = std::max(0.25f, intensity);
+
+    float r, g, b;
+    if (radial > 0.0f) // receding -> red
+    {
+        r = 1.0f;  g = 0.25f * (1.0f - intensity);  b = 0.25f * (1.0f - intensity);
+    }
+    else // approaching -> blue
+    {
+        r = 0.25f * (1.0f - intensity);  g = 0.55f * (1.0f - intensity * 0.5f);  b = 1.0f;
+    }
+
+    LightNode* ln = dynamic_cast<LightNode*>(m_doppler_light);
+    if (ln)
+    {
+        ln->setColor(r, g, b);
+        // Energy scales with intensity so a stationary target still glows
+        // faintly while a fast approach / flee saturates the tint.
+        ln->setEnergy(0.8f + 1.6f * intensity);
+    }
+    m_doppler_light->setVisible(true);
+#endif
+}   // updateDopplerTint
 
 // ----------------------------------------------------------------------------
 void KartGFX::getGFXStatus(int* nitro, bool* zipper,

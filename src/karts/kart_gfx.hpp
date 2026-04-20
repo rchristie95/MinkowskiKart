@@ -99,6 +99,12 @@ private:
     /** A light that's shown on the second skid-level with another color. */
     irr::scene::ISceneNode* m_skidding_light_2;
 
+    /** Coloured point light that sits on this kart while a time-dilation
+     *  attachment is applied. Seen by observers (practically: the launcher
+     *  of the powerup) and dynamically tinted red (receding) or blue
+     *  (approaching) from the local camera's perspective. */
+    irr::scene::ISceneNode* m_doppler_light;
+
     void addEffect(KartGFXType type, const std::string &file_name,
                    const Vec3 &position, bool important);
     void resizeBox(const KartGFXType type, float new_size);
@@ -117,6 +123,7 @@ public:
     void update(float dt);
     void updateNitroGraphics(float f);
     void updateSkidLight(unsigned int level);
+    void updateDopplerTint();
     void getGFXStatus(int* nitro, bool* zipper,
                       int* skidding, bool* red_skidding) const;
     void setGFXFromReplay(int nitro, bool zipper,

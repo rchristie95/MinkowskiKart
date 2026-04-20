@@ -655,7 +655,12 @@ void Attachment::updateGraphics(float dt)
 
     if (m_type != ATTACH_NOTHING)
     {
-        m_node->setVisible(true);
+        // Time-dilation no longer renders its legacy trailing parachute mesh:
+        // the effect is conveyed purely through the per-kart Doppler tint the
+        // launcher sees, plus the halo VFX. Keeping the node hidden avoids a
+        // stray parachute flapping behind every affected kart.
+        const bool hide_attachment_mesh = (m_type == ATTACH_TIME_DILATION);
+        m_node->setVisible(!hide_attachment_mesh);
         bool is_shield = m_type == ATTACH_WARP_BUBBLE ||
                         m_type == ATTACH_NOLOK_WARP_BUBBLE;
         float wanted_node_scale = is_shield ?
