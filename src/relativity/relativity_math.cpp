@@ -32,6 +32,7 @@
 #include "tracks/track.hpp"
 #include "tracks/track_object_manager.hpp"
 #include "utils/log.hpp"
+#include "utils/time.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -277,9 +278,55 @@ float getCurrentCLight()
     // Relativity never turns "off" here: normal driving always uses the
     // configured baseline c_light, and active on-kart powerup effects only
     // override that baseline temporarily.
-    const float c_light = isPowerupCLightActive()
+    //
+    // The transition between the two configured values is ramped over
+    // kCLightRampSeconds of real time so that the Doppler / contraction visuals
+    // don't snap abruptly when a powerup activates or ends.
+    constexpr double kCLightRampSeconds = 1.0;
+
+    const float target_c_light = isPowerupCLightActive()
         ? getConfiguredPowerupCLight()
         : getConfiguredNormalCLight();
+
+    // State preserved between calls to interpolate smoothly. Safe because the
+    // shader uniform update (the only caller that runs per-frame) is single
+    // threaded on the main thread.
+    static bool s_initialized = false;
+    static float s_ramp_start_c_light = 0.0f;
+    static float s_last_target = 0.0f;
+    static double s_ramp_start_time = 0.0;
+
+    const double now = StkTime::getRealTime();
+    if (!s_initialized)
+    {
+        s_initialized = true;
+        s_ramp_start_c_light = target_c_light;
+        s_last_target = target_c_light;
+        s_ramp_start_time = now - kCLightRampSeconds;
+    }
+    else if (target_c_light != s_last_target)
+    {
+        // Begin a new ramp from wherever we currently are toward the new
+        // target. Computing the current interpolated value first means a
+        // mid-transition reversal doesn't pop.
+        const double prev_elapsed = now - s_ramp_start_time;
+        const double prev_t = prev_elapsed >= kCLightRampSeconds ? 1.0
+            : std::max(0.0, prev_elapsed / kCLightRampSeconds);
+        const float current = (float)((1.0 - prev_t) * s_ramp_start_c_light
+            + prev_t * s_last_target);
+        s_ramp_start_c_light = current;
+        s_last_target = target_c_light;
+        s_ramp_start_time = now;
+    }
+
+    const double elapsed = now - s_ramp_start_time;
+    const double t = elapsed >= kCLightRampSeconds ? 1.0
+        : std::max(0.0, elapsed / kCLightRampSeconds);
+    // Smoothstep for a gentler ease-in/ease-out.
+    const double smooth_t = t * t * (3.0 - 2.0 * t);
+    const float c_light = (float)((1.0 - smooth_t) * s_ramp_start_c_light
+        + smooth_t * s_last_target);
+
     if (stk_config)
         stk_config->m_relativity_c_light = c_light;
     return c_light;

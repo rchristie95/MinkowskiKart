@@ -220,20 +220,37 @@ bool Bowling::updateAndDelete(int ticks)
  */
 bool Bowling::hit(AbstractKart* kart, PhysicalObject* obj)
 {
-    bool was_real_hit = Flyable::hit(kart, obj);
-    if(was_real_hit)
+    // Kart collisions: detonate damage on the hit kart but keep the black hole
+    // alive in place. It continues to roll / lens the scene until its
+    // m_max_lifespan (20s) expires, at which point the flyable framework
+    // deletes it naturally. Shield still absorbs the hit, but also does not
+    // remove the ball.
+    if (kart && !isOwnerImmunity(kart) && m_has_server_state &&
+        !hasAnimation())
     {
-        SP::sp_black_hole_active = false;
-        if(kart && kart->isShielded())
+        if (kart->isShielded())
         {
             kart->decreaseShieldTime();
             return true;
         }
-        else
+        if (!kart->getKartAnimation())
         {
-            m_has_hit_kart = kart != NULL;
+            m_has_hit_kart = true;
+            // Direct-hit-only explosion; do NOT call Flyable::hit(), since
+            // that flag schedules this projectile for deletion next tick.
             explode(kart, obj, /*hit_secondary*/false);
         }
+        return true;
+    }
+
+    // Non-kart collisions (track geometry, physical objects) fall back to the
+    // original behaviour: the ball explodes and is removed.
+    bool was_real_hit = Flyable::hit(kart, obj);
+    if(was_real_hit)
+    {
+        SP::sp_black_hole_active = false;
+        m_has_hit_kart = false;
+        explode(kart, obj, /*hit_secondary*/false);
     }
     return was_real_hit;
 }   // hit

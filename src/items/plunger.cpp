@@ -115,8 +115,11 @@ void Plunger::onFireFlyable()
     //adjust height according to terrain
     setAdjustUpVelocity(false);
 
-    const bool create_rubber_band =
-        !(m_reverse_mode || RaceManager::get()->isBattleMode());
+    // In reverse-fire mode we still want the wavy photon tail for visuals, but
+    // the rubber band is used purely for display — its physics forces and
+    // length-based snap are disabled inside RubberBand::update(). Battle mode
+    // continues to suppress the band entirely.
+    const bool create_rubber_band = !RaceManager::get()->isBattleMode();
     if (create_rubber_band && !m_rubber_band)
         m_rubber_band = new RubberBand(this, m_owner);
     else if (!create_rubber_band && m_rubber_band)
