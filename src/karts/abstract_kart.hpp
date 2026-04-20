@@ -420,6 +420,10 @@ public:
     /** Returns true if nitro is currently being used. */
     virtual bool isUsingNitro() const = 0;
     // ------------------------------------------------------------------------
+    /** Returns true if this kart is currently under an on-kart powerup effect
+     *  that should switch the shared relativity c_light override. */
+    virtual bool isCLightPowerupActive() const = 0;
+    // ------------------------------------------------------------------------
     /** Returns true if any powerup is currently active for this kart. */
     virtual bool isAnyPowerupActive() const = 0;
     // ------------------------------------------------------------------------

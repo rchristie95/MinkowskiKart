@@ -1862,28 +1862,47 @@ bool Kart::isUsingNitro() const
 }
 
 //-----------------------------------------------------------------------------
-bool Kart::isAnyPowerupActive() const
+bool Kart::isCLightPowerupActive() const
 {
-    if (isShielded() || isSquashed() || isInvulnerable() || getBlockedByPlungerTicks() > 0)
+    if (isShielded() || isSquashed() || isInvulnerable() ||
+        getBlockedByPlungerTicks() > 0)
+    {
         return true;
-    
-    if (getAttachment() && getAttachment()->getType() != Attachment::ATTACH_NOTHING)
+    }
+
+    if (getAttachment() &&
+        getAttachment()->getType() != Attachment::ATTACH_NOTHING)
+    {
         return true;
-        
+    }
+
     if (isUsingNitro())
         return true;
-        
+
     if (m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_ZIPPER) ||
         m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_WARP_BUBBLE))
+    {
         return true;
-        
+    }
+
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+bool Kart::isAnyPowerupActive() const
+{
+    if (isCLightPowerupActive())
+        return true;
+
     if (ProjectileManager::get() && ProjectileManager::get()->hasActiveProjectile(this))
         return true;
-        
+
     if (Track::getCurrentTrack() && Track::getCurrentTrack()->getItemManager() &&
         Track::getCurrentTrack()->getItemManager()->areItemsSwitched())
+    {
         return true;
-        
+    }
+
     return false;
 }
 

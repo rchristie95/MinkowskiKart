@@ -259,7 +259,7 @@ bool isPowerupCLightActive()
     for (unsigned int i = 0; i < world->getNumKarts(); i++)
     {
         AbstractKart* kart = world->getKart(i);
-        if (kart && kart->isAnyPowerupActive())
+        if (kart && kart->isCLightPowerupActive())
             return true;
     }
     return false;
@@ -268,6 +268,9 @@ bool isPowerupCLightActive()
 // ----------------------------------------------------------------------------
 float getCurrentCLight()
 {
+    // Relativity never turns "off" here: normal driving always uses the
+    // configured baseline c_light, and active on-kart powerup effects only
+    // override that baseline temporarily.
     const float c_light = isPowerupCLightActive()
         ? getConfiguredPowerupCLight()
         : getConfiguredNormalCLight();
