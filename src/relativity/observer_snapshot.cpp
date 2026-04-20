@@ -263,8 +263,10 @@ ObserverVisualState buildObserverVisualState(
         return visual_state;
 
     const RelativisticState& state = kart->getRelativisticState();
-    
-    const bool item_active = Relativity::isPowerupCLightActive();
+
+    // Relativity visuals are always active whenever relativity is enabled: the
+    // configured c_light only alternates between the normal and powerup values,
+    // it never switches the effect off.
     bool doppler_active = false;
     
     if (kart->isSquashed() || kart->getBlockedByPlungerTicks() > 0)
@@ -312,7 +314,7 @@ ObserverVisualState buildObserverVisualState(
     }
 
     visual_state.m_valid = true;
-    visual_state.m_item_active = item_active;
+    visual_state.m_item_active = true;
     visual_state.m_doppler_active = doppler_active;
     visual_state.m_c_light = c_light;
     visual_state.m_beta = beta;
