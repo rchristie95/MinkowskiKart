@@ -9,6 +9,7 @@ Files:
  anchor.png
  anchor-attach-icon.png
  anchor-icon.png
+ asteroid.spm
  banana-low.spm
  bomb.spm
  bubblegum.spm
@@ -27,6 +28,11 @@ Files:
 Copyright: Copyright 2008-2010 MiniBjorn
 License: CC-BY-SA 3.0
 Comment: Marianne Gagnon made slight modifications to the gift box model.
+
+Files: asteroid.spm
+Copyright: Copyright 2015 Jean-Manuel ClÃ©menÃ§on
+License: CC-BY-SA 4.0
+Comment: Derived from library/gfx_meteorit_a/gfx_meteorit_a_meteor.spm.
 
 Files: gift-box-low.spm
 Copyright:
