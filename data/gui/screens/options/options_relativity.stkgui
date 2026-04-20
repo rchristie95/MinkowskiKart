@@ -51,6 +51,15 @@
                         <spinner id="powerup_c_light" width="90%" height="fit"/>
                         <spacer width="5%" height="100%"/>
                     </div>
+                    <spacer width="5" height="6%"/>
+                    <label width="90%" height="fit" align="center"
+                           text="max speed (fraction of c)" text_align="center"/>
+                    <spacer width="5" height="3%"/>
+                    <div layout="horizontal-row" width="90%" height="fit" align="center">
+                        <spacer width="5%" height="100%"/>
+                        <spinner id="max_beta" width="90%" height="fit"/>
+                        <spacer width="5%" height="100%"/>
+                    </div>
                     <spacer width="5" height="4%"/>
                 </box>
 
