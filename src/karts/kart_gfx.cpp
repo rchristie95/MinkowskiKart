@@ -474,9 +474,6 @@ void KartGFX::updateNitroGraphics(float nitro_frac)
         setCreationRateRelative(KartGFX::KGFX_NITRO2, nitro_frac);
         setCreationRateRelative(KartGFX::KGFX_NITROSMOKE1, nitro_frac);
         setCreationRateRelative(KartGFX::KGFX_NITROSMOKE2, nitro_frac);
-        
-        if (supportsLight())
-            m_nitro_light->setVisible(true);
     }
     else
     {
@@ -484,10 +481,14 @@ void KartGFX::updateNitroGraphics(float nitro_frac)
         setCreationRateAbsolute(KartGFX::KGFX_NITRO2,      0);
         setCreationRateAbsolute(KartGFX::KGFX_NITROSMOKE1, 0);
         setCreationRateAbsolute(KartGFX::KGFX_NITROSMOKE2, 0);
-        
-        if (supportsLight())
-            m_nitro_light->setVisible(false);
     }
+
+    // The rear blue nitro light produced a low-quality blue haze that read as
+    // a fake "blueshift". It's disabled in favour of the proper Doppler shift
+    // applied via observer_snapshot + relativity_color.frag while nitro is
+    // being burned.
+    if (supportsLight() && m_nitro_light)
+        m_nitro_light->setVisible(false);
     
     // Exhaust is always emitting
     setCreationRateRelative(KartGFX::KGFX_EXHAUST1, 1.0);

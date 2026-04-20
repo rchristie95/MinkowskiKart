@@ -45,6 +45,10 @@ struct ObserverVisualState
     bool      m_valid;
     bool      m_item_active;
     bool      m_doppler_active;
+    // True when the Doppler shift should keep a central "radio-wave scanner"
+    // circle clear so the player can still see ahead — currently set while
+    // consuming nitro. Ignored unless m_doppler_active is also true.
+    bool      m_scanner_center_active;
     float     m_c_light;
     float     m_beta;
     float     m_gamma;
