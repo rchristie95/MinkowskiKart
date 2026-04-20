@@ -80,9 +80,9 @@ extern unsigned sp_cur_player;
 namespace
 {
 const size_t SP_MATRIX_UBO_BASE_FLOATS = 16 * 9 + 2;
-const size_t SP_MATRIX_UBO_FLOATS = 168;   // +4 for u_black_hole vec4
+const size_t SP_MATRIX_UBO_FLOATS = 172;   // +4 for u_black_hole vec4, +4 for u_wormhole vec4
 const size_t SP_RELATIVITY_UBO_FLOAT_OFFSET = 146;
-const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 22; // +4 for u_black_hole
+const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 26; // +4 for u_black_hole, +4 for u_wormhole
 
 struct RelativityMotionState
 {
@@ -260,6 +260,11 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[19] = sp_black_hole_world_pos.Y;
     tail[20] = sp_black_hole_world_pos.Z;
     tail[21] = sp_black_hole_active ? 1.0f : 0.0f;
+    // u_wormhole: world-space position (xyz) + active flag (w)
+    tail[22] = sp_wormhole_world_pos.X;
+    tail[23] = sp_wormhole_world_pos.Y;
+    tail[24] = sp_wormhole_world_pos.Z;
+    tail[25] = sp_wormhole_active ? 1.0f : 0.0f;
     return tail;
 }   // buildRelativityUBOTail
 
@@ -274,6 +279,10 @@ std::array<float, 16>* g_joint_ptr = NULL;
 // Set by Bowling projectile each frame; cleared when no black hole is live.
 irr::core::vector3df sp_black_hole_world_pos(0.0f, 0.0f, 0.0f);
 bool sp_black_hole_active = false;
+// Wormhole world position for gravitational lensing in tonemap.frag. Set by
+// the Wormhole flyable while alive; cleared on destruction.
+irr::core::vector3df sp_wormhole_world_pos(0.0f, 0.0f, 0.0f);
+bool sp_wormhole_active = false;
 // ----------------------------------------------------------------------------
 bool sp_culling = true;
 // ----------------------------------------------------------------------------

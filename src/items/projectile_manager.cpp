@@ -194,7 +194,7 @@ std::shared_ptr<Flyable>
         case PowerupManager::POWERUP_NEUTRON_STAR:
             f = std::make_shared<Cake>(kart);
             break;
-        case PowerupManager::POWERUP_GEODESIC_MISSILE:
+        case PowerupManager::POWERUP_WORMHOLE:
             f = std::make_shared<RubberBall>(kart);
             break;
         default:
@@ -263,19 +263,25 @@ int ProjectileManager::getNearbyProjectileCount(const AbstractKart * const kart,
 }   // getNearbyProjectileCount
 
 // -----------------------------------------------------------------------------
-std::vector<Vec3> ProjectileManager::getBasketballPositions()
+std::vector<Vec3> ProjectileManager::getWormholePositions()
 {
     std::vector<Vec3> positions;
     for (auto i = m_active_projectiles.begin(); i != m_active_projectiles.end(); i++)
     {
         if (!i->second->hasServerState())
             continue;
-        if (i->second->getType() == PowerupManager::POWERUP_GEODESIC_MISSILE)
+        if (i->second->getType() != PowerupManager::POWERUP_WORMHOLE)
+            continue;
+
+        Wormhole* wormhole = dynamic_cast<Wormhole*>(i->second.get());
+        if (wormhole)
+            wormhole->getMinimapPositions(&positions);
+        else
             positions.emplace_back(i->second->getXYZ());
     } // loop over projectiles
 
     return positions;
-} // getBasketballPositions
+} // getWormholePositions
 // -----------------------------------------------------------------------------
 std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
                                                  PowerupManager::PowerupType t)
@@ -298,7 +304,7 @@ std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
             uid.addUInt8(RN_CAKE);
             break;
         }
-        case PowerupManager::POWERUP_GEODESIC_MISSILE:
+        case PowerupManager::POWERUP_WORMHOLE:
         {
             uid.addUInt8(RN_RUBBERBALL);
             break;
@@ -382,5 +388,4 @@ bool ProjectileManager::hasActiveProjectile(const AbstractKart* kart) const
     }
     return false;
 }
-
 

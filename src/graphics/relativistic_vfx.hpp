@@ -129,7 +129,7 @@ struct FrameShiftVFX
     {}
 };
 
-struct NeutronStarVFX
+struct WormholeVFX
 {
     float              core_brightness;    // how bright the dense core is
     float              halo_tightness;     // how tight the halo clings
@@ -138,7 +138,7 @@ struct NeutronStarVFX
     ParticleEmitter   *core_emitter;
     ParticleEmitter   *halo_emitter;
 #endif
-    NeutronStarVFX() : core_brightness(1.0f), halo_tightness(0.3f),
+    WormholeVFX() : core_brightness(1.0f), halo_tightness(0.3f),
                        impact_flash(-1)
 #ifndef SERVER_ONLY
                        , core_emitter(nullptr), halo_emitter(nullptr)
@@ -202,7 +202,7 @@ private:
     // Singleton active effects for projectiles/global
     std::vector<GeodesicMissileVFX> m_geodesic_missiles;
     std::vector<BlackHoleVFX>       m_black_holes;
-    std::vector<NeutronStarVFX>     m_neutron_stars;
+    std::vector<WormholeVFX>     m_wormholes;
     std::vector<CosmicStringVFX>    m_cosmic_strings;
     FrameShiftVFX                   m_frame_shift;
 

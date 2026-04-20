@@ -96,7 +96,7 @@ void RelativisticVFXManager::reset()
         if (bh.accretion_emitter) { delete bh.accretion_emitter; bh.accretion_emitter = nullptr; }
         if (bh.disk_node) { irr_driver->removeNode(static_cast<scene::ISceneNode*>(bh.disk_node)); bh.disk_node = nullptr; }
     }
-    for (auto &ns : m_neutron_stars)
+    for (auto &ns : m_wormholes)
     {
         if (ns.core_emitter) { delete ns.core_emitter; ns.core_emitter = nullptr; }
         if (ns.halo_emitter) { delete ns.halo_emitter; ns.halo_emitter = nullptr; }
@@ -118,7 +118,7 @@ void RelativisticVFXManager::reset()
     m_tidal_arms.clear();
     m_geodesic_missiles.clear();
     m_black_holes.clear();
-    m_neutron_stars.clear();
+    m_wormholes.clear();
     m_cosmic_strings.clear();
     m_frame_shift = FrameShiftVFX();
     m_global_time = 0;

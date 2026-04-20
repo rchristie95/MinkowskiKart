@@ -101,6 +101,8 @@ extern unsigned sp_cur_buf_id[MAX_PLAYER_COUNT];
 extern irr::core::vector3df sp_wind_dir;
 extern irr::core::vector3df sp_black_hole_world_pos;
 extern bool sp_black_hole_active;
+extern irr::core::vector3df sp_wormhole_world_pos;
+extern bool sp_wormhole_active;
 // ----------------------------------------------------------------------------
 void init();
 // ----------------------------------------------------------------------------

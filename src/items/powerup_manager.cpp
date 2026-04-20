@@ -102,16 +102,36 @@ void PowerupManager::unloadPowerups()
 PowerupManager::PowerupType
     PowerupManager::getPowerupType(const std::string &name) const
 {
+    const std::string lower_name = StringUtils::toLowerCase(name);
     // Must match the order of PowerupType in powerup_manager.hpp!!
     static const std::string powerup_names[] = {
         "",            /* Nothing */
         "warp-bubble", "neutron-star", "black-hole", "zipper", "photon",
-        "frame-shift", "tidal-arm", "geodesic-missile", "time-dilation", "mass-spike"
+        "frame-shift", "tidal-arm", "wormhole", "time-dilation", "mass-spike"
     };
 
+    if (lower_name == "wormhole"          ||
+        lower_name == "geodesic-missile" ||
+        lower_name == "geodesic_missile" ||
+        lower_name == "rubber-ball"      ||
+        lower_name == "rubber_ball"      ||
+        lower_name == "rubberball")
+    {
+        return POWERUP_WORMHOLE;
+    }
+
+    if (lower_name == "neutron-star" ||
+        lower_name == "neutron_star" ||
+        lower_name == "neutronstar")
+    {
+        return POWERUP_NEUTRON_STAR;
+    }
+
+    // Backward compatibility: legacy identifier from before the Neutron Star
+    // → Wormhole rename. Keep accepted so old powerup.xml / savegames load.
     for(unsigned int i=POWERUP_FIRST; i<=POWERUP_LAST; i++)
     {
-        if(powerup_names[i]==name) return(PowerupType)i;
+        if(powerup_names[i] == lower_name) return(PowerupType)i;
     }
     return POWERUP_NOTHING;
 }   // getPowerupType
@@ -509,7 +529,7 @@ void PowerupManager::loadPowerup(PowerupType type, const XMLNode &node)
              Plunger::init(node, m_all_meshes[type]);    break;
         case POWERUP_NEUTRON_STAR:
              Cake::init(node, m_all_meshes[type]);       break;
-        case POWERUP_GEODESIC_MISSILE:
+        case POWERUP_WORMHOLE:
              RubberBall::init(node, m_all_meshes[type]); break;
         default: break;
     }   // switch
@@ -620,7 +640,7 @@ PowerupManager::PowerupType PowerupManager::getRandomPowerup(unsigned int pos,
         stk_config->ticks2Time(World::getWorld()->getTicksSinceStart()) <
                                       stk_config->m_no_explosive_items_timeout)
     {
-        if (powerup == POWERUP_NEUTRON_STAR || powerup == POWERUP_GEODESIC_MISSILE)
+        if (powerup == POWERUP_NEUTRON_STAR || powerup == POWERUP_WORMHOLE)
             powerup = POWERUP_BLACK_HOLE;
     }
     return (PowerupType)powerup;
@@ -681,4 +701,13 @@ void PowerupManager::unitTesting()
     {
         assert(count[i] == wd.m_weights_for_section[section][i]);
     }
+
+    assert(powerup_manager->getPowerupType("wormhole") == POWERUP_WORMHOLE);
+    assert(powerup_manager->getPowerupType("geodesic-missile")
+        == POWERUP_WORMHOLE);
+    assert(powerup_manager->getPowerupType("rubber_ball")
+        == POWERUP_WORMHOLE);
+    assert(powerup_manager->getPowerupType("neutron-star")
+        == POWERUP_NEUTRON_STAR);
+    Wormhole::unitTesting();
 }   // unitTesting
