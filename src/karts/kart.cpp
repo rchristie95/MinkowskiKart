@@ -3391,6 +3391,7 @@ void Kart::updateGraphics(float dt)
         if(nitro_frac>1.0f) nitro_frac = 1.0f;
     }
     m_kart_gfx->updateNitroGraphics(nitro_frac);
+    m_kart_gfx->updateDopplerTint();
 
     // Handle leaning of karts
     // -----------------------

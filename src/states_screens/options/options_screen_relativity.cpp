@@ -29,9 +29,9 @@ using namespace GUIEngine;
 
 // -----------------------------------------------------------------------------
 
-static const int C_LIGHT_MIN = 30;
+static const int C_LIGHT_MIN = 15;
 static const int C_LIGHT_MAX = 1000;
-static const int C_LIGHT_STEP = 10;
+static const int C_LIGHT_STEP = 5;
 
 // max_beta stored as an integer percentage (10 = 0.10 .. 99 = 0.99)
 static const int MAX_BETA_MIN_PCT  = 10;
