@@ -44,7 +44,7 @@
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/cake-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/geodesic-missile-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
                             text="Geodesic Missile: A guided projectile that curves through spacetime and chases down racers even if they change speed."/>
@@ -76,7 +76,7 @@
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                     <icon align="center" width="8%" height="100%" icon="gui/icons/rubber_ball-icon.png"/>
+                     <icon align="center" width="8%" height="100%" icon="gui/icons/neutron-star-icon.png"/>
                      <spacer width="3%" height="100%"/>
                      <bubble proportion="1" height="100%" text="Neutron Star: Hit a racer with a chunk of absurd density and watch their momentum disappear."/>
                 </div>

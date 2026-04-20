@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<particles emitter="sphere" radius="0.55">
+
+    <spreading angle="155" />
+
+    <velocity  x="0.000"
+               y="0.0045"
+               z="0.000" />
+
+    <material  file="gfx_earthJetblast_a.png" />
+
+    <!-- Amount of particles emitted per second -->
+    <rate      min="950"
+               max="1200" />
+
+    <!-- Minimal and maximal lifetime of a particle, in milliseconds. -->
+    <lifetime  min="350"
+               max="950" />
+
+    <!-- Size of the particles -->
+    <size      min="0.45"
+               max="1.05"
+               x-increase-factor="1.35"
+               y-increase-factor="1.35" />
+
+    <color     min="160 110 70"
+               max="255 225 170" />
+
+</particles>
