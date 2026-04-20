@@ -413,15 +413,12 @@ bool scaleCurrentCLight(float factor,
 // ----------------------------------------------------------------------------
 float getConfiguredMaxBeta()
 {
-    if (!stk_config ||
-        !std::isfinite((double)stk_config->m_relativity_max_beta) ||
-        stk_config->m_relativity_max_beta <= 0.0f)
-    {
-        return 0.98f;
-    }
-    if (stk_config->m_relativity_max_beta >= 1.0f)
+    const float beta = (float)UserConfigParams::m_relativity_max_beta;
+    if (!std::isfinite((double)beta) || beta <= 0.0f)
+        return 0.95f;
+    if (beta >= 1.0f)
         return 1.0f - 1.0e-6f;
-    return stk_config->m_relativity_max_beta;
+    return beta;
 }   // getConfiguredMaxBeta
 
 // ----------------------------------------------------------------------------
@@ -897,12 +894,12 @@ bool castApparentDriveableRay(const AbstractKart* observer_kart,
 namespace KartAdapter
 {
 
-float scalePropulsiveForce(float force, float signed_speed)
+float scalePropulsiveForce(float force, float /*signed_speed*/)
 {
-    if (!Relativity::isPropulsionLimited())
-        return force;
-    return Relativity::scaleLongitudinalForce(
-        force, signed_speed, Relativity::getCurrentCLight());
+    // Engine force is never scaled by relativistic gamma: that made the game
+    // feel sluggish without adding fun. The hard speed cap (c * max_beta, capped
+    // at 0.95c) in btKart::adjustSpeed is sufficient to bound kart velocity.
+    return force;
 }   // scalePropulsiveForce
 
 btVector3 clampVelocity(const btVector3& velocity, bool *was_clamped)

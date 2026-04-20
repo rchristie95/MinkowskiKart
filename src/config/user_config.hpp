@@ -1366,6 +1366,12 @@ namespace UserConfigParams
             PARAM_DEFAULT( IntUserConfigParam(30, "c_light_powerup",
                                              &m_relativity_group,
                                              "Configured c_light when a powerup is active (30-1000)") );
+
+    PARAM_PREFIX FloatUserConfigParam      m_relativity_max_beta
+            PARAM_DEFAULT( FloatUserConfigParam(0.95f, "max_beta",
+                                               &m_relativity_group,
+                                               "Maximum kart speed as a fraction of c (0.1-0.99)") );
+
     // ---- User management
 
     PARAM_PREFIX BoolUserConfigParam        m_always_show_login_screen

@@ -33,6 +33,33 @@ static const int C_LIGHT_MIN = 30;
 static const int C_LIGHT_MAX = 1000;
 static const int C_LIGHT_STEP = 10;
 
+// max_beta stored as an integer percentage (10 = 0.10 .. 99 = 0.99)
+static const int MAX_BETA_MIN_PCT  = 10;
+static const int MAX_BETA_MAX_PCT  = 99;
+
+static void populateMaxBetaSpinner(SpinnerWidget* w)
+{
+    w->clearLabels();
+    for (int pct = MAX_BETA_MIN_PCT; pct <= MAX_BETA_MAX_PCT; pct++)
+    {
+        std::ostringstream oss;
+        oss << "0." << (pct < 10 ? "0" : "") << pct << "c";
+        w->addLabel(core::stringw(oss.str().c_str()));
+    }
+}
+
+static int maxBetaToIndex(float beta)
+{
+    int pct = (int)std::round((double)beta * 100.0);
+    pct = std::max(MAX_BETA_MIN_PCT, std::min(MAX_BETA_MAX_PCT, pct));
+    return pct - MAX_BETA_MIN_PCT;
+}
+
+static float indexToMaxBeta(int index)
+{
+    return (float)(MAX_BETA_MIN_PCT + index) / 100.0f;
+}
+
 static void populateCLightSpinner(SpinnerWidget* w)
 {
     w->clearLabels();
@@ -94,6 +121,12 @@ void OptionsScreenRelativity::init()
     powerup_w->setValue(cLightToIndex(
         (int)UserConfigParams::m_relativity_powerup_c_light));
 
+    SpinnerWidget* beta_w = getWidget<SpinnerWidget>("max_beta");
+    assert(beta_w != NULL);
+    populateMaxBetaSpinner(beta_w);
+    beta_w->setValue(maxBetaToIndex(
+        (float)UserConfigParams::m_relativity_max_beta));
+
     Relativity::getCurrentCLight();
 }   // init
 
@@ -137,6 +170,12 @@ void OptionsScreenRelativity::eventCallback(Widget* widget,
         const int c_light = indexToCLight(w->getValue());
         UserConfigParams::m_relativity_powerup_c_light = c_light;
         Relativity::getCurrentCLight();
+    }
+    else if (name == "max_beta")
+    {
+        SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
+        assert(w != NULL);
+        UserConfigParams::m_relativity_max_beta = indexToMaxBeta(w->getValue());
     }
 }   // eventCallback
 
