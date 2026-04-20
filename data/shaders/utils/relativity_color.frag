@@ -8,6 +8,58 @@ bool dopplerVisualsEnabled()
     return u_relativity_params.y > 0.5;
 }
 
+bool dopplerScannerEnabled()
+{
+    return u_relativity_observer_pos.w > 0.5;
+}
+
+// Aspect-corrected distance from screen centre, in units where the scanner
+// circle radii below are comparable across arbitrary resolutions.
+float dopplerScannerRadius()
+{
+    vec2 uv = gl_FragCoord.xy / u_screen;
+    float aspect = u_screen.x / max(u_screen.y, 1.0);
+    vec2 d = (uv - vec2(0.5)) * vec2(aspect, 1.0);
+    return length(d);
+}
+
+// Scanner geometry. Kept in one place so tweaks stay consistent.
+#define SCANNER_INNER_RADIUS 0.14
+#define SCANNER_OUTER_RADIUS 0.18
+#define SCANNER_RING_WIDTH   0.006
+#define SCANNER_RING_COLOR   vec3(0.55, 0.95, 1.0)
+
+// Mask used to blend Doppler-shifted colour with the scanner interior:
+// 1.0 outside the scanner ring (full Doppler), 0.0 inside the inner radius.
+// Returns a constant 1.0 when scanner mode is off so the existing Doppler
+// shift on other triggers (banana squash, attachments, plunger) is unaffected.
+float dopplerScannerMask()
+{
+    if (!dopplerScannerEnabled()) return 1.0;
+    return smoothstep(SCANNER_INNER_RADIUS, SCANNER_OUTER_RADIUS,
+                      dopplerScannerRadius());
+}
+
+// BT.709 luminance — the scanner interior is desaturated to a monochrome
+// instrument readout instead of showing the raw scene colour.
+vec3 dopplerScannerMonochrome(vec3 color)
+{
+    float y = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    // Subtle green-tint bias for a CRT/oscilloscope feel without hiding detail.
+    return y * vec3(0.85, 1.0, 0.9);
+}
+
+// Bright ring drawn at the boundary of the scanner window to frame the view
+// like instrumentation. Returns intensity in [0, 1] for additive mixing.
+float dopplerScannerRing()
+{
+    if (!dopplerScannerEnabled()) return 0.0;
+    float r = dopplerScannerRadius();
+    float center = 0.5 * (SCANNER_INNER_RADIUS + SCANNER_OUTER_RADIUS);
+    float d = abs(r - center);
+    return 1.0 - smoothstep(0.0, SCANNER_RING_WIDTH, d);
+}
+
 // OpenRelativity color shift constants
 #define xla 0.39952807612909519
 #define xlb 444.63156780935032
@@ -106,22 +158,36 @@ vec3 constrainRGB(float r, float g, float b)
     return vec3(r, g, b);
 }
 
+// Composite the scanner overlay (monochrome interior + bright framing ring)
+// on top of `shifted` (Doppler-shifted colour) using `color` as the unshifted
+// reference for the instrument readout. When scanner mode is off this is a
+// straight pass-through of `shifted`, so every early-return below can just
+// run its own result through this helper and still draw the ring / interior
+// when the shift itself is a no-op (low speed, view-aligned, etc.).
+vec3 applyScannerOverlay(vec3 shifted, vec3 color)
+{
+    if (!dopplerScannerEnabled()) return shifted;
+    vec3 interior = dopplerScannerMonochrome(color);
+    vec3 composed = mix(interior, shifted, dopplerScannerMask());
+    return mix(composed, SCANNER_RING_COLOR, dopplerScannerRing());
+}
+
 vec3 applyDopplerShift(vec3 color, vec3 view_dir)
 {
     if (!dopplerVisualsEnabled()) return color;
 
     vec3 beta = u_relativity_beta.xyz;
     float beta2 = dot(beta, beta);
-    if (beta2 < 1e-6 || beta2 >= 1.0) return color;
+    if (beta2 < 1e-6 || beta2 >= 1.0) return applyScannerOverlay(color, color);
 
     float gamma = clamp(u_relativity_params.z, 1.0, 100.0);
     float shift = gamma * (1.0 - dot(beta, view_dir));
-    
-    if (shift < 0.01 || shift > 100.0) return color;
-    if (shift > 0.999 && shift < 1.001) return color;
-    
+
+    if (shift < 0.01 || shift > 100.0) return applyScannerOverlay(color, color);
+    if (shift > 0.999 && shift < 1.001) return applyScannerOverlay(color, color);
+
     vec3 xyz = RGBToXYZC(color.r, color.g, color.b);
-    if (any(isnan(xyz)) || any(isinf(xyz))) return color;
+    if (any(isnan(xyz)) || any(isinf(xyz))) return applyScannerOverlay(color, color);
 
     vec3 weights = weightFromXYZCurves(xyz);
     vec3 rParam = vec3(weights.x, 615.0, 8.0);
@@ -129,16 +195,18 @@ vec3 applyDopplerShift(vec3 color, vec3 view_dir)
     vec3 bParam = vec3(weights.z, 463.0, 5.0);
     vec3 UVParam = vec3(0.02, UV_START + UV_RANGE*0.0, 5.0);
     vec3 IRParam = vec3(0.02, IR_START + IR_RANGE*0.0, 5.0);
-    
+
     float invShift = 1.0 / shift;
     float shift3 = invShift * invShift * invShift;
-    
+
     float xf = shift3 * (getXFromCurve(rParam, shift) + getXFromCurve(gParam, shift) + getXFromCurve(bParam, shift) + getXFromCurve(IRParam, shift) + getXFromCurve(UVParam, shift));
     float yf = shift3 * (getYFromCurve(rParam, shift) + getYFromCurve(gParam, shift) + getYFromCurve(bParam, shift) + getYFromCurve(IRParam, shift) + getYFromCurve(UVParam, shift));
     float zf = shift3 * (getZFromCurve(rParam, shift) + getZFromCurve(gParam, shift) + getZFromCurve(bParam, shift) + getZFromCurve(IRParam, shift) + getZFromCurve(UVParam, shift));
-    
-    if (isnan(xf) || isnan(yf) || isnan(zf) || isinf(xf) || isinf(yf) || isinf(zf)) return color;
+
+    if (isnan(xf) || isnan(yf) || isnan(zf) || isinf(xf) || isinf(yf) || isinf(zf))
+        return applyScannerOverlay(color, color);
 
     vec3 rgbFinal = XYZToRGBC(xf, yf, zf);
-    return constrainRGB(rgbFinal.x, rgbFinal.y, rgbFinal.z);
+    vec3 shifted = constrainRGB(rgbFinal.x, rgbFinal.y, rgbFinal.z);
+    return applyScannerOverlay(shifted, color);
 }

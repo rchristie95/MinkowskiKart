@@ -1864,17 +1864,16 @@ bool Kart::isUsingNitro() const
 //-----------------------------------------------------------------------------
 bool Kart::isCLightPowerupActive() const
 {
-    // The warp bubble and the zipper (speed boost) both switch the shared
-    // relativity c_light to the configured powerup value. Other powerups
-    // (shields, attachments, nitro, plunger hits, etc.) do not alter the speed
-    // of light. Remote players' powerups never change the local observer's
-    // c_light because the local view only consults local player karts when
-    // deciding which c_light value to use. The transition itself is smoothed
-    // over one second inside Relativity::getCurrentCLight().
+    // Only the warp bubble switches the shared relativity c_light to the
+    // configured powerup value. Zippers (both the boost-box powerup and the
+    // track-placed ground speed boosters) and all other powerups leave c_light
+    // alone: they affect top speed normally but not the speed of light. Remote
+    // players' powerups never change the local observer's c_light because the
+    // local view only consults local player karts when deciding which c_light
+    // value to use. The transition itself is smoothed over one second inside
+    // Relativity::getCurrentCLight().
     return m_max_speed->isSpeedIncreaseActive(
-               MaxSpeed::MS_INCREASE_WARP_BUBBLE) ||
-           m_max_speed->isSpeedIncreaseActive(
-               MaxSpeed::MS_INCREASE_ZIPPER);
+               MaxSpeed::MS_INCREASE_WARP_BUBBLE);
 }
 
 //-----------------------------------------------------------------------------

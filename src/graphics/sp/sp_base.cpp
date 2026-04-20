@@ -246,6 +246,10 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[10] = visual_state.m_observer_position.x();
     tail[11] = visual_state.m_observer_position.y();
     tail[12] = visual_state.m_observer_position.z();
+    // u_relativity_observer_pos.w: repurposed as the "radio-wave scanner"
+    // Doppler-exemption flag so the centre of the player's view stays clear
+    // while they are burning nitro.
+    tail[13] = visual_state.m_scanner_center_active ? 1.0f : 0.0f;
     const Vec3& bubble_center = camera->getKart()->getSmoothedXYZ();
     tail[14] = bubble_center.getX();
     tail[15] = bubble_center.getY();
