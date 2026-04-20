@@ -1864,28 +1864,13 @@ bool Kart::isUsingNitro() const
 //-----------------------------------------------------------------------------
 bool Kart::isCLightPowerupActive() const
 {
-    if (isShielded() || isSquashed() || isInvulnerable() ||
-        getBlockedByPlungerTicks() > 0)
-    {
-        return true;
-    }
-
-    if (getAttachment() &&
-        getAttachment()->getType() != Attachment::ATTACH_NOTHING)
-    {
-        return true;
-    }
-
-    if (isUsingNitro())
-        return true;
-
-    if (m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_ZIPPER) ||
-        m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_WARP_BUBBLE))
-    {
-        return true;
-    }
-
-    return false;
+    // Only the warp bubble switches the shared relativity c_light: other
+    // powerups (shields, attachments, nitro, zippers, plunger hits, etc.) do
+    // not alter the speed of light. This also means remote players' powerups
+    // never change the local observer's c_light, because the local view only
+    // consults local player karts when deciding which c_light value to use.
+    return m_max_speed->isSpeedIncreaseActive(
+        MaxSpeed::MS_INCREASE_WARP_BUBBLE);
 }
 
 //-----------------------------------------------------------------------------
