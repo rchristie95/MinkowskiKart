@@ -21,6 +21,11 @@
 
 #include "items/cake.hpp"
 
+#include "graphics/explosion.hpp"
+#include "graphics/irr_driver.hpp"
+#include "graphics/mesh_tools.hpp"
+#include "guiengine/engine.hpp"
+#include "io/file_manager.hpp"
 #include "io/xml_node.hpp"
 #include "karts/abstract_kart.hpp"
 #include "utils/constants.hpp"
@@ -46,6 +51,19 @@ void Cake::init(const XMLNode &node, scene::IMesh *cake_model)
     Flyable::init(node, cake_model, PowerupManager::POWERUP_NEUTRON_STAR);
     float max_distance        = 80.0f;
     m_gravity                 = 9.8f;
+
+    // Keep the original cake projectile bounds for launch offset and
+    // collision shape so asteroid visuals don't change the classic arc/seek
+    // behaviour.
+    const std::string legacy_model =
+        file_manager->getAsset(FileManager::MODEL, "cake.spm");
+    scene::IMesh* legacy_cake_model = irr_driver->getMesh(legacy_model);
+    if (legacy_cake_model != NULL)
+    {
+        Vec3 min, max;
+        MeshTools::minMax3D(legacy_cake_model, &min, &max);
+        m_st_extend[PowerupManager::POWERUP_NEUTRON_STAR] = btVector3(max-min);
+    }
 
     node.get("max-distance",    &max_distance  );
     m_st_max_distance_squared = max_distance*max_distance;
@@ -74,6 +92,15 @@ bool Cake::hit(AbstractKart* kart, PhysicalObject* obj)
 
     return was_real_hit;
 }   // hit
+
+// ----------------------------------------------------------------------------
+HitEffect* Cake::getHitEffect() const
+{
+    if (GUIEngine::isNoGraphics())
+        return NULL;
+    return m_deleted_once ? NULL :
+        new Explosion(getXYZ(), "explosion", "explosion_asteroid.xml");
+}   // getHitEffect
 
 // ----------------------------------------------------------------------------
 void Cake::onFireFlyable()
