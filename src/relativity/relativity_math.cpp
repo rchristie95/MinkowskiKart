@@ -253,12 +253,18 @@ bool isPowerupCLightActive()
         return false;
 
     World* world = World::getWorld();
-    if (!world)
+    if (!world || !RaceManager::get())
         return false;
 
-    for (unsigned int i = 0; i < world->getNumKarts(); i++)
+    // Only the local player's own state can change the local observer's
+    // c_light: remote players firing or using powerups must not affect our
+    // speed of light. In splitscreen, any local player triggering the effect
+    // switches c_light for the shared configuration.
+    const unsigned int num_local_players =
+        RaceManager::get()->getNumLocalPlayers();
+    for (unsigned int i = 0; i < num_local_players; i++)
     {
-        AbstractKart* kart = world->getKart(i);
+        AbstractKart* kart = world->getLocalPlayerKart(i);
         if (kart && kart->isCLightPowerupActive())
             return true;
     }
