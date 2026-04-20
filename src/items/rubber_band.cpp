@@ -290,6 +290,13 @@ void RubberBand::update(int ticks)
     updatePosition();
     const Vec3 &k = m_owner->getXYZ();
 
+    // Reverse-fired plungers are visual-only: skip the length-based snap so the
+    // wavy photon tail can trail indefinitely while the plunger flies away, and
+    // skip force application entirely (the state never leaves RB_TO_PLUNGER in
+    // reverse mode anyway, but we bail early for clarity).
+    if (m_plunger->isReverseMode())
+        return;
+
     // Check for rubber band snapping
     // ------------------------------
     float l = (m_end_position-k).length2();
