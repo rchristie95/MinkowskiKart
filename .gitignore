@@ -4,6 +4,7 @@ build/CMakeFiles/
 build/.ninja_deps
 build/.ninja_log
 build/libsupertuxkart.dll.a
+build-dev/
 *.log
 
 # IDE / OS

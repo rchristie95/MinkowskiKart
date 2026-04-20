@@ -42,6 +42,29 @@ This project uses **CMake** and **Ninja** for compilation.
     ```
 4.  The binary will be generated at: `build\bin\supertuxkart.exe`
 
+### Fast Local Iteration
+For day-to-day local work, prefer the untracked `build-dev/` directory instead
+of the versioned `build/` tree. This keeps Ninja's incremental state clean and
+avoids large accidental rebuilds after pulls or resets.
+
+1.  Configure the dev build once:
+    ```powershell
+    .\configure-dev.bat
+    ```
+2.  Do normal incremental builds:
+    ```powershell
+    .\compile-dev.bat
+    ```
+3.  Force a clean rebuild only when you actually want one:
+    ```powershell
+    .\compile-dev.bat full
+    ```
+4.  Clean the dev build directory without rebuilding:
+    ```powershell
+    .\compile-dev.bat clean
+    ```
+5.  The dev executable will be generated at: `build-dev\bin\supertuxkart.exe`
+
 ## 📜 Citations and Credits
 
 ### SuperTuxKart
