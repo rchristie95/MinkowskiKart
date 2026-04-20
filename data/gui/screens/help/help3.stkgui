@@ -44,10 +44,10 @@
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/geodesic-missile-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/wormhole-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
-                            text="Geodesic Missile: A guided projectile that curves through spacetime and chases down racers even if they change speed."/>
+                            text="Wormhole: Spawn two linked portals. One opens ahead of you and the other opens farther up the track so any kart can cut through spacetime in either direction."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
@@ -78,7 +78,7 @@
                 <div width="100%" proportion="1" layout="horizontal-row">
                      <icon align="center" width="8%" height="100%" icon="gui/icons/neutron-star-icon.png"/>
                      <spacer width="3%" height="100%"/>
-                     <bubble proportion="1" height="100%" text="Neutron Star: Hit a racer with a chunk of absurd density and watch their momentum disappear."/>
+                     <bubble proportion="1" height="100%" text="Neutron Star: Launch a dense asteroid-like projectile that slams racers and bleeds off their momentum on impact."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">

@@ -116,6 +116,60 @@ void main()
         }
     }
 
+    // ---- Wormhole: portal-style lensing (cyan/violet swirl ring) ----
+    // Reuses the same screen-space Schwarzschild lens math as the black hole
+    // but renders as a translucent blue/purple ring to read as a tunnel
+    // rather than a crushing singularity, and it does not fully absorb light
+    // at the core (stars/scene sample from the opposite side of the ring).
+    if (u_wormhole.w > 0.5)
+    {
+        vec4 wh_clip = u_projection_view_matrix * vec4(u_wormhole.xyz, 1.0);
+        if (wh_clip.w > 0.001 && wh_clip.z > 0.0)
+        {
+            vec2 wh_ndc    = wh_clip.xy / wh_clip.w;
+            vec2 wh_screen = (wh_ndc * 0.5 + 0.5) * u_screen;
+
+            vec2  delta = gl_FragCoord.xy - wh_screen;
+            float r     = length(delta);
+
+            const float R_E = 60.0;
+
+            if (r > 0.5 && r < R_E * 6.0)
+            {
+                // Same lens equation but never a "swallowed" region: when the
+                // remapped radius would go negative we mirror it so the other
+                // side of the wormhole mouth is visible through the portal.
+                float r_src = r - (R_E * R_E) / r;
+                r_src = abs(r_src);
+                vec2 sample_pos = wh_screen + normalize(delta) * r_src;
+                vec2 wh_uv = clamp(sample_pos / u_screen, vec2(0.0), vec2(1.0));
+                vec4 portal_col = texture(tex, wh_uv);
+
+                // Blend portal image over the direct scene — stronger near
+                // the Einstein ring, fading at the outer limit.
+                float blend = 1.0 - clamp(r / (R_E * 2.5), 0.0, 1.0);
+                col.rgb = mix(col.rgb, portal_col.rgb, blend * 0.75);
+
+                // Glowing ring highlight (violet → cyan) to distinguish the
+                // wormhole from the black hole's hot accretion disk.
+                const float RING_INNER = R_E * 0.85;
+                const float RING_OUTER = R_E * 1.35;
+                if (r > RING_INNER && r < RING_OUTER)
+                {
+                    float ring_t = (r - RING_INNER) / (RING_OUTER - RING_INNER);
+                    float ring_strength = sin(ring_t * 3.14159);
+                    vec3 ring_col = mix(
+                        vec3(0.35, 0.15, 0.95),  // violet inner
+                        vec3(0.15, 0.85, 1.00),  // cyan outer
+                        ring_t);
+                    col.rgb = mix(col.rgb, ring_col * 1.8,
+                                  ring_strength * 0.6);
+                }
+            }
+        }
+    }
+    // -----------------------------------------------------------------
+
     vec3 eyedir = vec3(uv * 2.0 - 1.0, 1.0);
     vec4 tmp = (u_inverse_projection_matrix * vec4(eyedir, 1.0));
     tmp /= tmp.w;

@@ -182,12 +182,15 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
             m_sound_use = SFXManager::get()->createSoundSource("goo");
             break ;
 
+        case PowerupManager::POWERUP_WORMHOLE:
+            m_sound_use = SFXManager::get()->createSoundSource("portal");
+            break;
+
         case PowerupManager::POWERUP_FRAME_SHIFT:
             m_sound_use = SFXManager::get()->createSoundSource("swap");
             break;
 
         case PowerupManager::POWERUP_NOTHING:
-        case PowerupManager::POWERUP_NEUTRON_STAR:
         case PowerupManager::POWERUP_COSMIC_STRING:
         default :
             m_sound_use = SFXManager::get()->createSoundSource("shoot");
@@ -301,7 +304,7 @@ void Powerup::use()
             break;
         }
     case PowerupManager::POWERUP_NEUTRON_STAR:
-    case PowerupManager::POWERUP_GEODESIC_MISSILE:
+    case PowerupManager::POWERUP_WORMHOLE:
     case PowerupManager::POWERUP_BLACK_HOLE:
     case PowerupManager::POWERUP_COSMIC_STRING:
         if(stk_config->m_shield_restrict_weapons)

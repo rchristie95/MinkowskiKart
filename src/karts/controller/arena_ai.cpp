@@ -487,7 +487,7 @@ void ArenaAI::useItems(const float dt)
         }
     case PowerupManager::POWERUP_NEUTRON_STAR:
         {
-            // if the kart has a shield, do not break it by using a cake.
+            // if the kart has a shield, do not break it by using a neutron star.
             if (m_kart->getShieldTime() > min_bubble_time)
                 break;
 
@@ -559,7 +559,7 @@ void ArenaAI::useItems(const float dt)
     case PowerupManager::POWERUP_TIME_DILATION:
         break;   // POWERUP_TIME_DILATION
 
-    case PowerupManager::POWERUP_GEODESIC_MISSILE:
+    case PowerupManager::POWERUP_WORMHOLE:
         break;
 
     default:

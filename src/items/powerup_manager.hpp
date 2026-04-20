@@ -130,13 +130,14 @@ public:
     enum PowerupType {POWERUP_NOTHING,
                       POWERUP_FIRST,
                       POWERUP_WARP_BUBBLE = POWERUP_FIRST,  // was BUBBLEGUM - shield
-                      POWERUP_NEUTRON_STAR,                  // was CAKE - thrown projectile
+                      POWERUP_NEUTRON_STAR,                 // was CAKE - dense thrown projectile
                       POWERUP_BLACK_HOLE,                    // was BOWLING - heavy projectile
                       POWERUP_ZIPPER,                        // speed boost (unchanged)
                       POWERUP_COSMIC_STRING,                 // was PLUNGER - grapple/blackboard
                       POWERUP_FRAME_SHIFT,                   // was SWITCH - item swap
                       POWERUP_TIDAL_ARM,                     // was SWATTER - melee
-                      POWERUP_GEODESIC_MISSILE,              // was RUBBERBALL - homing
+                      POWERUP_WORMHOLE,                      // replaces the old RUBBERBALL slot
+                      POWERUP_GEODESIC_MISSILE = POWERUP_WORMHOLE, // compatibility alias
                       POWERUP_TIME_DILATION,                 // was PARACHUTE - slowdown
                       POWERUP_MASS_SPIKE,                    // was ANVIL - weight
                       POWERUP_LAST=POWERUP_MASS_SPIKE,

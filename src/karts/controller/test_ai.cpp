@@ -1246,7 +1246,7 @@ void SkiddingAI::handleItems(const float dt)
         }
     case PowerupManager::POWERUP_NEUTRON_STAR:
         {
-            // if the kart has a shield, do not break it by using a cake.
+            // if the kart has a shield, do not break it by using a neutron star.
             if(m_kart->getShieldTime() > min_bubble_time)
                 break;
             // Leave some time between shots
@@ -1425,7 +1425,7 @@ void SkiddingAI::handleItems(const float dt)
                     m_controls->setFire(true);
             break;
         }
-    case PowerupManager::POWERUP_GEODESIC_MISSILE:
+    case PowerupManager::POWERUP_WORMHOLE:
         // if the kart has a shield, do not break it by using a swatter.
         if(m_kart->getShieldTime() > min_bubble_time)
             break;

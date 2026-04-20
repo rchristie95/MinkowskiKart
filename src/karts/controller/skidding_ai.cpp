@@ -1192,7 +1192,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
           
     case PowerupManager::POWERUP_NEUTRON_STAR:
         {
-            // if the kart has a shield, do not break it by using a cake.
+            // if the kart has a shield, do not break it by using a neutron star.
             if((m_kart->getShieldTime() > min_bubble_time) && (stk_config->m_shield_restrict_weapons == true))
                 break;
 
@@ -1265,7 +1265,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
             handleSwatter(item_skill);
             break;
         } // POWERUP_TIDAL_ARM
-    case PowerupManager::POWERUP_GEODESIC_MISSILE:
+    case PowerupManager::POWERUP_WORMHOLE:
         // if the kart has a shield, do not break it by using a swatter.
         if((m_kart->getShieldTime() > min_bubble_time) && (stk_config->m_shield_restrict_weapons == true))
             break;
@@ -1306,7 +1306,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
     projectile_types[0] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_BLACK_HOLE);
     projectile_types[1] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_COSMIC_STRING);
     projectile_types[2] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_NEUTRON_STAR);
-    projectile_types[3] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_GEODESIC_MISSILE);
+    projectile_types[3] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_WORMHOLE);
    
     bool projectile_is_close = false;
     projectile_is_close = ProjectileManager::get()->projectileIsClose(m_kart, shield_radius);

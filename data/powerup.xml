@@ -3,7 +3,7 @@
   <!-- Minkowski Kart - Relativistic Powerups
        Order must match PowerupType enum in powerup_manager.hpp:
        warp-bubble, neutron-star, black-hole, zipper, photon,
-       frame-shift, tidal-arm, geodesic-missile, time-dilation, mass-spike -->
+       frame-shift, tidal-arm, wormhole, time-dilation, mass-spike -->
 
   <!-- WARP BUBBLE: shield sphere (was bubblegum) -->
   <item name="warp-bubble"     icon="warp-bubble-icon.png" />
@@ -37,22 +37,16 @@
   <!-- TIDAL ARM: close-range distortion melee (was swatter) -->
   <item name="tidal-arm"       icon="tidal-arm-icon.png" />
 
-  <!-- GEODESIC MISSILE: space-following homing projectile (was rubber-ball) -->
-  <item name="geodesic-missile" icon="geodesic-missile-icon.png"
+  <!-- WORMHOLE: spawn a linked pair of traversable spacetime shortcuts. -->
+  <item name="wormhole"        icon="wormhole-icon.png"
         model="rubber_ball.spm"
-        speed="42.0"
-        min-speed-offset="9.0"
-        max-speed-offset="29.0"
-        min-offset-distance="50.0"
-        max-offset-distance="250.0"
-        interval="1"
-        max-height="4.0"      min-height="0"
-        fast-ping-distance="50"
-        early-target-factor="1"
-        target-distance="15"  target-max-angle="90"
-        min-interpolation-distance="5"
-        squash-slowdown="0.5" squash-duration="2"
-        delete-time="5.0"     max-height-difference="10" />
+        speed="0"
+        min-height="0.2"       max-height="1.0"
+        force-updown="0"       max-distance="120"
+        entry-distance="20"
+        exit-distance="100"
+        lifetime="20"
+        reentry-cooldown="0.5" />
 
   <!-- TIME-DILATION FIELD: slows karts ahead (was parachute) -->
   <item name="time-dilation"   icon="time-dilation-icon.png"

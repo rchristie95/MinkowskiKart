@@ -191,7 +191,7 @@ RaceGUI::RaceGUI()
     m_blue_flag = irr_driver->getTexture(FileManager::GUI_ICON, "blue_flag.png");
     m_soccer_ball = irr_driver->getTexture(FileManager::GUI_ICON, "soccer_ball_normal.png");
     m_heart_icon = irr_driver->getTexture(FileManager::GUI_ICON, "heart.png");
-    m_basket_ball_icon = irr_driver->getTexture(FileManager::GUI_ICON, "rubber_ball-icon.png");
+    m_wormhole_icon = irr_driver->getTexture(FileManager::GUI_ICON, "wormhole-icon.png");
     m_champion = irr_driver->getTexture(FileManager::GUI_ICON, "cup_gold.png");
 }   // RaceGUI
 
@@ -839,14 +839,14 @@ void RaceGUI::drawGlobalMiniMap()
 
     }   // for i<getNumKarts
 
-    // Draw the basket-ball icons on the minimap
-    std::vector<Vec3> basketballs = ProjectileManager::get()->getBasketballPositions();
-    for(unsigned int i = 0; i != basketballs.size(); i++)
+    // Draw wormhole endpoints on the minimap.
+    std::vector<Vec3> wormholes = ProjectileManager::get()->getWormholePositions();
+    for(unsigned int i = 0; i != wormholes.size(); i++)
     {
         Vec3 draw_at;
-        track->mapPoint2MiniMap(basketballs[i], &draw_at);
+        track->mapPoint2MiniMap(wormholes[i], &draw_at);
 
-        video::ITexture* icon = m_basket_ball_icon;
+        video::ITexture* icon = m_wormhole_icon;
 
         core::rect<s32> source(core::position2di(0, 0), icon->getSize());
         int marker_half_size = m_minimap_player_size / 2;
