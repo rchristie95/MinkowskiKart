@@ -74,6 +74,7 @@ void ItemManager::loadDefaultItemMeshes()
     std::map<ItemState::ItemType, std::string> item_names;
     item_names[ItemState::ITEM_BANANA     ] = "banana";
     item_names[ItemState::ITEM_BONUS_BOX  ] = "bonus-box";
+    item_names[ItemState::ITEM_SUPER_POSITION] = "super-position";
     item_names[ItemState::ITEM_BUBBLEGUM  ] = "bubblegum";
     item_names[ItemState::ITEM_NITRO_BIG  ] = "nitro-big";
     item_names[ItemState::ITEM_NITRO_SMALL] = "nitro-small";
@@ -554,8 +555,8 @@ void ItemManager::deleteItemInQuad(ItemState* item)
 }   // deleteItemInQuad
 
 //-----------------------------------------------------------------------------
-/** Switches all items: boxes become bananas and vice versa for a certain
- *  amount of time (as defined in stk_config.xml).
+/** Switches all items according to the active item map for a certain amount of
+ *  time (as defined in stk_config.xml).
  */
 void ItemManager::switchItems()
 {
@@ -563,8 +564,8 @@ void ItemManager::switchItems()
 }  // switchItems
 
 //-----------------------------------------------------------------------------
-/** Switches all items: boxes become bananas and vice versa for a certain
- *  amount of time (as defined in stk_config.xml).
+/** Switches all items according to the active item map for a certain amount of
+ *  time (as defined in stk_config.xml).
  */
 void ItemManager::switchItemsInternal(std::vector<ItemState*> &all_items)
 {

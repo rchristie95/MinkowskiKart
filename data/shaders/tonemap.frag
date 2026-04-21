@@ -116,55 +116,136 @@ void main()
         }
     }
 
-    // ---- Wormhole: portal-style lensing (cyan/violet swirl ring) ----
-    // Reuses the same screen-space Schwarzschild lens math as the black hole
-    // but renders as a translucent blue/purple ring to read as a tunnel
-    // rather than a crushing singularity, and it does not fully absorb light
-    // at the core (stars/scene sample from the opposite side of the ring).
-    if (u_wormhole.w > 0.5)
+    // ---- Wormhole: Interstellar-style gravitational lensing sphere ----
+    //
+    // u_wormhole.xyz = world-space mouth centre.
+    // u_wormhole.w   = world-space mouth radius (>0 iff active).
+    //
+    // The mouth sphere is also rendered as geometry with a render-to-texture
+    // of the far end already composited into `tex`, so inside the silhouette
+    // we only need to radially compress those pixels to give the "fisheye
+    // into another patch of space" look from the Double Negative / Kip Thorne
+    // Interstellar wormhole paper. Outside the silhouette we apply the same
+    // inverse-square Schwarzschild deflection used by the black hole so
+    // stars and scenery smear into Einstein arcs around the rim.
+    if (u_wormhole.w > 0.01)
     {
         vec4 wh_clip = u_projection_view_matrix * vec4(u_wormhole.xyz, 1.0);
         if (wh_clip.w > 0.001 && wh_clip.z > 0.0)
         {
+            // Project the mouth centre to pixel coordinates.
             vec2 wh_ndc    = wh_clip.xy / wh_clip.w;
             vec2 wh_screen = (wh_ndc * 0.5 + 0.5) * u_screen;
 
+            // Project a point offset along camera-right by the world radius
+            // so we get the actual on-screen silhouette radius in pixels
+            // (robust to FOV, distance, and aspect).
+            vec3 cam_right = vec3(u_view_matrix[0][0],
+                                  u_view_matrix[1][0],
+                                  u_view_matrix[2][0]);
+            vec4 rim_clip = u_projection_view_matrix
+                          * vec4(u_wormhole.xyz + cam_right * u_wormhole.w, 1.0);
+            vec2 rim_ndc    = rim_clip.xy / max(rim_clip.w, 0.001);
+            vec2 rim_screen = (rim_ndc * 0.5 + 0.5) * u_screen;
+            float R_S = max(length(rim_screen - wh_screen), 8.0); // silhouette radius (px)
+
             vec2  delta = gl_FragCoord.xy - wh_screen;
             float r     = length(delta);
+            float R_LENS_OUTER = R_S * 4.0;
 
-            const float R_E = 60.0;
-
-            if (r > 0.5 && r < R_E * 6.0)
+            if (r > 0.1 && r < R_LENS_OUTER)
             {
-                // Same lens equation but never a "swallowed" region: when the
-                // remapped radius would go negative we mirror it so the other
-                // side of the wormhole mouth is visible through the portal.
-                float r_src = r - (R_E * R_E) / r;
-                r_src = abs(r_src);
-                vec2 sample_pos = wh_screen + normalize(delta) * r_src;
-                vec2 wh_uv = clamp(sample_pos / u_screen, vec2(0.0), vec2(1.0));
-                vec4 portal_col = texture(tex, wh_uv);
+                vec2  dir  = delta / max(r, 0.001);
+                // Gentle static swirl — rotate the sample direction slightly
+                // so light appears to flow around the mouth (frame-dragging
+                // style). No time uniform available in this pass, so we
+                // keep it position-independent.
+                float swirl = 0.18 * exp(-pow((r - R_S) / (R_S * 1.2), 2.0));
+                float cs = cos(swirl), sn = sin(swirl);
+                vec2 swirl_dir = vec2(cs * dir.x - sn * dir.y,
+                                      sn * dir.x + cs * dir.y);
 
-                // Blend portal image over the direct scene — stronger near
-                // the Einstein ring, fading at the outer limit.
-                float blend = 1.0 - clamp(r / (R_E * 2.5), 0.0, 1.0);
-                col.rgb = mix(col.rgb, portal_col.rgb, blend * 0.75);
-
-                // Glowing ring highlight (violet → cyan) to distinguish the
-                // wormhole from the black hole's hot accretion disk.
-                const float RING_INNER = R_E * 0.85;
-                const float RING_OUTER = R_E * 1.35;
-                if (r > RING_INNER && r < RING_OUTER)
+                if (r < R_S)
                 {
-                    float ring_t = (r - RING_INNER) / (RING_OUTER - RING_INNER);
-                    float ring_strength = sin(ring_t * 3.14159);
-                    vec3 ring_col = mix(
-                        vec3(0.35, 0.15, 0.95),  // violet inner
-                        vec3(0.15, 0.85, 1.00),  // cyan outer
-                        ring_t);
-                    col.rgb = mix(col.rgb, ring_col * 1.8,
-                                  ring_strength * 0.6);
+                    // --- Inside the mouth silhouette ---
+                    // The RTT of the far end is already composited here via
+                    // the rendered sphere mesh. Apply a stereographic-ish
+                    // radial compression: rho = sin(0.5*pi*rho_norm).
+                    // That pushes peripheral pixels toward the rim and gives
+                    // the "porthole into another universe" fisheye, while
+                    // leaving the centre near-linear.
+                    float rn        = r / R_S;              // 0..1
+                    float rn_fisheye = sin(rn * 1.5707963) * 0.98;
+                    vec2  inside_pos = wh_screen + swirl_dir * (rn_fisheye * R_S);
+                    vec2  inside_uv  = clamp(inside_pos / u_screen,
+                                             vec2(0.0), vec2(1.0));
+
+                    // Chromatic aberration: sample R/G/B at slightly offset
+                    // radii so the rim picks up a wavelength-dependent smear.
+                    float ca = 0.012 * (rn * rn);
+                    vec2 uv_r = clamp((wh_screen + swirl_dir * (rn_fisheye * R_S * (1.0 + ca))) / u_screen, vec2(0.0), vec2(1.0));
+                    vec2 uv_b = clamp((wh_screen + swirl_dir * (rn_fisheye * R_S * (1.0 - ca))) / u_screen, vec2(0.0), vec2(1.0));
+                    vec3 portal_col = vec3(
+                        texture(tex, uv_r).r,
+                        texture(tex, inside_uv).g,
+                        texture(tex, uv_b).b);
+
+                    // Rim darkening — the further out, the more light has to
+                    // climb out of the throat. Boosts the Einstein ring pop.
+                    float rim_darken = mix(1.0, 0.65, smoothstep(0.55, 1.0, rn));
+                    col.rgb = portal_col * rim_darken;
                 }
+                else
+                {
+                    // --- Outside the mouth: gravitational lensing of scene ---
+                    // Schwarzschild small-angle deflection: the apparent
+                    // position of a background pixel is its source position
+                    // plus R_E^2 / r along the radial outward direction.
+                    // Equivalently, sampling the scene at (r - R_E^2/r) in
+                    // the direction from the mouth centre gives the lensed
+                    // view. We clamp so rays that would pass through the
+                    // throat land on the rim instead of black.
+                    float R_E  = R_S * 1.05;                // Einstein ring ~at silhouette
+                    float r_src = r - (R_E * R_E) / r;
+                    r_src = max(r_src, R_S * 0.02);
+
+                    // Chromatic aberration increasing toward the rim.
+                    float ring_dist = abs(r - R_S) / R_S;
+                    float ca_out    = 2.0 / max(ring_dist + 0.15, 0.15);
+                    vec2  base_pos  = wh_screen + swirl_dir * r_src;
+                    vec2  lens_uv   = clamp(base_pos / u_screen,
+                                            vec2(0.0), vec2(1.0));
+                    vec2  uv_r      = clamp((base_pos + dir * ca_out) / u_screen,
+                                            vec2(0.0), vec2(1.0));
+                    vec2  uv_b      = clamp((base_pos - dir * ca_out) / u_screen,
+                                            vec2(0.0), vec2(1.0));
+                    vec3 lens_col = vec3(
+                        texture(tex, uv_r).r,
+                        texture(tex, lens_uv).g,
+                        texture(tex, uv_b).b);
+
+                    // Fade back to the direct scene at the outer working
+                    // radius so the effect has a graceful edge.
+                    float ring_blend = 1.0 - smoothstep(R_S * 1.0, R_LENS_OUTER, r);
+                    col.rgb = mix(col.rgb, lens_col, ring_blend);
+                }
+
+                // --- Einstein ring ---
+                // Peak brightness exactly at the silhouette, with a soft
+                // Gaussian on each side. Slight cyan-to-white gradient to
+                // cue "space folded" without looking like a neon hoop.
+                float ring_sigma = R_S * 0.12;
+                float ring_n     = (r - R_S) / ring_sigma;
+                float ring       = exp(-ring_n * ring_n);
+                // Subtle azimuthal modulation so the ring isn't perfectly
+                // uniform (mimics the non-uniform energy density of the
+                // Interstellar renders).
+                float theta  = atan(dir.y, dir.x);
+                float mod_az = 0.85 + 0.15 * cos(theta * 2.0);
+                vec3 ring_col = mix(vec3(0.55, 0.85, 1.00),
+                                    vec3(1.00, 0.95, 1.00),
+                                    0.5);
+                col.rgb += ring_col * (ring * mod_az * 1.6);
             }
         }
     }

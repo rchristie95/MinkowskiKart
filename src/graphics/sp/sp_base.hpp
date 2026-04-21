@@ -103,6 +103,9 @@ extern irr::core::vector3df sp_black_hole_world_pos;
 extern bool sp_black_hole_active;
 extern irr::core::vector3df sp_wormhole_world_pos;
 extern bool sp_wormhole_active;
+// World-space visual radius of the wormhole mouth currently used for
+// lensing. Non-zero only while sp_wormhole_active is true.
+extern float sp_wormhole_radius;
 // ----------------------------------------------------------------------------
 void init();
 // ----------------------------------------------------------------------------

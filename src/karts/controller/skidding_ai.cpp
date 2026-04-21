@@ -983,7 +983,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
     // If the item type is not handled here, ignore it
     Item::ItemType type = item->getType();
     if( type!=Item::ITEM_BANANA    && type!=Item::ITEM_BUBBLEGUM &&
-        type!=Item::ITEM_BONUS_BOX &&
+        type!=Item::ITEM_BONUS_BOX && type!=Item::ITEM_SUPER_POSITION &&
         type!=Item::ITEM_NITRO_BIG && type!=Item::ITEM_NITRO_SMALL  )
         return;
 
@@ -1008,6 +1008,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
                   return;
             break;
         case Item::ITEM_BONUS_BOX:
+        case Item::ITEM_SUPER_POSITION:
             break;
         default: assert(false); break;
     }    // switch
@@ -1239,11 +1240,11 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
             break;
         }   // POWERUP_COSMIC_STRING
 
-    case PowerupManager::POWERUP_FRAME_SHIFT:
+    case PowerupManager::POWERUP_SUPER_POSITION:
         {
             handleSwitch(item_skill, items_to_collect, items_to_avoid);
             break;
-        } // POWERUP_FRAME_SHIFT
+        } // POWERUP_SUPER_POSITION
 
     case PowerupManager::POWERUP_TIME_DILATION:
         {
@@ -1415,7 +1416,9 @@ void SkiddingAI::handleBubblegum(int item_skill,
        {
           float d = (items_to_collect[0]->getXYZ() - m_kart->getXYZ()).length2();
           
-          if ((items_to_collect[0]->getType() == Item::ITEM_BONUS_BOX) && (d < 0.7f))
+          if ((items_to_collect[0]->getType() == Item::ITEM_BONUS_BOX ||
+               items_to_collect[0]->getType() == Item::ITEM_SUPER_POSITION) &&
+              (d < 0.7f))
           {
              m_controls->setFire(true);
              m_controls->setLookBack(false);
@@ -1801,7 +1804,8 @@ void SkiddingAI::handleSwitch(int item_skill,
        //Big nitro are usually hard to take for the AI
        for(int i=(int)items_to_collect.size()-1; i>=0; i--)
        {
-           if (items_to_collect[i]->getType() == Item::ITEM_BONUS_BOX)
+           if (items_to_collect[i]->getType() == Item::ITEM_BONUS_BOX ||
+               items_to_collect[i]->getType() == Item::ITEM_SUPER_POSITION)
            {
               good = 2;
              i = -1;

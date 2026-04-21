@@ -112,7 +112,7 @@ struct MassSpikeVFX
     {}
 };
 
-struct FrameShiftVFX
+struct SuperPositionVFX
 {
     float              wave_progress;      // 0-1 sweep across track
     float              wave_radius;        // current wave radius from origin
@@ -121,10 +121,10 @@ struct FrameShiftVFX
 #ifndef SERVER_ONLY
     ParticleEmitter   *grid_emitter;
 #endif
-    FrameShiftVFX() : wave_progress(0), wave_radius(0),
-                      chromatic_split(0)
+    SuperPositionVFX() : wave_progress(0), wave_radius(0),
+                         chromatic_split(0)
 #ifndef SERVER_ONLY
-                      , grid_emitter(nullptr)
+                         , grid_emitter(nullptr)
 #endif
     {}
 };
@@ -204,7 +204,7 @@ private:
     std::vector<BlackHoleVFX>       m_black_holes;
     std::vector<WormholeVFX>     m_wormholes;
     std::vector<CosmicStringVFX>    m_cosmic_strings;
-    FrameShiftVFX                   m_frame_shift;
+    SuperPositionVFX                m_super_position;
 
     float m_global_time;
 
@@ -214,7 +214,7 @@ private:
                             AbstractKart *kart);
     void updateMassSpike(MassSpikeVFX &vfx, float dt,
                          AbstractKart *kart);
-    void updateFrameShift(float dt);
+    void updateSuperPosition(float dt);
 
 public:
     RelativisticVFXManager();
@@ -240,7 +240,7 @@ public:
     void deactivateTidalArm(unsigned int kart_id);
 
     // Frame shift (global effect)
-    void triggerFrameShift(const Vec3 &origin);
+    void triggerSuperPosition(const Vec3 &origin);
 
     // Blackboard overlay (Cosmic String backward-fire gag)
     void triggerBlackboard(unsigned int kart_id, float duration_seconds);
@@ -250,7 +250,7 @@ public:
     const WarpBubbleVFX *getWarpBubble(unsigned int kart_id) const;
     const TimeDilationVFX *getTimeDilation(unsigned int kart_id) const;
     const MassSpikeVFX *getMassSpike(unsigned int kart_id) const;
-    const FrameShiftVFX &getFrameShift() const { return m_frame_shift; }
+    const SuperPositionVFX &getSuperPosition() const { return m_super_position; }
 
     float getGlobalTime() const { return m_global_time; }
 

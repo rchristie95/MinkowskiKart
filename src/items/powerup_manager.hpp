@@ -134,7 +134,8 @@ public:
                       POWERUP_BLACK_HOLE,                    // was BOWLING - heavy projectile
                       POWERUP_ZIPPER,                        // speed boost (unchanged)
                       POWERUP_COSMIC_STRING,                 // was PLUNGER - grapple/blackboard
-                      POWERUP_FRAME_SHIFT,                   // was SWITCH - item swap
+                      POWERUP_SUPER_POSITION,                // was SWITCH - item swap
+                      POWERUP_FRAME_SHIFT = POWERUP_SUPER_POSITION, // compatibility alias
                       POWERUP_TIDAL_ARM,                     // was SWATTER - melee
                       POWERUP_WORMHOLE,                      // replaces the old RUBBERBALL slot
                       POWERUP_GEODESIC_MISSILE = POWERUP_WORMHOLE, // compatibility alias

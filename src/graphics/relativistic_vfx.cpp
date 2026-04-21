@@ -105,7 +105,7 @@ void RelativisticVFXManager::reset()
     {
         if (cs.filament_emitter) { delete cs.filament_emitter; cs.filament_emitter = nullptr; }
     }
-    if (m_frame_shift.grid_emitter) { delete m_frame_shift.grid_emitter; m_frame_shift.grid_emitter = nullptr; }
+    if (m_super_position.grid_emitter) { delete m_super_position.grid_emitter; m_super_position.grid_emitter = nullptr; }
 #endif
 
     for (BlackboardOverlay *bb : m_blackboards)
@@ -120,7 +120,7 @@ void RelativisticVFXManager::reset()
     m_black_holes.clear();
     m_wormholes.clear();
     m_cosmic_strings.clear();
-    m_frame_shift = FrameShiftVFX();
+    m_super_position = SuperPositionVFX();
     m_global_time = 0;
 }
 
@@ -350,29 +350,29 @@ void RelativisticVFXManager::deactivateTidalArm(unsigned int kart_id)
 }
 
 // ---------------------------------------------------------------------------
-// Frame Shift
+// Super Position
 // ---------------------------------------------------------------------------
-void RelativisticVFXManager::triggerFrameShift(const Vec3 &origin)
+void RelativisticVFXManager::triggerSuperPosition(const Vec3 &origin)
 {
-    m_frame_shift.origin = origin;
-    m_frame_shift.wave_progress = 0;
-    m_frame_shift.wave_radius = 0;
-    m_frame_shift.chromatic_split = 1.0f;
+    m_super_position.origin = origin;
+    m_super_position.wave_progress = 0;
+    m_super_position.wave_radius = 0;
+    m_super_position.chromatic_split = 1.0f;
 }
 
-void RelativisticVFXManager::updateFrameShift(float dt)
+void RelativisticVFXManager::updateSuperPosition(float dt)
 {
-    if (m_frame_shift.wave_progress >= 1.0f) return;
-    if (m_frame_shift.wave_progress < 0) return;
+    if (m_super_position.wave_progress >= 1.0f) return;
+    if (m_super_position.wave_progress < 0) return;
 
-    m_frame_shift.wave_progress += dt * 0.5f;  // ~2 second sweep
-    m_frame_shift.wave_radius = m_frame_shift.wave_progress * 200.0f;
-    m_frame_shift.chromatic_split = std::max(0.0f,
-        1.0f - m_frame_shift.wave_progress * 2.0f);
+    m_super_position.wave_progress += dt * 0.5f;  // ~2 second sweep
+    m_super_position.wave_radius = m_super_position.wave_progress * 200.0f;
+    m_super_position.chromatic_split = std::max(0.0f,
+        1.0f - m_super_position.wave_progress * 2.0f);
 
-    if (m_frame_shift.wave_progress >= 1.0f)
+    if (m_super_position.wave_progress >= 1.0f)
     {
-        m_frame_shift.wave_progress = -1;  // done
+        m_super_position.wave_progress = -1;  // done
     }
 }
 
@@ -418,7 +418,7 @@ void RelativisticVFXManager::update(float dt)
     for (unsigned int i = 0; i < m_mass_spikes.size() && i < world->getNumKarts(); i++)
         updateMassSpike(m_mass_spikes[i], dt, world->getKart(i));
 
-    updateFrameShift(dt);
+    updateSuperPosition(dt);
 
     // Update active blackboard overlays, remove finished ones
     for (auto it = m_blackboards.begin(); it != m_blackboards.end(); )

@@ -512,7 +512,7 @@ int ReplayRecorder::enumToCode (PowerupManager::PowerupType type)
         (type == PowerupManager::POWERUP_BLACK_HOLE)    ? 3 :
         (type == PowerupManager::POWERUP_ZIPPER)     ? 4 :
         (type == PowerupManager::POWERUP_COSMIC_STRING)    ? 5 :
-        (type == PowerupManager::POWERUP_FRAME_SHIFT)     ? 6 :
+        (type == PowerupManager::POWERUP_SUPER_POSITION)  ? 6 :
         (type == PowerupManager::POWERUP_TIDAL_ARM)    ? 7 :
         (type == PowerupManager::POWERUP_WORMHOLE) ? 8 :
         (type == PowerupManager::POWERUP_TIME_DILATION)  ? 9 :
@@ -546,7 +546,7 @@ PowerupManager::PowerupType ReplayRecorder::codeToEnumItem (int code)
         (code == 3) ? PowerupManager::POWERUP_BLACK_HOLE    :
         (code == 4) ? PowerupManager::POWERUP_ZIPPER     :
         (code == 5) ? PowerupManager::POWERUP_COSMIC_STRING    :
-        (code == 6) ? PowerupManager::POWERUP_FRAME_SHIFT     :
+        (code == 6) ? PowerupManager::POWERUP_SUPER_POSITION  :
         (code == 7) ? PowerupManager::POWERUP_TIDAL_ARM    :
         (code == 8) ? PowerupManager::POWERUP_WORMHOLE :
         (code == 9) ? PowerupManager::POWERUP_TIME_DILATION  :

@@ -552,9 +552,9 @@ void ArenaAI::useItems(const float dt)
     case PowerupManager::POWERUP_COSMIC_STRING:
         break;   // POWERUP_COSMIC_STRING
 
-    case PowerupManager::POWERUP_FRAME_SHIFT: // Don't handle switch
+    case PowerupManager::POWERUP_SUPER_POSITION: // Don't handle switch
         m_controls->setFire(true);       // (use it no matter what) for now
-        break;   // POWERUP_FRAME_SHIFT
+        break;   // POWERUP_SUPER_POSITION
 
     case PowerupManager::POWERUP_TIME_DILATION:
         break;   // POWERUP_TIME_DILATION
