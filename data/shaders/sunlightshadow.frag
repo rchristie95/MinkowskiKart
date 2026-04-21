@@ -88,6 +88,18 @@ float blend_start(float x) {
     return x * (1.0 - overlap_proportion);
 }
 
+float getRelativisticShadowFade()
+{
+    if (u_relativity_params.x <= 0.5)
+        return 0.0;
+
+    // Cascaded shadow maps are generated and filtered in the camera/sun frame.
+    // At relativistic speeds the visible scene is optically warped, so the
+    // sampled receiver-to-shadow-map relation becomes unstable. Fade dynamic
+    // shadow samples out once beta is large enough to shimmer.
+    return smoothstep(0.02, 0.12, length(u_relativity_beta.xyz));
+}
+
 vec3 getXcYcZc(int x, int y, float zC)
 {
     // We use perspective symetric projection matrix hence P(0,2) = P(1, 2) = 0
@@ -148,6 +160,8 @@ void main() {
     } else {
         factor = 1.;
     }
+
+    factor = mix(factor, 1.0, getRelativisticShadowFade());
 
     Diff = vec4(factor * NdotL * Diffuse * sun_color, 1.);
     Spec = vec4(factor * NdotL * Specular * sun_color, 1.);
