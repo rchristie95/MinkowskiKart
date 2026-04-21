@@ -116,18 +116,16 @@ void main()
         }
     }
 
-    // ---- Wormhole: Interstellar-style gravitational lensing sphere ----
+    // ---- Wormhole: Interstellar-style gravitational lensing mouth ----
     //
     // u_wormhole.xyz = world-space mouth centre.
     // u_wormhole.w   = world-space mouth radius (>0 iff active).
     //
-    // The mouth sphere is also rendered as geometry with a render-to-texture
-    // of the far end already composited into `tex`, so inside the silhouette
-    // we only need to radially compress those pixels to give the "fisheye
-    // into another patch of space" look from the Double Negative / Kip Thorne
-    // Interstellar wormhole paper. Outside the silhouette we apply the same
+    // The mouth is not drawn as coloured geometry. It is made from warped
+    // scene samples only, so the visible result reads as folded space rather
+    // than a blue or white object. Outside the silhouette we apply the same
     // inverse-square Schwarzschild deflection used by the black hole so
-    // stars and scenery smear into Einstein arcs around the rim.
+    // stars and scenery smear into arcs around the rim.
     if (u_wormhole.w > 0.01)
     {
         vec4 wh_clip = u_projection_view_matrix * vec4(u_wormhole.xyz, 1.0);
@@ -233,7 +231,8 @@ void main()
                 // --- Einstein ring ---
                 // Peak brightness exactly at the silhouette, with a soft
                 // Gaussian on each side. Slight cyan-to-white gradient to
-                // cue "space folded" without looking like a neon hoop.
+                // reuse the already warped scene colour instead of adding
+                // blue/white glow, so the rim remains made of the scene sample.
                 float ring_sigma = R_S * 0.12;
                 float ring_n     = (r - R_S) / ring_sigma;
                 float ring       = exp(-ring_n * ring_n);
@@ -242,10 +241,8 @@ void main()
                 // Interstellar renders).
                 float theta  = atan(dir.y, dir.x);
                 float mod_az = 0.85 + 0.15 * cos(theta * 2.0);
-                vec3 ring_col = mix(vec3(0.55, 0.85, 1.00),
-                                    vec3(1.00, 0.95, 1.00),
-                                    0.5);
-                col.rgb += ring_col * (ring * mod_az * 1.6);
+                float rim_boost = ring * mod_az * 0.45;
+                col.rgb = mix(col.rgb, col.rgb * 1.35, rim_boost);
             }
         }
     }
