@@ -260,11 +260,14 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[19] = sp_black_hole_world_pos.Y;
     tail[20] = sp_black_hole_world_pos.Z;
     tail[21] = sp_black_hole_active ? 1.0f : 0.0f;
-    // u_wormhole: world-space position (xyz) + active flag (w)
+    // u_wormhole: world-space position (xyz) + world-space radius (w).
+    // A non-zero radius implicitly marks the wormhole as active; the
+    // tonemap post-process uses this radius to project the mouth
+    // silhouette into screen space for proper Interstellar-style lensing.
     tail[22] = sp_wormhole_world_pos.X;
     tail[23] = sp_wormhole_world_pos.Y;
     tail[24] = sp_wormhole_world_pos.Z;
-    tail[25] = sp_wormhole_active ? 1.0f : 0.0f;
+    tail[25] = sp_wormhole_active ? sp_wormhole_radius : 0.0f;
     return tail;
 }   // buildRelativityUBOTail
 
@@ -283,6 +286,7 @@ bool sp_black_hole_active = false;
 // the Wormhole flyable while alive; cleared on destruction.
 irr::core::vector3df sp_wormhole_world_pos(0.0f, 0.0f, 0.0f);
 bool sp_wormhole_active = false;
+float sp_wormhole_radius = 0.0f;
 // ----------------------------------------------------------------------------
 bool sp_culling = true;
 // ----------------------------------------------------------------------------

@@ -1051,7 +1051,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
     // If the item type is not handled here, ignore it
     Item::ItemType type = item->getType();
     if( type!=Item::ITEM_BANANA    && type!=Item::ITEM_BUBBLEGUM &&
-        type!=Item::ITEM_BONUS_BOX &&
+        type!=Item::ITEM_BONUS_BOX && type!=Item::ITEM_SUPER_POSITION &&
         type!=Item::ITEM_NITRO_BIG && type!=Item::ITEM_NITRO_SMALL  )
         return;
 
@@ -1076,6 +1076,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
                   return;
             break;
         case Item::ITEM_BONUS_BOX:
+        case Item::ITEM_SUPER_POSITION:
             break;
         default: assert(false); break;
     }    // switch
@@ -1373,7 +1374,7 @@ void SkiddingAI::handleItems(const float dt)
             break;
         }   // POWERUP_COSMIC_STRING
 
-    case PowerupManager::POWERUP_FRAME_SHIFT:
+    case PowerupManager::POWERUP_SUPER_POSITION:
         // For now don't use a switch if this kart is first (since it's more
         // likely that this kart then gets a good iteam), otherwise use it
         // after a waiting an appropriate time
@@ -1381,7 +1382,7 @@ void SkiddingAI::handleItems(const float dt)
             m_time_since_last_shot
             > stk_config->ticks2Time(stk_config->m_item_switch_ticks)+2.0f)
             m_controls->setFire(true);
-        break;   // POWERUP_FRAME_SHIFT
+        break;   // POWERUP_SUPER_POSITION
 
     case PowerupManager::POWERUP_TIME_DILATION:
         // Wait one second more than a previous parachute

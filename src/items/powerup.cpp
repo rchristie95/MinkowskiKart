@@ -40,6 +40,28 @@
 #include "utils/string_utils.hpp"
 #include "utils/log.hpp" //TODO: remove after debugging is done
 
+namespace
+{
+uint64_t mixItemCollectionSeed(uint64_t value)
+{
+    value = (1664525L * value + 1013904223L);
+    value ^= (value >> 16);
+    value ^= (value >> 8);
+    return value;
+}
+
+uint64_t getItemCollectionSeed(const ItemState &item_state, int position,
+                               uint64_t random_seed, int ticks,
+                               uint64_t salt = 0)
+{
+    uint64_t value = item_state.getItemId() * 31ULL +
+        static_cast<uint64_t>(ticks / 10) +
+        static_cast<uint64_t>(position) * 23ULL +
+        random_seed + salt;
+    return mixItemCollectionSeed(value);
+}
+}   // namespace
+
 //-----------------------------------------------------------------------------
 /** Constructor, stores the kart to which this powerup belongs.
  *  \param kart The kart to which this powerup belongs.
@@ -186,7 +208,7 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
             m_sound_use = SFXManager::get()->createSoundSource("portal");
             break;
 
-        case PowerupManager::POWERUP_FRAME_SHIFT:
+        case PowerupManager::POWERUP_SUPER_POSITION:
             m_sound_use = SFXManager::get()->createSoundSource("swap");
             break;
 
@@ -290,12 +312,12 @@ void Powerup::use()
     case PowerupManager::POWERUP_ZIPPER:
         m_kart->handleZipper(NULL, true);
         break ;
-    case PowerupManager::POWERUP_FRAME_SHIFT:
+    case PowerupManager::POWERUP_SUPER_POSITION:
         {
             im->switchItems();
             // Trigger the sweeping Lorentz grid wave visual
             if (relativistic_vfx_manager)
-                relativistic_vfx_manager->triggerFrameShift(m_kart->getXYZ());
+                relativistic_vfx_manager->triggerSuperPosition(m_kart->getXYZ());
             if (!has_played_sound)
             {
                 m_sound_use->setPosition(m_kart->getXYZ());
@@ -567,22 +589,8 @@ void Powerup::hitBonusBox(const ItemState &item_state)
     // item. We multiply the item with a 'large' (more or less random)
     // number to spread the random values across the (typically 200)
     // weights used in the PowerupManager - same for the position.
-    uint64_t random_number = item_state.getItemId() * 31 +
-        world->getTicksSinceStart() / 10 + position * 23 +
-        powerup_manager->getRandomSeed();
-
-    // Use this random number as a seed of a PRNG (based on the one in
-    // bullet's btSequentialImpulseConstraintSolver) to avoid getting
-    // consecutive numbers. Without this the same item could be
-    // produced for a longer period of time, which would make this
-    // exploitable: someone could hack STK to display the item that
-    // can be collected for each box, and the pick the one with the
-    // 'best' item.
-    random_number = (1664525L * random_number + 1013904223L);
-    // Lower bits only have a short period, so mix in higher
-    // bits:
-    random_number ^= (random_number >> 16);
-    random_number ^= (random_number >> 8);
+    uint64_t random_number = getItemCollectionSeed(item_state, position,
+        powerup_manager->getRandomSeed(), world->getTicksSinceStart());
 
     new_powerup = powerup_manager->getRandomPowerup(position, &n,
                                                     random_number);
@@ -610,3 +618,24 @@ void Powerup::hitBonusBox(const ItemState &item_state)
     // POWERUP_MODE_SAME
 
 }   // hitBonusBox
+
+//-----------------------------------------------------------------------------
+/** Called when a super-position item is hit. It deterministically resolves to
+ *  either a normal bonus-box reward or a banana hit.
+ *  \param item_state The super-position item that was hit.
+ */
+void Powerup::hitSuperPosition(ItemState *item_state)
+{
+    int position = m_kart->getPosition();
+    World *world = World::getWorld();
+    const uint64_t base_seed = getItemCollectionSeed(*item_state, position,
+        powerup_manager->getRandomSeed(), world->getTicksSinceStart());
+
+    if ((base_seed & 1ULL) == 0)
+    {
+        hitBonusBox(*item_state);
+        return;
+    }
+
+    m_kart->getAttachment()->hitBanana(item_state);
+}   // hitSuperPosition

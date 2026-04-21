@@ -153,7 +153,11 @@ void ItemState::collected(const AbstractKart *kart)
     }
     else
     {
-        switch (m_type)
+        ItemType return_type = m_type;
+        if (m_type == ITEM_SUPER_POSITION && m_original_type != ITEM_NONE)
+            return_type = m_original_type;
+
+        switch (return_type)
         {
             case ITEM_BONUS_BOX:
                 m_ticks_till_return = stk_config->m_bonusbox_item_return_ticks;
@@ -222,6 +226,7 @@ Item::Item(ItemType type, const Vec3& xyz, const Vec3& normal,
     : ItemState(type, owner)
 {
     m_icon_node = NULL;
+    m_superposition_node = NULL;
     m_was_available_previously = true;
     // Prevent appear animation at start
     m_animation_start_ticks = -9999;
@@ -401,8 +406,9 @@ void Item::handleNewMesh(ItemType type)
 #ifndef SERVER_ONLY
     if (m_node == NULL)
         return;
-    setMesh(ItemManager::getItemModel(type),
-        ItemManager::getItemLowResolutionModel(type));
+    ItemType base_type = type == ITEM_SUPER_POSITION ? ITEM_BONUS_BOX : type;
+    setMesh(ItemManager::getItemModel(base_type),
+        ItemManager::getItemLowResolutionModel(base_type));
     for (auto* node : m_node->getAllNodes())
     {
         SP::SPMeshNode* spmn = dynamic_cast<SP::SPMeshNode*>(node);
@@ -416,6 +422,11 @@ void Item::handleNewMesh(ItemType type)
     if (m_icon_node)
         m_appear_anime_node->removeChild(m_icon_node);
     m_icon_node = NULL;
+    if (m_superposition_node)
+    {
+        m_superposition_node->remove();
+        m_superposition_node = NULL;
+    }
     auto icon = ItemManager::getIcon(type);
 
     if (!icon.empty())
@@ -427,6 +438,29 @@ void Item::handleNewMesh(ItemType type)
         m_icon_node->setVisible(false);
         ((scene::IBillboardSceneNode*)m_icon_node)
             ->setColor(ItemManager::getGlowColor(type).toSColor());
+    }
+
+    if (type == ITEM_SUPER_POSITION)
+    {
+        scene::ISceneNode* superposition_parent = m_node->getFirstNode();
+        if (!superposition_parent)
+            superposition_parent = m_node;
+
+        m_superposition_node = irr_driver->addMesh(
+            ItemManager::getItemModel(ITEM_BANANA),
+            StringUtils::insertValues("item_super_position_%i", getItemId()),
+            superposition_parent);
+        if (m_superposition_node)
+        {
+            m_superposition_node->setPosition(core::vector3df(0.0f, 1.35f, 0.0f));
+            m_superposition_node->setScale(core::vector3df(0.9f, 0.9f, 0.9f));
+            m_superposition_node->setVisible(true);
+
+            SP::SPMeshNode* spmn =
+                dynamic_cast<SP::SPMeshNode*>(m_superposition_node);
+            if (spmn)
+                spmn->setGlowColor(ItemManager::getGlowColor(type));
+        }
     }
 #endif
 }   // handleNewMesh

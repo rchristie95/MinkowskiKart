@@ -1165,6 +1165,9 @@ void Kart::collectedItem(ItemState *item_state)
             m_powerup->hitBonusBox(*item_state);
             break;
         }
+    case Item::ITEM_SUPER_POSITION:
+        m_powerup->hitSuperPosition(item_state);
+        break;
     case Item::ITEM_BUBBLEGUM:
         m_has_caught_nolok_bubblegum =
             (item_state->getPreviousOwner()&&
