@@ -441,6 +441,18 @@ void Wormhole::createVisuals()
 
     destroyVisuals();
 
+    // The wormhole should read as warped space, not as a physical blue/white
+    // object. Endpoint visibility now comes from the screen-space lensing pass
+    // in tonemap.frag, so no sphere or halo scene nodes are spawned here.
+    if (m_spawn_sfx)
+    {
+        m_spawn_sfx->setPosition(Vec3(m_endpoint_transforms[0].getOrigin()));
+        m_spawn_sfx->play();
+    }
+    if (m_node)
+        m_node->setVisible(false);
+    return;
+
     video::ITexture *fallback_texture =
         irr_driver->getTexture(FileManager::GUI_ICON, "wormhole-icon.png");
     // Halo colour is kept subtle now that the tonemap post-process draws
@@ -584,8 +596,8 @@ void Wormhole::updateRenderTargets()
     // Do not render portal RTTs from here. Calling ISceneManager::drawAll()
     // inside item graphics update bypasses the shader renderer's shadow and
     // framebuffer pipeline, leaving global GL state unstable for the main
-    // world pass. The 3D mouths and tonemap lensing stay active; true
-    // see-through portals need to be implemented through ShaderBasedRenderer.
+    // world pass. The tonemap lensing stays active; true see-through portals
+    // need to be implemented through ShaderBasedRenderer.
 }   // updateRenderTargets
 #endif
 
