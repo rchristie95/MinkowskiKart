@@ -21,8 +21,10 @@
 #include "audio/sfx_base.hpp"
 #include "audio/sfx_manager.hpp"
 #include "config/stk_config.hpp"
+#include "graphics/camera/camera.hpp"
 #include "graphics/irr_driver.hpp"
 #include "graphics/sp/sp_base.hpp"
+#include "graphics/sp/sp_mesh_node.hpp"
 #include "guiengine/engine.hpp"
 #include "io/file_manager.hpp"
 #include "io/xml_node.hpp"
@@ -91,6 +93,7 @@ Wormhole::~Wormhole()
     // This is only a supplemental post effect. The live wormhole instance
     // that updates last will republish its location on the next frame.
     SP::sp_wormhole_active = false;
+    SP::sp_wormhole_radius = 0.0f;
 }   // ~Wormhole
 
 // ----------------------------------------------------------------------------
@@ -286,12 +289,38 @@ void Wormhole::updateLensingAnchor() const
     if (!m_have_endpoints)
     {
         SP::sp_wormhole_active = false;
+        SP::sp_wormhole_radius = 0.0f;
         return;
     }
 
+    // Pick whichever endpoint is closer to the active camera so the
+    // Interstellar-style lens sits on the mouth the player is actually
+    // looking at. Falls back to endpoint 0 when no camera is available
+    // (e.g. during lobby / screenshot code paths).
+    int anchor_index = 0;
+    Camera *active_cam = Camera::getActiveCamera();
+    if (active_cam && active_cam->getCameraSceneNode())
+    {
+        const core::vector3df cam_pos =
+            active_cam->getCameraSceneNode()->getAbsolutePosition();
+        const btVector3 btcam(cam_pos.X, cam_pos.Y, cam_pos.Z);
+        const btScalar d0 =
+            (m_endpoint_transforms[0].getOrigin() - btcam).length2();
+        const btScalar d1 =
+            (m_endpoint_transforms[1].getOrigin() - btcam).length2();
+        anchor_index = (d1 < d0) ? 1 : 0;
+    }
+
+    // Apply the same collapse curve the visuals use so the lens shrinks
+    // as the wormhole ages out, instead of popping off all at once.
+    const float remaining = stk_config->ticks2Time(
+        std::max(0, m_expiry_ticks - World::getWorld()->getTicksSinceStart()));
+    const float collapse = remaining < 1.0f ? std::max(0.0f, remaining) : 1.0f;
+
     SP::sp_wormhole_world_pos =
-        Vec3(m_endpoint_transforms[0].getOrigin()).toIrrVector();
-    SP::sp_wormhole_active = true;
+        Vec3(m_endpoint_transforms[anchor_index].getOrigin()).toIrrVector();
+    SP::sp_wormhole_radius  = m_st_visual_radius * collapse;
+    SP::sp_wormhole_active  = true;
 }   // updateLensingAnchor
 
 // ----------------------------------------------------------------------------
@@ -412,10 +441,12 @@ void Wormhole::createVisuals()
 
     destroyVisuals();
 
-    video::IVideoDriver *driver = irr_driver->getVideoDriver();
     video::ITexture *fallback_texture =
         irr_driver->getTexture(FileManager::GUI_ICON, "wormhole-icon.png");
-    const video::SColor halo_colour(220, 90, 180, 255);
+    // Halo colour is kept subtle now that the tonemap post-process draws
+    // the bright Einstein ring on the silhouette. A strong glow here
+    // would fight the lensing ring and wash it out.
+    const video::SColor halo_colour(80, 40, 90, 160);
     const core::dimension2du rtt_size(256, 256);
 
     for (size_t i = 0; i < m_visuals.size(); i++)
@@ -424,12 +455,7 @@ void Wormhole::createVisuals()
         visual.mouth_node = irr_driver->addSphere(1.0f, video::SColor(255, 255, 255, 255));
         visual.halo_front = irr_driver->addSphere(1.0f, halo_colour);
         visual.halo_back = irr_driver->addSphere(1.0f, halo_colour);
-        visual.camera = irr_driver->addCameraSceneNode();
-        visual.texture = driver->addRenderTargetTexture(
-            rtt_size,
-            StringUtils::insertValues("wormhole_rtt_%d_%d",
-                                      (int)m_created_ticks, (int)i).c_str(),
-            video::ECF_A8R8G8B8);
+        visual.texture = fallback_texture;
 
         scene::ISceneNode* nodes[] = {
             visual.mouth_node, visual.halo_front, visual.halo_back
@@ -438,11 +464,23 @@ void Wormhole::createVisuals()
         {
             if (!node)
                 continue;
-            node->setVisible(true);
+            // Visuals start hidden until updateVisualState positions them at
+            // the real endpoints. Otherwise they sit at world origin (0,0,0)
+            // scaled and pulsing, which pollutes the shadow pass and causes
+            // the whole track to flicker between lit and shaded cascades
+            // until the first visual update lands.
+            node->setVisible(false);
             node->setAutomaticCulling(scene::EAC_OFF);
             node->getMaterial(0).Lighting = false;
             node->getMaterial(0).BackfaceCulling = false;
             node->getMaterial(0).EmissiveColor = halo_colour;
+
+            // These are pure effect geometry — they must never cast shadows.
+            // Any shadow they cast would sample the per-frame scale pulse and
+            // position jitter, making every surface receiving the directional
+            // light shimmer on and off.
+            if (SP::SPMeshNode *spmn = dynamic_cast<SP::SPMeshNode*>(node))
+                spmn->setInShadowPass(false);
         }
 
         if (visual.mouth_node)
@@ -514,6 +552,7 @@ void Wormhole::updateVisualState(float dt)
             Vec3(endpoint.getOrigin()).toIrrVector());
         visual.mouth_node->setRotation(hpr.toIrrHPR());
         visual.mouth_node->setScale(mouth_scale);
+        visual.mouth_node->setVisible(true);
 
         if (visual.halo_front)
         {
@@ -522,6 +561,7 @@ void Wormhole::updateVisualState(float dt)
                     .toIrrVector());
             visual.halo_front->setRotation(hpr.toIrrHPR());
             visual.halo_front->setScale(halo_scale);
+            visual.halo_front->setVisible(true);
         }
         if (visual.halo_back)
         {
@@ -530,6 +570,7 @@ void Wormhole::updateVisualState(float dt)
                     .toIrrVector());
             visual.halo_back->setRotation(hpr.toIrrHPR());
             visual.halo_back->setScale(halo_scale);
+            visual.halo_back->setVisible(true);
         }
     }
 
@@ -540,51 +581,11 @@ void Wormhole::updateVisualState(float dt)
 // ----------------------------------------------------------------------------
 void Wormhole::updateRenderTargets()
 {
-    if (!m_have_endpoints)
-        return;
-
-    video::IVideoDriver *driver = irr_driver->getVideoDriver();
-    scene::ISceneManager *scene_manager = irr_driver->getSceneManager();
-    scene::ICameraSceneNode *previous_camera = scene_manager->getActiveCamera();
-
-    for (int source = 0; source < 2; source++)
-    {
-        EndpointVisual &visual = m_visuals[source];
-        if (!visual.camera || !visual.texture || !visual.mouth_node)
-            continue;
-
-        const int destination = 1 - source;
-        const btTransform target_view =
-            offsetAlongForward(m_endpoint_transforms[destination], 0.75f);
-        const btVector3 eye = target_view.getOrigin();
-        const btVector3 target = eye + getForward(m_endpoint_transforms[destination]) * 40.0f;
-
-        visual.camera->setPosition(Vec3(eye).toIrrVector());
-        visual.camera->setTarget(Vec3(target).toIrrVector());
-        visual.camera->setUpVector(Vec3(getUp(m_endpoint_transforms[destination])).toIrrVector());
-
-        for (int i = 0; i < 2; i++)
-        {
-            if (m_visuals[i].mouth_node) m_visuals[i].mouth_node->setVisible(false);
-            if (m_visuals[i].halo_front) m_visuals[i].halo_front->setVisible(false);
-            if (m_visuals[i].halo_back) m_visuals[i].halo_back->setVisible(false);
-        }
-
-        scene_manager->setActiveCamera(visual.camera);
-        driver->setRenderTarget(visual.texture, true, true,
-                                video::SColor(255, 0, 0, 0));
-        scene_manager->drawAll();
-        driver->setRenderTarget(0, false, false);
-
-        for (int i = 0; i < 2; i++)
-        {
-            if (m_visuals[i].mouth_node) m_visuals[i].mouth_node->setVisible(true);
-            if (m_visuals[i].halo_front) m_visuals[i].halo_front->setVisible(true);
-            if (m_visuals[i].halo_back) m_visuals[i].halo_back->setVisible(true);
-        }
-    }
-
-    scene_manager->setActiveCamera(previous_camera);
+    // Do not render portal RTTs from here. Calling ISceneManager::drawAll()
+    // inside item graphics update bypasses the shader renderer's shadow and
+    // framebuffer pipeline, leaving global GL state unstable for the main
+    // world pass. The 3D mouths and tonemap lensing stay active; true
+    // see-through portals need to be implemented through ShaderBasedRenderer.
 }   // updateRenderTargets
 #endif
 

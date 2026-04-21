@@ -61,6 +61,7 @@ public:
     void            adjustSound  ();
     void            use          ();
     void            hitBonusBox (const ItemState &item);
+    void            hitSuperPosition(ItemState *item);
     void            saveState(BareNetworkString *buffer) const;
     void            rewindTo(BareNetworkString *buffer);
     void            update(int ticks);
