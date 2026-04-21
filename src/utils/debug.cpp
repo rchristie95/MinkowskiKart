@@ -128,7 +128,7 @@ enum DebugMenuCommand
     DEBUG_POWERUP_TIME_DILATION,
     DEBUG_POWERUP_COSMIC_STRING,
     DEBUG_POWERUP_TIDAL_ARM,
-    DEBUG_POWERUP_FRAME_SHIFT,
+    DEBUG_POWERUP_SUPER_POSITION,
     DEBUG_POWERUP_ZIPPER,
     DEBUG_POWERUP_NITRO,
     DEBUG_POWERUP_NOTHING,
@@ -626,8 +626,8 @@ bool handleContextMenuAction(s32 cmd_id)
     case DEBUG_POWERUP_TIDAL_ARM:
         addPowerup(PowerupManager::POWERUP_TIDAL_ARM, 255);
         break;
-    case DEBUG_POWERUP_FRAME_SHIFT:
-        addPowerup(PowerupManager::POWERUP_FRAME_SHIFT, 255);
+    case DEBUG_POWERUP_SUPER_POSITION:
+        addPowerup(PowerupManager::POWERUP_SUPER_POSITION, 255);
         break;
     case DEBUG_POWERUP_ZIPPER:
         addPowerup(PowerupManager::POWERUP_ZIPPER, 255);
@@ -1321,7 +1321,7 @@ bool onEvent(const SEvent &event)
             sub->addItem(L"Time Dilation (F6)", DEBUG_POWERUP_TIME_DILATION );
             sub->addItem(L"Photon (F7)", DEBUG_POWERUP_COSMIC_STRING );
             sub->addItem(L"Tidal Arm (F8)", DEBUG_POWERUP_TIDAL_ARM );
-            sub->addItem(L"Frame Shift (F9)", DEBUG_POWERUP_FRAME_SHIFT );
+            sub->addItem(L"Super Position (F9)", DEBUG_POWERUP_SUPER_POSITION );
             sub->addItem(L"Zipper (F10)", DEBUG_POWERUP_ZIPPER );
             sub->addItem(L"Nitro (Insert)", DEBUG_POWERUP_NITRO );
 
@@ -1621,7 +1621,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_FRAME_SHIFT);
+                    handleContextMenuAction(DEBUG_POWERUP_SUPER_POSITION);
                 }
                 break;
             }

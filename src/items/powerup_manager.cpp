@@ -28,6 +28,7 @@
 #include "io/xml_node.hpp"
 #include "items/bowling.hpp"
 #include "items/cake.hpp"
+#include "items/item.hpp"
 #include "items/plunger.hpp"
 #include "items/rubber_ball.hpp"
 #include "modes/world.hpp"
@@ -107,8 +108,19 @@ PowerupManager::PowerupType
     static const std::string powerup_names[] = {
         "",            /* Nothing */
         "warp-bubble", "neutron-star", "black-hole", "zipper", "photon",
-        "frame-shift", "tidal-arm", "wormhole", "time-dilation", "mass-spike"
+        "super_position", "tidal-arm", "wormhole", "time-dilation", "mass-spike"
     };
+
+    if (lower_name == "super_position"              ||
+        lower_name == "super-position"              ||
+        lower_name == "superposition_banana_box"    ||
+        lower_name == "superposition-banana-box"    ||
+        lower_name == "frame-shift"                 ||
+        lower_name == "frame_shift"                 ||
+        lower_name == "frameshift")
+    {
+        return POWERUP_SUPER_POSITION;
+    }
 
     if (lower_name == "wormhole"          ||
         lower_name == "geodesic-missile" ||
@@ -702,6 +714,16 @@ void PowerupManager::unitTesting()
         assert(count[i] == wd.m_weights_for_section[section][i]);
     }
 
+    assert(powerup_manager->getPowerupType("super_position")
+        == POWERUP_SUPER_POSITION);
+    assert(powerup_manager->getPowerupType("superposition_banana_box")
+        == POWERUP_SUPER_POSITION);
+    assert(powerup_manager->getPowerupType("frame-shift")
+        == POWERUP_SUPER_POSITION);
+    assert(stk_config->m_switch_items[Item::ITEM_BONUS_BOX]
+        == Item::ITEM_SUPER_POSITION);
+    assert(stk_config->m_switch_items[Item::ITEM_BANANA]
+        == Item::ITEM_SUPER_POSITION);
     assert(powerup_manager->getPowerupType("wormhole") == POWERUP_WORMHOLE);
     assert(powerup_manager->getPowerupType("geodesic-missile")
         == POWERUP_WORMHOLE);

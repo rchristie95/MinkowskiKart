@@ -3,7 +3,7 @@
   <!-- Minkowski Kart - Relativistic Powerups
        Order must match PowerupType enum in powerup_manager.hpp:
        warp-bubble, neutron-star, black-hole, zipper, photon,
-       frame-shift, tidal-arm, wormhole, time-dilation, mass-spike -->
+       super_position, tidal-arm, wormhole, time-dilation, mass-spike -->
 
   <!-- WARP BUBBLE: shield sphere (was bubblegum) -->
   <item name="warp-bubble"     icon="warp-bubble-icon.png" />
@@ -31,8 +31,8 @@
         force-updown="35"      force-to-target="15"
         max-distance="30" />
 
-  <!-- FRAME SHIFT: transforms items on track (was switch) -->
-  <item name="frame-shift"     icon="frame-shift-icon.png" />
+  <!-- SUPER POSITION: boxes and bananas collapse into a 50/50 quantum pickup -->
+  <item name="super_position"  icon="super-position-icon.png" />
 
   <!-- TIDAL ARM: close-range distortion melee (was swatter) -->
   <item name="tidal-arm"       icon="tidal-arm-icon.png" />

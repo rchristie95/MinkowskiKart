@@ -63,6 +63,7 @@ public:
         ITEM_FIRST,
         ITEM_BONUS_BOX = ITEM_FIRST,
         ITEM_BANANA,
+        ITEM_SUPER_POSITION,
         ITEM_NITRO_BIG,
         ITEM_NITRO_SMALL,
         ITEM_BUBBLEGUM,
@@ -338,6 +339,9 @@ private:
 
     /** Billboard that shows when the item is about to respawn */
     scene::ISceneNode* m_icon_node;
+
+    /** Extra banana mesh used by the super-position pickup. */
+    scene::ISceneNode* m_superposition_node;
 
     /** Stores if the item was available in the previously rendered frame. */
     bool m_was_available_previously;

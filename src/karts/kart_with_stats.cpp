@@ -120,6 +120,7 @@ void KartWithStats::collectedItem(ItemState *item_state)
         m_large_nitro_count++;
         break;
     case Item::ITEM_BONUS_BOX:
+    case Item::ITEM_SUPER_POSITION:
         m_bonus_count++;
         break;
     case Item::ITEM_BUBBLEGUM:
