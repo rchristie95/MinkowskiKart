@@ -228,6 +228,18 @@ float blend_start(float x) {
     return x * (1.0 - overlap_proportion);
 }
 
+float getRelativisticShadowFade()
+{
+    if (u_relativity_params.x <= 0.5)
+        return 0.0;
+
+    // PCSS is especially sensitive to camera-relative optical warping because
+    // both blocker search and filter radii depend on the receiver's projected
+    // shadow-map position. Fade those unstable dynamic samples out at
+    // relativistic beta instead of letting them flip surfaces dark/light.
+    return smoothstep(0.02, 0.12, length(u_relativity_beta.xyz));
+}
+
 void main() {
     vec2 uv = gl_FragCoord.xy / u_screen;
     float z = texture(dtex, uv).x;
@@ -309,6 +321,8 @@ void main() {
         factor = mix(factor4, 1.0, blend_ratio);
     }
     // else: factor remains 1.0 (no shadow for distances beyond splitmax)
+
+    factor = mix(factor, 1.0, getRelativisticShadowFade());
 
     Diff = vec4(factor * NdotL * Diffuse * sun_color, 1.);
     Spec = vec4(factor * NdotL * Specular * sun_color, 1.);
