@@ -3,7 +3,7 @@
   <!-- Minkowski Kart - Relativistic Powerups
        Order must match PowerupType enum in powerup_manager.hpp:
        warp-bubble, asteroid, black-hole, zipper, photon,
-       super_position, tidal-arm, wormhole, time-dilation, mass-spike -->
+       super_position, anti-karticle, wormhole, time-dilation, mass-spike -->
 
   <!-- WARP BUBBLE: shield sphere (was bubblegum) -->
   <item name="warp-bubble"     icon="warp-bubble-icon.png" />
@@ -34,8 +34,12 @@
   <!-- SUPER POSITION: boxes and bananas collapse into a 50/50 quantum pickup -->
   <item name="super_position"  icon="super-position-icon.png" />
 
-  <!-- TIDAL ARM: close-range distortion melee (was swatter) -->
-  <item name="tidal-arm"       icon="tidal-arm-icon.png" />
+  <!-- ANTI-KARTICLE: mirrored anti-kart clone with pair-production flash -->
+  <item name="anti-karticle"   icon="anti-karticle-icon.png"
+        model="bowling.spm"
+        speed="0"
+        min-height="0.2"       max-height="1.0"
+        force-updown="0"       lifetime="10" />
 
   <!-- WORMHOLE: spawn a linked pair of traversable spacetime shortcuts. -->
   <item name="wormhole"        icon="wormhole-icon.png"

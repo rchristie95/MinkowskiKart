@@ -20,6 +20,7 @@
 
 #include "graphics/explosion.hpp"
 #include "graphics/hit_effect.hpp"
+#include "items/anti_karticle.hpp"
 #include "items/bowling.hpp"
 #include "items/asteroid.hpp"
 #include "items/plunger.hpp"
@@ -197,6 +198,9 @@ std::shared_ptr<Flyable>
         case PowerupManager::POWERUP_WORMHOLE:
             f = std::make_shared<RubberBall>(kart);
             break;
+        case PowerupManager::POWERUP_ANTI_KARTICLE:
+            f = std::make_shared<AntiKarticle>(kart);
+            break;
         default:
             return nullptr;
     }
@@ -309,6 +313,11 @@ std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
             uid.addUInt8(RN_RUBBERBALL);
             break;
         }
+        case PowerupManager::POWERUP_ANTI_KARTICLE:
+        {
+            uid.addUInt8(RN_ANTI_KARTICLE);
+            break;
+        }
         default:
             assert(false);
             return "";
@@ -330,7 +339,7 @@ std::shared_ptr<Rewinder>
 
     RewinderName rn = (RewinderName)data.getUInt8();
     if (!(rn == RN_BOWLING || rn == RN_PLUNGER ||
-        rn == RN_CAKE || rn == RN_RUBBERBALL))
+        rn == RN_CAKE || rn == RN_RUBBERBALL || rn == RN_ANTI_KARTICLE))
         return nullptr;
 
     AbstractKart* kart = World::getWorld()->getKart(data.getUInt8());
@@ -356,6 +365,11 @@ std::shared_ptr<Rewinder>
         case RN_RUBBERBALL:
         {
             f = std::make_shared<RubberBall>(kart);
+            break;
+        }
+        case RN_ANTI_KARTICLE:
+        {
+            f = std::make_shared<AntiKarticle>(kart);
             break;
         }
         default:

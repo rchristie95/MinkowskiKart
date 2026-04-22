@@ -9,7 +9,7 @@
         <tip type="website_info"/> <!-- This is-managed in-code to avoid embedding an URL in the translatable string -->
     </tipset>
     <tipset id="race-powerup">
-        <tip text="The swatter can be used to remove bombs or parachutes."/>
+        <tip text="The anti-karticle mirrors your steering backward and can knock over racers behind you."/>
         <tip text="Braking allows to get rid of parachutes quicker."/>
         <tip text="Be careful when close to other karts, they may attack you!"/>
         <tip text="Wormholes can be avoided, but asteroids can still be disrupted with precise backward shots from a black hole, another asteroid, or a photon."/>
