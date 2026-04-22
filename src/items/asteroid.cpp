@@ -19,7 +19,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#include "items/cake.hpp"
+#include "items/asteroid.hpp"
 
 #include "graphics/explosion.hpp"
 #include "graphics/irr_driver.hpp"
@@ -33,36 +33,35 @@
 
 #include "utils/log.hpp" //TODO: remove after debugging is done
 
-float Cake::m_st_max_distance_squared;
-float Cake::m_gravity;
+float Asteroid::m_st_max_distance_squared;
+float Asteroid::m_gravity;
 
-Cake::Cake (AbstractKart *kart) : Flyable(kart, PowerupManager::POWERUP_NEUTRON_STAR)
+Asteroid::Asteroid (AbstractKart *kart) : Flyable(kart, PowerupManager::POWERUP_ASTEROID)
 {
     m_target = NULL;
-}   // Cake
+}   // Asteroid
 
 // -----------------------------------------------------------------------------
 /** Initialises the object from an entry in the powerup.xml file.
  *  \param node The xml node for this object.
- *  \param cakde_model The mesh model of the cake.
+ *  \param asteroid_model The mesh model of the asteroid.
  */
-void Cake::init(const XMLNode &node, scene::IMesh *cake_model)
+void Asteroid::init(const XMLNode &node, scene::IMesh *asteroid_model)
 {
-    Flyable::init(node, cake_model, PowerupManager::POWERUP_NEUTRON_STAR);
+    Flyable::init(node, asteroid_model, PowerupManager::POWERUP_ASTEROID);
     float max_distance        = 80.0f;
     m_gravity                 = 9.8f;
 
-    // Keep the original cake projectile bounds for launch offset and
-    // collision shape so asteroid visuals don't change the classic arc/seek
-    // behaviour.
+    // Keep the original collision envelope for launch offset and collision
+    // shape so asteroid visuals don't change the classic arc/seek behaviour.
     const std::string legacy_model =
-        file_manager->getAsset(FileManager::MODEL, "cake.spm");
-    scene::IMesh* legacy_cake_model = irr_driver->getMesh(legacy_model);
-    if (legacy_cake_model != NULL)
+        file_manager->getAsset(FileManager::MODEL, "asteroid_collision.spm");
+    scene::IMesh* legacy_collision_model = irr_driver->getMesh(legacy_model);
+    if (legacy_collision_model != NULL)
     {
         Vec3 min, max;
-        MeshTools::minMax3D(legacy_cake_model, &min, &max);
-        m_st_extend[PowerupManager::POWERUP_NEUTRON_STAR] = btVector3(max-min);
+        MeshTools::minMax3D(legacy_collision_model, &min, &max);
+        m_st_extend[PowerupManager::POWERUP_ASTEROID] = btVector3(max-min);
     }
 
     node.get("max-distance",    &max_distance  );
@@ -71,13 +70,13 @@ void Cake::init(const XMLNode &node, scene::IMesh *cake_model)
 
 // ----------------------------------------------------------------------------
 /** Callback from the physics in case that a kart or physical object is hit.
- *  The cake triggers an explosion when hit.
+ *  The asteroid triggers an explosion when hit.
  *  \param kart The kart hit (NULL if no kart was hit).
  *  \param object The object that was hit (NULL if none).
  *  \returns True if there was actually a hit (i.e. not owner, and target is
  *           not immune), false otherwise.
  */
-bool Cake::hit(AbstractKart* kart, PhysicalObject* obj)
+bool Asteroid::hit(AbstractKart* kart, PhysicalObject* obj)
 {
     bool was_real_hit = Flyable::hit(kart, obj);
     if(was_real_hit)
@@ -94,7 +93,7 @@ bool Cake::hit(AbstractKart* kart, PhysicalObject* obj)
 }   // hit
 
 // ----------------------------------------------------------------------------
-HitEffect* Cake::getHitEffect() const
+HitEffect* Asteroid::getHitEffect() const
 {
     if (GUIEngine::isNoGraphics())
         return NULL;
@@ -103,7 +102,7 @@ HitEffect* Cake::getHitEffect() const
 }   // getHitEffect
 
 // ----------------------------------------------------------------------------
-void Cake::onFireFlyable()
+void Asteroid::onFireFlyable()
 {
     Flyable::onFireFlyable();
     setDoTerrainInfo(false);
@@ -125,7 +124,7 @@ void Cake::onFireFlyable()
     // give a speed proportional to kart speed. m_speed is defined in flyable
     m_speed *= m_owner->getSpeed() / 23.0f;
 
-    //when going backwards, decrease speed of cake by less
+    // When going backwards, decrease speed of the asteroid by less.
     if (m_owner->getSpeed() < 0) m_speed /= 3.6f;
 
     m_speed += 16.0f;

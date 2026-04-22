@@ -19,7 +19,7 @@ We have implemented nine unique visual effects using custom GLSL shaders and C++
 5.  **Time-Dilation Field (Parachute):** Shoves the victim into a slow patch of time, visualized by a **redshift-biased halo** and smeared motion trails.
 6.  **Mass Spike (Anvil):** Simulates catastrophic local density by visually **compressing the kart’s suspension** and surrounding it with a dense downward shimmer.
 7.  **Frame Shift (Switch):** A sweeping **Lorentz grid wave** that reinterprets pickups and hazards as it passes over them.
-8.  **Neutron Star (Cake):** A brutally compact, extremely bright projectile representing maximum matter density.
+8.  **Asteroid:** A dense rocky projectile that slams racers and bleeds off their momentum on impact.
 9.  **Tidal Arm (Swatter):** A short-range distortion arc that "spaghettifies" space to smack away nearby rivals.
 
 ## 🛠️ Building the Project

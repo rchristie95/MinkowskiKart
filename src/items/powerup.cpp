@@ -325,7 +325,7 @@ void Powerup::use()
             }
             break;
         }
-    case PowerupManager::POWERUP_NEUTRON_STAR:
+    case PowerupManager::POWERUP_ASTEROID:
     case PowerupManager::POWERUP_WORMHOLE:
     case PowerupManager::POWERUP_BLACK_HOLE:
     case PowerupManager::POWERUP_COSMIC_STRING:

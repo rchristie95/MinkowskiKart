@@ -50,7 +50,7 @@ Explosion::Explosion(const Vec3& coord, const char* explosion_sound, const char 
     // Use a lower quality effect on mobile for better performance
     if (filename == "explosion.xml" ||
         filename == "explosion_bomb.xml" ||
-        filename == "explosion_cake.xml")
+        filename == "explosion_asteroid.xml")
     {
         filename = "explosion_low.xml";
     }

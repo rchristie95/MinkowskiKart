@@ -1365,7 +1365,7 @@ bool Track::loadMainTrack(const XMLNode &root)
 
     MeshTools::minMax3D(tangent_mesh, &m_aabb_min, &m_aabb_max);
     // Increase the maximum height of the track: since items that fly
-    // too high explode, e.g. cakes can not be show when being at the
+    // too high explode, e.g. asteroids can not be shown when being at the
     // top of the track (since they will explode when leaving the AABB
     // of the track). While the test for this in Flyable::updateAndDelete
     // could be relaxed to fix this, it is not certain how the physics

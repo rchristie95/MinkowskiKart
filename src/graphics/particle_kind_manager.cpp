@@ -77,7 +77,7 @@ void ParticleKindManager::preloadExplosions()
 {
     getParticles("explosion.xml");
     getParticles("explosion_bomb.xml");
-    getParticles("explosion_cake.xml");
+    getParticles("explosion_asteroid.xml");
     getParticles("jump_explosion.xml");
 }   // preloadExplosions
 

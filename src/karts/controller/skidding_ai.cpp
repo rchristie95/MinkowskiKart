@@ -425,7 +425,7 @@ void SkiddingAI::handleSteering(float dt)
     }
     //If we are going to crash against a kart, avoid it if it doesn't
     //drives the kart out of the road
-    //TODO : adds item handling to use a cake if available to
+    //TODO : add item handling to use an asteroid if available to
     //open the road
     else if( m_crashes.m_kart != -1 && !m_crashes.m_road )
     {
@@ -1191,15 +1191,15 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
             break;
         } // POWERUP_WARP_BUBBLE
           
-    case PowerupManager::POWERUP_NEUTRON_STAR:
+    case PowerupManager::POWERUP_ASTEROID:
         {
-            // if the kart has a shield, do not break it by using a neutron star.
+            // If the kart has a shield, do not break it by using an asteroid.
             if((m_kart->getShieldTime() > min_bubble_time) && (stk_config->m_shield_restrict_weapons == true))
                 break;
 
-            handleCake(item_skill);
+            handleAsteroid(item_skill);
             break;
-        }   // POWERUP_NEUTRON_STAR
+        }   // POWERUP_ASTEROID
           
     case PowerupManager::POWERUP_BLACK_HOLE:
         {
@@ -1288,9 +1288,9 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
 //-----------------------------------------------------------------------------
 /** Handle bubblegum depending on the chosen strategy
  * Level 2 : Use the shield immediately after a wait time
- * Level 3 : Use the shield against flyables except cakes. Use the shield against bad attachments
+ * Level 3 : Use the shield against flyables except asteroids. Use the shield against bad attachments
  *           and plunger. Use the bubble gum against an enemy close behind, except if holding a swatter.
- * Level 4 : Level 3, and protect against cakes too, and use before hitting gum/banana
+ * Level 4 : Level 3, and protect against asteroids too, and use before hitting gum/banana
  * Level 5 : Level 4, and use before hitting item box, and let plunger hit
  *                   (can use the shield after), and use against bomb only when the timer ends
  *  \param item_skill The skill with which to use the item
@@ -1303,10 +1303,10 @@ void SkiddingAI::handleBubblegum(int item_skill,
 {
     float shield_radius = m_ai_properties->m_shield_incoming_radius;
 
-    int projectile_types[4]; //[3] basket, [2] cakes, [1] plunger, [0] bowling
+    int projectile_types[4]; //[3] wormhole, [2] asteroid, [1] photon, [0] black hole
     projectile_types[0] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_BLACK_HOLE);
     projectile_types[1] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_COSMIC_STRING);
-    projectile_types[2] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_NEUTRON_STAR);
+    projectile_types[2] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_ASTEROID);
     projectile_types[3] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_WORMHOLE);
    
     bool projectile_is_close = false;
@@ -1321,9 +1321,9 @@ void SkiddingAI::handleBubblegum(int item_skill,
         return;
     }
     
-    // Check if a flyable (cake, ...) is close. If so, use bubblegum
+    // Check if a flyable (asteroid, ...) is close. If so, use bubblegum
     // as shield
-    if(item_skill == 3) //don't protect against cakes
+    if(item_skill == 3) // don't protect against asteroids
     {
        if( !m_kart->isShielded() && projectile_is_close
           && projectile_types[2] == 0)
@@ -1454,15 +1454,15 @@ void SkiddingAI::handleBubblegum(int item_skill,
 } //handleBubblegum
 
 //-----------------------------------------------------------------------------
-/** Handle cake depending on the chosen strategy
- * Level 2 : Use the cake against any close vulnerable enemy, with priority to those ahead and close,
+/** Handle asteroid depending on the chosen strategy
+ * Level 2 : Use the asteroid against any close vulnerable enemy, with priority to those ahead and close,
  *           check if the enemy is roughly ahead.
  * Level 3 : Level 2 and don't fire on slower karts
  * Level 4 : Level 3 and fire if the kart has a swatter which may hit us
  * Level 5 : Level 4 and don't fire on a shielded kart if we're just behind (gum)
  *  \param item_skill The skill with which to use the item
  */
-void SkiddingAI::handleCake(int item_skill)
+void SkiddingAI::handleAsteroid(int item_skill)
 {
     // Leave some time between shots
     if(m_time_since_last_shot<2.0f) return;
@@ -1523,7 +1523,7 @@ void SkiddingAI::handleCake(int item_skill)
         fire_ahead -= 100.0f;
 
     // Don't fire at a kart that is slower than us. Reason is that
-    // we can either save the cake for later since we will overtake
+    // we can either save the asteroid for later since we will overtake
     // the kart anyway, or that this might force the kart ahead to
     // use its nitro/zipper (and then we will shoot since then the
     // kart is faster).
@@ -1588,7 +1588,7 @@ void SkiddingAI::handleCake(int item_skill)
         m_controls->setLookBack(fire_backwards);
     return;
 
-} //handleCake
+} // handleAsteroid
 
 
 //-----------------------------------------------------------------------------

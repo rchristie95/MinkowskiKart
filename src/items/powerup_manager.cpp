@@ -27,7 +27,7 @@
 #include "io/file_manager.hpp"
 #include "io/xml_node.hpp"
 #include "items/bowling.hpp"
-#include "items/cake.hpp"
+#include "items/asteroid.hpp"
 #include "items/item.hpp"
 #include "items/plunger.hpp"
 #include "items/rubber_ball.hpp"
@@ -107,7 +107,7 @@ PowerupManager::PowerupType
     // Must match the order of PowerupType in powerup_manager.hpp!!
     static const std::string powerup_names[] = {
         "",            /* Nothing */
-        "warp-bubble", "neutron-star", "black-hole", "zipper", "photon",
+        "warp-bubble", "asteroid", "black-hole", "zipper", "photon",
         "super_position", "tidal-arm", "wormhole", "time-dilation", "mass-spike"
     };
 
@@ -132,15 +132,17 @@ PowerupManager::PowerupType
         return POWERUP_WORMHOLE;
     }
 
-    if (lower_name == "neutron-star" ||
+    if (lower_name == "asteroid"     ||
+        lower_name == "neutron-star" ||
         lower_name == "neutron_star" ||
-        lower_name == "neutronstar")
+        lower_name == "neutronstar"  ||
+        lower_name == "cake")
     {
-        return POWERUP_NEUTRON_STAR;
+        return POWERUP_ASTEROID;
     }
 
-    // Backward compatibility: legacy identifier from before the Neutron Star
-    // → Wormhole rename. Keep accepted so old powerup.xml / savegames load.
+    // Backward compatibility: legacy powerup identifiers are accepted so old
+    // powerup.xml files, scripts, and replays continue to load.
     for(unsigned int i=POWERUP_FIRST; i<=POWERUP_LAST; i++)
     {
         if(powerup_names[i] == lower_name) return(PowerupType)i;
@@ -480,8 +482,8 @@ int PowerupManager::WeightsData::getRandomItem(int rank, uint64_t random_number)
 }   // WeightsData::getRandomItem
 
 // ============================================================================
-/** Loads the data for one particular powerup. For bowling ball, plunger, and
- *  cake static members in the appropriate classes are called to store
+/** Loads the data for one particular powerup. For black hole, photon, and
+ *  asteroid static members in the appropriate classes are called to store
  *  additional information for those objects.
  *  \param type The type of the powerup.
  *  \param node The XML node with the data for this powerup.
@@ -539,8 +541,8 @@ void PowerupManager::loadPowerup(PowerupType type, const XMLNode &node)
              Bowling::init(node, m_all_meshes[type]);    break;
         case POWERUP_COSMIC_STRING:
              Plunger::init(node, m_all_meshes[type]);    break;
-        case POWERUP_NEUTRON_STAR:
-             Cake::init(node, m_all_meshes[type]);       break;
+        case POWERUP_ASTEROID:
+             Asteroid::init(node, m_all_meshes[type]);   break;
         case POWERUP_WORMHOLE:
              RubberBall::init(node, m_all_meshes[type]); break;
         default: break;
@@ -652,7 +654,7 @@ PowerupManager::PowerupType PowerupManager::getRandomPowerup(unsigned int pos,
         stk_config->ticks2Time(World::getWorld()->getTicksSinceStart()) <
                                       stk_config->m_no_explosive_items_timeout)
     {
-        if (powerup == POWERUP_NEUTRON_STAR || powerup == POWERUP_WORMHOLE)
+        if (powerup == POWERUP_ASTEROID || powerup == POWERUP_WORMHOLE)
             powerup = POWERUP_BLACK_HOLE;
     }
     return (PowerupType)powerup;
@@ -729,7 +731,9 @@ void PowerupManager::unitTesting()
         == POWERUP_WORMHOLE);
     assert(powerup_manager->getPowerupType("rubber_ball")
         == POWERUP_WORMHOLE);
+    assert(powerup_manager->getPowerupType("asteroid") == POWERUP_ASTEROID);
     assert(powerup_manager->getPowerupType("neutron-star")
-        == POWERUP_NEUTRON_STAR);
+        == POWERUP_ASTEROID);
+    assert(powerup_manager->getPowerupType("cake") == POWERUP_ASTEROID);
     Wormhole::unitTesting();
 }   // unitTesting

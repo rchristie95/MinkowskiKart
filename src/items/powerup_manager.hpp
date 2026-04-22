@@ -43,7 +43,7 @@ namespace irr
 
 /** This class manages all powerups. It reads in powerup.xml to get the data,
  *  initialise the static member of some flyables (i.e. powerup.xml contains
- *  info about cakes, plunger etc which needs to be stored), and maintains
+ *  info about asteroids, photon etc which needs to be stored), and maintains
  *  the 'weights' (used in randomly chosing which item was collected) for all
  *  items depending on position. The latter is done so that as the first player
  *  you get less advantageous items (but no useless ones either), while as the
@@ -130,7 +130,9 @@ public:
     enum PowerupType {POWERUP_NOTHING,
                       POWERUP_FIRST,
                       POWERUP_WARP_BUBBLE = POWERUP_FIRST,  // was BUBBLEGUM - shield
-                      POWERUP_NEUTRON_STAR,                 // was CAKE - dense thrown projectile
+                      POWERUP_ASTEROID,                     // was CAKE/NEUTRON_STAR - dense projectile
+                      POWERUP_NEUTRON_STAR = POWERUP_ASTEROID, // compatibility alias
+                      POWERUP_CAKE = POWERUP_ASTEROID,      // compatibility alias
                       POWERUP_BLACK_HOLE,                    // was BOWLING - heavy projectile
                       POWERUP_ZIPPER,                        // speed boost (unchanged)
                       POWERUP_COSMIC_STRING,                 // was PLUNGER - grapple/blackboard
