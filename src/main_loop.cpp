@@ -374,7 +374,7 @@ void MainLoop::updateRace(int ticks, bool fast_forward)
  *      rotation is adjusted according to the position etc of the kart (and
  *      special circumstances like rescue, falling).
  *    - Updates all projectiles using the projectile manager. Some of the
- *      projectiles are mostly handled by the physics (e.g. a cake will mainly
+ *      projectiles are mostly handled by the physics (e.g. an asteroid will mainly
  *      check if it's out of bounds), others (like basket ball) do all
  *      their aiming and movement here.
  *    - Updates the rewind manager to store rewind states.

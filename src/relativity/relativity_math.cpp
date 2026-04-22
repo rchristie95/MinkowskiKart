@@ -896,9 +896,8 @@ namespace KartAdapter
 
 float scalePropulsiveForce(float force, float /*signed_speed*/)
 {
-    // Engine force is never scaled by relativistic gamma: that made the game
-    // feel sluggish without adding fun. The hard speed cap (c * max_beta, capped
-    // at 0.95c) in btKart::adjustSpeed is sufficient to bound kart velocity.
+    // Engine force is not gamma-scaled. The hard speed cap in btKart::adjustSpeed
+    // bounds kart velocity without creating a hidden cruise-speed equilibrium.
     return force;
 }   // scalePropulsiveForce
 

@@ -633,7 +633,7 @@ HitEffect* Flyable::getHitEffect() const
     if (GUIEngine::isNoGraphics())
         return NULL;
     return m_deleted_once ? NULL :
-        new Explosion(getXYZ(), "explosion", "explosion_cake.xml");
+        new Explosion(getXYZ(), "explosion", "explosion_asteroid.xml");
 }   // getHitEffect
 
 // ----------------------------------------------------------------------------
