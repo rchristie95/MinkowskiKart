@@ -52,7 +52,7 @@
         lifetime="20"
         reentry-cooldown="0.5" />
 
-  <!-- TIME-DILATION FIELD: slows karts ahead (was parachute) -->
+  <!-- TIME-DILATION FIELD: slows other karts (was parachute) -->
   <item name="time-dilation"   icon="time-dilation-icon.png"
         model="parachute.spm" />
 

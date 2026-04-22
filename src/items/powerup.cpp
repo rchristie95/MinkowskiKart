@@ -449,27 +449,28 @@ void Powerup::use()
     case PowerupManager::POWERUP_TIME_DILATION:
         {
             AbstractKart* player_kart = NULL;
-            //Attach a parachute(that last 1,3 time as long as the
-            //one from the bananas and is affected by the rank multiplier)
-            //to all the karts that are in front of this one.
+            // Apply the time-dilation field to every other active kart. Karts
+            // ahead keep the old rank-scaled duration bonus; karts behind use
+            // the base "other kart" duration.
             for(unsigned int i = 0 ; i < world->getNumKarts(); ++i)
             {
                 AbstractKart *kart=world->getKart(i);
                 if(kart->isEliminated() || kart== m_kart || kart->isInvulnerable()) continue;
+                if(kart->isShielded())
+                {
+                    kart->decreaseShieldTime();
+                    continue;
+                }
+
+                float rank_mult = 1.0f;
                 if(m_kart->getPosition() > kart->getPosition())
                 {
-                    if(kart->isShielded())
-                    {
-                        kart->decreaseShieldTime();
-                        continue;
-                    }
-                    float rank_mult, position_factor;
-                    //0 if the one before the item user ; 1 if first ; scaled inbetween
+                    float position_factor = 1.0f;
                     if (kart->getPosition() == 1)
                     {
                         position_factor = 1.0f;
                     }
-                    else //m_kart position is always >= 3
+                    else if (m_kart->getPosition() > 2)
                     {
                         float rank_factor;
 
@@ -477,17 +478,23 @@ void Powerup::use()
                                     / (float)(m_kart->getPosition() - 2);
                         position_factor = 1.0f - rank_factor;
                     }
+                    if (position_factor < 0.0f)
+                        position_factor = 0.0f;
+                    else if (position_factor > 1.0f)
+                        position_factor = 1.0f;
 
                     rank_mult = 1 + (position_factor *
                                      (kp->getParachuteDurationRankMult() - 1));
-
-                    kart->getAttachment()
-                        ->set(Attachment::ATTACH_TIME_DILATION,
-                              stk_config->time2Ticks(kp->getParachuteDurationOther()*rank_mult) );
-
-                    if(kart->getController()->isLocalPlayerController())
-                        player_kart = kart;
                 }
+
+                kart->getAttachment()
+                    ->set(Attachment::ATTACH_TIME_DILATION,
+                          stk_config->time2Ticks(
+                              kp->getParachuteDurationOther() * rank_mult),
+                          m_kart);
+
+                if(kart->getController()->isLocalPlayerController())
+                    player_kart = kart;
             }
 
             // should we position the sound at the kart that is hit,

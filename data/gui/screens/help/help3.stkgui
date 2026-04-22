@@ -66,7 +66,7 @@
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/parachute-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Time-Dilation Field: Trap a racer ahead in a relativistic slowdown zone. Their speed and acceleration drop while the world smears around them."/>
+        <bubble proportion="1" height="100%" text="Time-Dilation Field: Trap every other racer in a relativistic slowdown zone. Their speed and acceleration drop while the world smears around them."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
