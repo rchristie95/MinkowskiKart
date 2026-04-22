@@ -124,7 +124,7 @@ enum DebugMenuCommand
     DEBUG_POWERUP_BLACK_HOLE,
     DEBUG_POWERUP_WARP_BUBBLE,
     DEBUG_POWERUP_WORMHOLE,
-    DEBUG_POWERUP_NEUTRON_STAR,
+    DEBUG_POWERUP_ASTEROID,
     DEBUG_POWERUP_TIME_DILATION,
     DEBUG_POWERUP_COSMIC_STRING,
     DEBUG_POWERUP_TIDAL_ARM,
@@ -614,8 +614,8 @@ bool handleContextMenuAction(s32 cmd_id)
     case DEBUG_POWERUP_WORMHOLE:
         addPowerup(PowerupManager::POWERUP_WORMHOLE, 255);
         break;
-    case DEBUG_POWERUP_NEUTRON_STAR:
-        addPowerup(PowerupManager::POWERUP_NEUTRON_STAR, 255);
+    case DEBUG_POWERUP_ASTEROID:
+        addPowerup(PowerupManager::POWERUP_ASTEROID, 255);
         break;
     case DEBUG_POWERUP_TIME_DILATION:
         addPowerup(PowerupManager::POWERUP_TIME_DILATION, 255);
@@ -1121,7 +1121,7 @@ bool handleContextMenuAction(s32 cmd_id)
                             "* <F2> - Wormhole powerup | + <Ctrl> - First person view | + <Shift> - Anchor attachment\n"
                             "* <F3> - Black Hole powerup | + <Ctrl> - Top view | + <Shift> - Parachute attachment\n"
                             "* <F4> - Warp Bubble powerup | + <Ctrl> - Behind wheel view | + <Shift> - Flatten kart\n"
-                            "* <F5> - Neutron Star powerup | + <Ctrl> - Behind kart view | + <Shift> - Send photon to kart front\n"
+                            "* <F5> - Asteroid powerup | + <Ctrl> - Behind kart view | + <Shift> - Send photon to kart front\n"
                             "* <F6> - Time Dilation powerup | + <Ctrl> - Right side of kart view | + <Shift> - Explode kart\n"
                             "* <F7> - Photon powerup | + <Ctrl> - Left side of kart view | + <Shift> - Scripting console\n"
                             "* <F8> - Swatter powerup | + <Ctrl> - Front of kart view | + <Shift> - Texture console\n"
@@ -1317,7 +1317,7 @@ bool onEvent(const SEvent &event)
             sub->addItem(L"Wormhole (F2)", DEBUG_POWERUP_WORMHOLE );
             sub->addItem(L"Black Hole (F3)", DEBUG_POWERUP_BLACK_HOLE );
             sub->addItem(L"Warp Bubble (F4)", DEBUG_POWERUP_WARP_BUBBLE );
-            sub->addItem(L"Neutron Star (F5)", DEBUG_POWERUP_NEUTRON_STAR );
+            sub->addItem(L"Asteroid (F5)", DEBUG_POWERUP_ASTEROID );
             sub->addItem(L"Time Dilation (F6)", DEBUG_POWERUP_TIME_DILATION );
             sub->addItem(L"Photon (F7)", DEBUG_POWERUP_COSMIC_STRING );
             sub->addItem(L"Tidal Arm (F8)", DEBUG_POWERUP_TIDAL_ARM );
@@ -1557,7 +1557,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_NEUTRON_STAR);
+                    handleContextMenuAction(DEBUG_POWERUP_ASTEROID);
                 }
                 break;
             }

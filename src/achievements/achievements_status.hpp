@@ -102,7 +102,7 @@ public :
            SWATTER_HIT                   = 40,
            SWATTER_HIT_1RACE             = 41,
            SWATTER_HIT_1RACE_MAX         = 42,
-           // Count how many times a swatter, bowling ball or cake from
+           // Count how many times a tidal arm, black hole or asteroid from
            // the player hit a kart (excluding the player's own kart)
            ALL_HITS                      = 43,
            ALL_HITS_1RACE                = 44,

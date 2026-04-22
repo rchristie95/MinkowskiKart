@@ -2,14 +2,14 @@
 <powerup>
   <!-- Minkowski Kart - Relativistic Powerups
        Order must match PowerupType enum in powerup_manager.hpp:
-       warp-bubble, neutron-star, black-hole, zipper, photon,
+       warp-bubble, asteroid, black-hole, zipper, photon,
        super_position, tidal-arm, wormhole, time-dilation, mass-spike -->
 
   <!-- WARP BUBBLE: shield sphere (was bubblegum) -->
   <item name="warp-bubble"     icon="warp-bubble-icon.png" />
 
-  <!-- NEUTRON STAR: fast dense lobbed projectile -->
-  <item name="neutron-star"    icon="neutron-star-icon.png"
+  <!-- ASTEROID: fast dense lobbed projectile -->
+  <item name="asteroid"        icon="asteroid-icon.png"
         model="asteroid.spm"   speed="50"
         min-height="0.2"       max-height="1.0"
         force-updown="25"      max-distance="90" />

@@ -49,8 +49,8 @@ and provide an enjoyable experience for all ages.'
 STK_APPDATA_P2 = 'We have several tracks with various themes for players to enjoy, \
 from driving underwater, rural farmlands, jungles or even in space! \
 Try your best while avoiding other karts as they may overtake you, \
-but don\'t eat the bananas! Watch for bowling balls, plungers, bubble gum, \
-and cakes thrown by your opponents.'
+but don\'t eat the bananas! Watch for black holes, photons, warp bubbles, \
+and asteroids launched by your opponents.'
 STK_APPDATA_P3 = 'You can do a single race against other karts, \
 compete in one of several Grand Prix, \
 try to beat the high score in time trials on your own, \

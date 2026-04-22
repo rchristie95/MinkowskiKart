@@ -456,7 +456,7 @@ void ArenaAI::useItems(const float dt)
             if (type == Attachment::ATTACH_TIDAL_ARM)
                 break;
 
-            // Check if a flyable (cake, ...) is close or a kart nearby
+            // Check if a flyable (asteroid, ...) is close or a kart nearby
             // has a swatter attachment. If so, use bubblegum
             // as shield
             if ( (!m_kart->isShielded() &&
@@ -485,9 +485,9 @@ void ArenaAI::useItems(const float dt)
 
             break;   // POWERUP_WARP_BUBBLE
         }
-    case PowerupManager::POWERUP_NEUTRON_STAR:
+    case PowerupManager::POWERUP_ASTEROID:
         {
-            // if the kart has a shield, do not break it by using a neutron star.
+            // If the kart has a shield, do not break it by using an asteroid.
             if (m_kart->getShieldTime() > min_bubble_time)
                 break;
 
@@ -503,7 +503,7 @@ void ArenaAI::useItems(const float dt)
             }
 
             break;
-        }   // POWERUP_NEUTRON_STAR
+        }   // POWERUP_ASTEROID
 
     case PowerupManager::POWERUP_BLACK_HOLE:
         {

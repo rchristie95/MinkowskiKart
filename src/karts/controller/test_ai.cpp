@@ -1204,7 +1204,7 @@ void SkiddingAI::handleItems(const float dt)
             if( type == Attachment::ATTACH_TIDAL_ARM)
                 break;
 
-            // Check if a flyable (cake, ...) is close. If so, use bubblegum
+            // Check if a flyable (asteroid, ...) is close. If so, use bubblegum
             // as shield
             if( !m_kart->isShielded() &&
                 ProjectileManager::get()->projectileIsClose(m_kart,
@@ -1245,9 +1245,9 @@ void SkiddingAI::handleItems(const float dt)
             }
             break;   // POWERUP_WARP_BUBBLE
         }
-    case PowerupManager::POWERUP_NEUTRON_STAR:
+    case PowerupManager::POWERUP_ASTEROID:
         {
-            // if the kart has a shield, do not break it by using a neutron star.
+            // If the kart has a shield, do not break it by using an asteroid.
             if(m_kart->getShieldTime() > min_bubble_time)
                 break;
             // Leave some time between shots
@@ -1269,7 +1269,7 @@ void SkiddingAI::handleItems(const float dt)
                                   );
 
             // Don't fire at a kart that is slower than us. Reason is that
-            // we can either save the cake for later since we will overtake
+            // we can either save the asteroid for later since we will overtake
             // the kart anyway, or that this might force the kart ahead to
             // use its nitro/zipper (and then we will shoot since then the
             // kart is faster).
@@ -1284,14 +1284,14 @@ void SkiddingAI::handleItems(const float dt)
 
             float distance = fire_backwards ? m_distance_behind
                                             : m_distance_ahead;
-            // Since cakes can be fired all around, just use a sane distance
-            // with a bit of extra for backwards, as enemy will go towards cake
+            // Since asteroids can be fired all around, just use a sane distance
+            // with a bit of extra for backwards, as enemy will go towards it.
             m_controls->setFire( (fire_backwards && distance < 25.0f) ||
                                  (!fire_backwards && distance < 20.0f)  );
             if(m_controls->getFire())
                 m_controls->setLookBack(fire_backwards);
             break;
-        }   // POWERUP_NEUTRON_STAR
+        }   // POWERUP_ASTEROID
 
     case PowerupManager::POWERUP_BLACK_HOLE:
         {
