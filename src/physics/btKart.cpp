@@ -928,8 +928,6 @@ void btKart::updateFriction(btScalar timeStep)
         {
             btVector3 forward_impulse =
                 m_forwardWS[wheel] * (m_forwardImpulse[wheel]);
-            forward_impulse = Relativity::KartAdapter::scaleResponse(
-                forward_impulse, m_chassisBody->getLinearVelocity());
             m_chassisBody->applyImpulse(
                                   forward_impulse,
 #define COMPATIBLE_0_7_3

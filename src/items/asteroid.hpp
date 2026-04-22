@@ -19,8 +19,8 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#ifndef HEADER_CAKE_HPP
-#define HEADER_CAKE_HPP
+#ifndef HEADER_ASTEROID_HPP
+#define HEADER_ASTEROID_HPP
 
 namespace irr
 {
@@ -35,7 +35,7 @@ class XMLNode;
 /**
   * \ingroup items
   */
-class Cake : public Flyable
+class Asteroid : public Flyable
 {
 private:
     /** Maximum distance for a missile to be attracted. */
@@ -48,8 +48,8 @@ private:
     Moveable*    m_target;
 
 public:
-                 Cake (AbstractKart *kart);
-    static  void init     (const XMLNode &node, scene::IMesh *cake_model);
+                 Asteroid (AbstractKart *kart);
+    static  void init     (const XMLNode &node, scene::IMesh *asteroid_model);
     virtual bool hit(AbstractKart* kart, PhysicalObject* obj=NULL) OVERRIDE;
     virtual HitEffect* getHitEffect() const OVERRIDE;
     // ------------------------------------------------------------------------
@@ -75,6 +75,6 @@ public:
                                                     { m_initial_velocity = v; }
     // ------------------------------------------------------------------------
     virtual void onFireFlyable() OVERRIDE;
-};   // Cake
+};   // Asteroid
 
 #endif

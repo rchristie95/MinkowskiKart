@@ -1591,8 +1591,8 @@ msgstr ""
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Cake - thrown at the closest rival, best on short ranges and long straights. "
-"It also affects other karts close to the explosion."
+"Asteroid: Launch a dense rocky projectile that slams racers and bleeds off "
+"their momentum on impact."
 msgstr ""
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
@@ -2624,8 +2624,8 @@ msgstr ""
 
 #. I18N: ./data/tips.xml
 msgid ""
-"Basketballs can be destroyed using precise backward shots with a bowling "
-"ball, cake, or plunger."
+"Wormholes can be avoided, but asteroids can still be disrupted with precise "
+"backward shots from a black hole, another asteroid, or a photon."
 msgstr ""
 
 #. I18N: ./data/tips.xml
@@ -7048,8 +7048,8 @@ msgid ""
 "We have several tracks with various themes for players to enjoy, from "
 "driving underwater, rural farmlands, jungles or even in space! Try your best "
 "while avoiding other karts as they may overtake you, but don't eat the "
-"bananas! Watch for bowling balls, plungers, bubble gum, and cakes thrown by "
-"your opponents."
+"bananas! Watch for black holes, photons, warp bubbles, and asteroids "
+"launched by your opponents."
 msgstr ""
 
 #: net.supertuxkart.SuperTuxKart.metainfo.xml:15

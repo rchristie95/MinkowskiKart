@@ -21,7 +21,7 @@
 #include "graphics/explosion.hpp"
 #include "graphics/hit_effect.hpp"
 #include "items/bowling.hpp"
-#include "items/cake.hpp"
+#include "items/asteroid.hpp"
 #include "items/plunger.hpp"
 #include "items/powerup_manager.hpp"
 #include "items/powerup.hpp"
@@ -191,8 +191,8 @@ std::shared_ptr<Flyable>
         case PowerupManager::POWERUP_COSMIC_STRING:
             f = std::make_shared<Plunger>(kart);
             break;
-        case PowerupManager::POWERUP_NEUTRON_STAR:
-            f = std::make_shared<Cake>(kart);
+        case PowerupManager::POWERUP_ASTEROID:
+            f = std::make_shared<Asteroid>(kart);
             break;
         case PowerupManager::POWERUP_WORMHOLE:
             f = std::make_shared<RubberBall>(kart);
@@ -299,7 +299,7 @@ std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
             uid.addUInt8(RN_PLUNGER);
             break;
         }
-        case PowerupManager::POWERUP_NEUTRON_STAR:
+        case PowerupManager::POWERUP_ASTEROID:
         {
             uid.addUInt8(RN_CAKE);
             break;
@@ -350,7 +350,7 @@ std::shared_ptr<Rewinder>
         }
         case RN_CAKE:
         {
-            f = std::make_shared<Cake>(kart);
+            f = std::make_shared<Asteroid>(kart);
             break;
         }
         case RN_RUBBERBALL:

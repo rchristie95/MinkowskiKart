@@ -508,7 +508,7 @@ int ReplayRecorder::enumToCode (PowerupManager::PowerupType type)
     int code =
         (type == PowerupManager::POWERUP_NOTHING)    ? 0 :
         (type == PowerupManager::POWERUP_WARP_BUBBLE)  ? 1 :
-        (type == PowerupManager::POWERUP_NEUTRON_STAR)       ? 2 :
+        (type == PowerupManager::POWERUP_ASTEROID)           ? 2 :
         (type == PowerupManager::POWERUP_BLACK_HOLE)    ? 3 :
         (type == PowerupManager::POWERUP_ZIPPER)     ? 4 :
         (type == PowerupManager::POWERUP_COSMIC_STRING)    ? 5 :
@@ -542,7 +542,7 @@ PowerupManager::PowerupType ReplayRecorder::codeToEnumItem (int code)
     PowerupManager::PowerupType type =
         (code == 0) ? PowerupManager::POWERUP_NOTHING    :
         (code == 1) ? PowerupManager::POWERUP_WARP_BUBBLE  :
-        (code == 2) ? PowerupManager::POWERUP_NEUTRON_STAR       :
+        (code == 2) ? PowerupManager::POWERUP_ASTEROID           :
         (code == 3) ? PowerupManager::POWERUP_BLACK_HOLE    :
         (code == 4) ? PowerupManager::POWERUP_ZIPPER     :
         (code == 5) ? PowerupManager::POWERUP_COSMIC_STRING    :

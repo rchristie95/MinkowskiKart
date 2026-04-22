@@ -299,7 +299,7 @@ void Physics::removeKart(const AbstractKart *kart)
 {
     // We can't simply remove a kart from the physics world when currently
     // loops over all kart objects are active. This can happen in collision
-    // handling, where a collision of a kart with a cake etc. removes
+    // handling, where a collision of a kart with an asteroid etc. removes
     // a kart from the physics. In this case save pointers to the kart
     // to be removed, and remove them once the physics processing is done.
     if(m_physics_loop_active)
