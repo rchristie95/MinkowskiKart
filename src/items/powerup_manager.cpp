@@ -26,6 +26,7 @@
 #include "guiengine/skin.hpp"
 #include "io/file_manager.hpp"
 #include "io/xml_node.hpp"
+#include "items/anti_karticle.hpp"
 #include "items/bowling.hpp"
 #include "items/asteroid.hpp"
 #include "items/item.hpp"
@@ -108,7 +109,7 @@ PowerupManager::PowerupType
     static const std::string powerup_names[] = {
         "",            /* Nothing */
         "warp-bubble", "asteroid", "black-hole", "zipper", "photon",
-        "super_position", "tidal-arm", "wormhole", "time-dilation", "mass-spike"
+        "super_position", "anti-karticle", "wormhole", "time-dilation", "mass-spike"
     };
 
     if (lower_name == "super_position"              ||
@@ -139,6 +140,16 @@ PowerupManager::PowerupType
         lower_name == "cake")
     {
         return POWERUP_ASTEROID;
+    }
+
+    if (lower_name == "anti-karticle"  ||
+        lower_name == "anti_karticle"  ||
+        lower_name == "antikarticle"   ||
+        lower_name == "tidal-arm"      ||
+        lower_name == "tidal_arm"      ||
+        lower_name == "swatter")
+    {
+        return POWERUP_ANTI_KARTICLE;
     }
 
     // Backward compatibility: legacy powerup identifiers are accepted so old
@@ -545,6 +556,8 @@ void PowerupManager::loadPowerup(PowerupType type, const XMLNode &node)
              Asteroid::init(node, m_all_meshes[type]);   break;
         case POWERUP_WORMHOLE:
              RubberBall::init(node, m_all_meshes[type]); break;
+        case POWERUP_ANTI_KARTICLE:
+             AntiKarticle::init(node, m_all_meshes[type]); break;
         default: break;
     }   // switch
 }   // loadPowerup
@@ -735,5 +748,9 @@ void PowerupManager::unitTesting()
     assert(powerup_manager->getPowerupType("neutron-star")
         == POWERUP_ASTEROID);
     assert(powerup_manager->getPowerupType("cake") == POWERUP_ASTEROID);
+    assert(powerup_manager->getPowerupType("anti-karticle")
+        == POWERUP_ANTI_KARTICLE);
+    assert(powerup_manager->getPowerupType("tidal-arm")
+        == POWERUP_ANTI_KARTICLE);
     Wormhole::unitTesting();
 }   // unitTesting

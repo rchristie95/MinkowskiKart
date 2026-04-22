@@ -256,9 +256,9 @@ void SkiddingAI::update(int ticks)
                 else if (r == 2 || r == 3)
                     m_kart->setPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 1);
                 else
-                    m_kart->setPowerup(PowerupManager::POWERUP_TIDAL_ARM, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_ANTI_KARTICLE, 1);
             }
-            else if (m_kart->getAttachment()->getType() == Attachment::ATTACH_TIDAL_ARM)
+            else if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_ANTI_KARTICLE)
             {
                 int r = rand() % 4;
                 if (r < 3)
@@ -272,7 +272,7 @@ void SkiddingAI::update(int ticks)
                 if (r == 0 || r == 1)
                     m_kart->setPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 1);
                 else if (r == 2 || r == 3)
-                    m_kart->setPowerup(PowerupManager::POWERUP_TIDAL_ARM, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_ANTI_KARTICLE, 1);
                 else
                     m_kart->setPowerup(PowerupManager::POWERUP_BLACK_HOLE, 1);
             }
@@ -1104,7 +1104,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
         if( m_time_since_last_shot > 3.0f )
         {
             m_controls->setFire(true);
-            if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_TIDAL_ARM)
+            if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_ANTI_KARTICLE)
                 m_time_since_last_shot = 3.0f;
             else
             {
@@ -1257,17 +1257,17 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
     case PowerupManager::POWERUP_MASS_SPIKE:
         break;   // POWERUP_MASS_SPIKE
 
-    case PowerupManager::POWERUP_TIDAL_ARM:
+    case PowerupManager::POWERUP_ANTI_KARTICLE:
         {
-             // if the kart has a shield, do not break it by using a swatter.
+             // If the kart has a shield, do not break it by firing a weapon.
             if(m_kart->getShieldTime() > min_bubble_time)
                 break;
 
             handleSwatter(item_skill);
             break;
-        } // POWERUP_TIDAL_ARM
+        } // POWERUP_ANTI_KARTICLE
     case PowerupManager::POWERUP_WORMHOLE:
-        // if the kart has a shield, do not break it by using a swatter.
+        // If the kart has a shield, do not break it by firing a weapon.
         if((m_kart->getShieldTime() > min_bubble_time) && (stk_config->m_shield_restrict_weapons == true))
             break;
         // Perhaps some more sophisticated algorithm might be useful.

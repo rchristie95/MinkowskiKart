@@ -181,10 +181,6 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
 
     switch (m_type)
     {
-        // No sound effect when arming the glove
-        case PowerupManager::POWERUP_TIDAL_ARM:
-            break;
-
         case PowerupManager::POWERUP_ZIPPER:
             break ;
 
@@ -294,7 +290,6 @@ void Powerup::use()
 
     // Play custom kart sound when collectible is used //TODO: what about the bubble gum?
     if (m_type != PowerupManager::POWERUP_NOTHING &&
-        m_type != PowerupManager::POWERUP_TIDAL_ARM &&
         m_type != PowerupManager::POWERUP_ZIPPER)
         m_kart->playCustomSFX(SFXManager::CUSTOM_SHOOT);
 
@@ -329,6 +324,7 @@ void Powerup::use()
     case PowerupManager::POWERUP_WORMHOLE:
     case PowerupManager::POWERUP_BLACK_HOLE:
     case PowerupManager::POWERUP_COSMIC_STRING:
+    case PowerupManager::POWERUP_ANTI_KARTICLE:
         if(stk_config->m_shield_restrict_weapons)
             m_kart->setShieldTime(0.0f); // make weapon usage destroy the shield
         if (!has_played_sound)
@@ -338,12 +334,6 @@ void Powerup::use()
         }
         ProjectileManager::get()->newProjectile(m_kart, m_type);
         break ;
-
-    case PowerupManager::POWERUP_TIDAL_ARM:
-        m_kart->getAttachment()
-                ->set(Attachment::ATTACH_TIDAL_ARM,
-                      stk_config->time2Ticks(kp->getSwatterDuration()));
-        break;
 
     case PowerupManager::POWERUP_WARP_BUBBLE:
         // use the bubble gum the traditional way, if the kart is looking back

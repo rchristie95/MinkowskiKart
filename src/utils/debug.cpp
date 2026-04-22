@@ -127,7 +127,7 @@ enum DebugMenuCommand
     DEBUG_POWERUP_ASTEROID,
     DEBUG_POWERUP_TIME_DILATION,
     DEBUG_POWERUP_COSMIC_STRING,
-    DEBUG_POWERUP_TIDAL_ARM,
+    DEBUG_POWERUP_ANTI_KARTICLE,
     DEBUG_POWERUP_SUPER_POSITION,
     DEBUG_POWERUP_ZIPPER,
     DEBUG_POWERUP_NITRO,
@@ -623,8 +623,8 @@ bool handleContextMenuAction(s32 cmd_id)
     case DEBUG_POWERUP_COSMIC_STRING:
         addPowerup(PowerupManager::POWERUP_COSMIC_STRING, 255);
         break;
-    case DEBUG_POWERUP_TIDAL_ARM:
-        addPowerup(PowerupManager::POWERUP_TIDAL_ARM, 255);
+    case DEBUG_POWERUP_ANTI_KARTICLE:
+        addPowerup(PowerupManager::POWERUP_ANTI_KARTICLE, 255);
         break;
     case DEBUG_POWERUP_SUPER_POSITION:
         addPowerup(PowerupManager::POWERUP_SUPER_POSITION, 255);
@@ -1124,7 +1124,7 @@ bool handleContextMenuAction(s32 cmd_id)
                             "* <F5> - Asteroid powerup | + <Ctrl> - Behind kart view | + <Shift> - Send photon to kart front\n"
                             "* <F6> - Time Dilation powerup | + <Ctrl> - Right side of kart view | + <Shift> - Explode kart\n"
                             "* <F7> - Photon powerup | + <Ctrl> - Left side of kart view | + <Shift> - Scripting console\n"
-                            "* <F8> - Swatter powerup | + <Ctrl> - Front of kart view | + <Shift> - Texture console\n"
+                            "* <F8> - Anti-Karticle powerup | + <Ctrl> - Front of kart view | + <Shift> - Texture console\n"
                             "* <F9> - Switch powerup | + <Ctrl> - Kart number slider | + <Shift> - Run cutscene(s)\n"
                             "* <F10> - Zipper powerup | + <Ctrl> - Powerup amount slider | + <Shift> - Toggle GUI\n"
                             "* <F11> - Save replay | + <Ctrl> - Save history | + <Shift> - Dump RTT\n"
@@ -1320,7 +1320,7 @@ bool onEvent(const SEvent &event)
             sub->addItem(L"Asteroid (F5)", DEBUG_POWERUP_ASTEROID );
             sub->addItem(L"Time Dilation (F6)", DEBUG_POWERUP_TIME_DILATION );
             sub->addItem(L"Photon (F7)", DEBUG_POWERUP_COSMIC_STRING );
-            sub->addItem(L"Tidal Arm (F8)", DEBUG_POWERUP_TIDAL_ARM );
+            sub->addItem(L"Anti-Karticle (F8)", DEBUG_POWERUP_ANTI_KARTICLE );
             sub->addItem(L"Super Position (F9)", DEBUG_POWERUP_SUPER_POSITION );
             sub->addItem(L"Zipper (F10)", DEBUG_POWERUP_ZIPPER );
             sub->addItem(L"Nitro (Insert)", DEBUG_POWERUP_NITRO );
@@ -1605,7 +1605,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_TIDAL_ARM);
+                    handleContextMenuAction(DEBUG_POWERUP_ANTI_KARTICLE);
                 }
                 break;
             }
