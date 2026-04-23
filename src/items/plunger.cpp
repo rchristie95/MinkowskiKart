@@ -225,6 +225,7 @@ bool Plunger::hit(AbstractKart *kart, PhysicalObject *obj)
             ->getPlungerBandDuration());
         if(kart)
         {
+            kart->blockViewWithPlunger();
             m_rubber_band->hit(kart);
         }
         else if(obj)

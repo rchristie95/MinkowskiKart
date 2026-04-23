@@ -3,7 +3,7 @@
   <!-- Minkowski Kart - Relativistic Powerups
        Order must match PowerupType enum in powerup_manager.hpp:
        warp-bubble, asteroid, black-hole, zipper, photon,
-       super_position, anti-karticle, wormhole, time-dilation, mass-spike -->
+       super_position, anti-karticle, wormhole, time-dilation, harmonic-oscillator -->
 
   <!-- WARP BUBBLE: shield sphere (was bubblegum) -->
   <item name="warp-bubble"     icon="warp-bubble-icon.png" />
@@ -56,70 +56,76 @@
   <item name="time-dilation"   icon="time-dilation-icon.png"
         model="parachute.spm" />
 
-  <!-- MASS SPIKE: weight penalty on leader (was anchor/anvil) -->
-  <item name="mass-spike"      icon="mass-spike-icon.png"
-        model="anchor.spm" />
+  <!-- HARMONIC OSCILLATOR: dumbbell-on-spring attached to leader. No direct
+       slowdown; adds inertia and oscillates with kart motion. -->
+  <item name="harmonic-oscillator" icon="harmonic-oscillator-icon.png"
+        model="harmonic-oscillator.spm" />
 
   <race-weight-list>
     <weights num-karts="1">
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
+      <!--           warp-b  ast   bhole zipper photon  super  anti-k wormh  tdil  hosc -->
+      <weight single  ="140      0   285   100      220      75     180     0     0     0"
+              multi   ="  0      0     0     0        0       0       0     0     0     0" />
+      <weight single  ="150      0   285   130      190      65     145     0    10     5"
+              multi   ="  0      0    20     0        0       0       0     0     0     0" />
+      <weight single  ="150      0   295   135      165      60     130     0    25    15"
+              multi   ="  0      0    25     0        0       0       0     0     0     0" />
+      <weight single  ="155      0   250   180      145      55     105    10    55    15"
+              multi   ="  0      0    30     0        0       0       0     0     0     0" />
+      <weight single  ="170      0   130   275       95      40      50    30    80    40"
+              multi   ="  0      0    90     0        0       0       0     0     0     0" />
     </weights>
     <weights num-karts="5">
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
+      <!--           warp-b  ast   bhole zipper photon  super  anti-k wormh  tdil  hosc -->
+      <weight single  ="130     80   250    75      220      55     190     0     0     0"
+              multi   ="  0      0     0     0        0       0       0     0     0     0" />
+      <weight single  ="150    135   225   125      130      40     140     0    20    10"
+              multi   ="  0      0    25     0        0       0       0     0     0     0" />
+      <weight single  ="150    135   210   144      120      32     115    15    30    24"
+              multi   ="  0      0    25     0        0       0       0     0     0     0" />
+      <weight single  ="160    120   125   205       95      26      70    70    54    40"
+              multi   ="  0      0    35     0        0       0       0     0     0     0" />
+      <weight single  ="145    105    40   230        0      18       0    35    70    36"
+              multi   =" 40      0    80   175       26       0       0     0     0     0" />
     </weights>
     <weights num-karts="9">
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
+      <!--           warp-b  ast   bhole zipper photon  super  anti-k wormh  tdil  hosc -->
+      <weight single  ="120     60   275    50      255      35     205     0     0     0"
+              multi   ="  0      0     0     0        0       0       0     0     0     0" />
+      <weight single  ="145    150   215   120      145      25     135     0    20    15"
+              multi   ="  0      0    30     0        0       0       0     0     0     0" />
+      <weight single  ="150    130   190   152      115      20     105    44    32    27"
+              multi   ="  0      0    35     0        0       0       0     0     0     0" />
+      <weight single  ="165    115   115   245       55      14      55    50    48    45"
+              multi   ="  0      0    60     0       33       0       0     0     0     0" />
+      <weight single  ="100     80    30   180        0       8       0    16    46    50"
+              multi   =" 90      0    90   290       20       0       0     0     0     0" />
     </weights>
     <weights num-karts="14">
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
+      <!--           warp-b  ast   bhole zipper photon  super  anti-k wormh  tdil  hosc -->
+      <weight single  ="110     40   300    25      285      25     215     0     0     0"
+              multi   ="  0      0     0     0        0       0       0     0     0     0" />
+      <weight single  ="140    155   225   110      150      18     130     0    22    20"
+              multi   ="  0      0    30     0        0       0       0     0     0     0" />
+      <weight single  ="150    125   195   159      125      12      95    36    35    28"
+              multi   ="  0      0    40     0        0       0       0     0     0     0" />
+      <weight single  ="135    105   105   234       45      10      45    35    40    36"
+              multi   =" 40      0    80    40       50       0       0     0     0     0" />
+      <weight single  =" 90     70    10   160        0       0       0     0    30    40"
+              multi   ="120      0   125   325       30       0       0     0     0     0" />
     </weights>
     <weights num-karts="20">
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
-      <weight single  ="90   90   90   90   90   90   90   90   90   90"
-              multi   ="10   10   10   10   10   10   10   10   10   10" />
+      <!--           warp-b  ast   bhole zipper photon  super  anti-k wormh  tdil  hosc -->
+      <weight single  ="100      0   345     0      320      15     220     0     0     0"
+              multi   ="  0      0     0     0        0       0       0     0     0     0" />
+      <weight single  ="135    160   225   100      165      12     130     0    20    23"
+              multi   ="  0      0    30     0        0       0       0     0     0     0" />
+      <weight single  ="150    120   185   165      130       8      85    27    30    25"
+              multi   ="  0      0    50     0       25       0       0     0     0     0" />
+      <weight single  ="125     90    90   262       40       6      35    20    22    30"
+              multi   =" 50      0   100    50       80       0       0     0     0     0" />
+      <weight single  =" 75     60     0   110        0       0       0     0    20    30"
+              multi   ="150      0   155   400        0       0       0     0     0     0" />
     </weights>
   </race-weight-list>
 
