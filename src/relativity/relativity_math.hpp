@@ -49,6 +49,8 @@ bool isPreferredFrameDynamics();
 bool shouldUseFirstPersonObserverCamera();
 bool isPowerupCLightActive();
 
+float getConfiguredNormalCLight();
+float getConfiguredPowerupCLight();
 float getCurrentCLight();
 float getMinimumAdjustableCLight();
 float getMaximumAdjustableCLight();

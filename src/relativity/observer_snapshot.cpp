@@ -270,13 +270,18 @@ ObserverVisualState buildObserverVisualState(
     // it never switches the effect off.
     bool doppler_active = false;
 
-    if (kart->isSquashed() || kart->getBlockedByPlungerTicks() > 0)
+    const Attachment* attachment = kart->getAttachment();
+    const bool is_calabi_yau_squash = kart->isSquashed() && attachment &&
+        attachment->getType() == Attachment::ATTACH_TIME_DILATION;
+
+    if ((kart->isSquashed() && !is_calabi_yau_squash) ||
+        kart->getBlockedByPlungerTicks() > 0)
     {
         doppler_active = true;
     }
-    if (kart->getAttachment() && (
-        kart->getAttachment()->getType() == Attachment::ATTACH_MASS_SPIKE ||
-        kart->getAttachment()->getType() == Attachment::ATTACH_BOMB))
+    if (attachment && (
+        attachment->getType() == Attachment::ATTACH_MASS_SPIKE ||
+        attachment->getType() == Attachment::ATTACH_BOMB))
     {
         doppler_active = true;
     }

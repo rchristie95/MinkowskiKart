@@ -1060,17 +1060,6 @@ void btKart::adjustSpeed(btScalar min_speed, btScalar max_speed)
         btScalar relativity_max_speed =
             (btScalar)Relativity::getMaxCoordinateSpeed();
 
-        // Time-dilation field: affected karts have their local c (and therefore
-        // their max coordinate speed) halved, making them physically slower
-        // until the attachment expires. The launcher is not affected because
-        // the time-dilation powerup never attaches to its own user.
-        const Attachment* attachment = m_kart ? m_kart->getAttachment() : NULL;
-        if (attachment &&
-            attachment->getType() == Attachment::ATTACH_TIME_DILATION)
-        {
-            relativity_max_speed *= btScalar(0.5f);
-        }
-
         if (max_speed < 0 || max_speed > relativity_max_speed)
             max_speed = relativity_max_speed;
         if (min_speed > max_speed)

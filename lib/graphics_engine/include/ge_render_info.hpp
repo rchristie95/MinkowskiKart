@@ -37,6 +37,8 @@ private:
 
     bool m_transparent;
 
+    bool m_invert_color;
+
     irr::video::SColor m_vertex_color;
 public:
     // ------------------------------------------------------------------------
@@ -44,6 +46,7 @@ public:
     {
         m_hue = hue;
         m_transparent = transparent;
+        m_invert_color = false;
         m_vertex_color = (irr::video::SColor)-1;
     }
     // ------------------------------------------------------------------------
@@ -51,9 +54,13 @@ public:
     // ------------------------------------------------------------------------
     void setTransparent(bool transparent)     { m_transparent = transparent; }
     // ------------------------------------------------------------------------
+    void setInvertColor(bool invert_color)   { m_invert_color = invert_color; }
+    // ------------------------------------------------------------------------
     float getHue() const                                     { return m_hue; }
     // ------------------------------------------------------------------------
     bool isTransparent() const                       { return m_transparent; }
+    // ------------------------------------------------------------------------
+    bool shouldInvertColor() const                  { return m_invert_color; }
     // ------------------------------------------------------------------------
     irr::video::SColor& getVertexColor()            { return m_vertex_color; }
 

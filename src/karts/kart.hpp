@@ -424,6 +424,8 @@ public:
     // ----------------------------------------------------------------------------------------
     virtual bool isUsingNitro() const OVERRIDE;
     // ----------------------------------------------------------------------------------------
+    virtual float getCLightTarget(CLightTargetKind* kind = NULL) const OVERRIDE;
+    // ----------------------------------------------------------------------------------------
     virtual bool isCLightPowerupActive() const OVERRIDE;
     // ----------------------------------------------------------------------------------------
     virtual bool isAnyPowerupActive() const OVERRIDE;

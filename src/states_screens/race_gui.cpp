@@ -115,14 +115,22 @@ double getCurrentLapProperTime(const AbstractKart* kart, int finished_laps,
     return std::max(0.0, total_proper_time_s - state.m_lap_start_proper_time_s);
 }   // getCurrentLapProperTime
 
-core::stringw formatFractionOfCLine(double beta)
+core::stringw formatBetaLine(double beta)
 {
     std::ostringstream oss;
     oss.setf(std::ios::fixed, std::ios::floatfield);
-    oss << "v/c " << std::setprecision(3)
+    oss << "\xce\xb2 " << std::setprecision(3)
         << std::max(0.0, std::min(beta, 0.999));
+    return StringUtils::utf8ToWide(oss.str());
+}   // formatBetaLine
+
+core::stringw formatActualVLine(double speed)
+{
+    std::ostringstream oss;
+    oss.setf(std::ios::fixed, std::ios::floatfield);
+    oss << "v " << std::setprecision(1) << speed;
     return core::stringw(oss.str().c_str());
-}   // formatFractionOfCLine
+}   // formatActualVLine
 
 core::stringw formatProperLapTimeLine(double proper_time_s)
 {
@@ -132,8 +140,8 @@ core::stringw formatProperLapTimeLine(double proper_time_s)
     {
         time_str = time_str.substr(0, decimal_pos);
     }
-    std::string text = "tau " + time_str;
-    return core::stringw(text.c_str());
+    std::string text = "\xcf\x84 " + time_str;
+    return StringUtils::utf8ToWide(text);
 }   // formatProperLapTimeLine
 
 core::stringw formatCLightLine(float c_light)
@@ -1520,12 +1528,15 @@ void RaceGUI::drawLap(const AbstractKart* kart,
             // whenever a powerup is active.
             const double display_beta = Relativity::betaForSpeed(
                 (double)state.m_speed, (double)c_light);
-            const core::stringw beta_line = formatFractionOfCLine(display_beta);
+            const core::stringw v_line = formatActualVLine(state.m_speed);
+            const core::stringw beta_line = formatBetaLine(display_beta);
             const core::stringw proper_time_line =
                 formatProperLapTimeLine(state.m_proper_time_s);
             const core::stringw c_light_line =
                 formatCLightLine(c_light);
 
+            const core::dimension2du v_dim =
+                info_font->getDimension(v_line.c_str());
             const core::dimension2du beta_dim =
                 info_font->getDimension(beta_line.c_str());
             const core::dimension2du proper_time_dim =
@@ -1533,20 +1544,26 @@ void RaceGUI::drawLap(const AbstractKart* kart,
             const core::dimension2du c_light_dim =
                 info_font->getDimension(c_light_line.c_str());
             const s32 vertical_gap = std::max(1, (int)(2.0f * scaling.Y));
-            const s32 info_width = std::max((s32)beta_dim.Width,
-                std::max((s32)proper_time_dim.Width,
-                         (s32)c_light_dim.Width));
+            const s32 info_width = std::max((s32)v_dim.Width,
+                std::max((s32)beta_dim.Width,
+                    std::max((s32)proper_time_dim.Width,
+                             (s32)c_light_dim.Width)));
             const s32 info_right = viewport.LowerRightCorner.X - 10
                 - (show_lap_counter ? icon_width : 0);
             const s32 info_top = show_lap_counter
                 ? pos.UpperLeftCorner.Y + m_font_height + vertical_gap
                 : pos.UpperLeftCorner.Y;
 
-            core::rect<s32> beta_pos(info_right - info_width,
+            core::rect<s32> v_pos(info_right - info_width,
                                      info_top,
                                      info_right,
-                                     info_top + (s32)beta_dim.Height);
-            const s32 proper_top = info_top + (s32)beta_dim.Height + vertical_gap;
+                                     info_top + (s32)v_dim.Height);
+            const s32 beta_top = info_top + (s32)v_dim.Height + vertical_gap;
+            core::rect<s32> beta_pos(info_right - info_width,
+                                     beta_top,
+                                     info_right,
+                                     beta_top + (s32)beta_dim.Height);
+            const s32 proper_top = beta_top + (s32)beta_dim.Height + vertical_gap;
             core::rect<s32> proper_time_pos(info_right - info_width,
                                             proper_top,
                                             info_right,
@@ -1560,6 +1577,7 @@ void RaceGUI::drawLap(const AbstractKart* kart,
                                                c_light_top +
                                                    (s32)c_light_dim.Height);
 
+            info_font->draw(v_line.c_str(), v_pos, color);
             info_font->draw(beta_line.c_str(), beta_pos, color);
             info_font->draw(proper_time_line.c_str(), proper_time_pos, color);
             info_font->draw(c_light_line.c_str(), c_light_pos,

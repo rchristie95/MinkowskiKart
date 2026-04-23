@@ -181,10 +181,6 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
 
     switch (m_type)
     {
-        // No sound effect when arming the glove
-        case PowerupManager::POWERUP_TIDAL_ARM:
-            break;
-
         case PowerupManager::POWERUP_ZIPPER:
             break ;
 
@@ -294,7 +290,6 @@ void Powerup::use()
 
     // Play custom kart sound when collectible is used //TODO: what about the bubble gum?
     if (m_type != PowerupManager::POWERUP_NOTHING &&
-        m_type != PowerupManager::POWERUP_TIDAL_ARM &&
         m_type != PowerupManager::POWERUP_ZIPPER)
         m_kart->playCustomSFX(SFXManager::CUSTOM_SHOOT);
 
@@ -329,6 +324,7 @@ void Powerup::use()
     case PowerupManager::POWERUP_WORMHOLE:
     case PowerupManager::POWERUP_BLACK_HOLE:
     case PowerupManager::POWERUP_COSMIC_STRING:
+    case PowerupManager::POWERUP_ANTI_KARTICLE:
         if(stk_config->m_shield_restrict_weapons)
             m_kart->setShieldTime(0.0f); // make weapon usage destroy the shield
         if (!has_played_sound)
@@ -338,12 +334,6 @@ void Powerup::use()
         }
         ProjectileManager::get()->newProjectile(m_kart, m_type);
         break ;
-
-    case PowerupManager::POWERUP_TIDAL_ARM:
-        m_kart->getAttachment()
-                ->set(Attachment::ATTACH_TIDAL_ARM,
-                      stk_config->time2Ticks(kp->getSwatterDuration()));
-        break;
 
     case PowerupManager::POWERUP_WARP_BUBBLE:
         // use the bubble gum the traditional way, if the kart is looking back
@@ -459,27 +449,28 @@ void Powerup::use()
     case PowerupManager::POWERUP_TIME_DILATION:
         {
             AbstractKart* player_kart = NULL;
-            //Attach a parachute(that last 1,3 time as long as the
-            //one from the bananas and is affected by the rank multiplier)
-            //to all the karts that are in front of this one.
+            // Apply the time-dilation field to every other active kart. Karts
+            // ahead keep the old rank-scaled duration bonus; karts behind use
+            // the base "other kart" duration.
             for(unsigned int i = 0 ; i < world->getNumKarts(); ++i)
             {
                 AbstractKart *kart=world->getKart(i);
                 if(kart->isEliminated() || kart== m_kart || kart->isInvulnerable()) continue;
+                if(kart->isShielded())
+                {
+                    kart->decreaseShieldTime();
+                    continue;
+                }
+
+                float rank_mult = 1.0f;
                 if(m_kart->getPosition() > kart->getPosition())
                 {
-                    if(kart->isShielded())
-                    {
-                        kart->decreaseShieldTime();
-                        continue;
-                    }
-                    float rank_mult, position_factor;
-                    //0 if the one before the item user ; 1 if first ; scaled inbetween
+                    float position_factor = 1.0f;
                     if (kart->getPosition() == 1)
                     {
                         position_factor = 1.0f;
                     }
-                    else //m_kart position is always >= 3
+                    else if (m_kart->getPosition() > 2)
                     {
                         float rank_factor;
 
@@ -487,17 +478,23 @@ void Powerup::use()
                                     / (float)(m_kart->getPosition() - 2);
                         position_factor = 1.0f - rank_factor;
                     }
+                    if (position_factor < 0.0f)
+                        position_factor = 0.0f;
+                    else if (position_factor > 1.0f)
+                        position_factor = 1.0f;
 
                     rank_mult = 1 + (position_factor *
                                      (kp->getParachuteDurationRankMult() - 1));
-
-                    kart->getAttachment()
-                        ->set(Attachment::ATTACH_TIME_DILATION,
-                              stk_config->time2Ticks(kp->getParachuteDurationOther()*rank_mult) );
-
-                    if(kart->getController()->isLocalPlayerController())
-                        player_kart = kart;
                 }
+
+                kart->getAttachment()
+                    ->set(Attachment::ATTACH_TIME_DILATION,
+                          stk_config->time2Ticks(
+                              kp->getParachuteDurationOther() * rank_mult),
+                          m_kart);
+
+                if(kart->getController()->isLocalPlayerController())
+                    player_kart = kart;
             }
 
             // should we position the sound at the kart that is hit,
@@ -637,5 +634,12 @@ void Powerup::hitSuperPosition(ItemState *item_state)
         return;
     }
 
-    m_kart->getAttachment()->hitBanana(item_state);
+    if (SFXManager::get())
+        SFXManager::get()->quickSound("cat_meow");
+
+    const KartProperties *kp = m_kart->getKartProperties();
+    m_kart->getAttachment()->set(
+        Attachment::ATTACH_SUPERPOSITION_CAT,
+        stk_config->time2Ticks(kp->getAnvilDuration()));
+    m_kart->adjustSpeed(kp->getAnvilSpeedFactor() * 0.5f);
 }   // hitSuperPosition

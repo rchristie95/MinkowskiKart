@@ -138,7 +138,8 @@ public:
                       POWERUP_COSMIC_STRING,                 // was PLUNGER - grapple/blackboard
                       POWERUP_SUPER_POSITION,                // was SWITCH - item swap
                       POWERUP_FRAME_SHIFT = POWERUP_SUPER_POSITION, // compatibility alias
-                      POWERUP_TIDAL_ARM,                     // was SWATTER - melee
+                      POWERUP_ANTI_KARTICLE,                 // was SWATTER/TIDAL_ARM - mirrored clone
+                      POWERUP_TIDAL_ARM = POWERUP_ANTI_KARTICLE, // compatibility alias
                       POWERUP_WORMHOLE,                      // replaces the old RUBBERBALL slot
                       POWERUP_GEODESIC_MISSILE = POWERUP_WORMHOLE, // compatibility alias
                       POWERUP_TIME_DILATION,                 // was PARACHUTE - slowdown
