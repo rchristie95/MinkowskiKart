@@ -8,6 +8,8 @@ Source Meshy zip files:
 - C:\Users\robso\Downloads\Meshy_AI_a_cat_0423130232_texture_obj.zip
 - C:\Users\robso\Downloads\Meshy_AI_an_asteriod_0423132113_texture_obj.zip
 - C:\Users\robso\Downloads\Meshy_AI_Calabi_Yau_0423132031_texture_obj.zip
+- C:\Users\robso\Downloads\Meshy_AI_make_a_thick_suspensi_0423200841_texture_obj.zip  (spring for harmonic oscillator)
+- C:\Users\robso\Downloads\Meshy_AI_make_a_thick_strongma_0423200759_texture_obj.zip  (dumbbell for harmonic oscillator)
 
 Project root:
 - C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub
@@ -20,6 +22,7 @@ Generated in-game assets:
 - asteroid-meshy.spm
 - calabi-yau.spm
 - calabi-yau-low.spm
+- harmonic-oscillator.spm  (currently a placeholder copy of anchor.spm; see below)
 
 High-level process:
 1. Extract each Meshy OBJ zip to a temporary folder.
@@ -42,3 +45,27 @@ Notes:
 - We switched to real .spm exports because direct runtime OBJ loading caused crashes.
 - The Calabi-Yau pickup height was later adjusted in code in src\items\item.cpp.
 - The cat is used both as the floating super-position marker mesh and as the front-mounted cat attachment.
+
+Harmonic-oscillator (replaces mass-spike / anchor):
+- Goal: a single combined mesh of a "dumbbell on a spring" mounted behind the kart.
+- Import both Meshy OBJs into one Blender scene:
+    * thick_suspensi* (spring)
+    * thick_strongma* (dumbbell)
+- Align the spring along the local Z axis (STK attachment frame: +Y up, -Z back).
+  The attachment is positioned by code at roughly (0, highestPoint*0.35, -kartLength*0.55),
+  so size the combined rig to fit a kart-sized bounding box (~0.8 m long, ~0.4 m tall).
+- Anchor the spring at the rear of the kart; put the dumbbell at the free end.
+- Apply transforms (Ctrl+A -> All Transforms) so scale/rotation bake in.
+- Join both meshes into one object (Ctrl+J) so it exports as a single .spm.
+- Export via the STK Blender exporter to:
+    C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub\stk-assets\models\harmonic-oscillator.spm
+  The placeholder file currently in that folder is just a copy of anchor.spm and will
+  be overwritten by the real export.
+- The oscillation is driven by src\items\attachment.cpp (m_osc_pos animates the whole
+  attachment node along +/- local Z). The dumbbell therefore does not need its own
+  bone/animation - moving the entire mesh is enough.
+
+Icon:
+- data\gui\icons\harmonic-oscillator-icon.png is the 128x128 spring/mass diagram.
+  This is both the powerup icon (powerup.xml) and the on-kart attachment icon
+  (src\items\attachment_manager.cpp).
