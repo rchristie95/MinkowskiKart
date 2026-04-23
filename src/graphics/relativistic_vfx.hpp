@@ -8,6 +8,8 @@
 
 #include "utils/no_copy.hpp"
 #include "utils/vec3.hpp"
+#include <cstdint>
+#include <memory>
 #include <vector>
 
 #ifndef SERVER_ONLY
@@ -20,6 +22,8 @@ namespace irr
     namespace video { class SMaterial; }
 }
 using namespace irr;
+
+namespace SP { class SPDynamicDrawCall; }
 
 class AbstractKart;
 class BlackboardOverlay;
@@ -81,13 +85,14 @@ struct BlackHoleVFX
 
 struct TimeDilationVFX
 {
+    bool               active;
     float              redshift_intensity; // how strong the red haze is
     float              smear_factor;       // motion trail stretching
     float              drag_sound_pitch;   // for audio deepening
 #ifndef SERVER_ONLY
     ParticleEmitter   *halo_emitter;
 #endif
-    TimeDilationVFX() : redshift_intensity(0), smear_factor(0),
+    TimeDilationVFX() : active(false), redshift_intensity(0), smear_factor(0),
                         drag_sound_pitch(1.0f)
 #ifndef SERVER_ONLY
                         , halo_emitter(nullptr)
@@ -182,6 +187,22 @@ struct TidalArmVFX
     {}
 };
 
+struct PairProductionVFX
+{
+    float              age;
+    float              lifetime;
+    float              wave_time;
+    Vec3               origin;
+    Vec3               axis;
+    Vec3               normal;
+#ifndef SERVER_ONLY
+    std::shared_ptr<SP::SPDynamicDrawCall> wave_draw_call[2];
+#endif
+    PairProductionVFX() : age(0), lifetime(0.75f), wave_time(0),
+                          origin(0, 0, 0), axis(1, 0, 0), normal(0, 1, 0)
+    {}
+};
+
 
 /**
  * Manages all relativistic visual effects for Minkowski Kart powerups.
@@ -204,6 +225,7 @@ private:
     std::vector<BlackHoleVFX>       m_black_holes;
     std::vector<WormholeVFX>     m_wormholes;
     std::vector<CosmicStringVFX>    m_cosmic_strings;
+    std::vector<PairProductionVFX>  m_pair_productions;
     SuperPositionVFX                m_super_position;
 
     float m_global_time;
@@ -215,6 +237,8 @@ private:
     void updateMassSpike(MassSpikeVFX &vfx, float dt,
                          AbstractKart *kart);
     void updateSuperPosition(float dt);
+    void updatePairProduction(PairProductionVFX &vfx, float dt);
+    void destroyPairProduction(PairProductionVFX &vfx);
 
 public:
     RelativisticVFXManager();
@@ -241,6 +265,10 @@ public:
 
     // Frame shift (global effect)
     void triggerSuperPosition(const Vec3 &origin);
+
+    // Anti-karticle pair-production flash
+    void triggerPairProduction(const Vec3 &origin, const Vec3 &forward,
+                               const Vec3 &normal, uint32_t seed);
 
     // Blackboard overlay (Cosmic String backward-fire gag)
     void triggerBlackboard(unsigned int kart_id, float duration_seconds);

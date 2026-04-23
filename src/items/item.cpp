@@ -25,6 +25,7 @@
 #include "graphics/sp/sp_mesh.hpp"
 #include "graphics/sp/sp_mesh_node.hpp"
 #include "guiengine/engine.hpp"
+#include "io/file_manager.hpp"
 #include "items/item_manager.hpp"
 #include "karts/abstract_kart.hpp"
 #include "modes/world.hpp"
@@ -44,6 +45,37 @@ const float ICON_SIZE = 0.7f;
 const int SPARK_AMOUNT = 10;
 const float SPARK_SIZE = 0.4f;
 const float SPARK_SPEED_H = 1.0f;
+
+namespace
+{
+core::vector3df getItemVisualOffset(Item::ItemType type)
+{
+    if (type == Item::ITEM_BANANA)
+        return core::vector3df(0.0f, 0.5f, 0.0f);
+    return core::vector3df(0.0f, 0.0f, 0.0f);
+}
+}
+
+#ifndef SERVER_ONLY
+namespace
+{
+scene::IAnimatedMesh* getSuperPositionCatMesh()
+{
+    static scene::IAnimatedMesh* s_cat_mesh = NULL;
+    static bool s_attempted_load = false;
+    if (!s_attempted_load)
+    {
+        s_attempted_load = true;
+        const std::string cat_model = file_manager->getAsset(
+        FileManager::MODEL, "superposition-cat.spm");
+        s_cat_mesh = irr_driver->getAnimatedMesh(cat_model);
+        if (s_cat_mesh != NULL)
+            s_cat_mesh->grab();
+    }
+    return s_cat_mesh;
+}
+}
+#endif
 
 // ----------------------------------------------------------------------------
 /** Constructor.
@@ -270,7 +302,7 @@ Item::Item(ItemType type, const Vec3& xyz, const Vec3& normal,
     m_node->setName(debug_name.c_str());
 #endif
     m_node->setAutomaticCulling(scene::EAC_FRUSTUM_BOX);
-    m_node->setPosition(xyz.toIrrVector());
+    m_node->setPosition(xyz.toIrrVector() + getItemVisualOffset(getType()));
     Vec3 hpr;
     hpr.setHPR(getOriginalRotation());
     m_node->setRotation(hpr.toIrrHPR());
@@ -446,20 +478,43 @@ void Item::handleNewMesh(ItemType type)
         if (!superposition_parent)
             superposition_parent = m_node;
 
-        m_superposition_node = irr_driver->addMesh(
-            ItemManager::getItemModel(ITEM_BANANA),
-            StringUtils::insertValues("item_super_position_%i", getItemId()),
-            superposition_parent);
+        scene::IAnimatedMesh* cat_mesh = getSuperPositionCatMesh();
+        if (cat_mesh != NULL)
+        {
+            m_superposition_node = irr_driver->addAnimatedMesh(
+                cat_mesh,
+                StringUtils::insertValues("item_super_position_cat_%i",
+                                          getItemId()),
+                superposition_parent);
+        }
         if (m_superposition_node)
         {
-            m_superposition_node->setPosition(core::vector3df(0.0f, 1.35f, 0.0f));
-            m_superposition_node->setScale(core::vector3df(0.9f, 0.9f, 0.9f));
+            m_superposition_node->setName(
+                StringUtils::insertValues("item_super_position_cat_%i",
+                                          getItemId()).c_str());
+            m_superposition_node->setPosition(core::vector3df(0.0f, 0.95f, 0.0f));
             m_superposition_node->setVisible(true);
+            m_superposition_node->setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+        }
+        else
+        {
+            m_superposition_node = irr_driver->addBillboard(
+                core::dimension2df(1.15f, 1.15f),
+                "cat-superposition.png",
+                superposition_parent);
+            if (m_superposition_node)
+            {
+                m_superposition_node->setName(
+                    StringUtils::insertValues("item_super_position_cat_%i",
+                                              getItemId()).c_str());
+                m_superposition_node->setPosition(core::vector3df(0.0f, 1.45f, 0.0f));
+                m_superposition_node->setVisible(true);
 
-            SP::SPMeshNode* spmn =
-                dynamic_cast<SP::SPMeshNode*>(m_superposition_node);
-            if (spmn)
-                spmn->setGlowColor(ItemManager::getGlowColor(type));
+                scene::IBillboardSceneNode* billboard =
+                    dynamic_cast<scene::IBillboardSceneNode*>(m_superposition_node);
+                if (billboard)
+                    billboard->setColor(video::SColor(255, 255, 255, 255));
+            }
         }
     }
 #endif
@@ -487,7 +542,7 @@ void Item::updateGraphics(float dt)
                        getOriginalType() == ITEM_NONE && !isUsedUp());
 
     m_node->setVisible(is_visible);
-    m_node->setPosition(getXYZ().toIrrVector());
+    m_node->setPosition(getXYZ().toIrrVector() + getItemVisualOffset(getType()));
 
     if (!m_was_available_previously && isAvailable())
     {

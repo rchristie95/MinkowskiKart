@@ -1865,18 +1865,31 @@ bool Kart::isUsingNitro() const
 }
 
 //-----------------------------------------------------------------------------
+float Kart::getCLightTarget(CLightTargetKind* kind) const
+{
+    if (m_attachment && m_attachment->getType() == Attachment::ATTACH_TIME_DILATION)
+    {
+        if (kind)
+            *kind = C_LIGHT_TARGET_HALF_NORMAL;
+        return 0.5f * Relativity::getConfiguredNormalCLight();
+    }
+
+    if (m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_WARP_BUBBLE))
+    {
+        if (kind)
+            *kind = C_LIGHT_TARGET_POWERUP;
+        return Relativity::getConfiguredPowerupCLight();
+    }
+
+    if (kind)
+        *kind = C_LIGHT_TARGET_NONE;
+    return 0.0f;
+}
+
+//-----------------------------------------------------------------------------
 bool Kart::isCLightPowerupActive() const
 {
-    // Only the warp bubble switches the shared relativity c_light to the
-    // configured powerup value. Zippers (both the boost-box powerup and the
-    // track-placed ground speed boosters) and all other powerups leave c_light
-    // alone: they affect top speed normally but not the speed of light. Remote
-    // players' powerups never change the local observer's c_light because the
-    // local view only consults local player karts when deciding which c_light
-    // value to use. The transition itself is smoothed over one second inside
-    // Relativity::getCurrentCLight().
-    return m_max_speed->isSpeedIncreaseActive(
-               MaxSpeed::MS_INCREASE_WARP_BUBBLE);
+    return getCLightTarget() > 0.0f;
 }
 
 //-----------------------------------------------------------------------------
@@ -1963,7 +1976,13 @@ void Kart::setSquashGraphics()
 #ifndef SERVER_ONLY
     if (isGhostKart() || GUIEngine::isNoGraphics()) return;
 
-    m_node->setScale(core::vector3df(1.0f, 0.5f, 1.0f));
+    float y_scale = 0.5f;
+    const Attachment* attachment = getAttachment();
+    if (attachment && attachment->getType() == Attachment::ATTACH_TIME_DILATION)
+    {
+        y_scale = 0.05f;
+    }
+    m_node->setScale(core::vector3df(1.0f, y_scale, 1.0f));
     if (m_vehicle->getNumWheels() > 0)
     {
         if (!m_wheel_box)
@@ -1978,7 +1997,7 @@ void Kart::setSquashGraphics()
                 wheels[i]->setParent(m_wheel_box);
         }
         m_wheel_box->getRelativeTransformationMatrix()
-            .setScale(core::vector3df(1.0f, 2.0f, 1.0f));
+            .setScale(core::vector3df(1.0f, 1.0f / y_scale, 1.0f));
     }
 #endif
 }   // setSquashGraphics
@@ -2836,8 +2855,8 @@ float Kart::applyAirFriction(float engine_power)
     // Apply parachute physics
     // Currently, all karts have the same base friction
     // If this is changed, a compensation needs to be added here
-    if(m_attachment->getType()==Attachment::ATTACH_TIME_DILATION)
-        friction_intensity *= m_kart_properties->getParachuteFriction();
+    // ATTACH_TIME_DILATION (Calabi-Yau) no longer applies parachute friction
+    // as it is now a purely relativistic effect.
 
     if (friction_intensity < 0.0f) friction_intensity = 0.0f;
 

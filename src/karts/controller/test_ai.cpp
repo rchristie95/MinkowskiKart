@@ -249,9 +249,9 @@ void SkiddingAI::update(int ticks)
                 else if (r == 2 || r == 3)
                     m_kart->setPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 1);
                 else
-                    m_kart->setPowerup(PowerupManager::POWERUP_TIDAL_ARM, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_ANTI_KARTICLE, 1);
             }
-            else if (m_kart->getAttachment()->getType() == Attachment::ATTACH_TIDAL_ARM)
+            else if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_ANTI_KARTICLE)
             {
                 int r = rand() % 4;
                 if (r < 3)
@@ -265,7 +265,7 @@ void SkiddingAI::update(int ticks)
                 if (r == 0 || r == 1)
                     m_kart->setPowerup(PowerupManager::POWERUP_WARP_BUBBLE, 1);
                 else if (r == 2 || r == 3)
-                    m_kart->setPowerup(PowerupManager::POWERUP_TIDAL_ARM, 1);
+                    m_kart->setPowerup(PowerupManager::POWERUP_ANTI_KARTICLE, 1);
                 else
                     m_kart->setPowerup(PowerupManager::POWERUP_BLACK_HOLE, 1);
             }
@@ -1164,7 +1164,7 @@ void SkiddingAI::handleItems(const float dt)
         if( m_time_since_last_shot > 3.0f )
         {
             m_controls->setFire(true);
-            if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_TIDAL_ARM)
+            if (m_kart->getPowerup()->getType() == PowerupManager::POWERUP_ANTI_KARTICLE)
                 m_time_since_last_shot = 3.0f;
             else
             {
@@ -1406,11 +1406,11 @@ void SkiddingAI::handleItems(const float dt)
         }
         break;   // POWERUP_MASS_SPIKE
 
-    case PowerupManager::POWERUP_TIDAL_ARM:
+    case PowerupManager::POWERUP_ANTI_KARTICLE:
         {
-            // Squared distance for which the swatter works
+            // Squared distance for which the anti-karticle is worth spawning.
             float d2 = m_kart->getKartProperties()->getSwatterDistance();
-            // if the kart has a shield, do not break it by using a swatter.
+            // If the kart has a shield, do not break it by firing a weapon.
             if(m_kart->getShieldTime() > min_bubble_time)
                 break;
             // Fire if the closest kart ahead or to the back is not already

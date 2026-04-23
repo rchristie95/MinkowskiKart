@@ -7,22 +7,39 @@
 #include "graphics/blackboard_overlay.hpp"
 
 #ifndef SERVER_ONLY
+#include "graphics/central_settings.hpp"
 #include "graphics/irr_driver.hpp"
+#include "graphics/material_manager.hpp"
 #include "graphics/particle_emitter.hpp"
 #include "graphics/particle_kind.hpp"
 #include "graphics/particle_kind_manager.hpp"
+#include "graphics/sp/sp_base.hpp"
+#include "graphics/sp/sp_dynamic_draw_call.hpp"
+#include "graphics/sp/sp_shader_manager.hpp"
 #include "graphics/stk_particle.hpp"
 #include <IMeshSceneNode.h>
 #include <IBillboardSceneNode.h>
 #endif
 
 #include "config/stk_config.hpp"
+#include "guiengine/engine.hpp"
 #include "karts/abstract_kart.hpp"
 #include "modes/world.hpp"
 #include "utils/constants.hpp"
 
 #include <algorithm>
 #include <cmath>
+
+namespace
+{
+    constexpr int kPairWaveSegments = 14;
+    constexpr float kPairWaveCycles = 3.0f;
+    constexpr float kPairWaveHalfWidth = 0.04f;
+    constexpr float kPairWaveLength = 10.0f;
+    constexpr float kPairForwardSpawnOffset = 1.4f;
+    constexpr float kPairVerticalSpawnOffset = 0.45f;
+    constexpr float kPhotonYawRange = (float)M_PI * 0.25f;
+}
 
 RelativisticVFXManager *relativistic_vfx_manager = nullptr;
 
@@ -105,6 +122,10 @@ void RelativisticVFXManager::reset()
     {
         if (cs.filament_emitter) { delete cs.filament_emitter; cs.filament_emitter = nullptr; }
     }
+    for (auto &pp : m_pair_productions)
+    {
+        destroyPairProduction(pp);
+    }
     if (m_super_position.grid_emitter) { delete m_super_position.grid_emitter; m_super_position.grid_emitter = nullptr; }
 #endif
 
@@ -120,6 +141,7 @@ void RelativisticVFXManager::reset()
     m_black_holes.clear();
     m_wormholes.clear();
     m_cosmic_strings.clear();
+    m_pair_productions.clear();
     m_super_position = SuperPositionVFX();
     m_global_time = 0;
 }
@@ -211,7 +233,8 @@ void RelativisticVFXManager::activateTimeDilation(unsigned int kart_id)
 {
     if (kart_id >= m_time_dilations.size()) return;
     TimeDilationVFX &td = m_time_dilations[kart_id];
-    td.redshift_intensity = 1.0f;
+    td.active = true;
+    td.redshift_intensity = 0.0f;
     td.smear_factor = 0.8f;
     td.drag_sound_pitch = 0.6f;
 
@@ -234,6 +257,7 @@ void RelativisticVFXManager::deactivateTimeDilation(unsigned int kart_id)
 {
     if (kart_id >= m_time_dilations.size()) return;
     TimeDilationVFX &td = m_time_dilations[kart_id];
+    td.active = false;
     td.redshift_intensity = 0;
     td.smear_factor = 0;
     td.drag_sound_pitch = 1.0f;
@@ -245,11 +269,12 @@ void RelativisticVFXManager::deactivateTimeDilation(unsigned int kart_id)
 void RelativisticVFXManager::updateTimeDilation(TimeDilationVFX &vfx, float dt,
                                                  AbstractKart *kart)
 {
-    if (vfx.redshift_intensity <= 0) return;
+    if (!vfx.active) return;
 
-    // Pulsing redshift
-    float pulse = 0.8f + 0.2f * sinf(m_global_time * 2.0f);
-    vfx.redshift_intensity = pulse;
+    // Pulsing redshift - DISABLED (optical Doppler trigger removed)
+    // float pulse = 0.8f + 0.2f * sinf(m_global_time * 2.0f);
+    // vfx.redshift_intensity = pulse;
+    vfx.redshift_intensity = 0.0f;
 
     // Motion smear based on speed
     float speed = kart->getSpeed();
@@ -377,6 +402,137 @@ void RelativisticVFXManager::updateSuperPosition(float dt)
 }
 
 // ---------------------------------------------------------------------------
+// Pair Production
+// ---------------------------------------------------------------------------
+void RelativisticVFXManager::destroyPairProduction(PairProductionVFX &vfx)
+{
+#ifndef SERVER_ONLY
+    for (auto &dc : vfx.wave_draw_call)
+    {
+        if (dc)
+        {
+            dc->removeFromSP();
+            dc = nullptr;
+        }
+    }
+#endif
+}
+
+void RelativisticVFXManager::triggerPairProduction(const Vec3 &origin,
+                                                   const Vec3 &forward,
+                                                   const Vec3 &normal,
+                                                   uint32_t seed)
+{
+    Vec3 up = normal;
+    if (up.length2() < 0.0001f)
+        up = Vec3(0.0f, 1.0f, 0.0f);
+    up.normalize();
+
+    Vec3 f = forward - up * forward.dot(up);
+    if (f.length2() < 0.0001f)
+        f = Vec3(0.0f, 0.0f, 1.0f) - up * up.getZ();
+    if (f.length2() < 0.0001f)
+        f = Vec3(1.0f, 0.0f, 0.0f);
+    f.normalize();
+
+    Vec3 side = f.cross(up);
+    if (side.length2() < 0.0001f)
+        side = Vec3(1.0f, 0.0f, 0.0f);
+    side.normalize();
+
+    const float random_fraction = (float)(seed & 0xffffu) / 65535.0f;
+    const float yaw = (random_fraction * 2.0f - 1.0f) * kPhotonYawRange;
+    Vec3 photon_direction = f * std::cos(yaw) + side * std::sin(yaw);
+    photon_direction.normalize();
+
+    PairProductionVFX vfx;
+    vfx.origin = origin + f * kPairForwardSpawnOffset
+        + up * kPairVerticalSpawnOffset;
+    vfx.axis = photon_direction;
+    vfx.normal = up;
+    vfx.age = 0.0f;
+    vfx.wave_time = 0.0f;
+
+#ifndef SERVER_ONLY
+    if (!GUIEngine::isNoGraphics() && CVS->isGLSL())
+    {
+        const video::SColor color(255, 90, 175, 255);
+        for (int i = 0; i < 1; i++)
+        {
+            vfx.wave_draw_call[i] =
+                std::make_shared<SP::SPDynamicDrawCall>(
+                    scene::EPT_TRIANGLE_STRIP,
+                    SP::SPShaderManager::get()->getSPShader("additive"),
+                    material_manager->getDefaultSPMaterial("additive"));
+            vfx.wave_draw_call[i]->getVerticesVector().resize(
+                (kPairWaveSegments + 1) * 2);
+            for (auto &vertex : vfx.wave_draw_call[i]->getVerticesVector())
+                vertex.m_color = color;
+            SP::addDynamicDrawCall(vfx.wave_draw_call[i]);
+        }
+    }
+#endif
+
+    m_pair_productions.push_back(vfx);
+}
+
+void RelativisticVFXManager::updatePairProduction(PairProductionVFX &vfx,
+                                                  float dt)
+{
+    vfx.age += dt;
+    vfx.wave_time += dt;
+
+#ifndef SERVER_ONLY
+    const float progress = std::min(1.0f, vfx.age / vfx.lifetime);
+    const float fade = std::max(0.0f, 1.0f - progress);
+    const float length = kPairWaveLength * (0.25f + 0.75f * progress);
+    const Vec3 axis = vfx.axis;
+    Vec3 wave_axis = vfx.normal.cross(axis);
+    if (wave_axis.length2() < 0.0001f)
+        wave_axis = Vec3(0.0f, 1.0f, 0.0f).cross(axis);
+    if (wave_axis.length2() < 0.0001f)
+        wave_axis = Vec3(1.0f, 0.0f, 0.0f);
+    wave_axis.normalize();
+    Vec3 wave_width = axis.cross(wave_axis);
+    if (wave_width.length2() < 0.0001f)
+        wave_width = vfx.normal;
+    wave_width.normalize();
+
+    const float amplitude = 0.55f * fade + 0.08f;
+    const float phase_per_unit = 2.0f * (float)M_PI /
+        std::max(0.5f, length / kPairWaveCycles);
+    const float phase_shift = vfx.wave_time * 24.0f * phase_per_unit;
+
+    for (int side = 0; side < 1; side++)
+    {
+        if (!vfx.wave_draw_call[side])
+            continue;
+
+        const Vec3 end = vfx.origin + axis * length;
+        auto &vertices = vfx.wave_draw_call[side]->getVerticesVector();
+        for (int i = 0; i <= kPairWaveSegments; i++)
+        {
+            const float t = (float)i / (float)kPairWaveSegments;
+            const float phase = t * length * phase_per_unit + phase_shift;
+            const Vec3 center = vfx.origin + (end - vfx.origin) * t
+                + wave_axis * (std::sin(phase) * amplitude);
+            const Vec3 photon_offset = wave_width * kPairWaveHalfWidth;
+            vertices[i * 2].m_position =
+                Vec3(center - photon_offset).toIrrVector();
+            vertices[i * 2 + 1].m_position =
+                Vec3(center + photon_offset).toIrrVector();
+            vertices[i * 2].m_normal = 0x1FF << 10;
+            vertices[i * 2 + 1].m_normal = 0x1FF << 10;
+            vertices[i * 2].m_color.setAlpha((uint32_t)(255.0f * fade));
+            vertices[i * 2 + 1].m_color.setAlpha((uint32_t)(255.0f * fade));
+        }
+        vfx.wave_draw_call[side]->setUpdateOffset(0);
+        vfx.wave_draw_call[side]->recalculateBoundingBox();
+    }
+#endif
+}
+
+// ---------------------------------------------------------------------------
 // Query functions
 // ---------------------------------------------------------------------------
 const WarpBubbleVFX *RelativisticVFXManager::getWarpBubble(unsigned int kart_id) const
@@ -388,7 +544,7 @@ const WarpBubbleVFX *RelativisticVFXManager::getWarpBubble(unsigned int kart_id)
 const TimeDilationVFX *RelativisticVFXManager::getTimeDilation(unsigned int kart_id) const
 {
     if (kart_id >= m_time_dilations.size()) return nullptr;
-    return m_time_dilations[kart_id].redshift_intensity > 0
+    return m_time_dilations[kart_id].active
         ? &m_time_dilations[kart_id] : nullptr;
 }
 
@@ -419,6 +575,18 @@ void RelativisticVFXManager::update(float dt)
         updateMassSpike(m_mass_spikes[i], dt, world->getKart(i));
 
     updateSuperPosition(dt);
+
+    for (auto it = m_pair_productions.begin(); it != m_pair_productions.end(); )
+    {
+        updatePairProduction(*it, dt);
+        if (it->age >= it->lifetime)
+        {
+            destroyPairProduction(*it);
+            it = m_pair_productions.erase(it);
+        }
+        else
+            ++it;
+    }
 
     // Update active blackboard overlays, remove finished ones
     for (auto it = m_blackboards.begin(); it != m_blackboards.end(); )

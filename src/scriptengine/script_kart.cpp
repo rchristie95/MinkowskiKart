@@ -214,7 +214,8 @@ namespace Scripting
             engine->RegisterEnumValue("PowerupType", "RUBBERBALL", PowerupManager::PowerupType::POWERUP_WORMHOLE);
             engine->RegisterEnumValue("PowerupType", "GEODESIC_MISSILE", PowerupManager::PowerupType::POWERUP_WORMHOLE);
             engine->RegisterEnumValue("PowerupType", "SUPER_POSITION", PowerupManager::PowerupType::POWERUP_SUPER_POSITION);
-            engine->RegisterEnumValue("PowerupType", "SWATTER", PowerupManager::PowerupType::POWERUP_TIDAL_ARM);
+            engine->RegisterEnumValue("PowerupType", "ANTI_KARTICLE", PowerupManager::PowerupType::POWERUP_ANTI_KARTICLE);
+            engine->RegisterEnumValue("PowerupType", "SWATTER", PowerupManager::PowerupType::POWERUP_ANTI_KARTICLE);
             engine->RegisterEnumValue("PowerupType", "SWITCH", PowerupManager::PowerupType::POWERUP_SUPER_POSITION);
             engine->RegisterEnumValue("PowerupType", "WORMHOLE", PowerupManager::PowerupType::POWERUP_WORMHOLE);
             engine->RegisterEnumValue("PowerupType", "ZIPPER", PowerupManager::PowerupType::POWERUP_ZIPPER);

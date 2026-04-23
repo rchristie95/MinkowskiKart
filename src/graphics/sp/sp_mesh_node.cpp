@@ -203,6 +203,14 @@ SPShader* SPMeshNode::getShader(unsigned mesh_buffer_id) const
             // Use real transparent shader first
             return shader;
         }
+        if (m_first_render_info && m_first_render_info->shouldInvertColor())
+        {
+            std::shared_ptr<SPShader> anti_shader =
+                SPShaderManager::get()->getSPShader(std::string("anti_karticle")
+                    + (m_animated ? "_skinned" : ""));
+            if (anti_shader)
+                return anti_shader.get();
+        }
         if (m_first_render_info && m_first_render_info->isTransparent())
         {
             return SPShaderManager::get()->getSPShader

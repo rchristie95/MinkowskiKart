@@ -526,11 +526,11 @@ void ArenaAI::useItems(const float dt)
             break;
         }   // POWERUP_BLACK_HOLE
 
-    case PowerupManager::POWERUP_TIDAL_ARM:
+    case PowerupManager::POWERUP_ANTI_KARTICLE:
         {
-            // Squared distance for which the swatter works
+            // Squared distance for which the anti-karticle is worth spawning.
             float d2 = m_kart->getKartProperties()->getSwatterDistance();
-            // if the kart has a shield, do not break it by using a swatter.
+            // If the kart has a shield, do not break it by firing a weapon.
             if (m_kart->getShieldTime() > min_bubble_time)
                 break;
 

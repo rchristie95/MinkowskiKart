@@ -220,6 +220,14 @@ public:
     {
         // triggers and easter eggs should not be switched
         if (m_type == ITEM_EASTER_EGG) return;
+
+        // If we are switching from a Calabi-Yau manifold (ITEM_BANANA) to something
+        // else, lower it to the original ground position.
+        if (m_type == ITEM_BANANA && type != ITEM_BANANA)
+        {
+            m_xyz -= getNormal() * 1.2f;
+        }
+
         m_original_type = m_type;
         setType(type);
         return;
@@ -235,6 +243,14 @@ public:
         // bubble gum has no original type.
         if (m_original_type == ITEM_NONE)
             return true;
+
+        // If we are switching back to a Calabi-Yau manifold (ITEM_BANANA),
+        // raise it back to its correct height.
+        if (m_original_type == ITEM_BANANA && m_type != ITEM_BANANA)
+        {
+            m_xyz += getNormal() * 1.2f;
+        }
+
         setType(m_original_type);
         m_original_type = ITEM_NONE;
         return false;
@@ -340,7 +356,7 @@ private:
     /** Billboard that shows when the item is about to respawn */
     scene::ISceneNode* m_icon_node;
 
-    /** Extra banana mesh used by the super-position pickup. */
+    /** Floating cat marker used by the super-position pickup. */
     scene::ISceneNode* m_superposition_node;
 
     /** Stores if the item was available in the previously rendered frame. */

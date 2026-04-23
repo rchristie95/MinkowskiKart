@@ -166,19 +166,19 @@ float clampFiniteCLight(float c_light, float fallback)
                     std::min(MAX_ADJUSTABLE_C_LIGHT, c_light));
 }   // clampFiniteCLight
 
-float getConfiguredNormalCLight()
+float getConfiguredNormalCLightValue()
 {
     return clampFiniteCLight(
         (float)UserConfigParams::m_relativity_normal_c_light,
         DEFAULT_NORMAL_C_LIGHT);
-}   // getConfiguredNormalCLight
+}   // getConfiguredNormalCLightValue
 
-float getConfiguredPowerupCLight()
+float getConfiguredPowerupCLightValue()
 {
     return clampFiniteCLight(
         (float)UserConfigParams::m_relativity_powerup_c_light,
         DEFAULT_POWERUP_C_LIGHT);
-}   // getConfiguredPowerupCLight
+}   // getConfiguredPowerupCLightValue
 
 void getAdjustableCLightBounds(float* min_c_light,
                                float* max_c_light)
@@ -189,10 +189,65 @@ void getAdjustableCLightBounds(float* min_c_light,
         *max_c_light = MAX_ADJUSTABLE_C_LIGHT;
 }   // getAdjustableCLightBounds
 
+struct ActiveCLightTarget
+{
+    bool                          m_active;
+    float                         m_target_c_light;
+    AbstractKart::CLightTargetKind m_kind;
+
+    ActiveCLightTarget()
+        : m_active(false),
+          m_target_c_light(0.0f),
+          m_kind(AbstractKart::C_LIGHT_TARGET_NONE)
+    {
+    }
+};   // struct ActiveCLightTarget
+
+ActiveCLightTarget getActiveLocalPlayerCLightTarget()
+{
+    ActiveCLightTarget result;
+    if (!World::getWorld() || !RaceManager::get())
+        return result;
+
+    const unsigned int num_local_players =
+        RaceManager::get()->getNumLocalPlayers();
+    for (unsigned int i = 0; i < num_local_players; i++)
+    {
+        AbstractKart* kart = World::getWorld()->getLocalPlayerKart(i);
+        if (!kart)
+            continue;
+
+        AbstractKart::CLightTargetKind kind = AbstractKart::C_LIGHT_TARGET_NONE;
+        const float target = kart->getCLightTarget(&kind);
+        if (target <= 0.0f)
+            continue;
+
+        if (!result.m_active || target < result.m_target_c_light)
+        {
+            result.m_active = true;
+            result.m_target_c_light = target;
+            result.m_kind = kind;
+        }
+    }
+
+    return result;
+}   // getActiveLocalPlayerCLightTarget
+
 }   // anonymous namespace
 
 namespace Relativity
 {
+
+float getConfiguredNormalCLight()
+{
+    return getConfiguredNormalCLightValue();
+}   // getConfiguredNormalCLight
+
+// ----------------------------------------------------------------------------
+float getConfiguredPowerupCLight()
+{
+    return getConfiguredPowerupCLightValue();
+}   // getConfiguredPowerupCLight
 
 ApparentSurfaceHit::ApparentSurfaceHit()
     : m_hit(false),
@@ -253,23 +308,7 @@ bool isPowerupCLightActive()
     if (!isEnabled())
         return false;
 
-    World* world = World::getWorld();
-    if (!world || !RaceManager::get())
-        return false;
-
-    // Only the local player's own state can change the local observer's
-    // c_light: remote players firing or using powerups must not affect our
-    // speed of light. In splitscreen, any local player triggering the effect
-    // switches c_light for the shared configuration.
-    const unsigned int num_local_players =
-        RaceManager::get()->getNumLocalPlayers();
-    for (unsigned int i = 0; i < num_local_players; i++)
-    {
-        AbstractKart* kart = world->getLocalPlayerKart(i);
-        if (kart && kart->isCLightPowerupActive())
-            return true;
-    }
-    return false;
+    return getActiveLocalPlayerCLightTarget().m_active;
 }   // isPowerupCLightActive
 
 // ----------------------------------------------------------------------------
@@ -284,8 +323,9 @@ float getCurrentCLight()
     // don't snap abruptly when a powerup activates or ends.
     constexpr double kCLightRampSeconds = 1.0;
 
-    const float target_c_light = isPowerupCLightActive()
-        ? getConfiguredPowerupCLight()
+    const ActiveCLightTarget active_target = getActiveLocalPlayerCLightTarget();
+    const float target_c_light = active_target.m_active
+        ? active_target.m_target_c_light
         : getConfiguredNormalCLight();
 
     // State preserved between calls to interpolate smoothly. Safe because the
@@ -386,12 +426,26 @@ bool setCurrentCLight(float c_light,
     const float clamped_c_light = std::max(min_c_light,
         std::min(max_c_light, c_light));
 
-    if (isPowerupCLightActive())
+    const ActiveCLightTarget active_target = getActiveLocalPlayerCLightTarget();
+    if (active_target.m_active &&
+        active_target.m_kind == AbstractKart::C_LIGHT_TARGET_POWERUP)
+    {
         UserConfigParams::m_relativity_powerup_c_light =
             (int)std::lround((double)clamped_c_light);
+    }
+    else if (active_target.m_active &&
+             active_target.m_kind == AbstractKart::C_LIGHT_TARGET_HALF_NORMAL)
+    {
+        const float normal_c_light = std::max(min_c_light,
+            std::min(max_c_light, clamped_c_light * 2.0f));
+        UserConfigParams::m_relativity_normal_c_light =
+            (int)std::lround((double)normal_c_light);
+    }
     else
+    {
         UserConfigParams::m_relativity_normal_c_light =
             (int)std::lround((double)clamped_c_light);
+    }
 
     const float current_c_light = getCurrentCLight();
     if (applied_c_light)

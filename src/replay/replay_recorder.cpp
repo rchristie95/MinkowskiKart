@@ -495,6 +495,7 @@ int ReplayRecorder::enumToCode (Attachment::AttachmentType type)
         (type == Attachment::ATTACH_BOMB)             ? 3 :
         (type == Attachment::ATTACH_TIDAL_ARM)          ? 4 :
         (type == Attachment::ATTACH_WARP_BUBBLE) ? 5 :
+        (type == Attachment::ATTACH_SUPERPOSITION_CAT) ? 6 :
                                                        -1 ;
 
     return code;
@@ -513,7 +514,7 @@ int ReplayRecorder::enumToCode (PowerupManager::PowerupType type)
         (type == PowerupManager::POWERUP_ZIPPER)     ? 4 :
         (type == PowerupManager::POWERUP_COSMIC_STRING)    ? 5 :
         (type == PowerupManager::POWERUP_SUPER_POSITION)  ? 6 :
-        (type == PowerupManager::POWERUP_TIDAL_ARM)    ? 7 :
+        (type == PowerupManager::POWERUP_ANTI_KARTICLE) ? 7 :
         (type == PowerupManager::POWERUP_WORMHOLE) ? 8 :
         (type == PowerupManager::POWERUP_TIME_DILATION)  ? 9 :
                                                       -1 ;
@@ -531,6 +532,7 @@ Attachment::AttachmentType ReplayRecorder::codeToEnumAttach (int code)
         (code == 3) ? Attachment::ATTACH_BOMB             :
         (code == 4) ? Attachment::ATTACH_TIDAL_ARM          :
         (code == 5) ? Attachment::ATTACH_WARP_BUBBLE :
+        (code == 6) ? Attachment::ATTACH_SUPERPOSITION_CAT :
                       Attachment::ATTACH_NOTHING ;
 
     return type;
@@ -547,7 +549,7 @@ PowerupManager::PowerupType ReplayRecorder::codeToEnumItem (int code)
         (code == 4) ? PowerupManager::POWERUP_ZIPPER     :
         (code == 5) ? PowerupManager::POWERUP_COSMIC_STRING    :
         (code == 6) ? PowerupManager::POWERUP_SUPER_POSITION  :
-        (code == 7) ? PowerupManager::POWERUP_TIDAL_ARM    :
+        (code == 7) ? PowerupManager::POWERUP_ANTI_KARTICLE :
         (code == 8) ? PowerupManager::POWERUP_WORMHOLE :
         (code == 9) ? PowerupManager::POWERUP_TIME_DILATION  :
                       PowerupManager::POWERUP_NOTHING ;
