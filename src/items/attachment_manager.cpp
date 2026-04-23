@@ -25,6 +25,7 @@
 #include "guiengine/engine.hpp"
 #include "guiengine/skin.hpp"
 #include "io/file_manager.hpp"
+#include "utils/log.hpp"
 
 #include <IAnimatedMesh.h>
 
@@ -56,6 +57,7 @@ static const initAttachmentType iat[]=
     {Attachment::ATTACH_TIME_DILATION,     "parachute.spm",        "parachute-attach-icon.png"    },
     {Attachment::ATTACH_BOMB,             "bomb.spm",             "bomb-attach-icon.png"         },
     {Attachment::ATTACH_MASS_SPIKE,       "anchor.spm",           "anchor-attach-icon.png"       },
+    {Attachment::ATTACH_SUPERPOSITION_CAT, "superposition-cat.spm", "super-position-icon.png"      },
     {Attachment::ATTACH_TIDAL_ARM,        "swatter.spm",          "swatter-icon.png"             },
     {Attachment::ATTACH_NOLOKS_SWATTER,   "swatter_nolok.spm",    "swatter-icon.png"             },
     {Attachment::ATTACH_TIDAL_ARM_ANIM,   "swatter_anim.spm",     "swatter-icon.png"             },
@@ -65,19 +67,30 @@ static const initAttachmentType iat[]=
 };
 
 //-----------------------------------------------------------------------------
+AttachmentManager::AttachmentManager()
+{
+    for (int i = 0; i < Attachment::ATTACH_MAX; i++)
+    {
+        m_attachments[i] = NULL;
+        m_all_icons[i] = NULL;
+    }
+}   // AttachmentManager
+
+//-----------------------------------------------------------------------------
 AttachmentManager::~AttachmentManager()
 {
     for(int i=0; iat[i].attachment!=Attachment::ATTACH_MAX; i++)
     {
         scene::IMesh *mesh = m_attachments[iat[i].attachment];
-        mesh->drop();
-        // If the count is 1, the only reference is in the
-        // irrlicht mesh cache, so the mesh can be removed
-        // from the cache.
-        // Note that this test is necessary, since some meshes
-        // are also used in powerup_manager!!!
-        if(mesh->getReferenceCount()==1)
+        if (!mesh)
+            continue;
+
+        // Attachment meshes are owned through Irrlicht's mesh cache. Removing
+        // them from the cache avoids dereferencing a stale attachment-held
+        // pointer during shutdown/reload and still releases the cache's ref.
+        if (irr_driver)
             irr_driver->removeMeshFromCache(mesh);
+        m_attachments[iat[i].attachment] = NULL;
     }
 }   // ~AttachmentManager
 
@@ -88,7 +101,12 @@ void AttachmentManager::loadModels()
     {
         std::string full_path = file_manager->getAsset(FileManager::MODEL,iat[i].file);
         scene::IAnimatedMesh* mesh = irr_driver->getAnimatedMesh(full_path);
-        mesh->grab();
+        if (!mesh)
+        {
+            Log::fatal("AttachmentManager", "Cannot load attachment mesh '%s'.",
+                full_path.c_str());
+            continue;
+        }
 #ifndef SERVER_ONLY
         SP::uploadSPM(mesh);
 #endif

@@ -420,6 +420,18 @@ public:
     /** Returns true if nitro is currently being used. */
     virtual bool isUsingNitro() const = 0;
     // ------------------------------------------------------------------------
+    enum CLightTargetKind
+    {
+        C_LIGHT_TARGET_NONE = 0,
+        C_LIGHT_TARGET_POWERUP,
+        C_LIGHT_TARGET_HALF_NORMAL
+    };
+    // ------------------------------------------------------------------------
+    /** Returns the current shared-c-light override target for this kart, or
+     *  0 if it is not overriding c_light. If kind is non-null it receives the
+     *  source of the override. */
+    virtual float getCLightTarget(CLightTargetKind* kind = NULL) const = 0;
+    // ------------------------------------------------------------------------
     /** Returns true if this kart is currently under an on-kart powerup effect
      *  that should switch the shared relativity c_light override. */
     virtual bool isCLightPowerupActive() const = 0;

@@ -634,5 +634,12 @@ void Powerup::hitSuperPosition(ItemState *item_state)
         return;
     }
 
-    m_kart->getAttachment()->hitBanana(item_state);
+    if (SFXManager::get())
+        SFXManager::get()->quickSound("cat_meow");
+
+    const KartProperties *kp = m_kart->getKartProperties();
+    m_kart->getAttachment()->set(
+        Attachment::ATTACH_SUPERPOSITION_CAT,
+        stk_config->time2Ticks(kp->getAnvilDuration()));
+    m_kart->adjustSpeed(kp->getAnvilSpeedFactor() * 0.5f);
 }   // hitSuperPosition

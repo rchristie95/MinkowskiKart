@@ -10,7 +10,7 @@
 
   <!-- ASTEROID: fast dense lobbed projectile -->
   <item name="asteroid"        icon="asteroid-icon.png"
-        model="asteroid.spm"   speed="50"
+        model="asteroid-meshy.spm" speed="50"
         min-height="0.2"       max-height="1.0"
         force-updown="25"      max-distance="90" />
 
