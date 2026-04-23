@@ -1266,8 +1266,10 @@ void IrrDriver::printRenderStats()
 scene::IAnimatedMesh *IrrDriver::getAnimatedMesh(const std::string &filename)
 {
     scene::IAnimatedMesh *m  = NULL;
+    std::string extension = StringUtils::toLowerCase(
+        StringUtils::getExtension(filename));
 
-    if (StringUtils::getExtension(filename) == "b3dz")
+    if (extension == "b3dz")
     {
         // compressed file
         io::IFileSystem* file_system = getDevice()->getFileSystem();

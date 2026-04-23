@@ -37,6 +37,7 @@
 #include "karts/controller/controller.hpp"
 #include "karts/explosion_animation.hpp"
 #include "karts/kart_properties.hpp"
+#include "modes/capture_the_flag.hpp"
 #include "modes/world.hpp"
 #include "network/network_string.hpp"
 #include "network/rewind_manager.hpp"
@@ -103,6 +104,66 @@ Attachment::~Attachment()
         m_bubble_explode_sound = NULL;
     }
 }   // ~Attachment
+
+//-----------------------------------------------------------------------------
+bool Attachment::applySwatterStyleSquash(AbstractKart* attacker,
+                                         AbstractKart* victim,
+                                         bool award_swatter_achievements)
+{
+    if (!victim)
+        return false;
+
+    const KartProperties *kp = victim->getKartProperties();
+    const bool success = victim->setSquash(kp->getSwatterSquashDuration(),
+                                           kp->getSwatterSquashSlowdown());
+    const bool has_created_explosion_animation =
+        success && victim->getKartAnimation() != NULL;
+
+    if (success)
+    {
+        World::getWorld()->kartHit(victim->getWorldKartId(),
+            attacker ? attacker->getWorldKartId() : -1);
+
+        CaptureTheFlag* ctf = dynamic_cast<CaptureTheFlag*>(World::getWorld());
+        if (ctf)
+        {
+            const int reset_ticks = (ctf->getTicksSinceStart() / 10) * 10 + 80;
+            ctf->resetKartForSwatterHit(victim->getWorldKartId(), reset_ticks);
+        }
+
+        if (attacker && award_swatter_achievements &&
+            attacker->getController()->canGetAchievements())
+        {
+            PlayerManager::addKartHit(victim->getWorldKartId());
+            PlayerManager::increaseAchievement(
+                AchievementsStatus::SWATTER_HIT, 1);
+            PlayerManager::increaseAchievement(
+                AchievementsStatus::ALL_HITS, 1);
+            if (RaceManager::get()->isLinearRaceMode())
+            {
+                PlayerManager::increaseAchievement(
+                    AchievementsStatus::SWATTER_HIT_1RACE, 1);
+                PlayerManager::increaseAchievement(
+                    AchievementsStatus::ALL_HITS_1RACE, 1);
+            }
+        }
+    }
+
+    if (!GUIEngine::isNoGraphics() && has_created_explosion_animation &&
+        !RewindManager::get()->isRewinding())
+    {
+        const Vec3& hit_origin = attacker ? attacker->getXYZ() : victim->getXYZ();
+        HitEffect *he = new Explosion(hit_origin, "explosion", "explosion.xml");
+        if ((attacker && attacker->getController()->isLocalPlayerController()) ||
+            (!attacker && victim->getController()->isLocalPlayerController()))
+        {
+            he->setLocalPlayerKartHit();
+        }
+        ProjectileManager::get()->addHitEffect(he);
+    }
+
+    return success;
+}   // applySwatterStyleSquash
 
 //-----------------------------------------------------------------------------
 /** Sets the attachment a kart has. This will also handle animation to be
@@ -342,8 +403,25 @@ void Attachment::hitBanana(ItemState *item_state)
         return;
     }
 
-    AttachmentType new_attachment = ATTACH_NOTHING;
     const KartProperties *kp = m_kart->getKartProperties();
+    if (item_state != NULL && item_state->getType() == Item::ITEM_BANANA)
+    {
+        if (m_kart->isInvulnerable() || m_kart->getKartAnimation() != NULL)
+            return;
+
+        if (!applySwatterStyleSquash(NULL, m_kart,
+                                     /*award_swatter_achievements*/false) ||
+            m_kart->getKartAnimation() != NULL)
+        {
+            return;
+        }
+
+        set(ATTACH_TIME_DILATION,
+            stk_config->time2Ticks(kp->getParachuteDurationOther()));
+        return;
+    }
+
+    AttachmentType new_attachment = ATTACH_NOTHING;
     // Use this as a basic random number to make sync with server easier.
     // Divide by 16 to increase probablity to have same time as server in
     // case of a few physics frames different between client and server.
@@ -551,6 +629,7 @@ void Attachment::update(int ticks)
         }
         break;
     case ATTACH_MASS_SPIKE:     // handled in Kart::updatePhysics
+    case ATTACH_SUPERPOSITION_CAT:
     case ATTACH_NOTHING:   // Nothing to do, but complete all cases for switch
     case ATTACH_MAX:
         m_initial_speed = 0;
@@ -664,6 +743,11 @@ void Attachment::updateGraphics(float dt)
                         m_type == ATTACH_NOLOK_WARP_BUBBLE;
         float wanted_node_scale = is_shield ?
             std::max(1.0f, m_kart->getHighestPoint() * 1.1f) : 1.0f;
+        if (m_type == ATTACH_SUPERPOSITION_CAT)
+        {
+            wanted_node_scale =
+                std::max(0.7f, std::min(1.0f, m_kart->getHighestPoint() * 0.7f));
+        }
         float scale_ratio = stk_config->ticks2Time(m_scaling_end_ticks -
             World::getWorld()->getTicksSinceStart()) / 0.7f;
         if (scale_ratio > 0.0f)
@@ -717,6 +801,13 @@ void Attachment::updateGraphics(float dt)
             int division = (m_ticks_left / ticks_per_flash);
             m_node->setVisible((division & 0x1) == 0);
         }
+
+        if (m_type == ATTACH_SUPERPOSITION_CAT)
+        {
+            const float y = std::max(0.25f, m_kart->getHighestPoint() * 0.45f);
+            const float z = std::max(0.35f, m_kart->getKartLength() * 0.52f);
+            m_node->setPosition(core::vector3df(0.0f, y, z));
+        }
     }
     else
         m_node->setVisible(false);
@@ -760,7 +851,8 @@ void Attachment::updateGraphics(float dt)
  */
 float Attachment::weightAdjust() const
 {
-    return m_type == ATTACH_MASS_SPIKE
+    return (m_type == ATTACH_MASS_SPIKE ||
+            m_type == ATTACH_SUPERPOSITION_CAT)
            ? m_kart->getKartProperties()->getAnvilWeight()
           : 0.0f;
 }   // weightAdjust

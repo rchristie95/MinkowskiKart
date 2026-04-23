@@ -340,7 +340,7 @@ private:
     /** Billboard that shows when the item is about to respawn */
     scene::ISceneNode* m_icon_node;
 
-    /** Extra banana mesh used by the super-position pickup. */
+    /** Floating cat marker used by the super-position pickup. */
     scene::ISceneNode* m_superposition_node;
 
     /** Stores if the item was available in the previously rendered frame. */

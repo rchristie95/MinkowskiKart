@@ -64,6 +64,7 @@ public:
         ATTACH_MASS_SPIKE = 1,      // was ATTACH_ANVIL
         ATTACH_BOMB = 2,
         // End of fixed order attachments, the rest can be changed.
+        ATTACH_SUPERPOSITION_CAT,
         ATTACH_TIDAL_ARM,           // was ATTACH_SWATTER
         // Note that the next 2 symbols are only used as an index into the mesh
         // array; it will NEVER be actually assigned as an attachment type
@@ -126,6 +127,9 @@ public:
                bool set_by_rewind_parachute = false);
     void rewindTo(BareNetworkString *buffer);
     void saveState(BareNetworkString *buffer) const;
+    static bool applySwatterStyleSquash(AbstractKart* attacker,
+                                        AbstractKart* victim,
+                                        bool award_swatter_achievements);
 
     // ------------------------------------------------------------------------
     /** Sets the type of the attachment, but keeps the old time left value. */

@@ -495,6 +495,7 @@ int ReplayRecorder::enumToCode (Attachment::AttachmentType type)
         (type == Attachment::ATTACH_BOMB)             ? 3 :
         (type == Attachment::ATTACH_TIDAL_ARM)          ? 4 :
         (type == Attachment::ATTACH_WARP_BUBBLE) ? 5 :
+        (type == Attachment::ATTACH_SUPERPOSITION_CAT) ? 6 :
                                                        -1 ;
 
     return code;
@@ -531,6 +532,7 @@ Attachment::AttachmentType ReplayRecorder::codeToEnumAttach (int code)
         (code == 3) ? Attachment::ATTACH_BOMB             :
         (code == 4) ? Attachment::ATTACH_TIDAL_ARM          :
         (code == 5) ? Attachment::ATTACH_WARP_BUBBLE :
+        (code == 6) ? Attachment::ATTACH_SUPERPOSITION_CAT :
                       Attachment::ATTACH_NOTHING ;
 
     return type;

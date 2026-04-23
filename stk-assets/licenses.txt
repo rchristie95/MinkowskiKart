@@ -7,6 +7,30 @@ Upstream-Contact:
 Source: https://supertuxkart.net
 License: GPL2+ and CC-BY-SA
 
+Files: textures/cat-superposition.png
+Copyright: Public Domain by OpenClipart via FreeSVG.org
+License: CC0
+Comment: Source: https://freesvg.org/1539916076
+
+Files: sfx/cat_meow.ogg
+Copyright: Public Domain by Joseph SARDIN via BigSoundBank
+License: CC0
+Comment: Source: https://bigsoundbank.com/meow-cat-2-s1890.html
+
+Files:
+ models/asteroid-meshy.obj
+ models/asteroid-meshy.mtl
+ models/asteroid-meshy.png
+ models/calabi-yau.obj
+ models/calabi-yau.mtl
+ models/calabi-yau.png
+ models/superposition-cat.obj
+ models/superposition-cat.mtl
+ models/superposition-cat.png
+Copyright: User-provided Meshy AI generated assets
+License: User-provided/generated asset; project-local use by repository owner
+Comment: Imported from user-supplied Meshy ZIP exports on 2026-04-23 and resized to 1024px textures for in-game use.
+
 Files: check_licenses.php
 Copyright: Copyright 2017-2018 Matthew Trescott <matthewtrescott@gmail.com>
 License: GPL 3.0+
