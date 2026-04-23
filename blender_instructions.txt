@@ -1,0 +1,44 @@
+Blender / Meshy asset conversion notes
+======================================
+
+Blender used:
+- C:\Program Files\Blender Foundation\Blender 5.1\blender.exe
+
+Source Meshy zip files:
+- C:\Users\robso\Downloads\Meshy_AI_a_cat_0423130232_texture_obj.zip
+- C:\Users\robso\Downloads\Meshy_AI_an_asteriod_0423132113_texture_obj.zip
+- C:\Users\robso\Downloads\Meshy_AI_Calabi_Yau_0423132031_texture_obj.zip
+
+Project root:
+- C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub
+
+Asset destination folder:
+- C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub\stk-assets\models
+
+Generated in-game assets:
+- superposition-cat.spm
+- asteroid-meshy.spm
+- calabi-yau.spm
+- calabi-yau-low.spm
+
+High-level process:
+1. Extract each Meshy OBJ zip to a temporary folder.
+2. Open Blender from:
+   C:\Program Files\Blender Foundation\Blender 5.1\blender.exe
+3. Import the Meshy model as OBJ with its textures/materials.
+4. Resize/orient the mesh so it roughly matches the original STK asset it replaces.
+5. Apply transforms in Blender so scale/rotation are baked into the export.
+6. Export the cleaned mesh through the STK Blender exporter to .spm.
+7. Copy the exported .spm into:
+   C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub\stk-assets\models
+8. Update STK XML/code to point at the new .spm asset.
+
+Files updated to use the converted assets:
+- C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub\data\items.xml
+- C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub\data\powerup.xml
+- C:\Users\robso\OneDrive\Desktop\PersonalGames\MinkowskiKartGithub\src\items\item.cpp
+
+Notes:
+- We switched to real .spm exports because direct runtime OBJ loading caused crashes.
+- The Calabi-Yau pickup height was later adjusted in code in src\items\item.cpp.
+- The cat is used both as the floating super-position marker mesh and as the front-mounted cat attachment.
