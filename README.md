@@ -1,82 +1,169 @@
 # Minkowski Kart: Relativistic Racing
 
-Minkowski Kart is a specialized fork of **SuperTuxKart**, integrated with **OpenRelativity** to simulate the visual and physical effects of special and general relativity at high velocities. This project transforms the standard kart racing experience into a playground for spacetime physics.
+Minkowski Kart is a specialized fork of SuperTuxKart integrated with
+OpenRelativity to simulate visual and gameplay ideas drawn from special and
+general relativity. It keeps the arcade kart-racing core, but remaps the item
+system around spacetime-themed powerups, screen effects, and debuffs.
 
-## 🚀 Overview
+## Overview
 
-This version of the game introduces a suite of "Relativistic Power-ups," replacing traditional items with tools that manipulate the local metric of spacetime. From frame-dragging accretion disks to Lorentz grid transformations, every visual effect is designed to communicate fundamental relativistic concepts.
+This fork replaces most stock STK items with relativistic counterparts. The
+current item set is defined in [data/powerup.xml](data/powerup.xml) and the
+gameplay logic lives primarily in `src/items/`.
 
-## ✨ New Relativistic VFX
+## Current Powerups
 
-We have implemented nine unique visual effects using custom GLSL shaders and C++ logic:
+The current collectible powerups are:
 
-1.  **Warp Bubble (Shield):** A transparent spherical shell with an **Einstein ring** rim. It features background refraction and concentric ripple effects upon blocking hits.
-2.  **Kerr Black Hole (Bowling Ball):** Replaces the bowling ball with a rotating black hole featuring a glowing **spiral accretion disk**, relativistic beaming, and a blue-shifted ergosphere.
-3.  **Cosmic String (Plunger/Grapple):** 
-    *   **Forward:** An infinitely thin, flickering filament that acts as a surgical grapple.
-    *   **Backward:** A "Blackboard Gag" that slams an academic chalkboard onto the victim's view, covered in erased chalk dust and **Einstein’s field equations**.
-4.  **Geodesic Missile (Rubber Ball):** A compact white-gold core that follows the easiest route through curved spacetime, leaving a bent light-path trail.
-5.  **Time-Dilation Field (Parachute):** Shoves the victim into a slow patch of time, visualized by a **redshift-biased halo** and smeared motion trails.
-6.  **Mass Spike (Anvil):** Simulates catastrophic local density by visually **compressing the kart’s suspension** and surrounding it with a dense downward shimmer.
-7.  **Frame Shift (Switch):** A sweeping **Lorentz grid wave** that reinterprets pickups and hazards as it passes over them.
-8.  **Asteroid:** A dense rocky projectile that slams racers and bleeds off their momentum on impact.
-9.  **Tidal Arm (Swatter):** A short-range distortion arc that "spaghettifies" space to smack away nearby rivals.
+1. `Warp Bubble`
+   A defensive shield. Looking forward uses it as a protective bubble; looking
+   backward still drops a trap bubblegum item. The active shield also grants a
+   short max-speed boost.
+2. `Asteroid`
+   A fast, dense projectile that replaces the old cake slot.
+3. `Black Hole`
+   A slower, heavier homing projectile built on the bowling slot.
+4. `Zipper`
+   The standard speed boost, unchanged from STK.
+5. `Photon`
+   A reworked plunger slot. Forward fire creates a tether hit, while backward
+   fire applies the same Doppler-style hit effect without the old central
+   viewhole overlay.
+6. `Super Position`
+   A global item-collapse effect that still switches track pickups, now paired
+   with relativistic VFX.
+7. `Anti-Karticle`
+   A mirrored anti-kart projectile replacing the old swatter slot.
+8. `Wormhole`
+   A linked pair of traversable portals replacing the old rubber-ball slot.
+9. `Time Dilation`
+   A field effect that applies slowdown attachments to other active karts.
+   Racers ahead of the user still receive the strongest rank-scaled effect.
+10. `Harmonic Oscillator`
+    A dumbbell-on-spring leader punish replacing the old anvil slot. It
+    attaches to the kart in first place, adds inertia, and oscillates with kart
+    motion instead of applying a one-time speed chop.
 
-## 🛠️ Building the Project
+## Current Debuffs And Attachments
 
-This project uses **CMake** and **Ninja** for compilation.
+The current race debuffs and on-kart attachments are:
+
+1. `Time Dilation`
+   The main slowdown debuff. It is applied by the Time Dilation powerup and by
+   direct banana hits. The old parachute mesh is hidden, but the slowdown and
+   VFX remain active.
+2. `Harmonic Oscillator`
+   Applied to the current leader by the harmonic-oscillator powerup. It uses a
+   visible rear-mounted spring-mass model and affects handling through added
+   mass and oscillation rather than a direct brake.
+3. `Photon Hit`
+   A successful photon hit now triggers the same fullscreen Doppler-style
+   effect for both forward-fired and backward-fired hits, without the old black
+   and white center scanner hole.
+4. `Super Position Cat`
+   When a super-position pickup resolves into its hazard outcome, the victim
+   gets a heavy cat attachment and a speed drop, acting as the replacement for
+   the old negative switch-style punishment.
+5. `Warp Bubble`
+   A positive attachment rather than a debuff, but still part of the current
+   attachment system and HUD icon set.
+
+## Item Weight Notes
+
+Normal race item weights are configured in [data/powerup.xml](data/powerup.xml).
+They have been rebalanced for the current Minkowski Kart behavior:
+
+- `Anti-Karticle` is weighted more toward leaders and front-runners because it
+  is most useful as a backward-fired pressure tool.
+- `Harmonic Oscillator` is weighted toward karts chasing the leader, since it
+  targets the kart in first place and is pointless to hand to first.
+- Non-race modes still retain much closer-to-STK fallback weighting.
+
+## Visual Effects
+
+Current relativistic presentation includes:
+
+- warp-bubble shielding and bubble impacts
+- black-hole and projectile effects
+- photon Doppler hit effects
+- super-position world pulse effects
+- time-dilation and mass-spike attachment VFX
+- wormhole portal visuals
+
+## Building The Project
+
+This project uses CMake and Ninja for compilation.
 
 ### Prerequisites
-*   LLVM-MinGW toolchain (bundled in `.build-tools/llvm-mingw`)
-*   Ninja (bundled in `.build-tools/ninja`)
 
-### Compilation
-1.  Clone the repository with its tracked `build/`, `.build-tools/`, and `dependencies-win-x86_64/` directories intact.
-2.  From the repo root, run:
-    ```powershell
-    .\compile.bat
-    ```
-3.  If you prefer to invoke Ninja directly, this works too:
-    ```powershell
-    .build-tools\ninja\ninja.exe -C build
-    ```
-4.  The binary will be generated at: `build\bin\supertuxkart.exe`
+- LLVM-MinGW toolchain in `.build-tools/llvm-mingw`
+- Ninja in `.build-tools/ninja`
 
-### Fast Local Iteration
-For day-to-day local work, prefer the untracked `build-dev/` directory instead
-of the versioned `build/` tree. This keeps Ninja's incremental state clean and
-avoids large accidental rebuilds after pulls or resets.
+### Standard Build
 
-1.  Configure the dev build once:
-    ```powershell
-    .\configure-dev.bat
-    ```
-2.  Do normal incremental builds:
-    ```powershell
-    .\compile-dev.bat
-    ```
-3.  Force a clean rebuild only when you actually want one:
-    ```powershell
-    .\compile-dev.bat full
-    ```
-4.  Clean the dev build directory without rebuilding:
-    ```powershell
-    .\compile-dev.bat clean
-    ```
-5.  The dev executable will be generated at: `build-dev\bin\supertuxkart.exe`
+1. Clone the repository with its tracked `build/`, `.build-tools/`, and
+   `dependencies-win-x86_64/` directories intact.
+2. From the repo root, run:
 
-## 📜 Citations and Credits
+```powershell
+.\compile.bat
+```
+
+3. The executable will be generated at `build\bin\supertuxkart.exe`.
+
+### Dev Build
+
+For normal local iteration, prefer the untracked `build-dev/` directory:
+
+1. Configure once:
+
+```powershell
+.\configure-dev.bat
+```
+
+2. Build incrementally:
+
+```powershell
+.\compile-dev.bat
+```
+
+3. Force a clean rebuild when needed:
+
+```powershell
+.\compile-dev.bat full
+```
+
+4. Clean without rebuilding:
+
+```powershell
+.\compile-dev.bat clean
+```
+
+5. The dev executable will be generated at `build-dev\bin\supertuxkart.exe`.
+
+### Packaging
+
+The packaging flow is driven by `package.ps1`. It now prefers the current repo
+build output from `build-dev\bin` and falls back to `build\bin`, while shipping
+the current repo `data/` and `stk-assets/` content.
+
+## Credits
 
 ### SuperTuxKart
-This project is built upon the **SuperTuxKart** engine. We are deeply grateful to the SuperTuxKart team for their decades of work on this premier open-source racing game.
-*   **Official Website:** [supertuxkart.net](https://supertuxkart.net)
-*   **License:** GNU General Public License v3 (GPLv3)
+
+This project is built on the SuperTuxKart engine.
+
+- Official website: [supertuxkart.net](https://supertuxkart.net)
+- License: GPLv3
 
 ### OpenRelativity
-The relativistic physics and rendering logic are powered by **OpenRelativity**, originally developed by the **MIT Game Lab**. 
-*   **Original Toolkit:** [OpenRelativity on GitHub](https://github.com/MITGameLab/OpenRelativity)
-*   **License:** MIT License
-*   *Note:* This project adapts OpenRelativity's shaders and math for the SuperTuxKart rendering pipeline.
+
+Relativistic rendering and math ideas are adapted from OpenRelativity by the
+MIT Game Lab.
+
+- Original toolkit: [OpenRelativity on GitHub](https://github.com/MITGameLab/OpenRelativity)
+- License: MIT
 
 ---
-*Developed as an educational and experimental mod for MinkowskiKart.*
+
+Developed as an educational and experimental MinkowskiKart fork.

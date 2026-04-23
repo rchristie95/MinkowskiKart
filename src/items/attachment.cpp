@@ -62,6 +62,10 @@ Attachment::Attachment(AbstractKart* kart)
     m_initial_speed        = 0;
     m_graphical_type       = ATTACH_NOTHING;
     m_scaling_end_ticks    = -1;
+    m_osc_pos              = 0.0f;
+    m_osc_vel              = 0.0f;
+    m_osc_last_kart_fwd_speed = 0.0f;
+    m_osc_initialized      = false;
     m_node = NULL;
     if (GUIEngine::isNoGraphics())
         return;
@@ -200,6 +204,12 @@ void Attachment::set(AttachmentType type, int ticks,
     m_previous_owner   = current_kart;
     m_scaling_end_ticks = World::getWorld()->getTicksSinceStart() +
         stk_config->time2Ticks(0.7f);
+
+    // Reset harmonic-oscillator state so each new attachment starts at rest.
+    m_osc_pos                = 0.0f;
+    m_osc_vel                = 0.0f;
+    m_osc_last_kart_fwd_speed = 0.0f;
+    m_osc_initialized        = false;
 
     // Activate relativistic VFX for new attachment
     if (relativistic_vfx_manager)
@@ -495,13 +505,10 @@ void Attachment::hitBanana(ItemState *item_state)
             break;
         }
         case ATTACH_MASS_SPIKE:
+            // Harmonic oscillator: no direct speed reduction. Inertia from the
+            // added mass and the spring-mass oscillation handle the effect.
             set(ATTACH_MASS_SPIKE, stk_config->time2Ticks(kp->getAnvilDuration())
                 + leftover_ticks                                      );
-            // if ( m_kart == m_kart[0] )
-            //   sound -> playSfx ( SOUND_SHOOMF ) ;
-            // Reduce speed once (see description above), all other changes are
-            // handled in Kart::updatePhysics
-            m_kart->adjustSpeed(kp->getAnvilSpeedFactor());
             break;
         case ATTACH_BOMB:
             set( ATTACH_BOMB, stk_config->time2Ticks(stk_config->m_bomb_time)
@@ -803,6 +810,52 @@ void Attachment::updateGraphics(float dt)
             const float y = std::max(0.25f, m_kart->getHighestPoint() * 0.45f);
             const float z = std::max(0.35f, m_kart->getKartLength() * 0.52f);
             m_node->setPosition(core::vector3df(0.0f, y, z));
+        }
+
+        if (m_type == ATTACH_MASS_SPIKE)
+        {
+            // Harmonic oscillator: the dumbbell rides on a spring and
+            // oscillates back-and-forth in the kart's local forward axis in
+            // response to kart acceleration. Integrating in the kart frame:
+            //   m * a_rel = -k*x - c*v - m*a_kart
+            // so a_rel = -omega^2 * x - 2*zeta*omega*v - a_kart, where
+            // omega = sqrt(k/m) and zeta is the damping ratio.
+            const float natural_freq_hz = 1.3f;      // springy but not too loose
+            const float zeta            = 0.12f;     // light damping -> lingers
+            const float omega           = 2.0f * PI * natural_freq_hz;
+            const float k_over_m        = omega * omega;
+            const float damping         = 2.0f * zeta * omega;
+
+            const float fwd_speed = m_kart->getSpeed();
+            if (!m_osc_initialized)
+            {
+                m_osc_last_kart_fwd_speed = fwd_speed;
+                m_osc_initialized         = true;
+            }
+            // Clamp dt to avoid blow-ups on hitches / the first frame.
+            const float dt_osc = std::max(0.0f, std::min(dt, 0.05f));
+            const float a_kart = (dt_osc > 1e-5f)
+                ? (fwd_speed - m_osc_last_kart_fwd_speed) / dt_osc
+                : 0.0f;
+            m_osc_last_kart_fwd_speed = fwd_speed;
+
+            // Semi-implicit Euler keeps the oscillator stable for reasonable
+            // timesteps without needing substepping.
+            const float accel =
+                -k_over_m * m_osc_pos - damping * m_osc_vel - a_kart;
+            m_osc_vel += accel * dt_osc;
+            m_osc_pos += m_osc_vel * dt_osc;
+
+            // Clamp travel so the dumbbell never visually escapes the spring.
+            const float max_travel = 0.6f;
+            if (m_osc_pos >  max_travel) { m_osc_pos =  max_travel; m_osc_vel = std::min(m_osc_vel, 0.0f); }
+            if (m_osc_pos < -max_travel) { m_osc_pos = -max_travel; m_osc_vel = std::max(m_osc_vel, 0.0f); }
+
+            // Seat the dumbbell behind the kart and offset along local Z by
+            // the oscillator position (STK local +Z is forward).
+            const float y = std::max(0.20f, m_kart->getHighestPoint() * 0.35f);
+            const float z_rest = -std::max(0.50f, m_kart->getKartLength() * 0.55f);
+            m_node->setPosition(core::vector3df(0.0f, y, z_rest + m_osc_pos));
         }
     }
     else

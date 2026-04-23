@@ -285,18 +285,6 @@ ObserverVisualState buildObserverVisualState(
     {
         doppler_active = true;
     }
-    // Burning nitro also triggers the Doppler view: this replaces the old
-    // low-quality rear blue nitro-light halo with a proper full-screen shift.
-    if (kart->isUsingNitro())
-    {
-        doppler_active = true;
-    }
-    // Any time a Doppler debuff is active, render the scene through the
-    // "radio-wave scanner" instrument: monochrome centre disc + bright bezel
-    // ring, with full Doppler shift outside. Gives the player a consistent
-    // visual language for "you are experiencing relativistic visual effects".
-    const bool scanner_center_active = doppler_active;
-    
     const float c_light = Relativity::getCurrentCLight();
     if (!std::isfinite((double)c_light) || c_light <= 0.0f)
         return visual_state;
@@ -332,7 +320,7 @@ ObserverVisualState buildObserverVisualState(
     visual_state.m_valid = true;
     visual_state.m_item_active = true;
     visual_state.m_doppler_active = doppler_active;
-    visual_state.m_scanner_center_active = doppler_active && scanner_center_active;
+    visual_state.m_scanner_center_active = false;
     visual_state.m_c_light = c_light;
     visual_state.m_beta = beta;
     visual_state.m_gamma = gamma;
