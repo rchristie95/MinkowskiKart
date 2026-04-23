@@ -4,9 +4,20 @@
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$worktreeBin  = Join-Path $projectRoot ".claude\worktrees\exciting-turing-4d9f46\build\bin"
+$preferredBuildBin = Join-Path $projectRoot "build-dev\bin"
+$fallbackBuildBin  = Join-Path $projectRoot "build\bin"
 $stageDir     = Join-Path $projectRoot "_package_staging"
 $zipOut       = Join-Path $projectRoot "MinkowskiKart-windows.zip"
+
+if (Test-Path (Join-Path $preferredBuildBin "supertuxkart.exe")) {
+    $buildBin = $preferredBuildBin
+}
+elseif (Test-Path (Join-Path $fallbackBuildBin "supertuxkart.exe")) {
+    $buildBin = $fallbackBuildBin
+}
+else {
+    $buildBin = $preferredBuildBin
+}
 
 Write-Host ""
 Write-Host "================================================" -ForegroundColor Cyan
@@ -15,9 +26,9 @@ Write-Host "================================================" -ForegroundColor C
 Write-Host ""
 
 # Check build exists
-if (-not (Test-Path "$worktreeBin\supertuxkart.exe")) {
+if (-not (Test-Path "$buildBin\supertuxkart.exe")) {
     Write-Host "ERROR: supertuxkart.exe not found at:" -ForegroundColor Red
-    Write-Host "  $worktreeBin" -ForegroundColor Red
+    Write-Host "  $buildBin" -ForegroundColor Red
     Write-Host "Build the project first." -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
@@ -30,7 +41,7 @@ New-Item -ItemType Directory -Path $stageDir | Out-Null
 
 # Copy exe + DLLs, rename exe to MinkowskiKart.exe
 Write-Host "Copying game binary and DLLs..." -ForegroundColor Yellow
-Copy-Item "$worktreeBin\*" $stageDir
+Copy-Item "$buildBin\*" $stageDir
 Rename-Item "$stageDir\supertuxkart.exe" "MinkowskiKart.exe"
 if (Test-Path "$stageDir\supertuxkart.pdb") { Remove-Item "$stageDir\supertuxkart.pdb" }
 
