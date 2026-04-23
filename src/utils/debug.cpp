@@ -222,11 +222,11 @@ void addAttachment(Attachment::AttachmentType type)
         //    continue;
         if (type == Attachment::ATTACH_MASS_SPIKE)
         {
+            // Harmonic oscillator: no direct slowdown, only inertia + oscillation.
             kart->getAttachment()
                 ->set(type,
                       stk_config->time2Ticks(kart->getKartProperties()
                                                  ->getAnvilDuration()) );
-            kart->adjustSpeed(kart->getKartProperties()->getAnvilSpeedFactor());
         }
         else if (type == Attachment::ATTACH_TIME_DILATION)
         {

@@ -109,8 +109,20 @@ PowerupManager::PowerupType
     static const std::string powerup_names[] = {
         "",            /* Nothing */
         "warp-bubble", "asteroid", "black-hole", "zipper", "photon",
-        "super_position", "anti-karticle", "wormhole", "time-dilation", "mass-spike"
+        "super_position", "anti-karticle", "wormhole", "time-dilation",
+        "harmonic-oscillator"
     };
+
+    if (lower_name == "harmonic-oscillator"  ||
+        lower_name == "harmonic_oscillator"  ||
+        lower_name == "harmonicoscillator"   ||
+        lower_name == "mass-spike"           ||
+        lower_name == "mass_spike"           ||
+        lower_name == "anvil"                ||
+        lower_name == "anchor")
+    {
+        return POWERUP_MASS_SPIKE;
+    }
 
     if (lower_name == "super_position"              ||
         lower_name == "super-position"              ||
