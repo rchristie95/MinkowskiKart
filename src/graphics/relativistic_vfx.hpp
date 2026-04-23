@@ -85,13 +85,14 @@ struct BlackHoleVFX
 
 struct TimeDilationVFX
 {
+    bool               active;
     float              redshift_intensity; // how strong the red haze is
     float              smear_factor;       // motion trail stretching
     float              drag_sound_pitch;   // for audio deepening
 #ifndef SERVER_ONLY
     ParticleEmitter   *halo_emitter;
 #endif
-    TimeDilationVFX() : redshift_intensity(0), smear_factor(0),
+    TimeDilationVFX() : active(false), redshift_intensity(0), smear_factor(0),
                         drag_sound_pitch(1.0f)
 #ifndef SERVER_ONLY
                         , halo_emitter(nullptr)

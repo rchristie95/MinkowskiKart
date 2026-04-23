@@ -409,12 +409,8 @@ void Attachment::hitBanana(ItemState *item_state)
         if (m_kart->isInvulnerable() || m_kart->getKartAnimation() != NULL)
             return;
 
-        if (!applySwatterStyleSquash(NULL, m_kart,
-                                     /*award_swatter_achievements*/false) ||
-            m_kart->getKartAnimation() != NULL)
-        {
-            return;
-        }
+        // Visual squash only (no speed reduction)
+        m_kart->setSquash(kp->getParachuteDurationOther(), 1.0f);
 
         set(ATTACH_TIME_DILATION,
             stk_config->time2Ticks(kp->getParachuteDurationOther()));

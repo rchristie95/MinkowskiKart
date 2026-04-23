@@ -1976,7 +1976,13 @@ void Kart::setSquashGraphics()
 #ifndef SERVER_ONLY
     if (isGhostKart() || GUIEngine::isNoGraphics()) return;
 
-    m_node->setScale(core::vector3df(1.0f, 0.5f, 1.0f));
+    float y_scale = 0.5f;
+    const Attachment* attachment = getAttachment();
+    if (attachment && attachment->getType() == Attachment::ATTACH_TIME_DILATION)
+    {
+        y_scale = 0.05f;
+    }
+    m_node->setScale(core::vector3df(1.0f, y_scale, 1.0f));
     if (m_vehicle->getNumWheels() > 0)
     {
         if (!m_wheel_box)
@@ -1991,7 +1997,7 @@ void Kart::setSquashGraphics()
                 wheels[i]->setParent(m_wheel_box);
         }
         m_wheel_box->getRelativeTransformationMatrix()
-            .setScale(core::vector3df(1.0f, 2.0f, 1.0f));
+            .setScale(core::vector3df(1.0f, 1.0f / y_scale, 1.0f));
     }
 #endif
 }   // setSquashGraphics
@@ -2849,8 +2855,8 @@ float Kart::applyAirFriction(float engine_power)
     // Apply parachute physics
     // Currently, all karts have the same base friction
     // If this is changed, a compensation needs to be added here
-    if(m_attachment->getType()==Attachment::ATTACH_TIME_DILATION)
-        friction_intensity *= m_kart_properties->getParachuteFriction();
+    // ATTACH_TIME_DILATION (Calabi-Yau) no longer applies parachute friction
+    // as it is now a purely relativistic effect.
 
     if (friction_intensity < 0.0f) friction_intensity = 0.0f;
 
