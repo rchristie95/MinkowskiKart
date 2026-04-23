@@ -233,7 +233,8 @@ void RelativisticVFXManager::activateTimeDilation(unsigned int kart_id)
 {
     if (kart_id >= m_time_dilations.size()) return;
     TimeDilationVFX &td = m_time_dilations[kart_id];
-    td.redshift_intensity = 1.0f;
+    td.active = true;
+    td.redshift_intensity = 0.0f;
     td.smear_factor = 0.8f;
     td.drag_sound_pitch = 0.6f;
 
@@ -256,6 +257,7 @@ void RelativisticVFXManager::deactivateTimeDilation(unsigned int kart_id)
 {
     if (kart_id >= m_time_dilations.size()) return;
     TimeDilationVFX &td = m_time_dilations[kart_id];
+    td.active = false;
     td.redshift_intensity = 0;
     td.smear_factor = 0;
     td.drag_sound_pitch = 1.0f;
@@ -267,11 +269,12 @@ void RelativisticVFXManager::deactivateTimeDilation(unsigned int kart_id)
 void RelativisticVFXManager::updateTimeDilation(TimeDilationVFX &vfx, float dt,
                                                  AbstractKart *kart)
 {
-    if (vfx.redshift_intensity <= 0) return;
+    if (!vfx.active) return;
 
-    // Pulsing redshift
-    float pulse = 0.8f + 0.2f * sinf(m_global_time * 2.0f);
-    vfx.redshift_intensity = pulse;
+    // Pulsing redshift - DISABLED (optical Doppler trigger removed)
+    // float pulse = 0.8f + 0.2f * sinf(m_global_time * 2.0f);
+    // vfx.redshift_intensity = pulse;
+    vfx.redshift_intensity = 0.0f;
 
     // Motion smear based on speed
     float speed = kart->getSpeed();
@@ -541,7 +544,7 @@ const WarpBubbleVFX *RelativisticVFXManager::getWarpBubble(unsigned int kart_id)
 const TimeDilationVFX *RelativisticVFXManager::getTimeDilation(unsigned int kart_id) const
 {
     if (kart_id >= m_time_dilations.size()) return nullptr;
-    return m_time_dilations[kart_id].redshift_intensity > 0
+    return m_time_dilations[kart_id].active
         ? &m_time_dilations[kart_id] : nullptr;
 }
 

@@ -304,7 +304,11 @@ Item* ItemManager::dropNewItem(ItemState::ItemType type,
         // to be created (and we just return NULL).
         if (!material_hit) return NULL;
         normal.normalize();
-        pos = hit_point + kart->getTrans().getBasis() * Vec3(0, -0.05f, 0);
+        pos = hit_point;
+        if (type == ItemState::ITEM_BANANA)
+        {
+            pos += kart->getTrans().getBasis() * Vec3(0, 1.2f, 0);
+        }
     }
     else
     {
@@ -353,7 +357,14 @@ Item* ItemManager::placeItem(ItemState::ItemType type, const Vec3& xyz,
            ProfileWorld::isProfileMode()                               );
     ItemState::ItemType mesh_type = type;
 
-    Item* item = new Item(type, xyz, normal, m_item_mesh[mesh_type],
+    Vec3 pos = xyz;
+    if (type == ItemState::ITEM_BANANA)
+    {
+        // Calabi-Yau model origin is likely at its center, so lift it up.
+        pos += normal * 1.2f;
+    }
+
+    Item* item = new Item(type, pos, normal, m_item_mesh[mesh_type],
                           m_item_lowres_mesh[mesh_type], m_icon[mesh_type],
                           /*prev_owner*/NULL);
 
