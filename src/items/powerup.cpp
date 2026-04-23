@@ -413,8 +413,9 @@ void Powerup::use()
         break;
 
     case PowerupManager::POWERUP_MASS_SPIKE:
-        //Attach an anvil(twice as good as the one given
-        //by the bananas) to the kart in the 1st position.
+        // Harmonic oscillator: attach a dumbbell-on-spring to the leader.
+        // Does NOT directly slow them down; added mass provides inertia and
+        // the mass oscillates in response to kart motion.
         for(unsigned int i = 0 ; i < world->getNumKarts(); ++i)
         {
             AbstractKart *kart=world->getKart(i);
@@ -425,7 +426,6 @@ void Powerup::use()
                 kart->getAttachment()->set(Attachment::ATTACH_MASS_SPIKE,
                                            stk_config->
                                            time2Ticks(kp->getAnvilDuration()) );
-                kart->adjustSpeed(kp->getAnvilSpeedFactor() * 0.5f);
 
                 // should we position the sound at the kart that is hit,
                 // or the kart "throwing" the anvil? Ideally it should be both.

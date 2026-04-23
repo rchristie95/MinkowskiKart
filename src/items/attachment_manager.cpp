@@ -56,7 +56,7 @@ static const initAttachmentType iat[]=
 {
     {Attachment::ATTACH_TIME_DILATION,     "parachute.spm",        "parachute-attach-icon.png"    },
     {Attachment::ATTACH_BOMB,             "bomb.spm",             "bomb-attach-icon.png"         },
-    {Attachment::ATTACH_MASS_SPIKE,       "anchor.spm",           "anchor-attach-icon.png"       },
+    {Attachment::ATTACH_MASS_SPIKE,       "harmonic-oscillator.spm", "harmonic-oscillator-icon.png" },
     {Attachment::ATTACH_SUPERPOSITION_CAT, "superposition-cat.spm", "super-position-icon.png"      },
     {Attachment::ATTACH_TIDAL_ARM,        "swatter.spm",          "swatter-icon.png"             },
     {Attachment::ATTACH_NOLOKS_SWATTER,   "swatter_nolok.spm",    "swatter-icon.png"             },

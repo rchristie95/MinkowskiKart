@@ -113,6 +113,19 @@ private:
     /** Sound for exploding bubble gum shield */
     SFXBase          *m_bubble_explode_sound;
 
+    /** Harmonic-oscillator visual state (dumbbell-on-spring). Tracked only on
+     *  the graphics side, so no rewind/network persistence is needed.
+     *  m_osc_pos is the longitudinal offset of the dumbbell from its rest
+     *  position (positive = forward of rest, negative = behind); m_osc_vel
+     *  is its velocity along that axis. Both are in meters / m*s^-1.
+     *  m_osc_last_kart_fwd_speed tracks kart forward speed between ticks to
+     *  derive kart acceleration, which drives the oscillator via the
+     *  pseudo-force in the kart frame. */
+    float             m_osc_pos;
+    float             m_osc_vel;
+    float             m_osc_last_kart_fwd_speed;
+    bool              m_osc_initialized;
+
 public:
           Attachment(AbstractKart* kart);
          ~Attachment();
