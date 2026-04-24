@@ -32,6 +32,7 @@ using namespace irr;
 #include "utils/vec3.hpp"
 
 class Material;
+class AbstractKart;
 class ParticleKind;
 class STKParticle;
 class Track;
@@ -86,6 +87,7 @@ public:
 
     void         setPosition(const Vec3 &pos);
     void         setRotation(const Vec3 &rot);
+    void         setHiddenForKart(const AbstractKart* kart);
 
     const ParticleKind* getParticlesInfo() const { return m_particle_type; }
 

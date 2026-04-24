@@ -28,6 +28,7 @@
 using namespace irr;
 
 struct CPUParticle;
+class AbstractKart;
 
 inline float glslSmoothstep(float edge0, float edge1, float x)
 {
@@ -71,6 +72,8 @@ private:
     float m_size_increase_factor;
 
     bool m_first_execution, m_randomize_initial_y, m_flips, m_pre_generating;
+
+    const AbstractKart* m_hidden_for_kart;
 
     /** Previous frame particles emitter source matrix */
     core::matrix4 m_previous_frame_matrix;
@@ -142,6 +145,10 @@ public:
     unsigned getMaxCount() const                        { return m_max_count; }
     // ------------------------------------------------------------------------
     void setPreGenerating(bool val)                 { m_pre_generating = val; }
+    // ------------------------------------------------------------------------
+    void setHiddenForKart(const AbstractKart* kart) { m_hidden_for_kart = kart; }
+    // ------------------------------------------------------------------------
+    bool isHiddenForActiveCamera() const;
     // ------------------------------------------------------------------------
     static void updateFlips(unsigned maximum_particle_count);
     // ------------------------------------------------------------------------

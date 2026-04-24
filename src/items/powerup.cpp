@@ -182,6 +182,7 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
     switch (m_type)
     {
         case PowerupManager::POWERUP_ZIPPER:
+            m_sound_use = SFXManager::get()->createSoundSource("rocket_boost");
             break ;
 
         case PowerupManager::POWERUP_BLACK_HOLE:
@@ -296,7 +297,8 @@ void Powerup::use()
     // FIXME - for some collectibles, set() is never called
     if (!has_played_sound && m_sound_use == NULL)
     {
-        m_sound_use = SFXManager::get()->createSoundSource("shoot");
+        m_sound_use = SFXManager::get()->createSoundSource(
+            m_type == PowerupManager::POWERUP_ZIPPER ? "rocket_boost" : "shoot");
     }
 
     m_number--;
@@ -305,6 +307,11 @@ void Powerup::use()
     switch (m_type)
     {
     case PowerupManager::POWERUP_ZIPPER:
+        if (!has_played_sound && m_sound_use != NULL)
+        {
+            Powerup::adjustSound();
+            m_sound_use->play();
+        }
         m_kart->handleZipper(NULL, true);
         break ;
     case PowerupManager::POWERUP_SUPER_POSITION:

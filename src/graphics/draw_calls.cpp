@@ -175,6 +175,8 @@ void DrawCalls::parseSceneManager(core::array<scene::ISceneNode*> &List,
         }
         else if (STKParticle *node = dynamic_cast<STKParticle*>(List[i]))
         {
+            if (node->isHiddenForActiveCamera())
+                continue;
             node->updateAbsolutePosition();
             if (!isCulledPrecise(cam, List[i], irr_driver->getBoundingBoxesViz()))
                 CPUParticleManager::getInstance()->addParticleNode(node);
