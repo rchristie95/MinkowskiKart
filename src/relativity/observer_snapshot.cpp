@@ -279,9 +279,7 @@ ObserverVisualState buildObserverVisualState(
     {
         doppler_active = true;
     }
-    if (attachment && (
-        attachment->getType() == Attachment::ATTACH_MASS_SPIKE ||
-        attachment->getType() == Attachment::ATTACH_BOMB))
+    if (attachment && attachment->getType() == Attachment::ATTACH_BOMB)
     {
         doppler_active = true;
     }

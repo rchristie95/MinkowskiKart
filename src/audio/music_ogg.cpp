@@ -20,6 +20,7 @@
 
 #include "audio/music_ogg.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "audio/music_manager.hpp"
@@ -297,6 +298,14 @@ void MusicOggStream::setVolume(float volume)
     alSourcef(m_soundSource, AL_GAIN, volume);
     check("volume music");   // clear errors
 }   // setVolume
+
+//-----------------------------------------------------------------------------
+void MusicOggStream::setSpeed(float speed)
+{
+    speed = std::max(0.5f, std::min(2.0f, speed));
+    alSourcef(m_soundSource, AL_PITCH, speed);
+    check("speed music");
+}   // setSpeed
 
 //-----------------------------------------------------------------------------
 void MusicOggStream::update()

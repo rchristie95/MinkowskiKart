@@ -35,6 +35,7 @@ public:
     virtual bool pauseMusic  ()                            { return true; }
     virtual bool resumeMusic ()                            { return true; }
     virtual void setVolume   (float volume)                {}
+    virtual void setSpeed    (float speed)                 {}
     virtual void updateFaster(float percent, float pitch)  {}
     virtual void update      ()                            {}
     virtual bool isPlaying   ()                            { return false; }

@@ -448,6 +448,11 @@ void SFXManager::mainLoop(void *obj)
             MusicInformation *mi = current->m_music_information;
             mi->setTemporaryVolume(current->m_parameter.getX());  break;
         }
+        case SFX_MUSIC_SET_SPEED:
+        {
+            MusicInformation *mi = current->m_music_information;
+            mi->setSpeed(current->m_parameter.getX());            break;
+        }
         case SFX_MUSIC_WAITING:
                current->m_music_information->preStart();
                current->m_music_information->setMusicWaiting();   break;

@@ -39,10 +39,10 @@ The current collectible powerups are:
 9. `Time Dilation`
    A field effect that applies slowdown attachments to other active karts.
    Racers ahead of the user still receive the strongest rank-scaled effect.
-10. `Harmonic Oscillator`
-    A dumbbell-on-spring leader punish replacing the old anvil slot. It
-    attaches to the kart in first place, adds inertia, and oscillates with kart
-    motion instead of applying a one-time speed chop.
+10. `Maxwell-Boltzmann`
+    A leader-punish replacing the old harmonic/anvil slot. It targets the kart
+    in first place for 10 seconds and applies deterministic Brownian velocity
+    kicks in the track-tangent plane every second.
 
 ## Current Debuffs And Attachments
 
@@ -52,10 +52,11 @@ The current race debuffs and on-kart attachments are:
    The main slowdown debuff. It is applied by the Time Dilation powerup and by
    direct banana hits. The old parachute mesh is hidden, but the slowdown and
    VFX remain active.
-2. `Harmonic Oscillator`
-   Applied to the current leader by the harmonic-oscillator powerup. It uses a
-   visible rear-mounted spring-mass model and affects handling through added
-   mass and oscillation rather than a direct brake.
+2. `Maxwell-Boltzmann`
+   Applied to the current leader by the Maxwell-Boltzmann powerup. It lasts
+   10 seconds, starts kicking after 1 second, and uses deterministic
+   Gaussian tangent-plane kicks with sigma 10 m/s. Each kick spawns a colored
+   Brownian sphere that appears to hit and bounce off the affected kart.
 3. `Photon Hit`
    A successful photon hit now triggers the same fullscreen Doppler-style
    effect for both forward-fired and backward-fired hits, without the old black
@@ -75,7 +76,7 @@ They have been rebalanced for the current Minkowski Kart behavior:
 
 - `Anti-Karticle` is weighted more toward leaders and front-runners because it
   is most useful as a backward-fired pressure tool.
-- `Harmonic Oscillator` is weighted toward karts chasing the leader, since it
+- `Maxwell-Boltzmann` is weighted toward karts chasing the leader, since it
   targets the kart in first place and is pointless to hand to first.
 - Non-race modes still retain much closer-to-STK fallback weighting.
 
@@ -87,7 +88,7 @@ Current relativistic presentation includes:
 - black-hole and projectile effects
 - photon Doppler hit effects
 - super-position world pulse effects
-- time-dilation and mass-spike attachment VFX
+- time-dilation VFX and Maxwell-Boltzmann Brownian kick spheres
 - wormhole portal visuals
 
 ## Building The Project
