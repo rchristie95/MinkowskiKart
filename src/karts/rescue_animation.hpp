@@ -24,6 +24,7 @@
 
 class AbstractKart;
 class Referee;
+class SFXBase;
 
 /** This triggers a rescue of the specified kart.
  * \ingroup karts
@@ -42,6 +43,9 @@ friend class KartRewinder;
     /** The referee during a rescue operation. */
     Referee* m_referee;
 
+    /** Helicopter rescue sound played while the animation is active. */
+    SFXBase* m_helicopter_sound;
+
     /* Final transformation to place kart. */
     btTransform m_rescue_transform;
 
@@ -56,6 +60,10 @@ friend class KartRewinder;
     void restoreData(BareNetworkString* b);
     // ------------------------------------------------------------------------
     void init(const btTransform& rescue_transform, float velocity);
+    // ------------------------------------------------------------------------
+    void startHelicopterSound();
+    // ------------------------------------------------------------------------
+    void stopHelicopterSound();
 public:
     // ------------------------------------------------------------------------
     static RescueAnimation* create(AbstractKart* kart,
@@ -68,6 +76,8 @@ public:
     virtual void updateGraphics(float dt);
     // ------------------------------------------------------------------------
     virtual KartAnimationType getAnimationType() const   { return KAT_RESCUE; }
+    // ------------------------------------------------------------------------
+    float getDropOffProgress() const;
     // ------------------------------------------------------------------------
     virtual void saveState(BareNetworkString* buffer);
     // ------------------------------------------------------------------------

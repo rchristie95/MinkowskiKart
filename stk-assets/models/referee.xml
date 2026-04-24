@@ -1,18 +1,36 @@
 <?xml version="1.0"?>
-<!-- model: the model filename to load as referee
+<!-- model: legacy fallback filename for older builds
+    start-model: Einstein model used during ready/set/go
+    start-light-model: ready/set/go light board using traffic_light.png
+    rescue-model: Hawking helicopter body used during rescue
+    rescue-rotor-model: optional rotor child mesh spun during rescue
     {first,last}-rescue-frame: Frame numbers for the rescue animation.
     {first,last}-start-frame: Frame numbers for the start animation.
     start-offset: XYZ offset relative to kart where to display the start referee
-    scale: Scales the mesh. 
+    scale: Legacy fallback scale.
     start-rotation: Rotation of the referee at start
-    colors: Three texture names that are used for ready, set, go.  -->
+    child offsets/rotations/scales are local to their referee root.  -->
 
 <referee model="thunderbird.spm"
-         first-rescue-frame="625"
-         last-rescue-frame="700"
-         first-start-frame="265"
-         last-start-frame="290"
-         start-offset="-1.2 2 2"
-         scale = "0.2 0.2 0.2"
-         start-rotation="0 180 0"
+         start-model="einstein-referee.spm"
+         start-light-model="referee-start-lights.spm"
+         rescue-model="hawking-helicopter-body.spm"
+         rescue-rotor-model="hawking-helicopter-rotor.spm"
+         first-rescue-frame="1"
+         last-rescue-frame="2"
+         first-start-frame="1"
+         last-start-frame="2"
+         start-offset="-1.2 0 2"
+         scale="1 1 1"
+         start-scale="1 1 1"
+         start-rotation="0 0 0"
+         start-light-offset="0 0.82 -0.42"
+         start-light-rotation="0 0 0"
+         start-light-scale="0.5 0.5 0.5"
+         rescue-offset="0 -0.35 0"
+         rescue-rotation="0 0 0"
+         rescue-scale="1 1 1"
+         rescue-rotor-offset="0.0001 1.1124 0.1773"
+         rescue-rotor-rotation="0 0 0"
+         rescue-rotor-scale="1 1 1"
 />

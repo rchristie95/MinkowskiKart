@@ -25,10 +25,6 @@ namespace irr
     {
         class IAnimatedMesh; class IAnimatedMeshSceneNode; class ISceneNode;
     }
-    namespace video
-    {
-        class ITexture;
-    }
 }
 
 using namespace irr;
@@ -52,12 +48,11 @@ class AbstractKart;
 class Referee
 {
 private:
-    /** The static mesh, which is loaded from a static function and shared
-     *  between all instances. */
-    static scene::IAnimatedMesh *m_st_referee_mesh;
-
-    /** The three textures to use for ready, set, go. */
-    static video::ITexture *m_st_traffic_lights[3];
+    /** Static meshes loaded once and shared between referee instances. */
+    static scene::IAnimatedMesh *m_st_start_mesh;
+    static scene::IAnimatedMesh *m_st_start_light_mesh;
+    static scene::IAnimatedMesh *m_st_rescue_mesh;
+    static scene::IAnimatedMesh *m_st_rescue_rotor_mesh;
 
     /** Which mesh buffer to use to show the traffic light texture. */
     static int m_st_traffic_buffer;
@@ -79,15 +74,28 @@ private:
     static Vec3 m_st_start_offset;
 
     /** Scaling to be applied to the referee. */
-    static Vec3 m_st_scale;
+    static Vec3 m_st_start_scale;
+    static Vec3 m_st_start_light_offset;
+    static Vec3 m_st_start_light_rotation;
+    static Vec3 m_st_start_light_scale;
+    static Vec3 m_st_rescue_offset;
+    static Vec3 m_st_rescue_rotation;
+    static Vec3 m_st_rescue_scale;
+    static Vec3 m_st_rescue_rotor_offset;
+    static Vec3 m_st_rescue_rotor_rotation;
+    static Vec3 m_st_rescue_rotor_scale;
 
     /** A rotation to be applied to the referee before displaying it. */
     static Vec3 m_st_start_rotation;
 
     static float m_height;
 
-    /** The scene node for an instance of the referee. */
+    /** The root scene node for an instance of the referee. */
     scene::IAnimatedMeshSceneNode *m_scene_node;
+
+    scene::IAnimatedMeshSceneNode *m_body_node;
+    scene::IAnimatedMeshSceneNode *m_start_light_node;
+    scene::IAnimatedMeshSceneNode *m_rescue_rotor_node;
 
     scene::ISceneNode* m_light;
 
@@ -111,6 +119,8 @@ public:
     bool        isAttached() const;
     // ------------------------------------------------------------------------
     void        setAnimationFrameWithCreatedTicks(int created_ticks);
+    // ------------------------------------------------------------------------
+    void        updateRescueVisuals(int created_ticks);
     // ------------------------------------------------------------------------
     /** Returns the graphical offset the referee should be drawn at at the
      *  start of a race. */

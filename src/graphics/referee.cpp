@@ -45,16 +45,103 @@ int                   Referee::m_st_last_rescue_frame  = 1;
 int                   Referee::m_st_traffic_buffer     = -1;
 Vec3                  Referee::m_st_start_offset       = Vec3(-2, 2, 2);
 Vec3                  Referee::m_st_start_rotation     = Vec3(0, 180, 0);
-Vec3                  Referee::m_st_scale              = Vec3(1, 1, 1);
+Vec3                  Referee::m_st_start_scale        = Vec3(1, 1, 1);
+Vec3                  Referee::m_st_start_light_offset = Vec3(0, 1.1f, -0.42f);
+Vec3                  Referee::m_st_start_light_rotation = Vec3(0, 0, 0);
+Vec3                  Referee::m_st_start_light_scale  = Vec3(1, 1, 1);
+Vec3                  Referee::m_st_rescue_offset      = Vec3(0, 0.6f, 0);
+Vec3                  Referee::m_st_rescue_rotation    = Vec3(0, 0, 0);
+Vec3                  Referee::m_st_rescue_scale       = Vec3(1, 1, 1);
+Vec3                  Referee::m_st_rescue_rotor_offset = Vec3(0, 1.1124f, 0.1773f);
+Vec3                  Referee::m_st_rescue_rotor_rotation = Vec3(0, 0, 0);
+Vec3                  Referee::m_st_rescue_rotor_scale = Vec3(1, 1, 1);
 float                 Referee::m_height                = 0.0f;
-scene::IAnimatedMesh *Referee::m_st_referee_mesh       = NULL;
+scene::IAnimatedMesh *Referee::m_st_start_mesh         = NULL;
+scene::IAnimatedMesh *Referee::m_st_start_light_mesh   = NULL;
+scene::IAnimatedMesh *Referee::m_st_rescue_mesh        = NULL;
+scene::IAnimatedMesh *Referee::m_st_rescue_rotor_mesh  = NULL;
+
+namespace
+{
+scene::IAnimatedMesh* loadRefereeMesh(const std::string& model_filename,
+                                      const std::string& fallback_filename)
+{
+    const std::string filename = model_filename.empty()
+        ? fallback_filename : model_filename;
+    if (filename.empty())
+        return NULL;
+
+    scene::IAnimatedMesh* mesh = irr_driver->getAnimatedMesh(
+        file_manager->getAsset(FileManager::MODEL, filename));
+    if (!mesh)
+    {
+        Log::fatal("referee", "Can't find referee model '%s', aborting.",
+                   filename.c_str());
+    }
+    return mesh;
+}   // loadRefereeMesh
+
+int findTrafficBuffer(scene::IAnimatedMesh* mesh)
+{
+    if (!mesh)
+        return -1;
+
+    for (unsigned int i = 0; i < mesh->getMeshBufferCount(); i++)
+    {
+        scene::IMeshBuffer *mb = mesh->getMeshBuffer(i);
+        SP::SPMeshBuffer* spmb = dynamic_cast<SP::SPMeshBuffer*>(mb);
+        if (spmb)
+        {
+            auto ret = spmb->getAllSTKMaterials();
+            for (unsigned j = 0; j < ret.size(); j++)
+            {
+                std::string name =
+                    StringUtils::getBasename(ret[j]->getSamplerPath(0));
+                if (name == "traffic_light.png")
+                {
+                    spmb->enableTextureMatrix(j);
+                    return (int)i;
+                }
+            }
+            continue;
+        }
+
+        video::SMaterial &irrMaterial = mb->getMaterial();
+        video::ITexture* t = irrMaterial.getTexture(0);
+        if (!t) continue;
+
+        std::string name = StringUtils::getBasename(t->getName()
+            .getInternalName().c_str());
+        if (name == "traffic_light.png")
+            return (int)i;
+
+        irrMaterial.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+    }
+    return -1;
+}   // findTrafficBuffer
+
+void removeMeshOnce(scene::IAnimatedMesh*& mesh,
+                    scene::IAnimatedMesh* already_removed_a,
+                    scene::IAnimatedMesh* already_removed_b,
+                    scene::IAnimatedMesh* already_removed_c)
+{
+    if (!mesh || mesh == already_removed_a || mesh == already_removed_b ||
+        mesh == already_removed_c)
+    {
+        mesh = NULL;
+        return;
+    }
+    irr_driver->removeMeshFromCache(mesh);
+    mesh = NULL;
+}   // removeMeshOnce
+}
 
 // ----------------------------------------------------------------------------
 /** Loads the static mesh.
  */
 void Referee::init()
 {
-    assert(!m_st_referee_mesh);
+    assert(!m_st_start_mesh);
     const std::string filename=file_manager->getAssetChecked(FileManager::MODEL,
                                                              "referee.xml", true);
     XMLNode *node = file_manager->createXMLTree(filename);
@@ -68,71 +155,47 @@ void Referee::init()
                "node, aborting.");
     }
     std::string model_filename;
+    std::string start_model_filename;
+    std::string start_light_model_filename;
+    std::string rescue_model_filename;
+    std::string rescue_rotor_model_filename;
     node->get("model", &model_filename);
+    node->get("start-model", &start_model_filename);
+    node->get("start-light-model", &start_light_model_filename);
+    node->get("rescue-model", &rescue_model_filename);
+    node->get("rescue-rotor-model", &rescue_rotor_model_filename);
 
-    m_st_referee_mesh = irr_driver->getAnimatedMesh(
-                                 file_manager->getAsset(FileManager::MODEL,
-                                                        model_filename)      );
-    if(!m_st_referee_mesh)
-    {
-        Log::fatal("referee", "Can't find referee model '%s', aborting.",
-               model_filename.c_str());
-    }
+    m_st_start_mesh = loadRefereeMesh(start_model_filename, model_filename);
+    m_st_rescue_mesh = loadRefereeMesh(rescue_model_filename, model_filename);
+    m_st_start_light_mesh = loadRefereeMesh(start_light_model_filename, "");
+    m_st_rescue_rotor_mesh = loadRefereeMesh(rescue_rotor_model_filename, "");
 
     node->get("first-rescue-frame", &m_st_first_rescue_frame);
     node->get("last-rescue-frame",  &m_st_last_rescue_frame );
     node->get("first-start-frame",  &m_st_first_start_frame );
     node->get("last-start-frame",   &m_st_last_start_frame  );
     node->get("start-offset",       &m_st_start_offset      );
-    node->get("scale",              &m_st_scale             );
+    node->get("scale",              &m_st_start_scale       );
+    node->get("start-scale",        &m_st_start_scale       );
     node->get("start-rotation",     &m_st_start_rotation    );
+    node->get("start-light-offset", &m_st_start_light_offset);
+    node->get("start-light-rotation", &m_st_start_light_rotation);
+    node->get("start-light-scale",  &m_st_start_light_scale );
+    node->get("rescue-offset",      &m_st_rescue_offset     );
+    node->get("rescue-rotation",    &m_st_rescue_rotation   );
+    node->get("rescue-scale",       &m_st_rescue_scale      );
+    node->get("rescue-rotor-offset", &m_st_rescue_rotor_offset);
+    node->get("rescue-rotor-rotation", &m_st_rescue_rotor_rotation);
+    node->get("rescue-rotor-scale", &m_st_rescue_rotor_scale);
 
     float angle_to_kart = atan2(m_st_start_offset.getX(),
                                 m_st_start_offset.getZ())
                         * RAD_TO_DEGREE;
     m_st_start_rotation.setY(m_st_start_rotation.getY()+angle_to_kart);
 
-    for(unsigned int i=0; i<m_st_referee_mesh->getMeshBufferCount(); i++)
-    {
-        if (m_st_traffic_buffer != -1)
-        {
-            break;
-        }
-        scene::IMeshBuffer *mb = m_st_referee_mesh->getMeshBuffer(i);
-        SP::SPMeshBuffer* spmb = dynamic_cast<SP::SPMeshBuffer*>(mb);
-        if (spmb)
-        {
-            auto ret = spmb->getAllSTKMaterials();
-            for (unsigned j = 0; j < ret.size(); j++)
-            {
-                std::string name =
-                    StringUtils::getBasename(ret[j]->getSamplerPath(0));
-                if (name == "traffic_light.png")
-                {
-                    m_st_traffic_buffer = i;
-                    spmb->enableTextureMatrix(j);
-                    break;
-                }
-            }
-            continue;
-        }
-        video::SMaterial &irrMaterial = mb->getMaterial();
-        video::ITexture* t=irrMaterial.getTexture(0);
-        if(!t) continue;
-
-        std::string name=StringUtils::getBasename(t->getName()
-                                                  .getInternalName().c_str());
-        if (name == "traffic_light.png")
-        {
-            m_st_traffic_buffer = i;
-            break;
-        }
-        else
-        {
-            irrMaterial.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
-        }
-
-    }
+    m_st_traffic_buffer = findTrafficBuffer(m_st_start_light_mesh);
+    if (m_st_traffic_buffer < 0)
+        m_st_traffic_buffer = findTrafficBuffer(m_st_start_mesh);
 
     delete node;
 }   // init
@@ -142,8 +205,13 @@ void Referee::init()
  */
 void Referee::cleanup()
 {
-    irr_driver->removeMeshFromCache(m_st_referee_mesh);
-    m_st_referee_mesh = NULL;
+    scene::IAnimatedMesh* removed_a = m_st_start_mesh;
+    removeMeshOnce(m_st_start_mesh, NULL, NULL, NULL);
+    scene::IAnimatedMesh* removed_b = m_st_start_light_mesh;
+    removeMeshOnce(m_st_start_light_mesh, removed_a, NULL, NULL);
+    scene::IAnimatedMesh* removed_c = m_st_rescue_mesh;
+    removeMeshOnce(m_st_rescue_mesh, removed_a, removed_b, NULL);
+    removeMeshOnce(m_st_rescue_rotor_mesh, removed_a, removed_b, removed_c);
     m_st_traffic_buffer = -1;
 }   // cleanup
 
@@ -153,29 +221,36 @@ void Referee::cleanup()
  */
 Referee::Referee()
 {
-    assert(m_st_referee_mesh);
-    // First add a NULL mesh, then set the material to be read only
-    // (this appears to be the only way to get read only materials).
-    // This way we only need to adjust the materials in the original
-    // mesh. ATM it doesn't make any difference, but if we ever should
-    // decide to use more than one referee model at startup we only
-    // have to change the textures once, and all models will be in synch.
-    //
-    // Disabled due to texture matrix not working in legacy video drivers
+    assert(m_st_start_mesh);
     m_scene_node = irr_driver->addAnimatedMesh(NULL, "referee");
-    //m_scene_node->setReadOnlyMaterials(true);
-    m_scene_node->setMesh(m_st_referee_mesh);
+    m_scene_node->setMesh(m_st_start_mesh);
     m_scene_node->grab();
     m_scene_node->setRotation(m_st_start_rotation.toIrrVector());
-    m_scene_node->setScale(m_st_scale.toIrrVector());
-    m_scene_node->setFrameLoop(m_st_first_start_frame,
-                               m_st_last_start_frame);
+    m_scene_node->setScale(m_st_start_scale.toIrrVector());
+    m_body_node = m_scene_node;
+    m_body_node->setFrameLoop(m_st_first_start_frame, m_st_last_start_frame);
+
+    if (m_st_start_light_mesh)
+    {
+        m_start_light_node = irr_driver->addAnimatedMesh(
+            m_st_start_light_mesh, "referee_start_lights", m_scene_node);
+        m_start_light_node->setPosition(m_st_start_light_offset.toIrrVector());
+        m_start_light_node->setRotation(m_st_start_light_rotation.toIrrVector());
+        m_start_light_node->setScale(m_st_start_light_scale.toIrrVector());
+    }
+    else
+    {
+        m_start_light_node = NULL;
+    }
+    m_rescue_rotor_node = NULL;
 #ifndef SERVER_ONLY
     if ((CVS->isGLSL() && CVS->isDeferredEnabled()) ||
         irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
     {
+        scene::ISceneNode* light_parent = m_start_light_node
+            ? (scene::ISceneNode*)m_start_light_node : (scene::ISceneNode*)m_scene_node;
         m_light = irr_driver->addLight(core::vector3df(0.0f, 0.0f, 0.6f), 0.7f, 2.0f,
-            0.7f /* r */, 0.0 /* g */, 0.0f /* b */, false /* sun */, m_scene_node);
+            0.7f /* r */, 0.0 /* g */, 0.0f /* b */, false /* sun */, light_parent);
     }
     else
 #endif
@@ -191,19 +266,31 @@ Referee::Referee()
  */
 Referee::Referee(const AbstractKart &kart)
 {
-    assert(m_st_referee_mesh);
-    // First add a NULL mesh, then set the material to be read only
-    // (this appears to be the only way to get read only materials).
-    // This way we only need to adjust the materials in the original
-    // mesh. ATM it doesn't make any difference, but if we ever should
-    // decide to use more than one referee model at startup we only
-    // have to change the textures once, and all models will be in synch.
+    assert(m_st_rescue_mesh);
     m_scene_node = irr_driver->addAnimatedMesh(NULL, "referee");
-    //m_scene_node->setReadOnlyMaterials(true);
-    m_scene_node->setMesh(m_st_referee_mesh);
+    m_scene_node->setMesh(m_st_rescue_mesh);
     m_scene_node->grab();
-    m_scene_node->setScale(m_st_scale.toIrrVector());
-    m_scene_node->setPosition(core::vector3df(0, kart.getKartHeight() + 0.4f, 0));
+    m_scene_node->setScale(m_st_rescue_scale.toIrrVector());
+    m_scene_node->setRotation(m_st_rescue_rotation.toIrrVector());
+    m_scene_node->setPosition(core::vector3df(0, kart.getKartHeight() + 0.4f, 0) +
+                              m_st_rescue_offset.toIrrVector());
+    m_body_node = m_scene_node;
+    m_body_node->setFrameLoop(m_st_first_rescue_frame, m_st_last_rescue_frame);
+    m_start_light_node = NULL;
+    m_light = NULL;
+
+    if (m_st_rescue_rotor_mesh)
+    {
+        m_rescue_rotor_node = irr_driver->addAnimatedMesh(
+            m_st_rescue_rotor_mesh, "referee_rescue_rotor", m_scene_node);
+        m_rescue_rotor_node->setPosition(m_st_rescue_rotor_offset.toIrrVector());
+        m_rescue_rotor_node->setRotation(m_st_rescue_rotor_rotation.toIrrVector());
+        m_rescue_rotor_node->setScale(m_st_rescue_rotor_scale.toIrrVector());
+    }
+    else
+    {
+        m_rescue_rotor_node = NULL;
+    }
 
 }   // Referee
 
@@ -253,14 +340,19 @@ void Referee::selectReadySetGo(int rsg)
     if (m_st_traffic_buffer < 0)
         return;
 
-    SP::SPMeshNode* spmn = dynamic_cast<SP::SPMeshNode*>(m_scene_node);
+    scene::IAnimatedMeshSceneNode* traffic_node = m_start_light_node
+        ? m_start_light_node : m_body_node;
+    if (!traffic_node)
+        return;
+
+    SP::SPMeshNode* spmn = dynamic_cast<SP::SPMeshNode*>(traffic_node);
     if (spmn)
     {
         spmn->setTextureMatrix(m_st_traffic_buffer, {{ 0.0f, rsg * 0.333f }});
     }
     else
     {
-        video::SMaterial &m = m_scene_node->getMaterial(m_st_traffic_buffer);
+        video::SMaterial &m = traffic_node->getMaterial(m_st_traffic_buffer);
         core::matrix4* matrix = &m.getTextureMatrix(0);
         matrix->setTextureTranslate(0.0f, rsg*0.333f);
         // disable lighting, we need to see the traffic light even if facing away
@@ -314,14 +406,31 @@ void Referee::selectReadySetGo(int rsg)
  */
 void Referee::setAnimationFrameWithCreatedTicks(int created_ticks)
 {
+    if (!m_body_node)
+        return;
+
     float dur = stk_config->ticks2Time(
         World::getWorld()->getTicksSinceStart() - created_ticks);
     dur *= 25.0f;
     float ref_dur = (float)(m_st_last_rescue_frame - m_st_first_rescue_frame);
     float frame = std::fmod(dur, ref_dur);
     frame += (float)m_st_first_rescue_frame;
-    m_scene_node->setCurrentFrame(frame);
+    m_body_node->setCurrentFrame(frame);
 }   // setAnimationFrameWithCreatedTicks
+
+// ----------------------------------------------------------------------------
+void Referee::updateRescueVisuals(int created_ticks)
+{
+    setAnimationFrameWithCreatedTicks(created_ticks);
+    if (!m_rescue_rotor_node)
+        return;
+
+    const int ticks = World::getWorld()->getTicksSinceStart() - created_ticks;
+    const float rotor_angle = std::fmod((float)ticks * 45.0f, 360.0f);
+    Vec3 rotation = m_st_rescue_rotor_rotation;
+    rotation.setY(rotation.getY() + rotor_angle);
+    m_rescue_rotor_node->setRotation(rotation.toIrrVector());
+}   // updateRescueVisuals
 
 // ----------------------------------------------------------------------------
 /** Moves the referee to the specified position. */
