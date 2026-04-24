@@ -163,6 +163,12 @@ void ParticleEmitter::setRotation(const Vec3 &rot)
 }   // setRotation
 
 //-----------------------------------------------------------------------------
+void ParticleEmitter::setHiddenForKart(const AbstractKart* kart)
+{
+    m_node->setHiddenForKart(kart);
+}   // setHiddenForKart
+
+//-----------------------------------------------------------------------------
 void ParticleEmitter::setParticleType(const ParticleKind* type)
 {
     assert(m_magic_number == 0x58781325);

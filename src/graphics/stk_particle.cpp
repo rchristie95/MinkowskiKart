@@ -19,6 +19,7 @@
 
 #include "graphics/stk_particle.hpp"
 #include "graphics/central_settings.hpp"
+#include "graphics/camera/camera.hpp"
 #include "graphics/cpu_particle_manager.hpp"
 #include "graphics/irr_driver.hpp"
 #include "guiengine/engine.hpp"
@@ -52,8 +53,17 @@ STKParticle::STKParticle(bool randomize_initial_y, ISceneNode* parent, s32 id,
     m_randomize_initial_y = randomize_initial_y;
     m_flips = false;
     m_max_count = 0;
+    m_hidden_for_kart = NULL;
     drop();
 }   // STKParticle
+
+// ----------------------------------------------------------------------------
+bool STKParticle::isHiddenForActiveCamera() const
+{
+    Camera* camera = Camera::getActiveCamera();
+    return m_hidden_for_kart != NULL && camera != NULL &&
+           camera->getKart() == m_hidden_for_kart;
+}   // isHiddenForActiveCamera
 
 // ----------------------------------------------------------------------------
 static void generateLifetimeSizeDirection(scene::IParticleEmitter *emitter,
@@ -502,6 +512,9 @@ void STKParticle::updateFlips(unsigned maximum_particle_count)
 // ----------------------------------------------------------------------------
 void STKParticle::OnRegisterSceneNode()
 {
+    if (isHiddenForActiveCamera())
+        return;
+
     if (CVS->isGLSL())
     {
         Log::warn("STKParticle", "Don't call OnRegisterSceneNode with GLSL");
