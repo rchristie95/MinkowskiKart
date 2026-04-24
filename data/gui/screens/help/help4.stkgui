@@ -14,8 +14,8 @@
                         I18N="Tab in help menu" text="Game Modes"/>
                 <icon-button id="page3" width="128" height="128" icon="gui/icons/gift.png"
                         I18N="Tab in help menu" text="Powerups"/>
-                <icon-button id="page4" width="128" height="128" icon="gui/icons/compactification-icon.png"
-                        I18N="Tab in help menu" text="Compactifications"/>
+                <icon-button id="page4" width="128" height="128" icon="gui/icons/calabi_yau_translucent_128.png"
+                        I18N="Tab in help menu" text="Hazards"/>
                 <icon-button id="page5" width="128" height="128" icon="gui/icons/story_mode_book.png"
                         I18N="Tab in help menu" text="Story Mode"/>
                 <icon-button id="page6" width="128" height="128" icon="gui/icons/mass.png"
@@ -28,7 +28,7 @@
 
             <box width="78%" height="100%" layout="vertical-row">
                 <spacer height="1%" width="10"/>
-                <label align="center" word_wrap="true" text="Hitting a compactification can result in one of the following being attached to the kart:"/>
+                <label align="center" word_wrap="true" text="Hitting a hazard can result in one of the following being attached to the kart:"/>
                 <spacer height="2%" width="10"/>                
 
                 <div width="100%" proportion="2" layout="horizontal-row">
@@ -36,15 +36,15 @@
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
                             I18N="In the help menu"
-                            text="Maxwell-Boltzmann - applies random Brownian kicks to the leader."/>
+                            text="Boltzmann - applies random Brownian kicks to the leaders velocity."/>
                 </div>
                 
                 <div width="100%" proportion="2" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/time-dilation-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/calabi_yau_translucent_128.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
                             I18N="In the help menu"
-                            text="Compactification - folds your kart through Calabi-Yau space and briefly squashes your view of the race."/>
+                            text="Calabi-Yau Manifold - folds your kart through extra dimensions required by string theory and briefly compactifies your view of the race. Sounds made up to me!"/>
                 </div>
                 
                 <div width="100%" proportion="2" layout="horizontal-row">
@@ -53,6 +53,14 @@
                     <bubble proportion="1" height="100%"
                             I18N="In the help menu"
                             text="Bomb - detonates after some amount of time, throwing the kart up in the air. Bump into another kart to transfer the bomb to it."/>
+                </div>
+
+                <div width="100%" proportion="2" layout="horizontal-row">
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/cat_box_superposition_128_transparent.png"/>
+                    <spacer width="3%" height="100%"/>
+                    <bubble proportion="1" height="100%"
+                            I18N="In the help menu"
+                            text="Schroedinger's Cat - appears when Superposition powerup is active. Has a 50/50 chance of giving a random powerup or a very angry cat on the bonnet."/>
                 </div>
             </box>
         </div>

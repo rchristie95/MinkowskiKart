@@ -143,8 +143,12 @@ void MainMenuScreen::init()
 
     // White labels so they read against the dark background image.
     const video::SColor white(255, 255, 255, 255);
-    static const char* const TOP_BTNS[] = { "story", "new", "multiplayer", "online", "addons" };
-    for (const char* id : TOP_BTNS)
+    static const char* const BTNS_WITH_WHITE_LABELS[] = {
+        "story", "new", "multiplayer", "online", "addons",
+        "options", "help", "startTutorial", "highscores",
+        "achievements", "gpEditor", "about", "quit"
+    };
+    for (const char* id : BTNS_WITH_WHITE_LABELS)
     {
         IconButtonWidget* btn = getWidget<IconButtonWidget>(id);
         if (btn) btn->setLabelColor(white);

@@ -14,8 +14,8 @@
                         I18N="Tab in help menu" text="Game Modes"/>
                 <icon-button id="page3" width="128" height="128" icon="gui/icons/gift.png"
                         I18N="Tab in help menu" text="Powerups"/>
-                <icon-button id="page4" width="128" height="128" icon="gui/icons/compactification-icon.png"
-                        I18N="Tab in help menu" text="Compactifications"/>
+                <icon-button id="page4" width="128" height="128" icon="gui/icons/calabi_yau_translucent_128.png"
+                        I18N="Tab in help menu" text="Hazards"/>
                 <icon-button id="page5" width="128" height="128" icon="gui/icons/story_mode_book.png"
                         I18N="Tab in help menu" text="Story Mode"/>
                 <icon-button id="page6" width="128" height="128" icon="gui/icons/mass.png"
@@ -44,11 +44,11 @@
                             I18N="In the help menu"
                             text="Collect blue gift boxes, they will give you powerups."/>
                     <spacer width="3%" height="100%"/>
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/compactification-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/calabi_yau_translucent_128.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="3" height="100%" word_wrap="true"
                             I18N="In the help menu"
-                            text="Avoid compactifications!"/>
+                            text="Avoid Calabi-Yau Manifolds!"/>
                 </div>
 
                 <div width="100%" proportion="6" layout="horizontal-row">

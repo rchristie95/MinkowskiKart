@@ -210,14 +210,12 @@ namespace Scripting
             engine->RegisterEnumValue("PowerupType", "NEUTRON_STAR", PowerupManager::PowerupType::POWERUP_ASTEROID);
             engine->RegisterEnumValue("PowerupType", "PARACHUTE", PowerupManager::PowerupType::POWERUP_TIME_DILATION);
             engine->RegisterEnumValue("PowerupType", "PHOTON", PowerupManager::PowerupType::POWERUP_PHOTON);
-            engine->RegisterEnumValue("PowerupType", "PHOTON", PowerupManager::PowerupType::POWERUP_PHOTON);
             engine->RegisterEnumValue("PowerupType", "WORMHOLE", PowerupManager::PowerupType::POWERUP_WORMHOLE);
             engine->RegisterEnumValue("PowerupType", "GEODESIC_MISSILE", PowerupManager::PowerupType::POWERUP_WORMHOLE);
             engine->RegisterEnumValue("PowerupType", "SUPER_POSITION", PowerupManager::PowerupType::POWERUP_SUPER_POSITION);
             engine->RegisterEnumValue("PowerupType", "ANTI_KARTICLE", PowerupManager::PowerupType::POWERUP_ANTI_KARTICLE);
             engine->RegisterEnumValue("PowerupType", "SWATTER", PowerupManager::PowerupType::POWERUP_ANTI_KARTICLE);
             engine->RegisterEnumValue("PowerupType", "SWITCH", PowerupManager::PowerupType::POWERUP_SUPER_POSITION);
-            engine->RegisterEnumValue("PowerupType", "WORMHOLE", PowerupManager::PowerupType::POWERUP_WORMHOLE);
             engine->RegisterEnumValue("PowerupType", "ZIPPER", PowerupManager::PowerupType::POWERUP_ZIPPER);
         }
     }
