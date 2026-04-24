@@ -23,6 +23,7 @@
 #include "config/stk_config.hpp"
 #include "relativity/relativity_math.hpp"
 
+#include <cmath>
 #include <sstream>
 
 using namespace GUIEngine;
