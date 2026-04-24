@@ -247,13 +247,25 @@ void MusicManager::setTemporaryVolume(float gain)
 }   // setTemporaryVolume
 
 //-----------------------------------------------------------------------------
+void MusicManager::setTemporarySpeed(float speed)
+{
+    if (m_current_music.load() != NULL)
+        SFXManager::get()->queue(SFXManager::SFX_MUSIC_SET_SPEED,
+                                 m_current_music, speed);
+}   // setTemporarySpeed
+
+//-----------------------------------------------------------------------------
 /** Queues a command for the sfx manager to reset a temporary volume change.
  */
 void MusicManager::resetTemporaryVolume()
 {
     if (m_current_music.load() != NULL)
+    {
         SFXManager::get()->queue(SFXManager::SFX_MUSIC_DEFAULT_VOLUME,
                                  m_current_music);
+        SFXManager::get()->queue(SFXManager::SFX_MUSIC_SET_SPEED,
+                                 m_current_music, 1.0f);
+    }
 }   // resetTemporaryVolume
 
 //-----------------------------------------------------------------------------

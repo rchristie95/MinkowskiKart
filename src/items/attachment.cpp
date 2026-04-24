@@ -22,15 +22,18 @@
 #include <algorithm>
 #include "achievements/achievements_status.hpp"
 #include "audio/sfx_base.hpp"
+#include "audio/sfx_manager.hpp"
 #include "config/player_manager.hpp"
 #include "config/stk_config.hpp"
 #include "config/user_config.hpp"
 #include "graphics/explosion.hpp"
+#include "graphics/hit_effect.hpp"
 #include "graphics/irr_driver.hpp"
 #include <ge_render_info.hpp>
 #include "guiengine/engine.hpp"
 #include "items/attachment_manager.hpp"
 #include "items/item_manager.hpp"
+#include "items/powerup_manager.hpp"
 #include "items/projectile_manager.hpp"
 #include "items/swatter.hpp"
 #include "karts/abstract_kart.hpp"
@@ -42,11 +45,170 @@
 #include "network/network_string.hpp"
 #include "network/rewind_manager.hpp"
 #include "physics/triangle_mesh.hpp"
+#include "race/race_manager.hpp"
 #include "tracks/track.hpp"
 #include "utils/constants.hpp"
 
 #include "irrMath.h"
 #include <IAnimatedMeshSceneNode.h>
+#include <ISceneNode.h>
+#include <btBulletDynamicsCommon.h>
+
+#include <cstdint>
+#include <random>
+
+namespace
+{
+    const float MAXWELL_BOLTZMANN_DURATION_SECONDS = 10.0f;
+    const float MAXWELL_BOLTZMANN_KICK_PERIOD      = 1.0f;
+    const float MAXWELL_BOLTZMANN_SIGMA            = 10.0f;
+    const float BROWNIAN_SPHERE_START_DISTANCE     = 1.0f;
+
+    uint64_t mixSeed(uint64_t value)
+    {
+        value ^= value >> 33;
+        value *= 0xff51afd7ed558ccdULL;
+        value ^= value >> 33;
+        value *= 0xc4ceb9fe1a85ec53ULL;
+        value ^= value >> 33;
+        return value;
+    }   // mixSeed
+
+    class BrownianKickEffect : public HitEffect
+    {
+    private:
+        Vec3              m_center;
+        Vec3              m_direction;
+        float             m_bounce_distance;
+        float             m_out_distance;
+        float             m_speed;
+        float             m_age;
+        float             m_duration;
+        bool              m_impact_played;
+        float             m_impact_age;
+        const char       *m_impact_sound;
+        SFXBase          *m_sfx;
+        scene::ISceneNode *m_node;
+        scene::ISceneNode *m_ring_node;
+
+    public:
+        BrownianKickEffect(const Vec3& center, const Vec3& direction,
+                           float kart_width, float magnitude)
+            : m_center(center), m_direction(direction), m_age(0.0f),
+              m_impact_played(false), m_impact_age(0.0f),
+              m_impact_sound("ball_bounce"), m_sfx(NULL), m_node(NULL),
+              m_ring_node(NULL)
+        {
+            if (m_direction.length2() <= btScalar(1.0e-8f))
+                m_direction = Vec3(1.0f, 0.0f, 0.0f);
+            m_direction.normalize();
+            m_bounce_distance = std::max(0.20f, kart_width * 0.45f);
+            m_out_distance = BROWNIAN_SPHERE_START_DISTANCE;
+            m_speed = core::clamp(magnitude * 0.45f, 4.0f, 12.0f);
+            const float travel = std::max(0.05f,
+                (m_out_distance - m_bounce_distance) * 2.0f);
+            m_duration = std::max(0.25f, travel / m_speed);
+            if (magnitude >= 22.0f)
+                m_impact_sound = "metal_clang";
+            else if (magnitude >= 10.0f)
+                m_impact_sound = "boing";
+
+#ifndef SERVER_ONLY
+            if (!GUIEngine::isNoGraphics() && irr_driver)
+            {
+                const float t = core::clamp(magnitude / 30.0f, 0.0f, 1.0f);
+                const u32 red = (u32)(255.0f * t);
+                const u32 blue = (u32)(255.0f * (1.0f - t));
+                const u32 green = (u32)(80.0f * (1.0f - fabsf(0.5f - t) * 2.0f));
+                video::SColor colour(230, red, green, blue);
+                m_node = irr_driver->addSphere(0.16f, colour);
+                if (m_node)
+                {
+                    m_node->setPosition((m_center - m_direction *
+                        m_out_distance).toIrrVector());
+                }
+            }
+#endif
+        }
+
+        ~BrownianKickEffect()
+        {
+#ifndef SERVER_ONLY
+            if (m_node && irr_driver)
+                irr_driver->removeNode(m_node);
+            if (m_ring_node && irr_driver)
+                irr_driver->removeNode(m_ring_node);
+            if (m_sfx)
+                m_sfx->deleteSFX();
+#endif
+        }
+
+        bool updateAndDelete(int ticks) OVERRIDE
+        {
+            m_age += stk_config->ticks2Time(ticks);
+            const float phase = m_duration > 0.0f
+                ? core::clamp(m_age / m_duration, 0.0f, 1.0f)
+                : 1.0f;
+            const float segment = phase < 0.5f ? phase * 2.0f
+                                                : (phase - 0.5f) * 2.0f;
+            const float distance = phase < 0.5f
+                ? m_out_distance + (m_bounce_distance - m_out_distance) * segment
+                : m_bounce_distance + (m_out_distance - m_bounce_distance) * segment;
+
+#ifndef SERVER_ONLY
+            if (!m_impact_played && phase >= 0.5f)
+            {
+                m_impact_played = true;
+                m_impact_age = 0.0f;
+                if (irr_driver)
+                {
+                    m_ring_node = irr_driver->addSphere(
+                        0.24f, video::SColor(95, 230, 245, 255));
+                    if (m_ring_node)
+                        m_ring_node->setPosition((m_center - m_direction *
+                            m_bounce_distance).toIrrVector());
+                }
+                if (SFXManager::get())
+                {
+                    m_sfx = SFXManager::get()->createSoundSource(m_impact_sound);
+                    if (m_sfx)
+                    {
+                        const float vol =
+                            RaceManager::get()->getNumLocalPlayers() > 1
+                                ? 0.45f : 0.9f;
+                        m_sfx->setVolume(vol);
+                        m_sfx->play(m_center - m_direction * m_bounce_distance);
+                    }
+                }
+            }
+            if (m_node)
+                m_node->setPosition((m_center - m_direction * distance)
+                    .toIrrVector());
+            if (m_ring_node)
+            {
+                m_impact_age += stk_config->ticks2Time(ticks);
+                const float ring_t = core::clamp(m_impact_age / 0.20f,
+                                                 0.0f, 1.0f);
+                const float ring_scale = 1.0f + ring_t * 2.5f;
+                m_ring_node->setScale(core::vector3df(ring_scale, ring_scale,
+                                                      ring_scale));
+                if (ring_t >= 1.0f && irr_driver)
+                {
+                    irr_driver->removeNode(m_ring_node);
+                    m_ring_node = NULL;
+                }
+            }
+            if (m_age >= m_duration && m_node && irr_driver)
+            {
+                irr_driver->removeNode(m_node);
+                m_node = NULL;
+            }
+#endif
+            return m_age >= m_duration &&
+                (!m_sfx || m_sfx->getStatus() != SFXBase::SFX_PLAYING);
+        }
+    };
+}
 
 /** Initialises the attachment each kart has.
  */
@@ -62,10 +224,10 @@ Attachment::Attachment(AbstractKart* kart)
     m_initial_speed        = 0;
     m_graphical_type       = ATTACH_NOTHING;
     m_scaling_end_ticks    = -1;
-    m_osc_pos              = 0.0f;
-    m_osc_vel              = 0.0f;
-    m_osc_last_kart_fwd_speed = 0.0f;
-    m_osc_initialized      = false;
+    m_maxwell_ticks_to_next_kick = 0;
+    m_maxwell_kick_index = 0;
+    m_maxwell_kick_flash_ticks = 0;
+    m_maxwell_last_kick_delta_v = Vec3(0.0f, 0.0f, 0.0f);
     m_node = NULL;
     if (GUIEngine::isNoGraphics())
         return;
@@ -108,6 +270,12 @@ Attachment::~Attachment()
         m_bubble_explode_sound = NULL;
     }
 }   // ~Attachment
+
+//-----------------------------------------------------------------------------
+float Attachment::getMaxwellBoltzmannDurationSeconds()
+{
+    return MAXWELL_BOLTZMANN_DURATION_SECONDS;
+}   // getMaxwellBoltzmannDurationSeconds
 
 //-----------------------------------------------------------------------------
 bool Attachment::applySwatterStyleSquash(AbstractKart* attacker,
@@ -170,6 +338,110 @@ bool Attachment::applySwatterStyleSquash(AbstractKart* attacker,
 }   // applySwatterStyleSquash
 
 //-----------------------------------------------------------------------------
+void Attachment::resetMaxwellBoltzmannState(int ticks_left)
+{
+    const int duration_ticks =
+        stk_config->time2Ticks(MAXWELL_BOLTZMANN_DURATION_SECONDS);
+    const int cadence_ticks =
+        stk_config->time2Ticks(MAXWELL_BOLTZMANN_KICK_PERIOD);
+    const int elapsed_ticks = std::max(0, duration_ticks - ticks_left);
+    m_maxwell_kick_index = elapsed_ticks / cadence_ticks;
+    m_maxwell_ticks_to_next_kick = cadence_ticks -
+        (elapsed_ticks % cadence_ticks);
+    if (m_maxwell_ticks_to_next_kick <= 0)
+        m_maxwell_ticks_to_next_kick = cadence_ticks;
+    m_maxwell_kick_flash_ticks = 0;
+    m_maxwell_last_kick_delta_v = Vec3(0.0f, 0.0f, 0.0f);
+}   // resetMaxwellBoltzmannState
+
+//-----------------------------------------------------------------------------
+void Attachment::applyMaxwellBoltzmannKick()
+{
+    if (!m_kart || !m_kart->getBody() || m_kart->isEliminated() ||
+        m_kart->getKartAnimation() != NULL)
+    {
+        return;
+    }
+
+    btVector3 normal = m_kart->getNormal();
+    if (normal.length2() <= btScalar(1.0e-8f))
+        normal = m_kart->getBody()->getWorldTransform().getBasis().getColumn(1);
+    normal.normalize();
+
+    btVector3 tangent_a =
+        m_kart->getBody()->getWorldTransform().getBasis().getColumn(2);
+    tangent_a -= normal * tangent_a.dot(normal);
+    if (tangent_a.length2() <= btScalar(1.0e-8f))
+    {
+        tangent_a = normal.cross(btVector3(1.0f, 0.0f, 0.0f));
+        if (tangent_a.length2() <= btScalar(1.0e-8f))
+            tangent_a = normal.cross(btVector3(0.0f, 0.0f, 1.0f));
+    }
+    tangent_a.normalize();
+    btVector3 tangent_b = normal.cross(tangent_a);
+    tangent_b.normalize();
+    btRigidBody* body = m_kart->getBody();
+
+    uint64_t seed = powerup_manager ? powerup_manager->getRandomSeed() : 0;
+    seed ^= uint64_t(m_kart->getWorldKartId() + 1) * 0x9e3779b97f4a7c15ULL;
+    seed ^= uint64_t(m_maxwell_kick_index + 1) * 0xbf58476d1ce4e5b9ULL;
+    std::mt19937 rng((uint32_t)(mixSeed(seed) & 0xffffffffULL));
+    std::normal_distribution<float> normal_dist(
+        0.0f, MAXWELL_BOLTZMANN_SIGMA);
+
+    const btVector3 current_velocity =
+        body->getLinearVelocity() - normal * body->getLinearVelocity().dot(normal);
+    btVector3 travel_dir = current_velocity;
+    if (travel_dir.length2() <= btScalar(1.0e-6f))
+        travel_dir = tangent_a;
+    travel_dir.normalize();
+
+    const float kick_a = normal_dist(rng) * 0.45f;
+    const float kick_b = normal_dist(rng) * 0.45f;
+    const float drag_kick = fabsf(normal_dist(rng));
+    const btVector3 delta_v = tangent_a * kick_a + tangent_b * kick_b -
+                              travel_dir * drag_kick;
+    m_maxwell_last_kick_delta_v = Vec3(delta_v);
+    m_maxwell_kick_flash_ticks = stk_config->time2Ticks(0.45f);
+    const btVector3 velocity = body->getLinearVelocity() + delta_v;
+    body->setLinearVelocity(velocity);
+    body->setInterpolationLinearVelocity(velocity);
+    body->activate();
+
+    if (!GUIEngine::isNoGraphics() && !RewindManager::get()->isRewinding())
+    {
+        Vec3 kick_dir(delta_v);
+        const float magnitude = kick_dir.length();
+        if (magnitude > 1.0e-5f)
+        {
+            kick_dir /= magnitude;
+            Vec3 center = m_kart->getXYZ() + Vec3(normal) *
+                std::max(0.25f, m_kart->getHighestPoint() * 0.45f);
+            ProjectileManager::get()->addHitEffect(
+                new BrownianKickEffect(center, kick_dir,
+                                       m_kart->getKartWidth(), magnitude));
+        }
+    }
+}   // applyMaxwellBoltzmannKick
+
+//-----------------------------------------------------------------------------
+void Attachment::updateMaxwellBoltzmann(int ticks)
+{
+    const int cadence_ticks =
+        stk_config->time2Ticks(MAXWELL_BOLTZMANN_KICK_PERIOD);
+    if (m_maxwell_kick_flash_ticks > 0)
+        m_maxwell_kick_flash_ticks = std::max(0,
+            m_maxwell_kick_flash_ticks - ticks);
+    m_maxwell_ticks_to_next_kick -= ticks;
+    while (m_maxwell_ticks_to_next_kick <= 0)
+    {
+        applyMaxwellBoltzmannKick();
+        m_maxwell_kick_index++;
+        m_maxwell_ticks_to_next_kick += cadence_ticks;
+    }
+}   // updateMaxwellBoltzmann
+
+//-----------------------------------------------------------------------------
 /** Sets the attachment a kart has. This will also handle animation to be
  *  played, e.g. when a swatter replaces a bomb.
  *  \param type The type of the new attachment.
@@ -199,17 +471,16 @@ void Attachment::set(AttachmentType type, int ticks,
         break;
     }   // switch(type)
 
+    if (type == ATTACH_MASS_SPIKE)
+        ticks = stk_config->time2Ticks(getMaxwellBoltzmannDurationSeconds());
+
     m_type             = type;
     m_ticks_left       = ticks;
     m_previous_owner   = current_kart;
     m_scaling_end_ticks = World::getWorld()->getTicksSinceStart() +
         stk_config->time2Ticks(0.7f);
 
-    // Reset harmonic-oscillator state so each new attachment starts at rest.
-    m_osc_pos                = 0.0f;
-    m_osc_vel                = 0.0f;
-    m_osc_last_kart_fwd_speed = 0.0f;
-    m_osc_initialized        = false;
+    resetMaxwellBoltzmannState(type == ATTACH_MASS_SPIKE ? m_ticks_left : 0);
 
     // Activate relativistic VFX for new attachment
     if (relativistic_vfx_manager)
@@ -223,9 +494,6 @@ void Attachment::set(AttachmentType type, int ticks,
             break;
         case ATTACH_TIME_DILATION:
             relativistic_vfx_manager->activateTimeDilation(kid);
-            break;
-        case ATTACH_MASS_SPIKE:
-            relativistic_vfx_manager->activateMassSpike(kid);
             break;
         case ATTACH_TIDAL_ARM:
             relativistic_vfx_manager->activateTidalArm(kid);
@@ -267,10 +535,7 @@ void Attachment::set(AttachmentType type, int ticks,
 }   // set
 
 // -----------------------------------------------------------------------------
-/** Removes any attachement currently on the kart. As for the anvil attachment,
- *  takes care of resetting the owner kart's physics structures to account for
- *  the updated mass.
- */
+/** Removes any attachement currently on the kart. */
 void Attachment::clear()
 {
     // Deactivate relativistic VFX
@@ -285,9 +550,6 @@ void Attachment::clear()
             break;
         case ATTACH_TIME_DILATION:
             relativistic_vfx_manager->deactivateTimeDilation(kid);
-            break;
-        case ATTACH_MASS_SPIKE:
-            relativistic_vfx_manager->deactivateMassSpike(kid);
             break;
         case ATTACH_TIDAL_ARM:
             relativistic_vfx_manager->deactivateTidalArm(kid);
@@ -305,6 +567,7 @@ void Attachment::clear()
     m_type = ATTACH_NOTHING;
     m_ticks_left = 0;
     m_initial_speed = 0;
+    resetMaxwellBoltzmannState(0);
 }   // clear
 
 // -----------------------------------------------------------------------------
@@ -378,6 +641,7 @@ void Attachment::rewindTo(BareNetworkString *buffer)
 
     m_type = new_type;
     m_ticks_left = ticks_left;
+    resetMaxwellBoltzmannState(new_type == ATTACH_MASS_SPIKE ? ticks_left : 0);
 }   // rewindTo
 
 // -----------------------------------------------------------------------------
@@ -466,10 +730,9 @@ void Attachment::hitBanana(ItemState *item_state)
         break;
         }
     case ATTACH_MASS_SPIKE:
-        // if the kart already has an anvil, attach a new anvil,
-        // and increase the overall time
+        // Maxwell-Boltzmann refreshes to a clean full-duration window.
         new_attachment = ATTACH_MASS_SPIKE;
-        leftover_ticks  = m_ticks_left;
+        leftover_ticks  = 0;
         break;
     case ATTACH_TIME_DILATION:
         new_attachment = ATTACH_TIME_DILATION;
@@ -505,10 +768,8 @@ void Attachment::hitBanana(ItemState *item_state)
             break;
         }
         case ATTACH_MASS_SPIKE:
-            // Harmonic oscillator: no direct speed reduction. Inertia from the
-            // added mass and the spring-mass oscillation handle the effect.
-            set(ATTACH_MASS_SPIKE, stk_config->time2Ticks(kp->getAnvilDuration())
-                + leftover_ticks                                      );
+            set(ATTACH_MASS_SPIKE,
+                stk_config->time2Ticks(getMaxwellBoltzmannDurationSeconds()));
             break;
         case ATTACH_BOMB:
             set( ATTACH_BOMB, stk_config->time2Ticks(stk_config->m_bomb_time)
@@ -609,6 +870,10 @@ void Attachment::update(int ticks)
 
     switch (m_type)
     {
+    case ATTACH_MASS_SPIKE:
+        updateMaxwellBoltzmann(ticks);
+        m_initial_speed = 0;
+        break;
     case ATTACH_TIME_DILATION:
         {
         // Partly handled in Kart::updatePhysics
@@ -631,7 +896,6 @@ void Attachment::update(int ticks)
         }
         }
         break;
-    case ATTACH_MASS_SPIKE:     // handled in Kart::updatePhysics
     case ATTACH_SUPERPOSITION_CAT:
     case ATTACH_NOTHING:   // Nothing to do, but complete all cases for switch
     case ATTACH_MAX:
@@ -738,9 +1002,9 @@ void Attachment::updateGraphics(float dt)
     if (m_type != ATTACH_NOTHING)
     {
         // Time-dilation no longer renders its legacy trailing parachute mesh.
-        // Keeping the node hidden avoids a stray parachute flapping behind
-        // every affected kart while preserving the gameplay slowdown.
-        const bool hide_attachment_mesh = (m_type == ATTACH_TIME_DILATION);
+        // These debuffs are represented through HUD/VFX, not a rear mesh.
+        const bool hide_attachment_mesh = (m_type == ATTACH_TIME_DILATION ||
+                                           m_type == ATTACH_MASS_SPIKE);
         m_node->setVisible(!hide_attachment_mesh);
         bool is_shield = m_type == ATTACH_WARP_BUBBLE ||
                         m_type == ATTACH_NOLOK_WARP_BUBBLE;
@@ -812,51 +1076,6 @@ void Attachment::updateGraphics(float dt)
             m_node->setPosition(core::vector3df(0.0f, y, z));
         }
 
-        if (m_type == ATTACH_MASS_SPIKE)
-        {
-            // Harmonic oscillator: the dumbbell rides on a spring and
-            // oscillates back-and-forth in the kart's local forward axis in
-            // response to kart acceleration. Integrating in the kart frame:
-            //   m * a_rel = -k*x - c*v - m*a_kart
-            // so a_rel = -omega^2 * x - 2*zeta*omega*v - a_kart, where
-            // omega = sqrt(k/m) and zeta is the damping ratio.
-            const float natural_freq_hz = 1.3f;      // springy but not too loose
-            const float zeta            = 0.12f;     // light damping -> lingers
-            const float omega           = 2.0f * PI * natural_freq_hz;
-            const float k_over_m        = omega * omega;
-            const float damping         = 2.0f * zeta * omega;
-
-            const float fwd_speed = m_kart->getSpeed();
-            if (!m_osc_initialized)
-            {
-                m_osc_last_kart_fwd_speed = fwd_speed;
-                m_osc_initialized         = true;
-            }
-            // Clamp dt to avoid blow-ups on hitches / the first frame.
-            const float dt_osc = std::max(0.0f, std::min(dt, 0.05f));
-            const float a_kart = (dt_osc > 1e-5f)
-                ? (fwd_speed - m_osc_last_kart_fwd_speed) / dt_osc
-                : 0.0f;
-            m_osc_last_kart_fwd_speed = fwd_speed;
-
-            // Semi-implicit Euler keeps the oscillator stable for reasonable
-            // timesteps without needing substepping.
-            const float accel =
-                -k_over_m * m_osc_pos - damping * m_osc_vel - a_kart;
-            m_osc_vel += accel * dt_osc;
-            m_osc_pos += m_osc_vel * dt_osc;
-
-            // Clamp travel so the dumbbell never visually escapes the spring.
-            const float max_travel = 0.6f;
-            if (m_osc_pos >  max_travel) { m_osc_pos =  max_travel; m_osc_vel = std::min(m_osc_vel, 0.0f); }
-            if (m_osc_pos < -max_travel) { m_osc_pos = -max_travel; m_osc_vel = std::max(m_osc_vel, 0.0f); }
-
-            // Seat the dumbbell behind the kart and offset along local Z by
-            // the oscillator position (STK local +Z is forward).
-            const float y = std::max(0.20f, m_kart->getHighestPoint() * 0.35f);
-            const float z_rest = -std::max(0.50f, m_kart->getKartLength() * 0.55f);
-            m_node->setPosition(core::vector3df(0.0f, y, z_rest + m_osc_pos));
-        }
     }
     else
         m_node->setVisible(false);
@@ -900,8 +1119,7 @@ void Attachment::updateGraphics(float dt)
  */
 float Attachment::weightAdjust() const
 {
-    return (m_type == ATTACH_MASS_SPIKE ||
-            m_type == ATTACH_SUPERPOSITION_CAT)
+    return (m_type == ATTACH_SUPERPOSITION_CAT)
            ? m_kart->getKartProperties()->getAnvilWeight()
           : 0.0f;
 }   // weightAdjust

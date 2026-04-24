@@ -70,6 +70,7 @@ public:
     void              setMasterMusicVolume(float gain);
     void              resetTemporaryVolume();
     void              setTemporaryVolume(float gain);
+    void              setTemporarySpeed(float speed);
     // ------------------------------------------------------------------------
     /** Returns the master volume. */
     float getMasterMusicVolume() const { return m_master_gain; }
