@@ -155,6 +155,14 @@ KartGFX::KartGFX(const AbstractKart *kart, bool is_day)
         m_all_emitters.push_back(NULL);
 #endif
     }
+    addEffect(KGFX_ROCKETSMOKE1, "rocket_smoke_screen.xml", rear_left, true);
+    addEffect(KGFX_ROCKETSMOKE2, "rocket_smoke_screen.xml", rear_right, true);
+#ifndef SERVER_ONLY
+    if (m_all_emitters[KGFX_ROCKETSMOKE1])
+        m_all_emitters[KGFX_ROCKETSMOKE1]->setHiddenForKart(m_kart);
+    if (m_all_emitters[KGFX_ROCKETSMOKE2])
+        m_all_emitters[KGFX_ROCKETSMOKE2]->setHiddenForKart(m_kart);
+#endif
 
 #endif
 }   // KartGFX
@@ -365,6 +373,14 @@ void KartGFX::setCreationRateAbsolute(KartGFXType type, float f)
         return;
 
     m_all_emitters[type]->setCreationRateAbsolute(f);
+    if (type == KGFX_ZIPPER)
+    {
+        const float smoke_rate = f > 0.0f ? std::min(180.0f, f * 0.225f) : 0.0f;
+        if (m_all_emitters[KGFX_ROCKETSMOKE1])
+            m_all_emitters[KGFX_ROCKETSMOKE1]->setCreationRateAbsolute(smoke_rate);
+        if (m_all_emitters[KGFX_ROCKETSMOKE2])
+            m_all_emitters[KGFX_ROCKETSMOKE2]->setCreationRateAbsolute(smoke_rate);
+    }
 #endif
 }   // setCreationRateAbsolute
 

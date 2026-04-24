@@ -64,6 +64,8 @@ public:
                        KGFX_SKID0R,
                        KGFX_EXHAUST1,
                        KGFX_EXHAUST2,
+                       KGFX_ROCKETSMOKE1,
+                       KGFX_ROCKETSMOKE2,
                        KGFX_COUNT};
 
 private:

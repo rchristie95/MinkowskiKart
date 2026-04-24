@@ -58,6 +58,7 @@
    <sfx filename="race_finish.ogg"      volume="1.0" positional="false" />
    <sfx filename="race_finish_victory.ogg" volume="1.0" positional="false" />
    <sfx filename="rain.ogg"             volume="1.0" positional="false" />
+   <sfx filename="rocket_boost.ogg"     volume="1.0" positional="true" rolloff="0.15" />
    <sfx filename="shoot.ogg"            volume="1.0" positional="true" rolloff="0.1"  />
    <sfx filename="skid.ogg"             volume="1.0" positional="true" rolloff="0.5"  />
    <sfx filename="splash.ogg"           volume="1.0" positional="true" rolloff="0.05" />
