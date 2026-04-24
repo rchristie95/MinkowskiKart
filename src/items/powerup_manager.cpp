@@ -110,10 +110,16 @@ PowerupManager::PowerupType
         "",            /* Nothing */
         "warp-bubble", "asteroid", "black-hole", "zipper", "photon",
         "super_position", "anti-karticle", "wormhole", "time-dilation",
-        "harmonic-oscillator"
+        "maxwell-boltzmann"
     };
 
-    if (lower_name == "harmonic-oscillator"  ||
+    if (lower_name == "maxwell-boltzmann"    ||
+        lower_name == "maxwell_boltzmann"    ||
+        lower_name == "maxwellboltzmann"     ||
+        lower_name == "maxwell-boltzman"     ||
+        lower_name == "maxwell_boltzman"     ||
+        lower_name == "maxwellboltzman"      ||
+        lower_name == "harmonic-oscillator"  ||
         lower_name == "harmonic_oscillator"  ||
         lower_name == "harmonicoscillator"   ||
         lower_name == "mass-spike"           ||

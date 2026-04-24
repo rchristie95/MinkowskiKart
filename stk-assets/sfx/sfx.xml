@@ -48,6 +48,7 @@
    <sfx filename="last_lap_fanfare.ogg" volume="1.0" positional="false" />
    <sfx filename="locked.ogg"           volume="1.0" positional="false" />
    <sfx filename="machine_sound.ogg"    volume="1.0" positional="true" />
+   <sfx filename="metal_clang.ogg"      volume="0.8" positional="true" rolloff="0.5" />
    <sfx filename="nitro.ogg"            volume="1.0" positional="true" rolloff="0.15"  />
    <sfx filename="parachute.ogg"        volume="1.0" positional="true" rolloff="0.5"  />
    <sfx filename="portal.ogg"           volume="1.0" positional="true" />

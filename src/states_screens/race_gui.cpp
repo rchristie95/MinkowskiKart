@@ -28,6 +28,7 @@ using namespace irr;
 #include "challenges/story_mode_timer.hpp"
 #include "challenges/unlock_manager.hpp"
 #include "config/user_config.hpp"
+#include "audio/music_manager.hpp"
 #include "font/font_drawer.hpp"
 #include "graphics/camera/camera.hpp"
 #include "graphics/central_settings.hpp"
@@ -42,6 +43,7 @@ using namespace irr;
 #include "guiengine/modaldialog.hpp"
 #include "guiengine/scalable_font.hpp"
 #include "io/file_manager.hpp"
+#include "items/attachment.hpp"
 #include "items/powerup_manager.hpp"
 #include "items/projectile_manager.hpp"
 #include "karts/abstract_kart.hpp"
@@ -87,10 +89,12 @@ struct RelativisticLapHUDState
 };
 
 std::map<unsigned int, RelativisticLapHUDState> g_relativistic_lap_hud_state;
+bool g_time_dilation_music_slowed = false;
 
 void resetRelativisticLapHUDState()
 {
     g_relativistic_lap_hud_state.clear();
+    g_time_dilation_music_slowed = false;
 }   // resetRelativisticLapHUDState
 
 double getCurrentLapProperTime(const AbstractKart* kart, int finished_laps,
@@ -373,6 +377,30 @@ void RaceGUI::renderGlobal(float dt)
     RaceGUIBase::renderGlobal(dt);
     cleanupMessages(dt);
 
+    bool slow_music = false;
+    World* music_world = World::getWorld();
+    if (music_world)
+    {
+        for (unsigned int i = 0; i < music_world->getNumKarts(); i++)
+        {
+            AbstractKart* kart = music_world->getKart(i);
+            if (kart && kart->getController() &&
+                kart->getController()->isLocalPlayerController() &&
+                kart->getAttachment() &&
+                kart->getAttachment()->getType() ==
+                    Attachment::ATTACH_TIME_DILATION)
+            {
+                slow_music = true;
+                break;
+            }
+        }
+    }
+    if (music_manager && slow_music != g_time_dilation_music_slowed)
+    {
+        music_manager->setTemporarySpeed(slow_music ? 0.5f : 1.0f);
+        g_time_dilation_music_slowed = slow_music;
+    }
+
     // Special case : when 3 players play, use 4th window to display such
     // stuff (but we must clear it)
     if (RaceManager::get()->getIfEmptyScreenSpaceExists() &&
@@ -499,6 +527,7 @@ void RaceGUI::renderPlayerView(const Camera *camera, float dt)
         {
             drawPowerupIcons(kart, viewport, scaling);
             drawSpeedEnergyRank(kart, viewport, scaling, dt);
+            drawBoltzmannStatus(kart, viewport, scaling);
         }
     }
 

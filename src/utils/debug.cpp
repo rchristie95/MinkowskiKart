@@ -222,11 +222,10 @@ void addAttachment(Attachment::AttachmentType type)
         //    continue;
         if (type == Attachment::ATTACH_MASS_SPIKE)
         {
-            // Harmonic oscillator: no direct slowdown, only inertia + oscillation.
             kart->getAttachment()
                 ->set(type,
-                      stk_config->time2Ticks(kart->getKartProperties()
-                                                 ->getAnvilDuration()) );
+                      stk_config->time2Ticks(
+                          Attachment::getMaxwellBoltzmannDurationSeconds()) );
         }
         else if (type == Attachment::ATTACH_TIME_DILATION)
         {
@@ -1117,8 +1116,8 @@ bool handleContextMenuAction(s32 cmd_id)
         {
             new DebugMessageDialog(L"Debug keyboard shortcuts (can conflict with user-defined shortcuts):\n"
                             "* <~> - Show this help dialog | + <Ctrl> - Adjust lights | + <Shift> - Adjust visuals\n"
-                            "* <F1> - Mass Spike powerup | + <Ctrl> - Normal view | + <Shift> - Bomb attachment\n"
-                            "* <F2> - Wormhole powerup | + <Ctrl> - First person view | + <Shift> - Anchor attachment\n"
+                            "* <F1> - Maxwell-Boltzmann powerup | + <Ctrl> - Normal view | + <Shift> - Bomb attachment\n"
+                            "* <F2> - Wormhole powerup | + <Ctrl> - First person view | + <Shift> - Maxwell-Boltzmann attachment\n"
                             "* <F3> - Black Hole powerup | + <Ctrl> - Top view | + <Shift> - Parachute attachment\n"
                             "* <F4> - Warp Bubble powerup | + <Ctrl> - Behind wheel view | + <Shift> - Flatten kart\n"
                             "* <F5> - Asteroid powerup | + <Ctrl> - Behind kart view | + <Shift> - Send photon to kart front\n"
@@ -1313,7 +1312,7 @@ bool onEvent(const SEvent &event)
 
             mnu->addItem(L"Items >",-1,true,true);
             sub = mnu->getSubMenu(3);
-            sub->addItem(L"Mass Spike (F1)", DEBUG_POWERUP_MASS_SPIKE );
+            sub->addItem(L"Maxwell-Boltzmann (F1)", DEBUG_POWERUP_MASS_SPIKE );
             sub->addItem(L"Wormhole (F2)", DEBUG_POWERUP_WORMHOLE );
             sub->addItem(L"Black Hole (F3)", DEBUG_POWERUP_BLACK_HOLE );
             sub->addItem(L"Warp Bubble (F4)", DEBUG_POWERUP_WARP_BUBBLE );
@@ -1328,7 +1327,7 @@ bool onEvent(const SEvent &event)
             mnu->addItem(L"Attachments >",-1,true, true);
             sub = mnu->getSubMenu(4);
             sub->addItem(L"Bomb (Shift + F1)", DEBUG_ATTACHMENT_BOMB);
-            sub->addItem(L"Anchor (Shift + F2)", DEBUG_ATTACHMENT_ANVIL);
+            sub->addItem(L"Maxwell-Boltzmann (Shift + F2)", DEBUG_ATTACHMENT_ANVIL);
             sub->addItem(L"Parachute (Shift + F3)", DEBUG_ATTACHMENT_PARACHUTE);
             sub->addItem(L"Flatten (Shift + F4)", DEBUG_ATTACHMENT_SQUASH);
             sub->addItem(L"Photon (Shift + F5)", DEBUG_ATTACHMENT_PLUNGER);
