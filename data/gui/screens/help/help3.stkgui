@@ -14,8 +14,8 @@
                         I18N="Tab in help menu" text="Game Modes"/>
                 <icon-button id="page3" width="128" height="128" icon="gui/icons/gift.png"
                         I18N="Tab in help menu" text="Powerups"/>
-                <icon-button id="page4" width="128" height="128" icon="gui/icons/banana.png"
-                        I18N="Tab in help menu" text="Bananas"/>
+                <icon-button id="page4" width="128" height="128" icon="gui/icons/compactification-icon.png"
+                        I18N="Tab in help menu" text="Compactifications"/>
                 <icon-button id="page5" width="128" height="128" icon="gui/icons/story_mode_book.png"
                         I18N="Tab in help menu" text="Story Mode"/>
                 <icon-button id="page6" width="128" height="128" icon="gui/icons/mass.png"
@@ -32,7 +32,7 @@
                 <spacer height="2%" width="10"/>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/bubblegum-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/warp-bubble-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%" text="Warp Bubble: Wrap your kart in a local spacetime bubble. Blocks one incoming hit, clears attached hazards, and ignores sticky track traps."/>
                 </div>
@@ -57,14 +57,14 @@
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/bowling-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/black-hole-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
                             text="Pocket Black Hole: Throw a tiny unstable singularity that curves out and back. Great if you aim it well. Terrible if you do not."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/parachute-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/time-dilation-icon.png"/>
                     <spacer width="3%" height="100%"/>
         <bubble proportion="1" height="100%" text="Time-Dilation Field: Trap every other racer in a relativistic slowdown zone. Their speed and acceleration drop while the world smears around them."/>
                 </div>
@@ -72,7 +72,7 @@
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/swap-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Super Position: Bananas and item boxes collapse into a shared pickup. Touch one to get either a random powerup or an immediate banana hit."/>
+                    <bubble proportion="1" height="100%" text="Super Position: Compactifications and item boxes collapse into a shared pickup. Touch one to get either a random powerup or an immediate Compactification hit."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">

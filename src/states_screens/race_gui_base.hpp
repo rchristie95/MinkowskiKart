@@ -164,8 +164,8 @@ protected:
      *  between two slow moving states ('shakily moving') till the end of
      *  the plunger time is nearly reached, then it goes to a very fast
      *  moving state ('plunger blown off'). */
-    enum PlungerState {PLUNGER_STATE_INIT,   PLUNGER_STATE_SLOW_1,
-                       PLUNGER_STATE_SLOW_2, PLUNGER_STATE_FAST}
+    enum PhotonState {PHOTON_STATE_INIT,   PHOTON_STATE_SLOW_1,
+                       PHOTON_STATE_SLOW_2, PHOTON_STATE_FAST}
                         m_plunger_state;
 
     /** How long the plunger should stay in the current state. */
@@ -219,7 +219,7 @@ protected:
     void drawGlobalMusicDescription();
     void drawGlobalReadySetGo();
     void drawGlobalGoal();
-    void drawPlungerInFace(const Camera *camera, float dt);
+    void drawPhotonInFace(const Camera *camera, float dt);
     /** Instructs the base gui to ignore unimportant messages (like
      *  item messages).
      */

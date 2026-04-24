@@ -16,8 +16,8 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#ifndef HEADER_BOWLING_HPP
-#define HEADER_BOWLING_HPP
+#ifndef HEADER_BLACK_HOLE_HPP
+#define HEADER_BLACK_HOLE_HPP
 
 namespace irr
 {
@@ -38,14 +38,14 @@ class SFXBase;
 /**
   * \ingroup items
   */
-class Bowling : public Flyable
+class BlackHole : public Flyable
 {
 private:
-    static float m_st_max_distance;   // maximum distance for a bowling ball to be attracted
+    static float m_st_max_distance;   // maximum distance for a black hole to be attracted
     static float m_st_max_distance_squared;
     static float m_st_force_to_target;
 
-    /** If a bowling ball has hit something, this flag is set to indicate
+    /** If a black hole has hit something, this flag is set to indicate
      *  if a kart was hit or not. The sound effect is only played if a
      *  kart was hit. */
     bool m_has_hit_kart;
@@ -63,15 +63,15 @@ private:
 #endif
 
 public:
-             Bowling(AbstractKart* kart);
-    virtual ~Bowling();
-    static  void init(const XMLNode &node, scene::IMesh *bowling);
+             BlackHole(AbstractKart* kart);
+    virtual ~BlackHole();
+    static  void init(const XMLNode &node, scene::IMesh *black_hole);
     virtual bool updateAndDelete(int ticks) OVERRIDE;
     virtual bool hit(AbstractKart* kart, PhysicalObject* obj=NULL) OVERRIDE;
     virtual HitEffect *getHitEffect() const OVERRIDE;
     // ------------------------------------------------------------------------
     virtual void onFireFlyable() OVERRIDE;
 
-};   // Bowling
+};   // BlackHole
 
 #endif

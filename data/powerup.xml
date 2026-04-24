@@ -14,7 +14,7 @@
         min-height="0.2"       max-height="1.0"
         force-updown="25"      max-distance="90" />
 
-  <!-- POCKET BLACK HOLE: slow homing gravitational ball (Bowling flyable) -->
+  <!-- POCKET BLACK HOLE: slow homing gravitational ball (BlackHole flyable) -->
   <item name="black-hole"      icon="black-hole-icon.png"
         model="bowling.spm"    speed="4.0"
         min-height="0.2"       max-height="1.0"

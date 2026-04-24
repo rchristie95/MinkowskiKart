@@ -59,7 +59,7 @@ msgid "Strike!"
 msgstr "打擊出去！"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "用保齡球打中 10 次賽車。"
 
 #. I18N: ./data/achievements.xml
@@ -115,11 +115,11 @@ msgid ""
 msgstr "在有至少 3 個 AI 的比賽中連續獲勝 5 次。請注意，重新開始比賽也算是一次失敗。"
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "香蕉愛好者"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "在一場比賽中收集到至少 5 個香蕉。"
 
 #. I18N: ./data/achievements.xml
@@ -136,7 +136,7 @@ msgstr "蚊子獵人"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "把你的對手當成蚊子打！在一場比賽中用蒼蠅拍打扁他們至少 5 次。"
 
@@ -1473,7 +1473,7 @@ msgstr "收集藍色的禮物盒，它們會給你強化道具。"
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "避開香蕉皮！"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1602,13 +1602,13 @@ msgstr "蛋糕 - 丟向最近的對手，最好在短距離或是長直賽道使
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "吸盤──直接丟出去來拉著一名對手的背後，或是當向後看時丟出來遮蔽後頭對手的視線。"
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "保齡球 - 在擊中物體前都會直線前進，會被牆壁反彈。如果你在向後看的時候丟出，它就會向後滾。"
 
@@ -1630,13 +1630,13 @@ msgstr "籃球──跳向領頭的賽車手，並一路壓扁並降低經過的
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "蒼蠅拍 - 拍扁靠近的卡丁車，會減慢他們的速度。也可以用於移除降落傘與炸彈。"
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "撞到香蕉可能會導致下面的其中一種東西黏到卡丁車上："
 
@@ -2606,7 +2606,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "在安全的時候，甩尾可以讓您更快。"
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "蒼蠅拍可用於移除炸彈或降落傘。"
 
 #. I18N: ./data/tips.xml
@@ -4596,14 +4596,14 @@ msgstr "（一場比賽）"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "保齡球擊中"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "蒼蠅拍擊中"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4623,7 +4623,7 @@ msgstr "擊中同一台卡丁車"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "已收集的香蕉"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6728,7 +6728,7 @@ msgstr "按下 <%s> 以向後看。\n並按下 <%s> 加上 <%s> 以向後開火�
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "按鏡子的圖示來向後看。\n按住鏡子圖示，然後拖曳到保齡球的圖示上，向後開火！"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

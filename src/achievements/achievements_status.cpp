@@ -127,18 +127,18 @@ void AchievementsStatus::setEnumToString()
     m_ach_enum_to_xml[(int)POWERUP_USED] = "powerup-used";
     m_ach_enum_to_xml[(int)POWERUP_USED_1RACE] = "LOGC-powerup-used-1race";
     m_ach_enum_to_xml[(int)POWERUP_USED_1RACE_MAX] = "LOGM-powerup-used-1race";
-    m_ach_enum_to_xml[(int)BOWLING_HIT] = "bowling-hit";
-    m_ach_enum_to_xml[(int)BOWLING_HIT_1RACE] = "LOGC-bowling-hit-1race";
-    m_ach_enum_to_xml[(int)BOWLING_HIT_1RACE_MAX] = "LOGM-bowling-hit-1race";
-    m_ach_enum_to_xml[(int)SWATTER_HIT] = "swatter-hit";
-    m_ach_enum_to_xml[(int)SWATTER_HIT_1RACE] = "LOGC-swatter-hit-1race";
-    m_ach_enum_to_xml[(int)SWATTER_HIT_1RACE_MAX] = "LOGM-swatter-hit-1race";
+    m_ach_enum_to_xml[(int)BLACK_HOLE_HIT] = "black-hole-hit";
+    m_ach_enum_to_xml[(int)BLACK_HOLE_HIT_1RACE] = "LOGC-black-hole-hit-1race";
+    m_ach_enum_to_xml[(int)BLACK_HOLE_HIT_1RACE_MAX] = "LOGM-black-hole-hit-1race";
+    m_ach_enum_to_xml[(int)ANTI_KARTICLE_HIT] = "anti-karticle-hit";
+    m_ach_enum_to_xml[(int)ANTI_KARTICLE_HIT_1RACE] = "LOGC-anti-karticle-hit-1race";
+    m_ach_enum_to_xml[(int)ANTI_KARTICLE_HIT_1RACE_MAX] = "LOGM-anti-karticle-hit-1race";
     m_ach_enum_to_xml[(int)ALL_HITS] = "all-hits";
     m_ach_enum_to_xml[(int)ALL_HITS_1RACE] = "LOGC-all-hits-1race";
     m_ach_enum_to_xml[(int)ALL_HITS_1RACE_MAX] = "LOGM-all-hits-1race";
-    m_ach_enum_to_xml[(int)BANANA] = "banana";
-    m_ach_enum_to_xml[(int)BANANA_1RACE] = "LOGC-banana-1race";
-    m_ach_enum_to_xml[(int)BANANA_1RACE_MAX] = "LOGM-banana-1race";
+    m_ach_enum_to_xml[(int)COMPACTIFICATION] = "compactification";
+    m_ach_enum_to_xml[(int)COMPACTIFICATION_1RACE] = "LOGC-compactification-1race";
+    m_ach_enum_to_xml[(int)COMPACTIFICATION_1RACE_MAX] = "LOGM-compactification-1race";
     m_ach_enum_to_xml[(int)SKIDDING] = "skidding";
     m_ach_enum_to_xml[(int)SKIDDING_1RACE] = "LOGC-skidding-1race";
     m_ach_enum_to_xml[(int)SKIDDING_1RACE_MAX] = "LOGM-skidding-1race";
@@ -546,26 +546,26 @@ void AchievementsStatus::onRaceEnd(bool aborted)
     if (m_variables[POWERUP_USED_1RACE].counter > m_variables[POWERUP_USED_1RACE_MAX].counter)
         m_variables[POWERUP_USED_1RACE_MAX].counter = m_variables[POWERUP_USED_1RACE].counter;
 
-    if (m_variables[BANANA_1RACE].counter > m_variables[BANANA_1RACE_MAX].counter)
-        m_variables[BANANA_1RACE_MAX].counter = m_variables[BANANA_1RACE].counter;
+    if (m_variables[COMPACTIFICATION_1RACE].counter > m_variables[COMPACTIFICATION_1RACE_MAX].counter)
+        m_variables[COMPACTIFICATION_1RACE_MAX].counter = m_variables[COMPACTIFICATION_1RACE].counter;
 
     if (m_variables[SKIDDING_1RACE].counter > m_variables[SKIDDING_1RACE_MAX].counter)
         m_variables[SKIDDING_1RACE_MAX].counter = m_variables[SKIDDING_1RACE].counter;
 
-    if (m_variables[BOWLING_HIT_1RACE].counter > m_variables[BOWLING_HIT_1RACE_MAX].counter)
-        m_variables[BOWLING_HIT_1RACE_MAX].counter = m_variables[BOWLING_HIT_1RACE].counter;
+    if (m_variables[BLACK_HOLE_HIT_1RACE].counter > m_variables[BLACK_HOLE_HIT_1RACE_MAX].counter)
+        m_variables[BLACK_HOLE_HIT_1RACE_MAX].counter = m_variables[BLACK_HOLE_HIT_1RACE].counter;
 
-    if (m_variables[SWATTER_HIT_1RACE].counter > m_variables[SWATTER_HIT_1RACE_MAX].counter)
-        m_variables[SWATTER_HIT_1RACE_MAX].counter = m_variables[SWATTER_HIT_1RACE].counter;
+    if (m_variables[ANTI_KARTICLE_HIT_1RACE].counter > m_variables[ANTI_KARTICLE_HIT_1RACE_MAX].counter)
+        m_variables[ANTI_KARTICLE_HIT_1RACE_MAX].counter = m_variables[ANTI_KARTICLE_HIT_1RACE].counter;
 
     if (m_variables[ALL_HITS_1RACE].counter > m_variables[ALL_HITS_1RACE_MAX].counter)
         m_variables[ALL_HITS_1RACE_MAX].counter = m_variables[ALL_HITS_1RACE].counter;
 
     m_variables[POWERUP_USED_1RACE].counter = 0;
-    m_variables[BANANA_1RACE].counter = 0;
+    m_variables[COMPACTIFICATION_1RACE].counter = 0;
     m_variables[SKIDDING_1RACE].counter = 0;
-    m_variables[BOWLING_HIT_1RACE].counter = 0;
-    m_variables[SWATTER_HIT_1RACE].counter = 0;
+    m_variables[BLACK_HOLE_HIT_1RACE].counter = 0;
+    m_variables[ANTI_KARTICLE_HIT_1RACE].counter = 0;
     m_variables[ALL_HITS_1RACE].counter = 0;
 
     if (m_variables[CONS_WON_RACES].counter > m_variables[CONS_WON_RACES_MAX].counter)

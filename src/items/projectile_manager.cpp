@@ -1,4 +1,4 @@
-﻿//
+//
 //  SuperTuxKart - a fun racing game with go-kart
 //  Copyright (C) 2006-2015 Joerg Henrichs
 //
@@ -21,12 +21,12 @@
 #include "graphics/explosion.hpp"
 #include "graphics/hit_effect.hpp"
 #include "items/anti_karticle.hpp"
-#include "items/bowling.hpp"
+#include "items/black_hole.hpp"
 #include "items/asteroid.hpp"
-#include "items/plunger.hpp"
+#include "items/photon.hpp"
 #include "items/powerup_manager.hpp"
 #include "items/powerup.hpp"
-#include "items/rubber_ball.hpp"
+#include "items/wormhole.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/controller/controller.hpp"
 #include "modes/world.hpp"
@@ -187,16 +187,16 @@ std::shared_ptr<Flyable>
     switch(type)
     {
         case PowerupManager::POWERUP_BLACK_HOLE:
-            f = std::make_shared<Bowling>(kart);
+            f = std::make_shared<BlackHole>(kart);
             break;
-        case PowerupManager::POWERUP_COSMIC_STRING:
-            f = std::make_shared<Plunger>(kart);
+        case PowerupManager::POWERUP_PHOTON:
+            f = std::make_shared<Photon>(kart);
             break;
         case PowerupManager::POWERUP_ASTEROID:
             f = std::make_shared<Asteroid>(kart);
             break;
         case PowerupManager::POWERUP_WORMHOLE:
-            f = std::make_shared<RubberBall>(kart);
+            f = std::make_shared<Wormhole>(kart);
             break;
         case PowerupManager::POWERUP_ANTI_KARTICLE:
             f = std::make_shared<AntiKarticle>(kart);
@@ -295,12 +295,12 @@ std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
     {
         case PowerupManager::POWERUP_BLACK_HOLE:
         {
-            uid.addUInt8(RN_BOWLING);
+            uid.addUInt8(RN_BLACK_HOLE);
             break;
         }
-        case PowerupManager::POWERUP_COSMIC_STRING:
+        case PowerupManager::POWERUP_PHOTON:
         {
-            uid.addUInt8(RN_PLUNGER);
+            uid.addUInt8(RN_PHOTON);
             break;
         }
         case PowerupManager::POWERUP_ASTEROID:
@@ -310,7 +310,7 @@ std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
         }
         case PowerupManager::POWERUP_WORMHOLE:
         {
-            uid.addUInt8(RN_RUBBERBALL);
+            uid.addUInt8(RN_WORMHOLE);
             break;
         }
         case PowerupManager::POWERUP_ANTI_KARTICLE:
@@ -338,8 +338,8 @@ std::shared_ptr<Rewinder>
     BareNetworkString data(uid.data(), (int)uid.size());
 
     RewinderName rn = (RewinderName)data.getUInt8();
-    if (!(rn == RN_BOWLING || rn == RN_PLUNGER ||
-        rn == RN_CAKE || rn == RN_RUBBERBALL || rn == RN_ANTI_KARTICLE))
+    if (!(rn == RN_BLACK_HOLE || rn == RN_PHOTON ||
+        rn == RN_CAKE || rn == RN_WORMHOLE || rn == RN_ANTI_KARTICLE))
         return nullptr;
 
     AbstractKart* kart = World::getWorld()->getKart(data.getUInt8());
@@ -347,14 +347,14 @@ std::shared_ptr<Rewinder>
     std::shared_ptr<Flyable> f;
     switch (rn)
     {
-        case RN_BOWLING:
+        case RN_BLACK_HOLE:
         {
-            f = std::make_shared<Bowling>(kart);
+            f = std::make_shared<BlackHole>(kart);
             break;
         }
-        case RN_PLUNGER:
+        case RN_PHOTON:
         {
-            f = std::make_shared<Plunger>(kart);
+            f = std::make_shared<Photon>(kart);
             break;
         }
         case RN_CAKE:
@@ -362,9 +362,9 @@ std::shared_ptr<Rewinder>
             f = std::make_shared<Asteroid>(kart);
             break;
         }
-        case RN_RUBBERBALL:
+        case RN_WORMHOLE:
         {
-            f = std::make_shared<RubberBall>(kart);
+            f = std::make_shared<Wormhole>(kart);
             break;
         }
         case RN_ANTI_KARTICLE:

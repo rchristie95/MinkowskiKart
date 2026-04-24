@@ -69,7 +69,7 @@ msgid "Strike!"
 msgstr "Frapita!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Frapu 10 gokartojn kun kegla globo."
 
 #. I18N: ./data/achievements.xml
@@ -125,11 +125,11 @@ msgid ""
 msgstr "Venku 5 ununurajn vetkurojn kontraŭ almenaŭ 3 artefaritaj inteligentoj. Atentu, komenci vetkuron denove kalkulas kiel perdo."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Bananamanto"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Kolektu minimume 5 bananojn en unu vetkuro."
 
 #. I18N: ./data/achievements.xml
@@ -146,7 +146,7 @@ msgstr "Moskitoĉasisto"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Prenu viajn kontraŭulojn kiel muŝojn! Per la muŝbatilo, platpremu ilin almenaŭ 5 fojojn en vetkuro."
 
@@ -1483,7 +1483,7 @@ msgstr "Kolektu bluajn donacajn ujojn, ili donos vin plifortigilojn."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Evitu la bananojn!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1612,13 +1612,13 @@ msgstr ""
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Malŝtopilo - ĵetu rekten por malantaŭtiri kontraŭulojn, aŭ ĵetu vidante malantaŭen por malebligi bonvidon de kontraŭulo."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr ""
 
@@ -1640,13 +1640,13 @@ msgstr "Basketpilko - resaltas post la gvidisto kaj eble platigas kaj malrapidig
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr ""
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Se vi trafus bananon, unu el la jenaj povas alkroĉiĝi al via gokarto:"
 
@@ -2616,7 +2616,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr ""
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr ""
 
 #. I18N: ./data/tips.xml
@@ -4610,14 +4610,14 @@ msgstr "(1 vetkuro)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Kegloglobaj frapoj"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Muŝbatilaj frapoj"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4637,7 +4637,7 @@ msgstr "Frapoj kontraŭ la sama gokarto"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Kolektitaj bananoj"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6745,7 +6745,7 @@ msgstr ""
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr ""
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

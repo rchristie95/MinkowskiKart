@@ -48,14 +48,14 @@ static const initAttachmentType iat[]=
 {
     {Attachment::ATTACH_TIME_DILATION,     "parachute.spm",        "time-dilation-icon.png"       },
     {Attachment::ATTACH_BOMB,             "bomb.spm",             "bomb-attach-icon.png"         },
-    {Attachment::ATTACH_MASS_SPIKE,       "bomb.spm",              "maxwell-boltzmann-icon.png"  },
+    {Attachment::ATTACH_MAXWELL_BOLTZMANN,       "bomb.spm",              "maxwell-boltzmann-icon.png"  },
     {Attachment::ATTACH_SUPERPOSITION_CAT, "superposition-cat.spm", "super-position-icon.png"      },
-    {Attachment::ATTACH_TIDAL_ARM,        "swatter.spm",          "swatter-icon.png"             },
-    {Attachment::ATTACH_NOLOKS_SWATTER,   "swatter_nolok.spm",    "swatter-icon.png"             },
-    {Attachment::ATTACH_TIDAL_ARM_ANIM,   "swatter_anim.spm",     "swatter-icon.png"             },
+    {Attachment::ATTACH_ANTI_KARTICLE,        "Swatter.spm",          "Swatter-icon.png"             },
+    {Attachment::ATTACH_NOLOKS_SWATTER,   "Swatter_nolok.spm",    "Swatter-icon.png"             },
+    {Attachment::ATTACH_ANTI_KARTICLE_ANIM,   "Swatter_anim.spm",     "Swatter-icon.png"             },
     {Attachment::ATTACH_WARP_BUBBLE,      "bubblegum_shield.spm", "shield-icon.png"              },
     {Attachment::ATTACH_NOLOK_WARP_BUBBLE, "bubblegum_shield_nolok.spm", "shield-icon.png"              },
-    {Attachment::ATTACH_COMPACTIFICATION, "parachute.spm",         "banana.png"                   },
+    {Attachment::ATTACH_COMPACTIFICATION, "parachute.spm",         "compactification-icon.png"    },
     {Attachment::ATTACH_MAX,              "",                     ""                             },
 };
 

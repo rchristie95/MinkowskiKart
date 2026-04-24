@@ -120,13 +120,13 @@ enum DebugMenuCommand
     DEBUG_SAVE_HISTORY,
     DEBUG_SAVE_SCREENSHOT,
     DEBUG_DUMP_RTT,
-    DEBUG_POWERUP_MASS_SPIKE,
+    DEBUG_POWERUP_MAXWELL_BOLTZMANN,
     DEBUG_POWERUP_BLACK_HOLE,
     DEBUG_POWERUP_WARP_BUBBLE,
     DEBUG_POWERUP_WORMHOLE,
     DEBUG_POWERUP_ASTEROID,
     DEBUG_POWERUP_TIME_DILATION,
-    DEBUG_POWERUP_COSMIC_STRING,
+    DEBUG_POWERUP_PHOTON,
     DEBUG_POWERUP_ANTI_KARTICLE,
     DEBUG_POWERUP_SUPER_POSITION,
     DEBUG_POWERUP_ZIPPER,
@@ -138,7 +138,7 @@ enum DebugMenuCommand
     DEBUG_ATTACHMENT_BOMB,
     DEBUG_ATTACHMENT_ANVIL,
     DEBUG_ATTACHMENT_SQUASH,
-    DEBUG_ATTACHMENT_PLUNGER,
+    DEBUG_ATTACHMENT_PHOTON,
     DEBUG_ATTACHMENT_EXPLOSION,
     DEBUG_ATTACHMENT_NOTHING,
     DEBUG_GUI_TOGGLE,
@@ -220,7 +220,7 @@ void addAttachment(Attachment::AttachmentType type)
            continue;
         //if (!kart->getController()->isLocalPlayerController())
         //    continue;
-        if (type == Attachment::ATTACH_MASS_SPIKE)
+        if (type == Attachment::ATTACH_MAXWELL_BOLTZMANN)
         {
             kart->getAttachment()
                 ->set(type,
@@ -231,7 +231,7 @@ void addAttachment(Attachment::AttachmentType type)
         {
             kart->getAttachment()
                 ->set(type, stk_config->time2Ticks(
-                kart->getKartProperties()->getParachuteDuration()));
+                kart->getKartProperties()->getTimeDilationDuration()));
         }
         else if (type == Attachment::ATTACH_BOMB)
         {
@@ -601,8 +601,8 @@ bool handleContextMenuAction(s32 cmd_id)
         if (!world) return false;
         history->Save();
         break;
-    case DEBUG_POWERUP_MASS_SPIKE:
-        addPowerup(PowerupManager::POWERUP_MASS_SPIKE, 255);
+    case DEBUG_POWERUP_MAXWELL_BOLTZMANN:
+        addPowerup(PowerupManager::POWERUP_MAXWELL_BOLTZMANN, 255);
         break;
     case DEBUG_POWERUP_BLACK_HOLE:
         addPowerup(PowerupManager::POWERUP_BLACK_HOLE, 255);
@@ -619,8 +619,8 @@ bool handleContextMenuAction(s32 cmd_id)
     case DEBUG_POWERUP_TIME_DILATION:
         addPowerup(PowerupManager::POWERUP_TIME_DILATION, 255);
         break;
-    case DEBUG_POWERUP_COSMIC_STRING:
-        addPowerup(PowerupManager::POWERUP_COSMIC_STRING, 255);
+    case DEBUG_POWERUP_PHOTON:
+        addPowerup(PowerupManager::POWERUP_PHOTON, 255);
         break;
     case DEBUG_POWERUP_ANTI_KARTICLE:
         addPowerup(PowerupManager::POWERUP_ANTI_KARTICLE, 255);
@@ -670,7 +670,7 @@ bool handleContextMenuAction(s32 cmd_id)
         break;
     }
     case DEBUG_ATTACHMENT_ANVIL:
-        addAttachment(Attachment::ATTACH_MASS_SPIKE);
+        addAttachment(Attachment::ATTACH_MAXWELL_BOLTZMANN);
         break;
     case DEBUG_ATTACHMENT_BOMB:
         addAttachment(Attachment::ATTACH_BOMB);
@@ -683,14 +683,14 @@ bool handleContextMenuAction(s32 cmd_id)
         {
             AbstractKart* kart = world->getLocalPlayerKart(i);
             const KartProperties *kp = kart->getKartProperties();
-            kart->setSquash(kp->getSwatterSquashDuration(), kp->getSwatterSquashSlowdown());
+            kart->setSquash(kp->getAntiKarticleSquashDuration(), kp->getAntiKarticleSquashSlowdown());
         }
         break;
-    case DEBUG_ATTACHMENT_PLUNGER:
+    case DEBUG_ATTACHMENT_PHOTON:
         for (unsigned int i = 0; i < RaceManager::get()->getNumLocalPlayers(); i++)
         {
             AbstractKart* kart = world->getLocalPlayerKart(i);
-            kart->blockViewWithPlunger();
+            kart->blockViewWithPhoton();
         }
         break;
     case DEBUG_ATTACHMENT_EXPLOSION:
@@ -1123,7 +1123,7 @@ bool handleContextMenuAction(s32 cmd_id)
                             "* <F5> - Asteroid powerup | + <Ctrl> - Behind kart view | + <Shift> - Send photon to kart front\n"
                             "* <F6> - Time Dilation powerup | + <Ctrl> - Right side of kart view | + <Shift> - Explode kart\n"
                             "* <F7> - Photon powerup | + <Ctrl> - Left side of kart view | + <Shift> - Scripting console\n"
-                            "* <F8> - Anti-Karticle powerup | + <Ctrl> - Front of kart view | + <Shift> - Texture console\n"
+                            "* <F8> - Swatter powerup | + <Ctrl> - Front of kart view | + <Shift> - Texture console\n"
                             "* <F9> - Switch powerup | + <Ctrl> - Kart number slider | + <Shift> - Run cutscene(s)\n"
                             "* <F10> - Zipper powerup | + <Ctrl> - Powerup amount slider | + <Shift> - Toggle GUI\n"
                             "* <F11> - Save replay | + <Ctrl> - Save history | + <Shift> - Dump RTT\n"
@@ -1312,14 +1312,14 @@ bool onEvent(const SEvent &event)
 
             mnu->addItem(L"Items >",-1,true,true);
             sub = mnu->getSubMenu(3);
-            sub->addItem(L"Maxwell-Boltzmann (F1)", DEBUG_POWERUP_MASS_SPIKE );
+            sub->addItem(L"Maxwell-Boltzmann (F1)", DEBUG_POWERUP_MAXWELL_BOLTZMANN );
             sub->addItem(L"Wormhole (F2)", DEBUG_POWERUP_WORMHOLE );
             sub->addItem(L"Black Hole (F3)", DEBUG_POWERUP_BLACK_HOLE );
             sub->addItem(L"Warp Bubble (F4)", DEBUG_POWERUP_WARP_BUBBLE );
             sub->addItem(L"Asteroid (F5)", DEBUG_POWERUP_ASTEROID );
             sub->addItem(L"Time Dilation (F6)", DEBUG_POWERUP_TIME_DILATION );
-            sub->addItem(L"Photon (F7)", DEBUG_POWERUP_COSMIC_STRING );
-            sub->addItem(L"Anti-Karticle (F8)", DEBUG_POWERUP_ANTI_KARTICLE );
+            sub->addItem(L"Photon (F7)", DEBUG_POWERUP_PHOTON );
+            sub->addItem(L"Swatter (F8)", DEBUG_POWERUP_ANTI_KARTICLE );
             sub->addItem(L"Super Position (F9)", DEBUG_POWERUP_SUPER_POSITION );
             sub->addItem(L"Zipper (F10)", DEBUG_POWERUP_ZIPPER );
             sub->addItem(L"Nitro (Insert)", DEBUG_POWERUP_NITRO );
@@ -1330,7 +1330,7 @@ bool onEvent(const SEvent &event)
             sub->addItem(L"Maxwell-Boltzmann (Shift + F2)", DEBUG_ATTACHMENT_ANVIL);
             sub->addItem(L"Parachute (Shift + F3)", DEBUG_ATTACHMENT_PARACHUTE);
             sub->addItem(L"Flatten (Shift + F4)", DEBUG_ATTACHMENT_SQUASH);
-            sub->addItem(L"Photon (Shift + F5)", DEBUG_ATTACHMENT_PLUNGER);
+            sub->addItem(L"Photon (Shift + F5)", DEBUG_ATTACHMENT_PHOTON);
             sub->addItem(L"Explosion (Shift + F6)", DEBUG_ATTACHMENT_EXPLOSION);
 
             mnu->addItem(L"Modify kart items >",-1,true, true);
@@ -1492,7 +1492,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_MASS_SPIKE);
+                    handleContextMenuAction(DEBUG_POWERUP_MAXWELL_BOLTZMANN);
                 }
                 break;
             }
@@ -1552,7 +1552,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else if (shift_pressed)
                 {
-                    handleContextMenuAction(DEBUG_ATTACHMENT_PLUNGER);
+                    handleContextMenuAction(DEBUG_ATTACHMENT_PHOTON);
                 }
                 else
                 {
@@ -1588,7 +1588,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
                 }
                 else
                 {
-                    handleContextMenuAction(DEBUG_POWERUP_COSMIC_STRING);
+                    handleContextMenuAction(DEBUG_POWERUP_PHOTON);
                 }
                 break;
             }

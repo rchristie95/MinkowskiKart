@@ -429,8 +429,8 @@ void Physics::update(int ticks)
                 const KartProperties *kp = kart->getKartProperties();
                 // Count squash only once from original state
                 bool was_squashed = kart->isSquashed();
-                if (kart->setSquash(kp->getSwatterSquashDuration(),
-                    kp->getSwatterSquashSlowdown()) && !was_squashed)
+                if (kart->setSquash(kp->getAntiKarticleSquashDuration(),
+                    kp->getAntiKarticleSquashSlowdown()) && !was_squashed)
                 {
                     World::getWorld()->kartHit(kart->getWorldKartId());
                 }
@@ -469,8 +469,8 @@ void Physics::update(int ticks)
 
                 // Count squash only once from original state
                 bool was_squashed = kart->isSquashed();
-                if (kart->setSquash(kp->getSwatterSquashDuration(),
-                    kp->getSwatterSquashSlowdown()) && !was_squashed)
+                if (kart->setSquash(kp->getAntiKarticleSquashDuration(),
+                    kp->getAntiKarticleSquashSlowdown()) && !was_squashed)
                 {
                     World::getWorld()->kartHit(kart->getWorldKartId());
                 }
@@ -520,7 +520,7 @@ void Physics::update(int ticks)
         {
             // Projectile hits kart
             // --------------------
-            // Only explode a bowling ball if the target is
+            // Only explode a black hole if the target is
             // not invulnerable
             AbstractKart* target_kart = p->getUserPointer(1)->getPointerKart();
             PowerupManager::PowerupType type = p->getUserPointer(0)->getPointerFlyable()->getType();
@@ -542,10 +542,10 @@ void Physics::update(int ticks)
                 {
                     if (type == PowerupManager::POWERUP_BLACK_HOLE)
                     {
-                        PlayerManager::increaseAchievement(AchievementsStatus::BOWLING_HIT, 1);
+                        PlayerManager::increaseAchievement(AchievementsStatus::BLACK_HOLE_HIT, 1);
                         if (RaceManager::get()->isLinearRaceMode())
-                            PlayerManager::increaseAchievement(AchievementsStatus::BOWLING_HIT_1RACE, 1);
-                    }   // is bowling ball
+                            PlayerManager::increaseAchievement(AchievementsStatus::BLACK_HOLE_HIT_1RACE, 1);
+                    }   // is black hole
                 }   // if target_kart != kart && is a player kart and is current player
             }
 

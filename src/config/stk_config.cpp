@@ -155,7 +155,7 @@ void STKConfig::load(const std::string &filename)
     }
     CHECK_NEG(m_max_karts,                 "<karts max=..."             );
     CHECK_NEG(m_item_switch_ticks,         "item switch-time"           );
-    CHECK_NEG(m_bubblegum_counter,         "bubblegum disappear counter");
+    CHECK_NEG(m_warp_bubble_counter,         "bubblegum disappear counter");
     CHECK_NEG(m_explosion_impulse_objects, "explosion-impulse-objects"  );
     CHECK_NEG(m_max_skidmarks,             "max-skidmarks"              );
     CHECK_NEG(m_min_kart_version,          "<kart-version min...>"      );
@@ -191,8 +191,8 @@ void STKConfig::load(const std::string &filename)
     CHECK_NEG(m_snb_adjust_length_threshold, "network smoothing: adjust-length-threshold");
     CHECK_NEG(m_bonusbox_item_return_ticks, "bonus box return time");
     CHECK_NEG(m_nitro_item_return_ticks, "nitro return time");
-    CHECK_NEG(m_banana_item_return_ticks, "banana return time");
-    CHECK_NEG(m_bubblegum_item_return_ticks, "bubble gum return time");
+    CHECK_NEG(m_compactification_item_return_ticks, "compactification return time");
+    CHECK_NEG(m_warp_bubble_item_return_ticks, "warp bubble return time");
 
     if (m_relativity_enabled)
     {
@@ -229,7 +229,7 @@ void STKConfig::init_defaults()
     m_item_switch_ticks          = -100;
     m_penalty_ticks              = -100;
     m_physics_fps                = -100;
-    m_bubblegum_counter          = -100;
+    m_warp_bubble_counter          = -100;
     m_shield_restrict_weapons    = false;
     m_max_karts                  = -100;
     m_max_skidmarks              = -100;
@@ -282,8 +282,8 @@ void STKConfig::init_defaults()
 
     m_bonusbox_item_return_ticks  = -100;
     m_nitro_item_return_ticks     = -100;
-    m_banana_item_return_ticks    = -100;
-    m_bubblegum_item_return_ticks = -100;
+    m_compactification_item_return_ticks = -100;
+    m_warp_bubble_item_return_ticks      = -100;
 
     m_score_increase.clear();
     m_leader_intervals.clear();
@@ -517,10 +517,12 @@ void STKConfig::getAllData(const XMLNode * root)
             m_bonusbox_item_return_ticks = time2Ticks(f);
         if(item_return_node->get("nitro", &f))
             m_nitro_item_return_ticks = time2Ticks(f);
-        if(item_return_node->get("banana", &f))
-            m_banana_item_return_ticks = time2Ticks(f);
-        if(item_return_node->get("bubblegum", &f))
-            m_bubblegum_item_return_ticks = time2Ticks(f);
+        if(item_return_node->get("compactification", &f) ||
+           item_return_node->get("banana", &f))
+            m_compactification_item_return_ticks = time2Ticks(f);
+        if(item_return_node->get("warp-bubble", &f) ||
+           item_return_node->get("bubblegum", &f))
+            m_warp_bubble_item_return_ticks = time2Ticks(f);
     }
 
     if(const XMLNode *powerup_node= root->getNode("powerup"))
@@ -550,9 +552,11 @@ void STKConfig::getAllData(const XMLNode * root)
             m_item_switch_ticks = stk_config->time2Ticks(f);
     }
 
-    if(const XMLNode *bubblegum_node= root->getNode("bubblegum"))
+    if(const XMLNode *bubblegum_node =
+        root->getNode("warp-bubble") != NULL ?
+        root->getNode("warp-bubble") : root->getNode("bubblegum"))
     {
-        bubblegum_node->get("disappear-counter", &m_bubblegum_counter      );
+        bubblegum_node->get("disappear-counter", &m_warp_bubble_counter      );
         bubblegum_node->get("restrict-weapons",  &m_shield_restrict_weapons);
     }
 

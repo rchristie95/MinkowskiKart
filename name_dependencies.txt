@@ -1,0 +1,83 @@
+Current Powerup Names (Minkowski Kart):
+1. Warp Bubble
+2. Asteroid
+3. Black Hole
+4. Zipper
+5. Photon
+6. Superposition (Quantum Superposition)
+7. Anti-Karticle
+8. Wormhole
+9. Time-Dilation (Time-Dilation Field)
+10. Maxwell-Boltzmann
+
+Debuffs / Item Hits:
+- Compactification (Default hit from "banana" item)
+- Cat (50/50 chance hit from "banana" item when Superposition is active)
+
+Outdated / Legacy Names and Dependencies:
+
+- Warp Bubble (Current) -> Outdated: Bubblegum
+  - stk_config.xml: <item-return-time bubblegum="2.0">, <bubblegum> configuration section
+  - src/karts/kart_properties.hpp: getBubblegumDuration(), getBubblegumSpeedFraction(), etc.
+  - src/karts/xml_characteristic.cpp: node->getNode("bubblegum")
+  - src/items/item.hpp: ITEM_BUBBLEGUM enum value
+  - src/items/item_manager.cpp: item_names[ItemState::ITEM_BUBBLEGUM] = "bubblegum"
+  - src/items/attachment.hpp: ATTACH_WARP_BUBBLE was ATTACH_BUBBLEGUM_SHIELD
+  - src/items/attachment.cpp: m_bubble_explode_sound uses SFX "bubblegum_explode", dropNewItem(Item::ITEM_BUBBLEGUM)
+
+- Asteroid (Current) -> Outdated: Cake, Neutron Star
+  - src/items/projectile_manager.cpp: RN_CAKE enum (for networking)
+  - src/items/powerup_manager.cpp: getPowerupType checks for "cake", "neutron-star", "neutronstar"
+  - src/items/powerup_manager.hpp: POWERUP_NEUTRON_STAR and POWERUP_CAKE enum aliases
+
+- Black Hole (Current) -> Outdated: Bowling
+  - src/items/projectile_manager.cpp: RN_BOWLING enum (for networking)
+  - src/items/powerup.cpp: Uses SFX "bowling_shoot"
+  - stk-assets/sfx/sfx.xml: "bowling_roll.ogg", "bowling_shoot.ogg"
+  - src/items/powerup_manager.cpp: loadPowerup() switch case POWERUP_BLACK_HOLE calls Bowling::init()
+  - src/items/bowling.cpp/hpp: Class names and file names still use "Bowling"
+
+- Photon (Current) -> Outdated: Plunger, Cosmic String
+  - src/karts/kart_properties.hpp: getPlungerBandMaxLength(), etc.
+  - src/karts/xml_characteristic.cpp: node->getNode("plunger")
+  - src/items/projectile_manager.cpp: RN_PLUNGER enum (for networking)
+  - src/items/powerup_manager.hpp: POWERUP_COSMIC_STRING enum name
+  - src/items/plunger.cpp/hpp: Class names and file names still use "Plunger"
+
+- Superposition (Current) -> Outdated: Switch, Frame-Shift
+  - src/items/powerup_manager.cpp: getPowerupType checks for "frame-shift", "frame_shift", "frameshift"
+  - src/items/powerup_manager.hpp: POWERUP_FRAME_SHIFT enum alias
+  - src/items/powerup.cpp: Uses SFX "swap" (historically switch sound)
+
+- Anti-Karticle (Current) -> Outdated: Swatter, Tidal-Arm
+  - src/karts/kart_properties.hpp: getSwatterDuration(), getSwatterDistance(), etc.
+  - src/karts/xml_characteristic.cpp: node->getNode("swatter")
+  - src/items/powerup_manager.cpp: getPowerupType checks for "swatter", "tidal-arm", "tidal_arm"
+  - src/items/powerup_manager.hpp: POWERUP_TIDAL_ARM enum alias
+  - src/items/anti_karticle.cpp: Refers to Tidal Arm in comments
+
+- Wormhole (Current) -> Outdated: Rubber Ball, Geodesic-Missile
+  - src/items/projectile_manager.cpp: RN_RUBBERBALL enum (for networking)
+  - src/items/powerup_manager.cpp: getPowerupType checks for "rubber-ball", "geodesic-missile", "geodesic_missile"
+  - src/items/powerup_manager.hpp: POWERUP_GEODESIC_MISSILE enum alias
+  - src/items/rubber_ball.cpp/hpp: Class names and file names still use "RubberBall"
+
+- Time-Dilation (Current) -> Outdated: Parachute
+  - src/karts/kart_properties.hpp: getParachuteFriction(), getParachuteDuration(), etc.
+  - src/karts/xml_characteristic.cpp: node->getNode("parachute")
+  - src/items/powerup.cpp: Uses SFX "parachute"
+  - src/items/attachment.hpp: ATTACH_TIME_DILATION was ATTACH_PARACHUTE
+
+- Maxwell-Boltzmann (Current) -> Outdated: Anvil, Anchor, Mass-Spike, Harmonic-Oscillator
+  - src/karts/kart_properties.hpp: getAnvilDuration(), getAnvilWeight(), getAnvilSpeedFactor()
+  - src/karts/xml_characteristic.cpp: node->getNode("anvil")
+  - src/items/powerup.cpp: Uses SFX "anvil"
+  - src/items/powerup_manager.cpp: getPowerupType checks for "harmonic-oscillator", "anvil", "anchor", "mass-spike"
+  - src/items/powerup_manager.hpp: POWERUP_MASS_SPIKE (enum name), POWERUP_MAXWELL_BOLTZMANN and POWERUP_HARMONIC_OSCILLATOR (aliases)
+  - src/items/attachment.hpp: ATTACH_MASS_SPIKE was ATTACH_ANVIL
+
+Debuff / Banana Inconsistencies:
+- "banana" item name is still used in powerup.xml and items.xml, but it creates the "Compactification" effect.
+- "banana" hit achievement is still named BANANA.
+- "Cat" debuff (ATTACH_SUPERPOSITION_CAT) uses the "anvil" weight property: weightAdjust() returns getAnvilWeight().
+- "Compactification" debuff (ATTACH_COMPACTIFICATION) uses the "parachute" duration property: kp->getParachuteDurationOther() * 2.0f.

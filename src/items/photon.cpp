@@ -19,7 +19,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#include "items/plunger.hpp"
+#include "items/photon.hpp"
 
 #include "audio/sfx_manager.hpp"
 #include "io/xml_node.hpp"
@@ -39,24 +39,24 @@
 #include <ISceneNode.h>
 
 // -----------------------------------------------------------------------------
-Plunger::Plunger(AbstractKart *kart)
-       : Flyable(kart, PowerupManager::POWERUP_COSMIC_STRING)
+Photon::Photon(AbstractKart *kart)
+       : Flyable(kart, PowerupManager::POWERUP_PHOTON)
 {
     m_has_locally_played_sound = false;
     m_moved_to_infinity = false;
     m_reverse_mode = false;
     m_rubber_band = NULL;
-}   // Plunger
+}   // Photon
 
 // ----------------------------------------------------------------------------
-Plunger::~Plunger()
+Photon::~Photon()
 {
     if(m_rubber_band)
         delete m_rubber_band;
-}   // ~Plunger
+}   // ~Photon
 
 // ----------------------------------------------------------------------------
-void Plunger::onFireFlyable()
+void Photon::onFireFlyable()
 {
     Flyable::onFireFlyable();
     m_has_locally_played_sound = false;
@@ -136,13 +136,13 @@ void Plunger::onFireFlyable()
 }   // onFireFlyable
 
 // ----------------------------------------------------------------------------
-void Plunger::init(const XMLNode &node, scene::IMesh *plunger_model)
+void Photon::init(const XMLNode &node, scene::IMesh *plunger_model)
 {
-    Flyable::init(node, plunger_model, PowerupManager::POWERUP_COSMIC_STRING);
+    Flyable::init(node, plunger_model, PowerupManager::POWERUP_PHOTON);
 }   // init
 
 // ----------------------------------------------------------------------------
-void Plunger::updateGraphics(float dt)
+void Photon::updateGraphics(float dt)
 {
     Flyable::updateGraphics(dt);
 #ifndef SERVER_ONLY
@@ -162,7 +162,7 @@ void Plunger::updateGraphics(float dt)
  *  \param dt Time step size.
  *  \returns True of this object should be removed.
  */
-bool Plunger::updateAndDelete(int ticks)
+bool Photon::updateAndDelete(int ticks)
 {
     // In keep-alive mode, just update the rubber band
     if(m_keep_alive >= 0)
@@ -194,7 +194,7 @@ bool Plunger::updateAndDelete(int ticks)
  *  \returns True if there was actually a hit (i.e. not owner, and target is
  *           not immune), false otherwise.
  */
-bool Plunger::hit(AbstractKart *kart, PhysicalObject *obj)
+bool Photon::hit(AbstractKart *kart, PhysicalObject *obj)
 {
     if (isOwnerImmunity(kart) || m_moved_to_infinity || !m_has_server_state)
         return false;
@@ -205,7 +205,7 @@ bool Plunger::hit(AbstractKart *kart, PhysicalObject *obj)
     {
         if(kart)
         {
-            kart->blockViewWithPlunger();
+            kart->blockViewWithPhoton();
             if (kart->getController()->isLocalPlayerController() &&
                 !m_has_locally_played_sound)
             {
@@ -222,10 +222,10 @@ bool Plunger::hit(AbstractKart *kart, PhysicalObject *obj)
     else
     {
         m_keep_alive = (int16_t)stk_config->time2Ticks(m_owner->getKartProperties()
-            ->getPlungerBandDuration());
+            ->getPhotonBandDuration());
         if(kart)
         {
-            kart->blockViewWithPlunger();
+            kart->blockViewWithPhoton();
             m_rubber_band->hit(kart);
         }
         else if(obj)
@@ -250,7 +250,7 @@ bool Plunger::hit(AbstractKart *kart, PhysicalObject *obj)
 /** Called when the plunger hits the track. In this case, notify the rubber
  *  band, and remove the plunger (but keep it alive).
  */
-void Plunger::hitTrack()
+void Photon::hitTrack()
 {
     if (m_moved_to_infinity || !m_has_server_state)
         return;
@@ -258,7 +258,7 @@ void Plunger::hitTrack()
 }   // hitTrack
 
 // ----------------------------------------------------------------------------
-BareNetworkString* Plunger::saveState(std::vector<std::string>* ru)
+BareNetworkString* Photon::saveState(std::vector<std::string>* ru)
 {
     BareNetworkString* buffer = Flyable::saveState(ru);
     if (!buffer)
@@ -273,11 +273,11 @@ BareNetworkString* Plunger::saveState(std::vector<std::string>* ru)
 }   // saveState
 
 // ----------------------------------------------------------------------------
-void Plunger::restoreState(BareNetworkString *buffer, int count)
+void Photon::restoreState(BareNetworkString *buffer, int count)
 {
     Flyable::restoreState(buffer, count);
     m_keep_alive = buffer->getUInt16();
-    // Restore position base on m_keep_alive in Plunger::hit
+    // Restore position base on m_keep_alive in Photon::hit
     if (m_keep_alive == -1)
         m_moved_to_infinity = false;
     else
@@ -305,7 +305,7 @@ void Plunger::restoreState(BareNetworkString *buffer, int count)
 }   // restoreState
 
 // ----------------------------------------------------------------------------
-void Plunger::onDeleteFlyable()
+void Photon::onDeleteFlyable()
 {
     Flyable::onDeleteFlyable();
     if (m_rubber_band)

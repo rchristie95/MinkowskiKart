@@ -65,7 +65,7 @@ msgid "Strike!"
 msgstr "Strike!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Χτύπησε 10 καρτ με την μπάλα μπόουλινγκ."
 
 #. I18N: ./data/achievements.xml
@@ -121,11 +121,11 @@ msgid ""
 msgstr "Κέρδισε 5 αγώνες στην σειρά ενάντια σε τουλάχιστον 3 ρομπότ σε ατομικό αγωνά. Προσοχή, επανακίνηση του αγώνα μετράει ότι έχασες."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Μπανανάκιας"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Μάζεψε τουλάχιστον 5 μπανάνες σε έναν αγώνα."
 
 #. I18N: ./data/achievements.xml
@@ -142,7 +142,7 @@ msgstr "Κυνηγός κουνουπιών"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Να φέρεσαι στους αντιπάλους σου σαν κουνούπια! Με την μυγοσκοτώστρα, λιώσε τους τουλάχιστον 5 φορές σε έναν αγώνα."
 
@@ -1422,7 +1422,7 @@ msgstr "Μάζεψε δώρα, θα σου δώσουνε διάφορα powerup
 #. I18N: ./data/gui/screens/help1.stkgui
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Απέφυγε τις μπανάνες!"
 
 #. I18N: ./data/gui/screens/help1.stkgui
@@ -1551,13 +1551,13 @@ msgstr "Κεκάκι - πέταξε το κεκάκι σε έναν κοντιν
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Βεντούζα - ρίξε ευθεία για να τραβήξεις ένα αντίπαλο πίσω, ή ρίξε καθώς κοιτάς πίσω για να κάνεις κάποιον να χάσει την ορατότητα του."
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Μπάλα Μπόουλινγκ - πηγαίνει ευθεία μέχρι να χτυπήσει κάποιον, μπορεί να κάνει γκελ στους τοίχους. Άμα κοιτάς πίσω θα πεταχτεί προς τα πίσω."
 
@@ -1579,13 +1579,13 @@ msgstr "Μπάλα μπάσκετ - αναπηδά προς τον αρχηγό,
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Μυγοσκοτώστρα - θα λιώσει τα kart που περνάνε από κοντά και θα τα επιβραδύνει. Μπορεί επίσης να χρησιμοποιηθεί για να αφαιρέσει αλεξίπτωτα και βόμβες."
 
 #. I18N: ./data/gui/screens/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Χτυπώντας μια μπανάνα, έχει ως αποτέλεσμα ένα από τα ακόλουθα να προσαρτηθούν στο kart:"
 
@@ -2487,7 +2487,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Το Drift σου δίνει ώθηση, κάντο όταν είναι ασφαλές."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Η μυγοσκοτώστρα μπορεί να χρησιμοποιηθεί για να αφερέσει βόμβες η αλεξίπτωτα."
 
 #. I18N: ./data/tips.xml
@@ -4413,14 +4413,14 @@ msgstr "(1 αγώνας)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Χτυπήματα με την μπάλα του bowling"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Χτυπήματα με την μυγοσκοτώστρα"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4440,7 +4440,7 @@ msgstr "Χτυπήματα ενάντια στο ίδιο kart"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Μπανάνες μαζεύτηκαν"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6371,7 +6371,7 @@ msgstr "Πατήστε <%s> για να δείτε πίσω.\nΕκτοξεύστ
 #: ../stk-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Πατήστε το εικονίδιο του καθρέπτη για να κοιτάξετε πίσω σας.\nΠυροβολήστε με το όπλο προς τα πίσω κρατώντας πατημένο το εικονίδιο του καθρέπτη και έπειτα σύρετε στο εικονίδιο του μπόουλινγκ!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

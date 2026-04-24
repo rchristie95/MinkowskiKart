@@ -50,7 +50,7 @@ msgid "Strike!"
 msgstr "Ergyd!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Taro 10 cart gyda phêl fowlio."
 
 #. I18N: ./data/achievements.xml
@@ -106,11 +106,11 @@ msgid ""
 msgstr "Enilla 5 ras unigol yn olynol yn erbyn o leiaf 3 AI. Bydd yn ofalus, mae ailgychwyn ras yn cyfrif fel colled."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Carwr Bananas"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Casgla o leiaf 5 banana mewn un ras."
 
 #. I18N: ./data/achievements.xml
@@ -127,7 +127,7 @@ msgstr "Heliwr Mosgito"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Cymra dy wrthwynebwyr fel mosgitos! Gyda'r swatiwr, gwasga nhw o leiaf 5 gwaith mewn ras."
 
@@ -1464,7 +1464,7 @@ msgstr "Casgla flychau anrhegion glas, byddan nhw'n rhoi pweriadau i ti."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Osgoa fananas!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1593,13 +1593,13 @@ msgstr "Cacen - wedi'i daflu at dy gystadleuydd agosaf, yn orau os yn agos ac ar
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Plymiwr - tafla'n syth i dynnu dy wrthwynebydd yn ôl, neu ei daflu wrth edrych yn ôl i wneud i un golli golwg."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Pêl Fowlio - yn mynd yn syth nes ei fod yn taro, yna gall fownsio oddi ar y waliau. Os wyt ti'n edrych nôl, bydd yn cael ei daflu am yn ôl."
 
@@ -1621,13 +1621,13 @@ msgstr "Pêl Fasged - yn bownsio ar ôl yr arweinydd, ac efallai yn gwasgu ac ar
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Swatiwr - bydd yn cywasgu cartiau sydd gerllaw, gan eu harafu. Mae modd ei ddefnyddio hefyd i gael gwared ar barasiwtiau a bomiau."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Gall taro banana olygu bod un o'r canlynol yn cydio i'r cart:"
 
@@ -2597,7 +2597,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Mae sgidio yn dy wneud yn llawer cyflymach, gwna hynny pryd bynnag mae'n ddiogel."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Mae modd defnyddio'r swatiwr i ddileu bomiau neu barasiwtiau."
 
 #. I18N: ./data/tips.xml
@@ -4599,14 +4599,14 @@ msgstr " (1 ras)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Trawiadau pêl bowlio"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Trawiadau Swatiwr"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4626,7 +4626,7 @@ msgstr "Trawiadau yn erbyn yr un cart"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Bananas wedi'u casglu"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6740,7 +6740,7 @@ msgstr "Pwysa <%s> i edrych y tu ôl.\nTania'r arf gyda <%s> wrth bwyso <%s> i d
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Pwysa'r eicon drych i edrych y tu ôl.\nTania'r arf y tu ôl trwy ddal yr eicon drych ac yna troi at yr eicon bowlio!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

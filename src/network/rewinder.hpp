@@ -34,9 +34,9 @@ enum RewinderName : char
     RN_RED_FLAG = 0x03,
     RN_BLUE_FLAG = 0x04,
     RN_CAKE = 0x05,
-    RN_BOWLING = 0x06,
-    RN_PLUNGER = 0x07,
-    RN_RUBBERBALL = 0x08,
+    RN_BLACK_HOLE = 0x06,
+    RN_PHOTON = 0x07,
+    RN_WORMHOLE = 0x08,
     RN_PHYSICAL_OBJ = 0x09,
     RN_ANTI_KARTICLE = 0x0A
 };

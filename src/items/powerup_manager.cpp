@@ -27,11 +27,11 @@
 #include "io/file_manager.hpp"
 #include "io/xml_node.hpp"
 #include "items/anti_karticle.hpp"
-#include "items/bowling.hpp"
+#include "items/black_hole.hpp"
 #include "items/asteroid.hpp"
 #include "items/item.hpp"
-#include "items/plunger.hpp"
-#include "items/rubber_ball.hpp"
+#include "items/photon.hpp"
+#include "items/wormhole.hpp"
 #include "modes/world.hpp"
 #include "race/race_manager.hpp"
 #include "utils/constants.hpp"
@@ -127,7 +127,7 @@ PowerupManager::PowerupType
         lower_name == "anvil"                ||
         lower_name == "anchor")
     {
-        return POWERUP_MASS_SPIKE;
+        return POWERUP_MAXWELL_BOLTZMANN;
     }
 
     if (lower_name == "super_position"              ||
@@ -165,7 +165,7 @@ PowerupManager::PowerupType
         lower_name == "antikarticle"   ||
         lower_name == "tidal-arm"      ||
         lower_name == "tidal_arm"      ||
-        lower_name == "swatter")
+        lower_name == "Swatter")
     {
         return POWERUP_ANTI_KARTICLE;
     }
@@ -567,13 +567,13 @@ void PowerupManager::loadPowerup(PowerupType type, const XMLNode &node)
     // Load special attributes for certain powerups
     switch (type) {
         case POWERUP_BLACK_HOLE:
-             Bowling::init(node, m_all_meshes[type]);    break;
-        case POWERUP_COSMIC_STRING:
-             Plunger::init(node, m_all_meshes[type]);    break;
+             BlackHole::init(node, m_all_meshes[type]);    break;
+        case POWERUP_PHOTON:
+             Photon::init(node, m_all_meshes[type]);    break;
         case POWERUP_ASTEROID:
              Asteroid::init(node, m_all_meshes[type]);   break;
         case POWERUP_WORMHOLE:
-             RubberBall::init(node, m_all_meshes[type]); break;
+             Wormhole::init(node, m_all_meshes[type]); break;
         case POWERUP_ANTI_KARTICLE:
              AntiKarticle::init(node, m_all_meshes[type]); break;
         default: break;
@@ -699,7 +699,7 @@ PowerupManager::PowerupType PowerupManager::getRandomPowerup(unsigned int pos,
 void PowerupManager::unitTesting()
 {
     // Test 1: Test all possible random numbers for tutorial, and
-    // make sure that always three bowling balls are picked.
+    // make sure that always three black holes are picked.
     // ----------------------------------------------------------
     RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_TUTORIAL);
     powerup_manager->computeWeightsForRace(1);
@@ -755,7 +755,7 @@ void PowerupManager::unitTesting()
         == POWERUP_SUPER_POSITION);
     assert(stk_config->m_switch_items[Item::ITEM_BONUS_BOX]
         == Item::ITEM_SUPER_POSITION);
-    assert(stk_config->m_switch_items[Item::ITEM_BANANA]
+    assert(stk_config->m_switch_items[Item::ITEM_COMPACTIFICATION]
         == Item::ITEM_SUPER_POSITION);
     assert(powerup_manager->getPowerupType("wormhole") == POWERUP_WORMHOLE);
     assert(powerup_manager->getPowerupType("geodesic-missile")

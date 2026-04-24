@@ -1050,7 +1050,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
 
     // If the item type is not handled here, ignore it
     Item::ItemType type = item->getType();
-    if( type!=Item::ITEM_BANANA    && type!=Item::ITEM_BUBBLEGUM &&
+    if( type!=Item::ITEM_COMPACTIFICATION    && type!=Item::ITEM_WARP_BUBBLE &&
         type!=Item::ITEM_BONUS_BOX && type!=Item::ITEM_SUPER_POSITION &&
         type!=Item::ITEM_NITRO_BIG && type!=Item::ITEM_NITRO_SMALL  )
         return;
@@ -1059,8 +1059,8 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
     switch(type)
     {
         // Negative items: avoid them
-        case Item::ITEM_BUBBLEGUM: // fallthrough
-        case Item::ITEM_BANANA: avoid = true;  break;
+        case Item::ITEM_WARP_BUBBLE: // fallthrough
+        case Item::ITEM_COMPACTIFICATION: avoid = true;  break;
 
         // Positive items: try to collect
         case Item::ITEM_NITRO_BIG:
@@ -1145,7 +1145,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
  *  TODO: Implications of Bubble-Shield for AI's powerup-handling
 
  *  STATE: shield on -> avoid usage of offensive items (with certain tolerance)
- *  STATE: swatter on -> avoid usage of shield
+ *  STATE: Swatter on -> avoid usage of shield
  */
 void SkiddingAI::handleItems(const float dt)
 {
@@ -1200,8 +1200,8 @@ void SkiddingAI::handleItems(const float dt)
     case PowerupManager::POWERUP_WARP_BUBBLE:
         {
             Attachment::AttachmentType type = m_kart->getAttachment()->getType();
-            // Don't use shield when we have a swatter.
-            if( type == Attachment::ATTACH_TIDAL_ARM)
+            // Don't use shield when we have a Swatter.
+            if( type == Attachment::ATTACH_ANTI_KARTICLE)
                 break;
 
             // Check if a flyable (asteroid, ...) is close. If so, use bubblegum
@@ -1295,10 +1295,10 @@ void SkiddingAI::handleItems(const float dt)
 
     case PowerupManager::POWERUP_BLACK_HOLE:
         {
-            // if the kart has a shield, do not break it by using a bowling ball.
+            // if the kart has a shield, do not break it by using a black hole.
             if(m_kart->getShieldTime() > min_bubble_time)
                 break;
-            // Leave more time between bowling balls, since they are
+            // Leave more time between black holes, since they are
             // slower, so it should take longer to hit something which
             // can result in changing our target.
             if(m_time_since_last_shot < 5.0f) break;
@@ -1322,7 +1322,7 @@ void SkiddingAI::handleItems(const float dt)
                 if (abs_angle < 0.2f) straight_ahead = true;
             }
 
-            // Bowling balls are slower, so only fire on closer karts - but when
+            // Black holes are slower, so only fire on closer karts - but when
             // firing backwards, the kart can be further away, since the ball
             // acts a bit like a mine (and the kart is racing towards it, too)
             bool fire_backwards = (m_kart_behind && m_kart_ahead &&
@@ -1350,7 +1350,7 @@ void SkiddingAI::handleItems(const float dt)
         // saving the (potential more valuable nitro) for later
         break;   // POWERUP_ZIPPER
 
-    case PowerupManager::POWERUP_COSMIC_STRING:
+    case PowerupManager::POWERUP_PHOTON:
         {
             // if the kart has a shield, do not break it by using a plunger.
             if(m_kart->getShieldTime() > min_bubble_time)
@@ -1360,7 +1360,7 @@ void SkiddingAI::handleItems(const float dt)
             // time before a plunger effect becomes obvious.
             if(m_time_since_last_shot < 5.0f) break;
 
-            // Plungers can be fired backwards and are faster,
+            // Photons can be fired backwards and are faster,
             // so allow more distance for shooting.
             bool fire_backwards = (m_kart_behind && m_kart_ahead &&
                                    m_distance_behind < m_distance_ahead) ||
@@ -1372,7 +1372,7 @@ void SkiddingAI::handleItems(const float dt)
             if(m_controls->getFire())
                 m_controls->setLookBack(fire_backwards);
             break;
-        }   // POWERUP_COSMIC_STRING
+        }   // POWERUP_PHOTON
 
     case PowerupManager::POWERUP_SUPER_POSITION:
         // For now don't use a switch if this kart is first (since it's more
@@ -1386,13 +1386,13 @@ void SkiddingAI::handleItems(const float dt)
 
     case PowerupManager::POWERUP_TIME_DILATION:
         // Wait one second more than a previous parachute
-        if(m_time_since_last_shot > m_kart->getKartProperties()->getParachuteDurationOther() + 1.0f)
+        if(m_time_since_last_shot > m_kart->getKartProperties()->getTimeDilationDurationOther() + 1.0f)
             m_controls->setFire(true);
         break;   // POWERUP_TIME_DILATION
 
-    case PowerupManager::POWERUP_MASS_SPIKE:
+    case PowerupManager::POWERUP_MAXWELL_BOLTZMANN:
         // Wait one second more than a previous anvil
-        if(m_time_since_last_shot < m_kart->getKartProperties()->getAnvilDuration() + 1.0f) break;
+        if(m_time_since_last_shot < m_kart->getKartProperties()->getMaxwellBoltzmannDuration() + 1.0f) break;
 
         if(RaceManager::get()->getMinorMode()==RaceManager::MINOR_MODE_FOLLOW_LEADER)
         {
@@ -1404,12 +1404,12 @@ void SkiddingAI::handleItems(const float dt)
             m_controls->setFire(m_time_since_last_shot > 3.0f &&
                                 m_kart->getPosition()>1          );
         }
-        break;   // POWERUP_MASS_SPIKE
+        break;   // POWERUP_MAXWELL_BOLTZMANN
 
     case PowerupManager::POWERUP_ANTI_KARTICLE:
         {
             // Squared distance for which the anti-karticle is worth spawning.
-            float d2 = m_kart->getKartProperties()->getSwatterDistance();
+            float d2 = m_kart->getKartProperties()->getAntiKarticleDistance();
             // If the kart has a shield, do not break it by firing a weapon.
             if(m_kart->getShieldTime() > min_bubble_time)
                 break;
@@ -1427,7 +1427,7 @@ void SkiddingAI::handleItems(const float dt)
             break;
         }
     case PowerupManager::POWERUP_WORMHOLE:
-        // if the kart has a shield, do not break it by using a swatter.
+        // if the kart has a shield, do not break it by using a Swatter.
         if(m_kart->getShieldTime() > min_bubble_time)
             break;
         // Perhaps some more sophisticated algorithm might be useful.
@@ -1531,7 +1531,7 @@ void SkiddingAI::handleAcceleration(int ticks)
         return;
     }
 
-    if(m_kart->getBlockedByPlungerTicks()>0)
+    if(m_kart->getBlockedByPhotonTicks()>0)
     {
         if(m_kart->getSpeed() < m_kart->getCurrentMaxSpeed() / 2)
             m_controls->setAccel(0.05f);
@@ -1646,7 +1646,7 @@ void SkiddingAI::handleNitroAndZipper()
     // sandtrack            10      489.963            64.18 0.00   3  1009 0.00   0   0   1 135   0   0  1407 0.00
 
     // Don't use nitro when the AI has a plunger in the face!
-    if(m_kart->getBlockedByPlungerTicks()>0) return;
+    if(m_kart->getBlockedByPhotonTicks()>0) return;
 
     // Don't use nitro if we are braking
     if(m_controls->getBrake()) return;
@@ -1673,7 +1673,7 @@ void SkiddingAI::handleNitroAndZipper()
     // benefit. Better wait till later.
     const bool has_slowdown_attachment =
         m_kart->getAttachment()->getType()==Attachment::ATTACH_TIME_DILATION ||
-        m_kart->getAttachment()->getType()==Attachment::ATTACH_MASS_SPIKE;
+        m_kart->getAttachment()->getType()==Attachment::ATTACH_MAXWELL_BOLTZMANN;
     if(has_slowdown_attachment) return;
 
     // If the kart is very slow (e.g. after rescue), use nitro
@@ -2445,7 +2445,7 @@ void SkiddingAI::setSteering(float angle, float dt)
     else if(steer_fraction < -1.0f) steer_fraction = -1.0f;
 
     // Restrict steering when a plunger is in the face
-    if(m_kart->getBlockedByPlungerTicks()>0)
+    if(m_kart->getBlockedByPhotonTicks()>0)
     {
         if     (steer_fraction >  0.5f) steer_fraction =  0.5f;
         else if(steer_fraction < -0.5f) steer_fraction = -0.5f;

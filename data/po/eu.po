@@ -57,7 +57,7 @@ msgid "Strike!"
 msgstr "Jota!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Jo 10 kart bolatokiko bolarekin."
 
 #. I18N: ./data/achievements.xml
@@ -113,11 +113,11 @@ msgid ""
 msgstr "Irabazi 5 lasterketa jarraian 3 IAen aurka gutxienez. Adi, lasterketa bat berabiaraztean galdu balitz bezala gehitzen da"
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Banana zalea"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Bildu gutxienez 5 banana lasterketa batean."
 
 #. I18N: ./data/achievements.xml
@@ -134,7 +134,7 @@ msgstr "Eltxo ehiztaria"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Tratatu arerioak moskito legez! Zanpatu astintzailearekin gutxienez 5 aldiz lasterketa batean."
 
@@ -1414,7 +1414,7 @@ msgstr "Batu dohako kutxa urdinak, hobekuntzak emango dizkizute"
 #. I18N: ./data/gui/screens/help1.stkgui
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Ez zapaldu bananak"
 
 #. I18N: ./data/gui/screens/help1.stkgui
@@ -1543,13 +1543,13 @@ msgstr "Pastela - Irauli gertuko aurkaria, onena distantzia motzetan edo bide zu
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Bentosa - Bota aurrekoari honi atzeraka eginaz azkartzeko, edo atzera begira bota atzekoak ikusmena gal dezan."
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Bolatokiko bola - zuzen doa zer edo zer jo arte, hormetan errebotatzen du. Atzeraka begira bazaude atzekoei bota diezaiekezu."
 
@@ -1571,13 +1571,13 @@ msgstr "Saskibaloiko baloia - liderraren bila joaten da punpaka eta bidean kart-
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Astintzailea - Inguruko kartak zanpatuko ditu, eta horrekin geldotu. Jausgailuak eta bonbak kentzeko balio du ere."
 
 #. I18N: ./data/gui/screens/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Banana bat harrapatzean ondorengoetako bat itsatsiko zaio Kart horri: "
 
@@ -2479,7 +2479,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Irristatzeak azkarrago bihurtzen zaitu, egin segurua den guztietan."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Astintzailea bonbak edo jausgailuak kentzeko erabili daiteke."
 
 #. I18N: ./data/tips.xml
@@ -4405,14 +4405,14 @@ msgstr "(lasterketa 1)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Bolatokiko bolen joaldiak"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Astintzaile kolpeak"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4432,7 +4432,7 @@ msgstr "Kart berberaren aurkako joaldiak"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Bildutako bananak"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6363,7 +6363,7 @@ msgstr "Sakatu <%s> atzera begiratzeko. \nEgin tiro <%s> sakatuz <%s> ere sakatz
 #: ../stk-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Sakatu ispiluaren ikonoa atzera begiratzeko. \nEgin tiro atzerantz ispiluaren ikonoa mantenduz eta jarraian bolatokiko bolaren ikonoari emanez! "
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

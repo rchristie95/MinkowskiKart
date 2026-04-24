@@ -59,7 +59,7 @@ msgid "Strike!"
 msgstr "스트라이크!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "볼링공으로 카트 10대를 치세요."
 
 #. I18N: ./data/achievements.xml
@@ -115,11 +115,11 @@ msgid ""
 msgstr "적어도 AI 3명이서 단일 경주 5회를 연속으로 이기세요. 조심하세요, 경주를 다시 시작하면 손실로 간주됩니다."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "바나나 덕후"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "경주 1회에서 적어도 바나나 5개를 모으세요."
 
 #. I18N: ./data/achievements.xml
@@ -136,7 +136,7 @@ msgstr "모기 사냥꾼"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "당신의 상대방을 모기로 맞이하세요! 경주에서 적어도 5번 그들을 찰싹 뭉개세요."
 
@@ -1473,7 +1473,7 @@ msgstr "파란 선물 상자를 모으세요, 파워업을 줄 것입니다."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "바나나를 피하세요!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1602,13 +1602,13 @@ msgstr "케이크 - 가장 가까운 경쟁자에게 던지며, 좁은 범위와
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "뚫어뻥 - 상대방 뒤에 던져서 상대방을 뒤로 당기거나, 뒤를 돌아볼 때 던져 시야를 가립니다."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "볼링공 - 스트라이크하기 전까지는 직진하나, 벽에 부딪치면 튕겨나갑니다. 만약 뒤를 돌아본 채로 던지면, 뒤쪽으로 던져집니다."
 
@@ -1630,13 +1630,13 @@ msgstr "농구공 - 1위 플레이어 뒤에 튕겨서, 가는 길에 카트를 
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "파리채 - 카트를 가까이에서 뭉개서,  적들의 속도를 늦춥니다. 낙하산과 폭탄을 제거하는 데에도 사용될 수 있습니다."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "바나나를 치면 다음 중 하나가 카트에 붙여질 수 있습니다:"
 
@@ -2606,7 +2606,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "미끄러지면 더 빠릅니다, 안전할 때 하세요."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "찰싹은 폭탄이나 낙하산을 제거하는 데 사용할 수 있습니다."
 
 #. I18N: ./data/tips.xml
@@ -4596,14 +4596,14 @@ msgstr " (경주 1회)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "볼링공으로 칩니다"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "찰싹 칩니다"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4623,7 +4623,7 @@ msgstr "같은 카트와 칩니다"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "모은 바나나"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6728,7 +6728,7 @@ msgstr "뒤를 돌아보려면 <%s>를 누르세요.\n<%s>로 무기를 발사�
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "뒤를 보려면 거울 아이콘을 누르세요.\n거울 아이콘을 잡고 볼링 아이콘을 향해 휘두르면서 뒤에서 무기를 발사하세요!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

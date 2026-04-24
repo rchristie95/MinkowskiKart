@@ -16,7 +16,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#include "items/bowling.hpp"
+#include "items/black_hole.hpp"
 
 #include "audio/sfx_base.hpp"
 #include "audio/sfx_manager.hpp"
@@ -38,12 +38,12 @@
 #include <IBillboardSceneNode.h>
 #include <SColor.h>
 
-float Bowling::m_st_max_distance;   // maximum distance for a bowling ball to be attracted
-float Bowling::m_st_max_distance_squared;
-float Bowling::m_st_force_to_target;
+float BlackHole::m_st_max_distance;   // maximum distance for a black hole to be attracted
+float BlackHole::m_st_max_distance_squared;
+float BlackHole::m_st_force_to_target;
 
 // -----------------------------------------------------------------------------
-Bowling::Bowling(AbstractKart *kart)
+BlackHole::BlackHole(AbstractKart *kart)
         : Flyable(kart, PowerupManager::POWERUP_BLACK_HOLE, 50.0f /* mass */)
 {
     m_has_hit_kart = false;
@@ -86,12 +86,12 @@ Bowling::Bowling(AbstractKart *kart)
         }
     }
 #endif
-}   // Bowling
+}   // BlackHole
 
 // ----------------------------------------------------------------------------
 /** Destructor, removes any playing sfx.
  */
-Bowling::~Bowling()
+BlackHole::~BlackHole()
 {
     SP::sp_black_hole_active = false;
     removeRollSfx();
@@ -102,16 +102,16 @@ Bowling::~Bowling()
         m_core_billboard = nullptr;
     }
 #endif
-}   // ~Bowling
+}   // ~BlackHole
 
 // -----------------------------------------------------------------------------
 /** Initialises this object with data from the power.xml file.
  *  \param node XML Node
- *  \param bowling The bowling ball mesh
+ *  \param black_hole The black hole mesh
  */
-void Bowling::init(const XMLNode &node, scene::IMesh *bowling)
+void BlackHole::init(const XMLNode &node, scene::IMesh *black_hole)
 {
-    Flyable::init(node, bowling, PowerupManager::POWERUP_BLACK_HOLE);
+    Flyable::init(node, black_hole, PowerupManager::POWERUP_BLACK_HOLE);
     m_st_max_distance         = 20.0f;
     m_st_max_distance_squared = 20.0f * 20.0f;
     m_st_force_to_target      = 10.0f;
@@ -123,12 +123,12 @@ void Bowling::init(const XMLNode &node, scene::IMesh *bowling)
 }   // init
 
 // ----------------------------------------------------------------------------
-/** Updates the bowling ball ineach frame. If this function returns true, the
+/** Updates the black hole in each frame. If this function returns true, the
  *  object will be removed by the projectile manager.
  *  \param dt Time step size.
  *  \returns True of this object should be removed.
  */
-bool Bowling::updateAndDelete(int ticks)
+bool BlackHole::updateAndDelete(int ticks)
 {
     // Keep the lensing uniform pointing at this ball each frame.
     // This drives the screen-space gravitational-lens distortion in tonemap.frag.
@@ -155,9 +155,9 @@ bool Bowling::updateAndDelete(int ticks)
     Vec3        direction;
     float       minDistance;
     getClosestKart(&kart, &minDistance, &direction);
-    if(kart && minDistance<m_st_max_distance_squared)   // move bowling towards kart
+    if(kart && minDistance<m_st_max_distance_squared)   // move black hole towards kart
     {
-        // limit angle, so that the bowling ball does not turn
+        // limit angle, so that the black hole does not turn
         // around to hit a kart behind
         if(fabs(m_body->getLinearVelocity().angle(direction)) < 1.3)
         {
@@ -167,7 +167,7 @@ bool Bowling::updateAndDelete(int ticks)
     }
     
    
-    // Bowling balls lose energy (e.g. when hitting the track), so increase
+    // Black holes lose energy (e.g. when hitting the track), so increase
     // the speed if the ball is too slow, but only if it's not too high (if
     // the ball is too high, it is 'pushed down', which can reduce the
     // speed, which causes the speed to increase, which in turn causes
@@ -189,7 +189,7 @@ bool Bowling::updateAndDelete(int ticks)
     if (hat<= m_max_height)
     {
         if(vlen<0.8*m_speed*m_speed)
-        {   // bowling lost energy (less than 80%), i.e. it's too slow - speed it up:
+        {   // black hole lost energy (less than 80%), i.e. it's too slow - speed it up:
             if(vlen==0.0f) {
                 v = btVector3(.5f, .0, 0.5f);  // avoid 0 div.
             }
@@ -212,13 +212,13 @@ bool Bowling::updateAndDelete(int ticks)
 
 // -----------------------------------------------------------------------------
 /** Callback from the physics in case that a kart or physical object is hit.
- *  The bowling ball triggers an explosion when hit.
+ *  The black hole triggers an explosion when hit.
  *  \param kart The kart hit (NULL if no kart was hit).
  *  \param object The object that was hit (NULL if none).
  *  \returns True if there was actually a hit (i.e. not owner, and target is
  *           not immune), false otherwise.
  */
-bool Bowling::hit(AbstractKart* kart, PhysicalObject* obj)
+bool BlackHole::hit(AbstractKart* kart, PhysicalObject* obj)
 {
     // Kart collisions: detonate damage on the hit kart but keep the black hole
     // alive in place. It continues to roll / lens the scene until its
@@ -256,7 +256,7 @@ bool Bowling::hit(AbstractKart* kart, PhysicalObject* obj)
 }   // hit
 
 // ----------------------------------------------------------------------------
-void Bowling::removeRollSfx()
+void BlackHole::removeRollSfx()
 {
     if (m_roll_sfx)
     {
@@ -269,7 +269,7 @@ void Bowling::removeRollSfx()
 /** Returns the hit effect object to use when this objects hits something.
  *  \returns The hit effect object, or NULL if no hit effect should be played.
  */
-HitEffect* Bowling::getHitEffect() const
+HitEffect* BlackHole::getHitEffect() const
 {
     if (GUIEngine::isNoGraphics())
         return NULL;
@@ -282,7 +282,7 @@ HitEffect* Bowling::getHitEffect() const
 }   // getHitEffect
 
 // ----------------------------------------------------------------------------
-void Bowling::onFireFlyable()
+void BlackHole::onFireFlyable()
 {
     Flyable::onFireFlyable();
 

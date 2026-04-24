@@ -121,7 +121,7 @@
       default-track-friction: Default friction to be used for the track and
           any track/library pbject.
       default-moveable-friction: Default friction to be used for any moveable,
-          e.g. karts, bowling balls, ...
+          e.g. karts, black holes, ...
       solver-iteation: Number of solver iterations. A lower number reduces
           the quality, but can reduce bouncing effect.
       solver-split-impulse:: by default bullet solves for velocity and
@@ -235,8 +235,8 @@
 
   <!-- Item return times.
        Time until an item that has been collected returns. Can be set
-       differently for bonus (gift) boxes, nitro, bananas and bubble gums -->
-  <item-return-time bonusbox="2.0" nitro="2.0" banana="2.0" bubblegum="2.0"/>
+       differently for bonus (gift) boxes, nitro, compactifications and warp bubbles -->
+  <item-return-time bonusbox="2.0" nitro="2.0" compactification="2.0" warp-bubble="2.0"/>
 
   <!-- Powerup
        collect-mode : decides what is collected if a kart has already an
@@ -250,18 +250,18 @@
   <powerup collect-mode="new" no-explosive-items-timeout="15.0"/>
   <!-- time: How long a switch is being effective.
        items for each item list the index of the item it is switched with.
-             Order: giftbox, banana, big-nitro, small-nitro, bubble-gum, nolok-bubble-gum,
+             Order: giftbox, compactification, big-nitro, small-nitro, warp-bubble, nolok-warp-bubble,
                     easter egg-->
   <!-- Item switch map order:
-       bonus-box, banana, super-position, nitro-big, nitro-small,
-       bubblegum, bubblegum-nolok, easter-egg -->
+       bonus-box, compactification, super-position, nitro-big, nitro-small,
+       warp-bubble, warp-bubble-nolok, easter-egg -->
   <switch time="5"  items="2 2 2 3 4 5 6 7"/>
 
-  <!-- Bubblegum
-       disappear-counter: How often bubblegum gets driven over before it disappears.
-       shield-time: How long the bubblegum shield lasts
+  <!-- Warp Bubble
+       disappear-counter: How often warp bubbles get driven over before they disappear.
+       shield-time: How long the warp bubble shield lasts
        restrict-weapons: If true, using weapons will destroy the user's shield -->
-  <bubblegum disappear-counter="1" shield-time="10.0" restrict-weapons="false"/>
+  <warp-bubble disappear-counter="1" shield-time="10.0" restrict-weapons="false"/>
 
   <!-- explosion-impulse-objects is the impulse that pushes physical objects
        away if there is an explosion. -->

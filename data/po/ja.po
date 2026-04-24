@@ -75,7 +75,7 @@ msgid "Strike!"
 msgstr "ストライク！"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "ボウリングボールで10人のカートを攻撃しよう。"
 
 #. I18N: ./data/achievements.xml
@@ -131,11 +131,11 @@ msgid ""
 msgstr "5シングルレースで3人のAIに5連勝しよう！レースをやり直すと無効になっちゃうぞ！"
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "バナナ大好き"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "1レース中にバナナに5回接触しよう！"
 
 #. I18N: ./data/achievements.xml
@@ -152,7 +152,7 @@ msgstr "ハエハンター"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "ライバルはみんなハエだ！ハエ叩きで5人以上ぶっつぶそう！"
 
@@ -1489,7 +1489,7 @@ msgstr "青いプレゼントを集めよう、中には武器や色んなパワ
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "バナナを避けよう！"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1618,13 +1618,13 @@ msgstr "ケーキ　ライバルのカートに投げつけると爆発します
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "きゅうばん - 目の前にいるライバルのカートに投げつけると相手を後ろへ引っ張り、後ろに投げつけると相手の視界を塞ぐことができます。"
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "ボウリングボール、当たるまで真っすぐ転び、壁に当たると跳ね返ります。後ろを向くと後ろへ投げつけることが出来ます。"
 
@@ -1646,13 +1646,13 @@ msgstr "バスケットボール - 一番前の人を追いかけて爆発して
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "ハエたたき - 近寄るカートをぶっ潰していきます。カートにくっ付いたパラシュートと爆弾を払いのけることもできますよ。"
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "バナナを踏んでしまうと下記のものの一つがキミのカートにくっ付いて、走りをジャマします:"
 
@@ -2622,7 +2622,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "ドリフトをするとスピードアップします。安全な場所でドリフトしましょう。"
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "ハエ叩きは爆弾やパラシュートを外す効果があります。"
 
 #. I18N: ./data/tips.xml
@@ -4612,14 +4612,14 @@ msgstr "（１レース）"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "ボーリングボールのヒット件数"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "ハエ叩きのヒット件数"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4639,7 +4639,7 @@ msgstr "同じカートにぶつかった件数"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "回収したバナナ"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6744,7 +6744,7 @@ msgstr "後ろをのぞくには<%s>を押してください\n後ろへ攻撃す
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "後ろを見るにはバックミラーアイコンを押します。\nバックミラーアイコンを押したままボーリングアイコンのほうにスワイプして、アイテムを後方に発射しましょう!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

@@ -26,7 +26,7 @@
 #include "items/attachment.hpp"
 #include "items/item_manager.hpp"
 #include "items/projectile_manager.hpp"
-#include "items/rubber_ball.hpp"
+#include "items/wormhole.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/max_speed.hpp"
 #include "karts/controller/controller.hpp"
@@ -189,7 +189,7 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
             m_sound_use = SFXManager::get()->createSoundSource("bowling_shoot");
             break ;
 
-        case PowerupManager::POWERUP_MASS_SPIKE:
+        case PowerupManager::POWERUP_MAXWELL_BOLTZMANN:
             m_sound_use = SFXManager::get()->createSoundSource("anvil");
             break;
 
@@ -210,7 +210,7 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
             break;
 
         case PowerupManager::POWERUP_NOTHING:
-        case PowerupManager::POWERUP_COSMIC_STRING:
+        case PowerupManager::POWERUP_PHOTON:
         default :
             m_sound_use = SFXManager::get()->createSoundSource("shoot");
             break ;
@@ -330,7 +330,7 @@ void Powerup::use()
     case PowerupManager::POWERUP_ASTEROID:
     case PowerupManager::POWERUP_WORMHOLE:
     case PowerupManager::POWERUP_BLACK_HOLE:
-    case PowerupManager::POWERUP_COSMIC_STRING:
+    case PowerupManager::POWERUP_PHOTON:
     case PowerupManager::POWERUP_ANTI_KARTICLE:
         if(stk_config->m_shield_restrict_weapons)
             m_kart->setShieldTime(0.0f); // make weapon usage destroy the shield
@@ -346,7 +346,7 @@ void Powerup::use()
         // use the bubble gum the traditional way, if the kart is looking back
         if (m_kart->getControls().getLookBack())
         {
-            Item *new_item = im->dropNewItem(Item::ITEM_BUBBLEGUM, m_kart);
+            Item *new_item = im->dropNewItem(Item::ITEM_WARP_BUBBLE, m_kart);
 
             // E.g. ground not found in raycast.
             if(!new_item) return;
@@ -366,14 +366,14 @@ void Powerup::use()
                     m_kart->getAttachment()
                           ->set(Attachment::ATTACH_NOLOK_WARP_BUBBLE,
                                 stk_config->
-                                  time2Ticks(kp->getBubblegumShieldDuration()));
+                                  time2Ticks(kp->getWarpBubbleShieldDuration()));
                 }
                 else
                 {
                     m_kart->getAttachment()
                           ->set(Attachment::ATTACH_WARP_BUBBLE,
                                 stk_config->
-                                  time2Ticks(kp->getBubblegumShieldDuration()));
+                                  time2Ticks(kp->getWarpBubbleShieldDuration()));
                 }
             }
             else // using a bubble gum while still having a shield
@@ -383,14 +383,14 @@ void Powerup::use()
                     m_kart->getAttachment()
                           ->set(Attachment::ATTACH_NOLOK_WARP_BUBBLE,
                                 stk_config->
-                                 time2Ticks(kp->getBubblegumShieldDuration()));
+                                 time2Ticks(kp->getWarpBubbleShieldDuration()));
                 }
                 else
                 {
                     m_kart->getAttachment()
                           ->set(Attachment::ATTACH_WARP_BUBBLE,
                                 stk_config->
-                                time2Ticks(kp->getBubblegumShieldDuration()
+                                time2Ticks(kp->getWarpBubbleShieldDuration()
                                            + m_kart->getShieldTime()       ) );
                 }
             }
@@ -398,7 +398,7 @@ void Powerup::use()
             // Add 7.5 m/s max speed increase for Warp Bubble (BubbleGum shield)
             m_kart->increaseMaxSpeed(MaxSpeed::MS_INCREASE_WARP_BUBBLE,
                                      7.5f, 0.0f,
-                                     stk_config->time2Ticks(kp->getBubblegumShieldDuration()),
+                                     stk_config->time2Ticks(kp->getWarpBubbleShieldDuration()),
                                      stk_config->time2Ticks(0.5f));
 
             if (!has_played_sound)
@@ -419,7 +419,7 @@ void Powerup::use()
         }   // end of PowerupManager::POWERUP_WARP_BUBBLE
         break;
 
-    case PowerupManager::POWERUP_MASS_SPIKE:
+    case PowerupManager::POWERUP_MAXWELL_BOLTZMANN:
         // Maxwell-Boltzmann: punish the leader with deterministic Brownian
         // velocity kicks in the local track-tangent plane.
         for(unsigned int i = 0 ; i < world->getNumKarts(); ++i)
@@ -429,7 +429,7 @@ void Powerup::use()
             if(kart == m_kart) continue;
             if(kart->getPosition() == 1)
             {
-                kart->getAttachment()->set(Attachment::ATTACH_MASS_SPIKE,
+                kart->getAttachment()->set(Attachment::ATTACH_MAXWELL_BOLTZMANN,
                                            stk_config->time2Ticks(
                                                Attachment::
                                                getMaxwellBoltzmannDurationSeconds()) );
@@ -491,13 +491,13 @@ void Powerup::use()
                         position_factor = 1.0f;
 
                     rank_mult = 1 + (position_factor *
-                                     (kp->getParachuteDurationRankMult() - 1));
+                                     (kp->getTimeDilationDurationRankMult() - 1));
                 }
 
                 kart->getAttachment()
                     ->set(Attachment::ATTACH_TIME_DILATION,
                           stk_config->time2Ticks(
-                              kp->getParachuteDurationOther() * rank_mult),
+                              kp->getTimeDilationDurationOther() * rank_mult),
                           m_kart);
 
                 if(kart->getController()->isLocalPlayerController())
@@ -657,6 +657,6 @@ void Powerup::hitSuperPosition(ItemState *item_state)
     const KartProperties *kp = m_kart->getKartProperties();
     attachment->set(
         Attachment::ATTACH_SUPERPOSITION_CAT,
-        stk_config->time2Ticks(kp->getAnvilDuration()));
-    m_kart->adjustSpeed(kp->getAnvilSpeedFactor() * 0.5f);
+        stk_config->time2Ticks(kp->getMaxwellBoltzmannDuration()));
+    m_kart->adjustSpeed(kp->getMaxwellBoltzmannSpeedFactor() * 0.5f);
 }   // hitSuperPosition

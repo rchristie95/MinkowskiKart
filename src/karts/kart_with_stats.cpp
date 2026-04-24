@@ -47,7 +47,7 @@ void KartWithStats::reset()
     m_banana_count      = 0;
     m_small_nitro_count = 0;
     m_large_nitro_count = 0;
-    m_bubblegum_count   = 0;
+    m_warp_bubble_count   = 0;
     m_brake_count       = 0;
     m_off_track_count   = 0;
     Kart::reset();
@@ -109,7 +109,7 @@ void KartWithStats::collectedItem(ItemState *item_state)
 
     switch (type)
     {
-    case Item::ITEM_BANANA:
+    case Item::ITEM_COMPACTIFICATION:
         m_banana_count++;
         break;
     case Item::ITEM_NITRO_SMALL:
@@ -123,8 +123,8 @@ void KartWithStats::collectedItem(ItemState *item_state)
     case Item::ITEM_SUPER_POSITION:
         m_bonus_count++;
         break;
-    case Item::ITEM_BUBBLEGUM:
-        m_bubblegum_count++;
+    case Item::ITEM_WARP_BUBBLE:
+        m_warp_bubble_count++;
         break;
     default        : break;
     }   // switch TYPE
