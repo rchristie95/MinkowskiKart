@@ -21,8 +21,8 @@
         force-updown="1"       force-to-target="40"
         max-distance="30" />
 
-  <!-- ZIPPER: speed boost (unchanged) -->
-  <item name="zipper"          icon="zipper_collect.png" />
+  <!-- ZIPPER: rocket speed boost -->
+  <item name="zipper"          icon="rocket_boost.png" />
 
   <!-- PHOTON: exchanged photon tether forward / Doppler flare backward -->
   <item name="photon"          icon="photon-icon.png"
