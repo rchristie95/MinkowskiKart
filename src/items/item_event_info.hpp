@@ -142,7 +142,7 @@ public:
      *  can be created during a race. */
     ItemState::ItemType getNewItemType() const
     {
-        return ItemState::ITEM_BUBBLEGUM;
+        return ItemState::ITEM_WARP_BUBBLE;
     }   // getNewItemType
 
 };   // class ItemEventInfo

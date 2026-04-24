@@ -156,13 +156,13 @@ public:
         SWATTER_SQUASH_DURATION,
         SWATTER_SQUASH_SLOWDOWN,
 
-        // Plunger
-        PLUNGER_BAND_MAX_LENGTH,
-        PLUNGER_BAND_FORCE,
-        PLUNGER_BAND_DURATION,
-        PLUNGER_BAND_SPEED_INCREASE,
-        PLUNGER_BAND_FADE_OUT_TIME,
-        PLUNGER_IN_FACE_TIME,
+        // Photon
+        PHOTON_BAND_MAX_LENGTH,
+        PHOTON_BAND_FORCE,
+        PHOTON_BAND_DURATION,
+        PHOTON_BAND_SPEED_INCREASE,
+        PHOTON_BAND_FADE_OUT_TIME,
+        PHOTON_IN_FACE_TIME,
 
         // Startup
         STARTUP_TIME,
@@ -296,26 +296,26 @@ public:
     float getLeanMax() const;
     float getLeanSpeed() const;
 
-    float getAnvilDuration() const;
-    float getAnvilWeight() const;
-    float getAnvilSpeedFactor() const;
+    float getMaxwellBoltzmannDuration() const;
+    float getMaxwellBoltzmannWeight() const;
+    float getMaxwellBoltzmannSpeedFactor() const;
 
-    float getParachuteFriction() const;
-    float getParachuteDuration() const;
-    float getParachuteDurationOther() const;
-    float getParachuteDurationRankMult() const;
-    float getParachuteDurationSpeedMult() const;
-    float getParachuteLboundFraction() const;
-    float getParachuteUboundFraction() const;
-    float getParachuteMaxSpeed() const;
+    float getTimeDilationFriction() const;
+    float getTimeDilationDuration() const;
+    float getTimeDilationDurationOther() const;
+    float getTimeDilationDurationRankMult() const;
+    float getTimeDilationDurationSpeedMult() const;
+    float getTimeDilationLboundFraction() const;
+    float getTimeDilationUboundFraction() const;
+    float getTimeDilationMaxSpeed() const;
 
     float getFrictionKartFriction() const;
 
-    float getBubblegumDuration() const;
-    float getBubblegumSpeedFraction() const;
-    float getBubblegumTorque() const;
-    float getBubblegumFadeInTime() const;
-    float getBubblegumShieldDuration() const;
+    float getWarpBubbleDuration() const;
+    float getWarpBubbleSpeedFraction() const;
+    float getWarpBubbleTorque() const;
+    float getWarpBubbleFadeInTime() const;
+    float getWarpBubbleShieldDuration() const;
 
     float getZipperDuration() const;
     float getZipperForce() const;
@@ -323,17 +323,17 @@ public:
     float getZipperMaxSpeedIncrease() const;
     float getZipperFadeOutTime() const;
 
-    float getSwatterDuration() const;
-    float getSwatterDistance() const;
-    float getSwatterSquashDuration() const;
-    float getSwatterSquashSlowdown() const;
+    float getAntiKarticleDuration() const;
+    float getAntiKarticleDistance() const;
+    float getAntiKarticleSquashDuration() const;
+    float getAntiKarticleSquashSlowdown() const;
 
-    float getPlungerBandMaxLength() const;
-    float getPlungerBandForce() const;
-    float getPlungerBandDuration() const;
-    float getPlungerBandSpeedIncrease() const;
-    float getPlungerBandFadeOutTime() const;
-    float getPlungerInFaceTime() const;
+    float getPhotonBandMaxLength() const;
+    float getPhotonBandForce() const;
+    float getPhotonBandDuration() const;
+    float getPhotonBandSpeedIncrease() const;
+    float getPhotonBandFadeOutTime() const;
+    float getPhotonInFaceTime() const;
 
     std::vector<float> getStartupTime() const;
     std::vector<float> getStartupBoost() const;

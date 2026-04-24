@@ -1,5 +1,5 @@
 //
-//  Minkowski Kart - Anti-Karticle powerup
+//  Minkowski Kart - Swatter powerup
 //
 
 #ifndef HEADER_ANTI_KARTICLE_HPP

@@ -14,8 +14,8 @@
                         I18N="Tab in help menu" text="Game Modes"/>
                 <icon-button id="page3" width="128" height="128" icon="gui/icons/gift.png"
                         I18N="Tab in help menu" text="Powerups"/>
-                <icon-button id="page4" width="128" height="128" icon="gui/icons/banana.png"
-                        I18N="Tab in help menu" text="Bananas"/>
+                <icon-button id="page4" width="128" height="128" icon="gui/icons/compactification-icon.png"
+                        I18N="Tab in help menu" text="Compactifications"/>
                 <icon-button id="page5" width="128" height="128" icon="gui/icons/story_mode_book.png"
                         I18N="Tab in help menu" text="Story Mode"/>
                 <icon-button id="page6" width="128" height="128" icon="gui/icons/mass.png"
@@ -28,7 +28,7 @@
 
             <box width="78%" height="100%" layout="vertical-row">
                 <spacer height="1%" width="10"/>
-                <label align="center" word_wrap="true" text="Hitting a banana can result in one of the following being attached to the kart:"/>
+                <label align="center" word_wrap="true" text="Hitting a compactification can result in one of the following being attached to the kart:"/>
                 <spacer height="2%" width="10"/>                
 
                 <div width="100%" proportion="2" layout="horizontal-row">
@@ -40,11 +40,11 @@
                 </div>
                 
                 <div width="100%" proportion="2" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/parachute-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/time-dilation-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
                             I18N="In the help menu"
-                            text="Parachute - slows down the kart, more progressively than the anchor. The faster you go, the stronger it slows you down."/>
+                            text="Compactification - folds your kart through Calabi-Yau space and briefly squashes your view of the race."/>
                 </div>
                 
                 <div width="100%" proportion="2" layout="horizontal-row">

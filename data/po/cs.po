@@ -55,7 +55,7 @@ msgid "Strike!"
 msgstr "Zásah!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Zasáhněte 10 motokár bowlingovou koulí."
 
 #. I18N: ./data/achievements.xml
@@ -111,11 +111,11 @@ msgid ""
 msgstr "Vyhrajte 5 samostatných závodů v řadě proti nejméně 3 počítačem ovládaným motokárám. Pozor, restart závodu se počítá jako ztráta."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Milovník banánů"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Nasbírejte alespoň 5 banánů v jednom závodě."
 
 #. I18N: ./data/achievements.xml
@@ -132,7 +132,7 @@ msgstr "Lovec komárů"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Udělejte ze svých soupeřů komáry! V závodě alespoň 5 z nich plácačkou rozmáčkněte."
 
@@ -1469,7 +1469,7 @@ msgstr "Sbírejte modré krabice. Přidají vám bonusy."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Vyhněte se banánům!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1598,15 +1598,15 @@ msgstr "Dort – házejte na nejbližší soupeře, nejlépe na krátkých vzdá
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Zvon – trefte protivníkova záda a přitáhněte se. Nebo se ohlédněte a hoďte zvon dozadu – soupeř, kterého trefíte, přijde o výhled."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
-msgstr "Bowlingová koule – jede rovně dokud nenarazí, může se odrážet od stěn. Pokud se podíváte zpět, bude hozena dozadu."
+msgstr "Black Holeová koule – jede rovně dokud nenarazí, může se odrážet od stěn. Pokud se podíváte zpět, bude hozena dozadu."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid "Parachute - slows down all karts in a better position."
@@ -1626,13 +1626,13 @@ msgstr "Basketbalový míč – odrazí se za vedoucím a může přitom přimá
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Plácačka – rozplácne motokáry v blízkosti a tím je zpomalí. Lze ji také použít k odstranění padáků a bomb."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Náraz do banánu může mít za následek, že se připojí k motokáře jedna z následujících položek:"
 
@@ -2602,7 +2602,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Smyky vás dělají mnohem rychlejší, dělejte je kdykoli je to bezpečné."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Plácačka lze použít k odstranění bomb nebo padáků."
 
 #. I18N: ./data/tips.xml
@@ -4604,14 +4604,14 @@ msgstr " (1 závod)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Zásahy bowlingovou koulí"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Zásahy plácačkou"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4631,7 +4631,7 @@ msgstr "Zásahy stejné motokáry"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Posbírané banány"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6745,7 +6745,7 @@ msgstr "Stisknutím <%s> se ohlédnete za sebe.\nPomocí <%s> a při současném
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Stisknutím ikony zrcadla se podíváte dozadu.\nZbraň vystřelíte za sebe tak, že podržíte ikonu zrcadla, a poté zaútočíte bowlingovou ikonou!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

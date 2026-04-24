@@ -92,18 +92,18 @@
 
         powerup-used
         powerup-used-1race
-        bowling-hit
-        bowling-hit-1race
-        swatter-hit
-        swatter-hit-1race
+        black-hole-hit
+        black-hole-hit-1race
+        anti-karticle-hit
+        anti-karticle-hit-1race
         all-hits // hits from black hole, asteroid and anti-karticle
         all-hits-1race
         hit-same-kart-1race
 
     V - Counters related to other race events.
 
-        banana // counts how many banana the player's kart has hit
-        banana-1race
+        compactification // counts Compactification hits
+        compactification-1race
         skidding
         skidding-1race
         skidding-1lap
@@ -141,8 +141,8 @@
     <achievement id="1" name="Christoffel Columbus" description="Play every official track at least once." >
         <goal type="race-finished-all" value="1"/>
     </achievement>
-    <achievement id="2" name="Strike!" description="Hit 10 karts with a bowling-ball.">
-        <goal type="bowling-hit" value="10"/>
+    <achievement id="2" name="Strike!" description="Hit 10 karts with a black hole.">
+        <goal type="black-hole-hit" value="10"/>
     </achievement>
     <achievement id="3" name="Arch Enemy" description="Hit the same kart at least 5 times in one race.">
         <goal type="hit-same-kart-1race" value="5"/>
@@ -164,13 +164,13 @@
     <achievement id="8" name="Unstoppable" description="Win 5 single races in a row against at least 3 AIs. Beware, restarting a race counts as a loss.">
         <goal type="cons-won-races" value="5"/>
     </achievement>
-    <achievement id="9" name="Banana Lover" description="Collect at least 5 bananas in one race.">
-        <goal type="banana-1race" value="5"/>
+    <achievement id="9" name="Compactification Catcher" description="Hit at least 5 compactifications in one race.">
+        <goal type="compactification-1race" value="5"/>
     </achievement>
     <achievement id="10" name="It's secret" description="Really ... a secret." secret="yes">
     </achievement>
-    <achievement id="11" name="Mosquito Hunter" description="Take your opponents for mosquitos! With the swatter, squash them at least 5 times in a race.">
-        <goal type="swatter-hit-1race" value="5"/>
+    <achievement id="11" name="Mosquito Hunter" description="Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 times in a race.">
+        <goal type="anti-karticle-hit-1race" value="5"/>
     </achievement>
     <achievement id="12" name="Beyond Luck" description="Win 10 single races in a row in Expert or SuperTux against at least 5 AIs. Beware, restarting a race counts as a loss.">
         <goal type="cons-won-races-hard" value="10"/>

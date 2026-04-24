@@ -411,7 +411,10 @@ void XmlCharacteristic::load(const XMLNode *node)
             &m_values[LEAN_SPEED]);
     }
 
-    if (const XMLNode *sub_node = node->getNode("anvil"))
+    const XMLNode *maxwell_boltzmann_node = node->getNode("maxwell-boltzmann");
+    if (!maxwell_boltzmann_node)
+        maxwell_boltzmann_node = node->getNode("anvil");
+    if (const XMLNode *sub_node = maxwell_boltzmann_node)
     {
         sub_node->get("duration",
             &m_values[ANVIL_DURATION]);
@@ -421,7 +424,10 @@ void XmlCharacteristic::load(const XMLNode *node)
             &m_values[ANVIL_SPEED_FACTOR]);
     }
 
-    if (const XMLNode *sub_node = node->getNode("parachute"))
+    const XMLNode *time_dilation_node = node->getNode("time-dilation");
+    if (!time_dilation_node)
+        time_dilation_node = node->getNode("parachute");
+    if (const XMLNode *sub_node = time_dilation_node)
     {
         sub_node->get("friction",
             &m_values[PARACHUTE_FRICTION]);
@@ -447,7 +453,10 @@ void XmlCharacteristic::load(const XMLNode *node)
             &m_values[FRICTION_KART_FRICTION]);
     }
 
-    if (const XMLNode *sub_node = node->getNode("bubblegum"))
+    const XMLNode *warp_bubble_node = node->getNode("warp-bubble");
+    if (!warp_bubble_node)
+        warp_bubble_node = node->getNode("bubblegum");
+    if (const XMLNode *sub_node = warp_bubble_node)
     {
         sub_node->get("duration",
             &m_values[BUBBLEGUM_DURATION]);
@@ -475,7 +484,10 @@ void XmlCharacteristic::load(const XMLNode *node)
             &m_values[ZIPPER_FADE_OUT_TIME]);
     }
 
-    if (const XMLNode *sub_node = node->getNode("swatter"))
+    const XMLNode *anti_karticle_node = node->getNode("anti-karticle");
+    if (!anti_karticle_node)
+        anti_karticle_node = node->getNode("Swatter");
+    if (const XMLNode *sub_node = anti_karticle_node)
     {
         sub_node->get("duration",
             &m_values[SWATTER_DURATION]);
@@ -487,20 +499,23 @@ void XmlCharacteristic::load(const XMLNode *node)
             &m_values[SWATTER_SQUASH_SLOWDOWN]);
     }
 
-    if (const XMLNode *sub_node = node->getNode("plunger"))
+    const XMLNode *photon_node = node->getNode("photon");
+    if (!photon_node)
+        photon_node = node->getNode("plunger");
+    if (const XMLNode *sub_node = photon_node)
     {
         sub_node->get("band-max-length",
-            &m_values[PLUNGER_BAND_MAX_LENGTH]);
+            &m_values[PHOTON_BAND_MAX_LENGTH]);
         sub_node->get("band-force",
-            &m_values[PLUNGER_BAND_FORCE]);
+            &m_values[PHOTON_BAND_FORCE]);
         sub_node->get("band-duration",
-            &m_values[PLUNGER_BAND_DURATION]);
+            &m_values[PHOTON_BAND_DURATION]);
         sub_node->get("band-speed-increase",
-            &m_values[PLUNGER_BAND_SPEED_INCREASE]);
+            &m_values[PHOTON_BAND_SPEED_INCREASE]);
         sub_node->get("band-fade-out-time",
-            &m_values[PLUNGER_BAND_FADE_OUT_TIME]);
+            &m_values[PHOTON_BAND_FADE_OUT_TIME]);
         sub_node->get("in-face-time",
-            &m_values[PLUNGER_IN_FACE_TIME]);
+            &m_values[PHOTON_IN_FACE_TIME]);
     }
 
     if (const XMLNode *sub_node = node->getNode("startup"))

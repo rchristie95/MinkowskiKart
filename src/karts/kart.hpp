@@ -470,12 +470,12 @@ public:
     virtual bool isInvulnerable() const OVERRIDE { return m_invulnerable_ticks > 0; }
     // ----------------------------------------------------------------------------------------
     /** Returns true if the kart has a plunger attached to its face. */
-    virtual int getBlockedByPlungerTicks() const OVERRIDE
+    virtual int getBlockedByPhotonTicks() const OVERRIDE
                                          { return m_view_blocked_by_plunger; }
     // ----------------------------------------------------------------------------------------
     /** Sets the view to blocked by a plunger. The duration depends on
-     *  the difficulty, see KartProperties getPlungerInFaceTime. */
-    virtual void blockViewWithPlunger() OVERRIDE;
+     *  the difficulty, see KartProperties getPhotonInFaceTime. */
+    virtual void blockViewWithPhoton() OVERRIDE;
     // ----------------------------------------------------------------------------------------
     /** Enables a kart shield protection for a certain amount of time. */
     virtual void setShieldTime(float t) OVERRIDE;

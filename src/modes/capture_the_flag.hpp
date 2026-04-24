@@ -56,7 +56,7 @@ private:
     /* Used in updateGraphics to add race gui message for flag */
     int m_red_flag_status, m_blue_flag_status;
 
-    std::map<int, int> m_swatter_reset_kart_ticks;
+    std::map<int, int> m_Swatter_reset_kart_ticks;
 
     std::shared_ptr<CTFFlag> m_red_flag, m_blue_flag;
 
@@ -132,7 +132,7 @@ public:
     void loseFlagForKart(int kart_id);
     // ------------------------------------------------------------------------
     void resetKartForSwatterHit(int kart_id, int at_world_ticks)
-                      { m_swatter_reset_kart_ticks[kart_id] = at_world_ticks; }
+                      { m_Swatter_reset_kart_ticks[kart_id] = at_world_ticks; }
     // ------------------------------------------------------------------------
     virtual std::pair<uint32_t, uint32_t> getGameStartedProgress() const
         OVERRIDE

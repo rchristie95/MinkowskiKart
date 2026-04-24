@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <items>
   <bonus-box   model="gift-box.spm"        lowmodel="gift-box-low.spm"        glow="31 202 253"/>
-  <banana      model="calabi-yau.spm"      lowmodel="calabi-yau-low.spm"      glow="197 152 37"/>
+  <compactification model="calabi-yau.spm" lowmodel="calabi-yau-low.spm" glow="197 152 37"/>
   <super-position model="gift-box.spm"     lowmodel="gift-box-low.spm"        glow="186 170 255"/>
   <nitro-big   model="nitrotank-big.spm"   lowmodel="nitrotank-big-low.spm"   glow="0 70 158"/>
   <nitro-small model="nitrotank-small.spm" lowmodel="nitrotank-small-low.spm" glow="0 70 158"/>
   <!-- While a bubble gum technically 
        isn't an item, it is internally 
        handled as one, so list it here    -->
-  <bubblegum   model="bubblegum.spm"       lowmodel="bubblegum-low.spm"       glow="246 150 209"/>
-  <bubblegum-nolok   model="bubblegum-nolok.spm" lowmodel="bubblegum-nolok-low.spm" glow="20 190 0"/>
+  <warp-bubble       model="bubblegum.spm"       lowmodel="bubblegum-low.spm"       glow="246 150 209"/>
+  <warp-bubble-nolok model="bubblegum-nolok.spm" lowmodel="bubblegum-nolok-low.spm" glow="20 190 0"/>
   <easter-egg  model="easter_egg.spm" glow="0 60 120" />
 </items>
 

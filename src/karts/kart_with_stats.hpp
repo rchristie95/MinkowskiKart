@@ -56,7 +56,7 @@ private:
     unsigned int m_large_nitro_count;
 
     /** How many bubblegums were taken */
-    unsigned int m_bubblegum_count;
+    unsigned int m_warp_bubble_count;
 
     /** How often the kart braked. */
     unsigned int m_brake_count;
@@ -112,7 +112,7 @@ public:
     unsigned int getLargeNitroCount() const { return m_large_nitro_count; }
     // ------------------------------------------------------------------------
     /** Returns the number of bubblegums that were taken */
-    unsigned int getBubblegumCount() const { return m_bubblegum_count; }
+    unsigned int getWarpBubbleCount() const { return m_warp_bubble_count; }
     // ------------------------------------------------------------------------
     /** Returns how long a kart was rescued all in all. */
     float getRescueTime() const { return m_rescue_time; }

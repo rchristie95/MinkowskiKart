@@ -165,17 +165,17 @@ AbstractCharacteristic::ValueType AbstractCharacteristic::getType(
         return TYPE_FLOAT;
     case SWATTER_SQUASH_SLOWDOWN:
         return TYPE_FLOAT;
-    case PLUNGER_BAND_MAX_LENGTH:
+    case PHOTON_BAND_MAX_LENGTH:
         return TYPE_FLOAT;
-    case PLUNGER_BAND_FORCE:
+    case PHOTON_BAND_FORCE:
         return TYPE_FLOAT;
-    case PLUNGER_BAND_DURATION:
+    case PHOTON_BAND_DURATION:
         return TYPE_FLOAT;
-    case PLUNGER_BAND_SPEED_INCREASE:
+    case PHOTON_BAND_SPEED_INCREASE:
         return TYPE_FLOAT;
-    case PLUNGER_BAND_FADE_OUT_TIME:
+    case PHOTON_BAND_FADE_OUT_TIME:
         return TYPE_FLOAT;
-    case PLUNGER_IN_FACE_TIME:
+    case PHOTON_IN_FACE_TIME:
         return TYPE_FLOAT;
     case STARTUP_TIME:
         return TYPE_FLOAT_VECTOR;
@@ -399,18 +399,18 @@ std::string AbstractCharacteristic::getName(CharacteristicType type)
         return "SWATTER_SQUASH_DURATION";
     case SWATTER_SQUASH_SLOWDOWN:
         return "SWATTER_SQUASH_SLOWDOWN";
-    case PLUNGER_BAND_MAX_LENGTH:
-        return "PLUNGER_BAND_MAX_LENGTH";
-    case PLUNGER_BAND_FORCE:
-        return "PLUNGER_BAND_FORCE";
-    case PLUNGER_BAND_DURATION:
-        return "PLUNGER_BAND_DURATION";
-    case PLUNGER_BAND_SPEED_INCREASE:
-        return "PLUNGER_BAND_SPEED_INCREASE";
-    case PLUNGER_BAND_FADE_OUT_TIME:
-        return "PLUNGER_BAND_FADE_OUT_TIME";
-    case PLUNGER_IN_FACE_TIME:
-        return "PLUNGER_IN_FACE_TIME";
+    case PHOTON_BAND_MAX_LENGTH:
+        return "PHOTON_BAND_MAX_LENGTH";
+    case PHOTON_BAND_FORCE:
+        return "PHOTON_BAND_FORCE";
+    case PHOTON_BAND_DURATION:
+        return "PHOTON_BAND_DURATION";
+    case PHOTON_BAND_SPEED_INCREASE:
+        return "PHOTON_BAND_SPEED_INCREASE";
+    case PHOTON_BAND_FADE_OUT_TIME:
+        return "PHOTON_BAND_FADE_OUT_TIME";
+    case PHOTON_IN_FACE_TIME:
+        return "PHOTON_IN_FACE_TIME";
     case STARTUP_TIME:
         return "STARTUP_TIME";
     case STARTUP_BOOST:
@@ -864,7 +864,7 @@ float AbstractCharacteristic::getLeanSpeed() const
 }  // getLeanSpeed
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getAnvilDuration() const
+float AbstractCharacteristic::getMaxwellBoltzmannDuration() const
 {
     float result;
     bool is_set = false;
@@ -873,10 +873,10 @@ float AbstractCharacteristic::getAnvilDuration() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(ANVIL_DURATION).c_str());
     return result;
-}  // getAnvilDuration
+}  // getMaxwellBoltzmannDuration
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getAnvilWeight() const
+float AbstractCharacteristic::getMaxwellBoltzmannWeight() const
 {
     float result;
     bool is_set = false;
@@ -885,10 +885,10 @@ float AbstractCharacteristic::getAnvilWeight() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(ANVIL_WEIGHT).c_str());
     return result;
-}  // getAnvilWeight
+}  // getMaxwellBoltzmannWeight
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getAnvilSpeedFactor() const
+float AbstractCharacteristic::getMaxwellBoltzmannSpeedFactor() const
 {
     float result;
     bool is_set = false;
@@ -897,10 +897,10 @@ float AbstractCharacteristic::getAnvilSpeedFactor() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(ANVIL_SPEED_FACTOR).c_str());
     return result;
-}  // getAnvilSpeedFactor
+}  // getMaxwellBoltzmannSpeedFactor
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteFriction() const
+float AbstractCharacteristic::getTimeDilationFriction() const
 {
     float result;
     bool is_set = false;
@@ -909,10 +909,10 @@ float AbstractCharacteristic::getParachuteFriction() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_FRICTION).c_str());
     return result;
-}  // getParachuteFriction
+}  // getTimeDilationFriction
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteDuration() const
+float AbstractCharacteristic::getTimeDilationDuration() const
 {
     float result;
     bool is_set = false;
@@ -921,10 +921,10 @@ float AbstractCharacteristic::getParachuteDuration() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_DURATION).c_str());
     return result;
-}  // getParachuteDuration
+}  // getTimeDilationDuration
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteDurationOther() const
+float AbstractCharacteristic::getTimeDilationDurationOther() const
 {
     float result;
     bool is_set = false;
@@ -933,10 +933,10 @@ float AbstractCharacteristic::getParachuteDurationOther() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_DURATION_OTHER).c_str());
     return result;
-}  // getParachuteDurationOther
+}  // getTimeDilationDurationOther
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteDurationRankMult() const
+float AbstractCharacteristic::getTimeDilationDurationRankMult() const
 {
     float result;
     bool is_set = false;
@@ -945,10 +945,10 @@ float AbstractCharacteristic::getParachuteDurationRankMult() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_DURATION_RANK_MULT).c_str());
     return result;
-}  // getParachuteDurationRankMult
+}  // getTimeDilationDurationRankMult
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteDurationSpeedMult() const
+float AbstractCharacteristic::getTimeDilationDurationSpeedMult() const
 {
     float result;
     bool is_set = false;
@@ -957,10 +957,10 @@ float AbstractCharacteristic::getParachuteDurationSpeedMult() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_DURATION_SPEED_MULT).c_str());
     return result;
-}  // getParachuteDurationSpeedMult
+}  // getTimeDilationDurationSpeedMult
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteLboundFraction() const
+float AbstractCharacteristic::getTimeDilationLboundFraction() const
 {
     float result;
     bool is_set = false;
@@ -969,10 +969,10 @@ float AbstractCharacteristic::getParachuteLboundFraction() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_LBOUND_FRACTION).c_str());
     return result;
-}  // getParachuteLboundFraction
+}  // getTimeDilationLboundFraction
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteUboundFraction() const
+float AbstractCharacteristic::getTimeDilationUboundFraction() const
 {
     float result;
     bool is_set = false;
@@ -981,10 +981,10 @@ float AbstractCharacteristic::getParachuteUboundFraction() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_UBOUND_FRACTION).c_str());
     return result;
-}  // getParachuteUboundFraction
+}  // getTimeDilationUboundFraction
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getParachuteMaxSpeed() const
+float AbstractCharacteristic::getTimeDilationMaxSpeed() const
 {
     float result;
     bool is_set = false;
@@ -993,7 +993,7 @@ float AbstractCharacteristic::getParachuteMaxSpeed() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(PARACHUTE_MAX_SPEED).c_str());
     return result;
-}  // getParachuteMaxSpeed
+}  // getTimeDilationMaxSpeed
 
 // ----------------------------------------------------------------------------
 float AbstractCharacteristic::getFrictionKartFriction() const
@@ -1008,7 +1008,7 @@ float AbstractCharacteristic::getFrictionKartFriction() const
 }  // getFrictionKartFriction
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getBubblegumDuration() const
+float AbstractCharacteristic::getWarpBubbleDuration() const
 {
     float result;
     bool is_set = false;
@@ -1017,10 +1017,10 @@ float AbstractCharacteristic::getBubblegumDuration() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(BUBBLEGUM_DURATION).c_str());
     return result;
-}  // getBubblegumDuration
+}  // getWarpBubbleDuration
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getBubblegumSpeedFraction() const
+float AbstractCharacteristic::getWarpBubbleSpeedFraction() const
 {
     float result;
     bool is_set = false;
@@ -1029,10 +1029,10 @@ float AbstractCharacteristic::getBubblegumSpeedFraction() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(BUBBLEGUM_SPEED_FRACTION).c_str());
     return result;
-}  // getBubblegumSpeedFraction
+}  // getWarpBubbleSpeedFraction
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getBubblegumTorque() const
+float AbstractCharacteristic::getWarpBubbleTorque() const
 {
     float result;
     bool is_set = false;
@@ -1041,10 +1041,10 @@ float AbstractCharacteristic::getBubblegumTorque() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(BUBBLEGUM_TORQUE).c_str());
     return result;
-}  // getBubblegumTorque
+}  // getWarpBubbleTorque
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getBubblegumFadeInTime() const
+float AbstractCharacteristic::getWarpBubbleFadeInTime() const
 {
     float result;
     bool is_set = false;
@@ -1053,10 +1053,10 @@ float AbstractCharacteristic::getBubblegumFadeInTime() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(BUBBLEGUM_FADE_IN_TIME).c_str());
     return result;
-}  // getBubblegumFadeInTime
+}  // getWarpBubbleFadeInTime
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getBubblegumShieldDuration() const
+float AbstractCharacteristic::getWarpBubbleShieldDuration() const
 {
     float result;
     bool is_set = false;
@@ -1065,7 +1065,7 @@ float AbstractCharacteristic::getBubblegumShieldDuration() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(BUBBLEGUM_SHIELD_DURATION).c_str());
     return result;
-}  // getBubblegumShieldDuration
+}  // getWarpBubbleShieldDuration
 
 // ----------------------------------------------------------------------------
 float AbstractCharacteristic::getZipperDuration() const
@@ -1128,7 +1128,7 @@ float AbstractCharacteristic::getZipperFadeOutTime() const
 }  // getZipperFadeOutTime
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getSwatterDuration() const
+float AbstractCharacteristic::getAntiKarticleDuration() const
 {
     float result;
     bool is_set = false;
@@ -1137,10 +1137,10 @@ float AbstractCharacteristic::getSwatterDuration() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(SWATTER_DURATION).c_str());
     return result;
-}  // getSwatterDuration
+}  // getAntiKarticleDuration
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getSwatterDistance() const
+float AbstractCharacteristic::getAntiKarticleDistance() const
 {
     float result;
     bool is_set = false;
@@ -1149,10 +1149,10 @@ float AbstractCharacteristic::getSwatterDistance() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(SWATTER_DISTANCE).c_str());
     return result;
-}  // getSwatterDistance
+}  // getAntiKarticleDistance
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getSwatterSquashDuration() const
+float AbstractCharacteristic::getAntiKarticleSquashDuration() const
 {
     float result;
     bool is_set = false;
@@ -1161,10 +1161,10 @@ float AbstractCharacteristic::getSwatterSquashDuration() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(SWATTER_SQUASH_DURATION).c_str());
     return result;
-}  // getSwatterSquashDuration
+}  // getAntiKarticleSquashDuration
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getSwatterSquashSlowdown() const
+float AbstractCharacteristic::getAntiKarticleSquashSlowdown() const
 {
     float result;
     bool is_set = false;
@@ -1173,79 +1173,79 @@ float AbstractCharacteristic::getSwatterSquashSlowdown() const
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
                     getName(SWATTER_SQUASH_SLOWDOWN).c_str());
     return result;
-}  // getSwatterSquashSlowdown
+}  // getAntiKarticleSquashSlowdown
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getPlungerBandMaxLength() const
+float AbstractCharacteristic::getPhotonBandMaxLength() const
 {
     float result;
     bool is_set = false;
-    process(PLUNGER_BAND_MAX_LENGTH, &result, &is_set);
+    process(PHOTON_BAND_MAX_LENGTH, &result, &is_set);
     if (!is_set)
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
-                    getName(PLUNGER_BAND_MAX_LENGTH).c_str());
+                    getName(PHOTON_BAND_MAX_LENGTH).c_str());
     return result;
-}  // getPlungerBandMaxLength
+}  // getPhotonBandMaxLength
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getPlungerBandForce() const
+float AbstractCharacteristic::getPhotonBandForce() const
 {
     float result;
     bool is_set = false;
-    process(PLUNGER_BAND_FORCE, &result, &is_set);
+    process(PHOTON_BAND_FORCE, &result, &is_set);
     if (!is_set)
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
-                    getName(PLUNGER_BAND_FORCE).c_str());
+                    getName(PHOTON_BAND_FORCE).c_str());
     return result;
-}  // getPlungerBandForce
+}  // getPhotonBandForce
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getPlungerBandDuration() const
+float AbstractCharacteristic::getPhotonBandDuration() const
 {
     float result;
     bool is_set = false;
-    process(PLUNGER_BAND_DURATION, &result, &is_set);
+    process(PHOTON_BAND_DURATION, &result, &is_set);
     if (!is_set)
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
-                    getName(PLUNGER_BAND_DURATION).c_str());
+                    getName(PHOTON_BAND_DURATION).c_str());
     return result;
-}  // getPlungerBandDuration
+}  // getPhotonBandDuration
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getPlungerBandSpeedIncrease() const
+float AbstractCharacteristic::getPhotonBandSpeedIncrease() const
 {
     float result;
     bool is_set = false;
-    process(PLUNGER_BAND_SPEED_INCREASE, &result, &is_set);
+    process(PHOTON_BAND_SPEED_INCREASE, &result, &is_set);
     if (!is_set)
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
-                    getName(PLUNGER_BAND_SPEED_INCREASE).c_str());
+                    getName(PHOTON_BAND_SPEED_INCREASE).c_str());
     return result;
-}  // getPlungerBandSpeedIncrease
+}  // getPhotonBandSpeedIncrease
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getPlungerBandFadeOutTime() const
+float AbstractCharacteristic::getPhotonBandFadeOutTime() const
 {
     float result;
     bool is_set = false;
-    process(PLUNGER_BAND_FADE_OUT_TIME, &result, &is_set);
+    process(PHOTON_BAND_FADE_OUT_TIME, &result, &is_set);
     if (!is_set)
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
-                    getName(PLUNGER_BAND_FADE_OUT_TIME).c_str());
+                    getName(PHOTON_BAND_FADE_OUT_TIME).c_str());
     return result;
-}  // getPlungerBandFadeOutTime
+}  // getPhotonBandFadeOutTime
 
 // ----------------------------------------------------------------------------
-float AbstractCharacteristic::getPlungerInFaceTime() const
+float AbstractCharacteristic::getPhotonInFaceTime() const
 {
     float result;
     bool is_set = false;
-    process(PLUNGER_IN_FACE_TIME, &result, &is_set);
+    process(PHOTON_IN_FACE_TIME, &result, &is_set);
     if (!is_set)
         Log::fatal("AbstractCharacteristic", "Can't get characteristic %s",
-                    getName(PLUNGER_IN_FACE_TIME).c_str());
+                    getName(PHOTON_IN_FACE_TIME).c_str());
     return result;
-}  // getPlungerInFaceTime
+}  // getPhotonInFaceTime
 
 // ----------------------------------------------------------------------------
 std::vector<float> AbstractCharacteristic::getStartupTime() const

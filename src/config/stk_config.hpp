@@ -69,15 +69,15 @@ public:
 
     int   m_bonusbox_item_return_ticks;  /** Time until a bonus box collected by a kart returns */
     int   m_nitro_item_return_ticks;     /** Time until a nitro collected by a kart returns */
-    int   m_banana_item_return_ticks;    /** Time until a banana collected by a kart return */
-    int   m_bubblegum_item_return_ticks; /** Time until a bubble gum collected by a kart returns */
+    int   m_compactification_item_return_ticks; /** Time until a compactification collected by a kart returns */
+    int   m_warp_bubble_item_return_ticks;      /** Time until a warp bubble collected by a kart returns */
 
     static float UNDEFINED;
     float m_bomb_time;                 /**<Time before a bomb explodes.        */
     float m_bomb_time_increase;        /**<Time added to bomb timer when it's
                                            passed on.                          */
     int   m_item_switch_ticks;          /**< Time items will be switched.       */
-    int   m_bubblegum_counter;         /**< How many times bubble gums must be
+    int   m_warp_bubble_counter;         /**< How many times warp bubbles must be
                                             driven over before they disappear. */
     bool  m_shield_restrict_weapons;   /**<Wether weapon usage is punished. */
     float m_explosion_impulse_objects; /**<Impulse of explosion on moving

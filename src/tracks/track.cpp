@@ -2764,7 +2764,8 @@ void Track::itemCommand(const XMLNode *node)
         return;
 
     Item::ItemType type;
-    if     (name=="banana"     ) type = Item::ITEM_BANANA;
+    if     (name=="compactification" || name=="banana")
+        type = Item::ITEM_COMPACTIFICATION;
     else if(name=="item"       ) type = Item::ITEM_BONUS_BOX;
     else if(name=="small-nitro") type = Item::ITEM_NITRO_SMALL;
     else if(name=="easter-egg" ) type = Item::ITEM_EASTER_EGG;

@@ -609,21 +609,21 @@ void Kart::setPosition(int p)
 
 // -----------------------------------------------------------------------------
 /** Sets that the view is blocked by a plunger. The duration depends on
- *  the difficulty, see KartPorperties getPlungerInFaceTime.
+ *  the difficulty, see KartPorperties getPhotonInFaceTime.
  */
-void Kart::blockViewWithPlunger()
+void Kart::blockViewWithPhoton()
 {
     // Avoid that a plunger extends the plunger time
     if(m_view_blocked_by_plunger<=0 && !isShielded())
     {
         m_view_blocked_by_plunger = (int16_t)
-            stk_config->time2Ticks(m_kart_properties->getPlungerInFaceTime());
+            stk_config->time2Ticks(m_kart_properties->getPhotonInFaceTime());
     }
     if(isShielded())
     {
         decreaseShieldTime();
     }
-}   // blockViewWithPlunger
+}   // blockViewWithPhoton
 
 // -----------------------------------------------------------------------------
 /** Returns a transform that will align an object with the kart: the heading
@@ -1151,7 +1151,7 @@ void Kart::collectedItem(ItemState *item_state)
 
     switch (type)
     {
-    case Item::ITEM_BANANA:
+    case Item::ITEM_COMPACTIFICATION:
         m_attachment->hitBanana(item_state);
         break;
     case Item::ITEM_NITRO_SMALL:
@@ -1168,20 +1168,20 @@ void Kart::collectedItem(ItemState *item_state)
     case Item::ITEM_SUPER_POSITION:
         m_powerup->hitSuperPosition(item_state);
         break;
-    case Item::ITEM_BUBBLEGUM:
+    case Item::ITEM_WARP_BUBBLE:
         m_has_caught_nolok_bubblegum =
             (item_state->getPreviousOwner()&&
              item_state->getPreviousOwner()->getIdent() == "nolok");
 
         // slow down
         m_bubblegum_ticks = (int16_t)stk_config->time2Ticks(
-            m_kart_properties->getBubblegumDuration());
+            m_kart_properties->getWarpBubbleDuration());
         m_bubblegum_torque_sign =
             ((World::getWorld()->getTicksSinceStart() / 10) % 2 == 0) ?
             true : false;
         m_max_speed->setSlowdown(MaxSpeed::MS_DECREASE_BUBBLE,
-            m_kart_properties->getBubblegumSpeedFraction() ,
-            stk_config->time2Ticks(m_kart_properties->getBubblegumFadeInTime()),
+            m_kart_properties->getWarpBubbleSpeedFraction() ,
+            stk_config->time2Ticks(m_kart_properties->getWarpBubbleFadeInTime()),
             m_bubblegum_ticks);
         if (!RewindManager::get()->isRewinding())
             getNextEmitter()->play(getSmoothedXYZ(), m_goo_sound);
@@ -2891,7 +2891,7 @@ void Kart::updateEnginePowerAndBrakes(int ticks)
     {
         engine_power = 0.0f;
         m_body->applyTorque(btVector3(0.0,
-            m_kart_properties->getBubblegumTorque() *
+            m_kart_properties->getWarpBubbleTorque() *
             (m_bubblegum_torque_sign ? 1.0f : -1.0f), 0.0));
     }
 

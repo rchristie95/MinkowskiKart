@@ -235,13 +235,13 @@ core::stringw AchievementProgressDialog::niceGoalName(std::string internal_name)
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="powerup-used-1race") { nice_name = _("Powerups used"); nice_name += _(" (1 race)"); }
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="bowling-hit") nice_name = _("Bowling ball hits");
+    if(internal_name=="black-hole-hit") nice_name = _("Black hole hits");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="bowling-hit-1race") { nice_name = _("Bowling ball hits"); nice_name += _(" (1 race)"); }
+    if(internal_name=="black-hole-hit-1race") { nice_name = _("Black hole hits"); nice_name += _(" (1 race)"); }
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="swatter-hit") nice_name = _("Swatter hits");
+    if(internal_name=="anti-karticle-hit") nice_name = _("Anti-Karticle hits");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="swatter-hit-1race") { nice_name = _("Swatter hits"); nice_name += _(" (1 race)"); }
+    if(internal_name=="anti-karticle-hit-1race") { nice_name = _("Anti-Karticle hits"); nice_name += _(" (1 race)"); }
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="all-hits") nice_name = _("All hits");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
@@ -249,9 +249,9 @@ core::stringw AchievementProgressDialog::niceGoalName(std::string internal_name)
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="hit-same-kart-1race") { nice_name = _("Hits against the same kart"); nice_name += _(" (1 race)"); }
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="banana") nice_name = _("Bananas collected");
+    if(internal_name=="compactification" || internal_name=="banana") nice_name = _("Compactifications");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="banana-1race") { nice_name = _("Bananas collected"); nice_name += _(" (1 race)"); }
+    if(internal_name=="compactification-1race") { nice_name = _("Compactifications"); nice_name += _(" (1 race)"); }
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="skidding") nice_name = _("Skidding");
     if (internal_name=="skidding-1race")

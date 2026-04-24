@@ -46,7 +46,7 @@ void tutorial_bananas(int idKart)
 {
     Utils::logInfo("tutorial_bananas(Kart " + idKart + "): Triggered");
     GUI::displayStaticMessage(
-        GUI::translate("Avoid bananas!"),
+        GUI::translate("Avoid compactifications!"),
     GUI::ERROR);
 }
 
@@ -64,7 +64,7 @@ void tutorial_giftboxes(int idKart)
     else
     {
         GUI::displayStaticMessage(
-            GUI::translate("Collect gift boxes, and fire by pressing the bowling icon to blow away these boxes!")
+            GUI::translate("Collect gift boxes, and fire by pressing the black hole icon to blow away these boxes!")
         );
     }
 }
@@ -85,7 +85,7 @@ void tutorial_backgiftboxes(int idKart)
     else
     {
         GUI::displayStaticMessage(
-            GUI::translate("Press the mirror icon to look behind.\nFire the weapon behind by holding the mirror icon and then swiping to the bowling icon!")
+            GUI::translate("Press the mirror icon to look behind.\nFire the weapon behind by holding the mirror icon and then swiping to the black hole icon!")
         );
     }
 }

@@ -50,7 +50,7 @@ namespace
 {
 core::vector3df getItemVisualOffset(Item::ItemType type)
 {
-    if (type == Item::ITEM_BANANA)
+    if (type == Item::ITEM_COMPACTIFICATION)
         return core::vector3df(0.0f, 0.5f, 0.0f);
     return core::vector3df(0.0f, 0.0f, 0.0f);
 }
@@ -121,8 +121,8 @@ void ItemState::setDisappearCounter()
 {
     switch (m_type)
     {
-    case ITEM_BUBBLEGUM:
-        m_used_up_counter = stk_config->m_bubblegum_counter; break;
+    case ITEM_WARP_BUBBLE:
+        m_used_up_counter = stk_config->m_warp_bubble_counter; break;
     case ITEM_EASTER_EGG:
         m_used_up_counter = -1; break;
     default:
@@ -198,12 +198,12 @@ void ItemState::collected(const AbstractKart *kart)
             case ITEM_NITRO_SMALL:
                 m_ticks_till_return = stk_config->m_nitro_item_return_ticks;
                 break;
-            case ITEM_BANANA:
-                m_ticks_till_return = stk_config->m_banana_item_return_ticks;
+            case ITEM_COMPACTIFICATION:
+                m_ticks_till_return = stk_config->m_compactification_item_return_ticks;
                 break;
-            case ITEM_BUBBLEGUM:
-            case ITEM_BUBBLEGUM_NOLOK:
-                m_ticks_till_return = stk_config->m_bubblegum_item_return_ticks;
+            case ITEM_WARP_BUBBLE:
+            case ITEM_WARP_BUBBLE_NOLOK:
+                m_ticks_till_return = stk_config->m_warp_bubble_item_return_ticks;
                 break;
             default:
                 m_ticks_till_return = stk_config->time2Ticks(2.0f);
@@ -223,8 +223,8 @@ void ItemState::collected(const AbstractKart *kart)
 Item::ItemType ItemState::getGrahpicalType() const
 {
     return m_previous_owner && m_previous_owner->getIdent() == "nolok" &&
-        getType() == ITEM_BUBBLEGUM ?
-        ITEM_BUBBLEGUM_NOLOK : getType();
+        getType() == ITEM_WARP_BUBBLE ?
+        ITEM_WARP_BUBBLE_NOLOK : getType();
 }   // getGrahpicalType
 
 //-----------------------------------------------------------------------------
@@ -538,7 +538,7 @@ void Item::updateGraphics(float dt)
 
     float time_till_return = stk_config->ticks2Time(getTicksTillReturn());
     bool is_visible = isAvailable() || time_till_return <= 1.0f ||
-                      (getType() == ITEM_BUBBLEGUM &&
+                      (getType() == ITEM_WARP_BUBBLE &&
                        getOriginalType() == ITEM_NONE && !isUsedUp());
 
     m_node->setVisible(is_visible);
@@ -556,7 +556,7 @@ void Item::updateGraphics(float dt)
 
     if (is_visible)
     {
-        if (!isAvailable() && !(getType() == ITEM_BUBBLEGUM &&
+        if (!isAvailable() && !(getType() == ITEM_WARP_BUBBLE &&
                 getOriginalType() == ITEM_NONE && !isUsedUp()))
         {
             // Keep it visible so particles work, but hide the model

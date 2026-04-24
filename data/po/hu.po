@@ -59,7 +59,7 @@ msgid "Strike!"
 msgstr "Üsd, vágd, nem apád!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Találj el 10 gokartot egy tekegolyóval."
 
 #. I18N: ./data/achievements.xml
@@ -115,11 +115,11 @@ msgid ""
 msgstr "Nyerj 5 önálló versenyt egyhuzamban legalább 3 számítógépes ellenfél ellen. Vigyázz, egy verseny újraindítása vesztésnek számít."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Banánkedvelő"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Gyűjts össze egy versenyen legalább 5 banánt."
 
 #. I18N: ./data/achievements.xml
@@ -136,7 +136,7 @@ msgstr "Moszkitóvadász"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Tekintsd az ellenfeleket moszkitóknak! Csapd le őket a légycsapóval legalább 5-ször egy versenyben."
 
@@ -1473,7 +1473,7 @@ msgstr "Gyűjts kék ajándékdobozokat, bónuszokat fognak adni."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Kerüld el a banánokat!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1602,13 +1602,13 @@ msgstr "Torta – dobd a legközelebbi ellenfélre, a legjobb rövidtávon és h
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "WC-pumpa - dobd el az egyenesben egy ellenfél visszahúzásához, vagy hátranézés közben, hogy eltakard valaki kilátását."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Tekegolyó – egyenesen gurul, amíg ki nem üt valakit. Visszapattanhat a falakról. Ha hátranézel, akkor hátra is gurítható."
 
@@ -1630,13 +1630,13 @@ msgstr "Kosárlabda - az első helyen álló után pattog, valamint szétlapíth
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Légycsapó – lecsapja a közelben lévő gokartokat, lelassítva azokat. Használható ejtőernyők és bombák eltávolításához is."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Egy banán elütése azt okozhatja, hogy a következők egyike lesz a gokartra akadva:"
 
@@ -2606,7 +2606,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "A farolás sokkal gyorsabbá tesz, használd mindig, ha biztonságos."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "A légycsapó használható a bombák vagy az ejtőernyők eltávolításához."
 
 #. I18N: ./data/tips.xml
@@ -4600,14 +4600,14 @@ msgstr " (1 verseny)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Tekegolyó találatok"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Légycsapó ütések"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4627,7 +4627,7 @@ msgstr "Ugyanazon gokart elleni csapások"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Összegyűjtött banánok"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6735,7 +6735,7 @@ msgstr "Nézz hátra ennek megnyomásával: <%s>.\nTüzelj a fegyverrel magad m�
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Nyomd meg a tükör ikont a hátranézéshez.\nTüzelj a fegyverrel hátra a tükör ikon nyomva tartásával és utána a tekegolyó ikonra pöccintve!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

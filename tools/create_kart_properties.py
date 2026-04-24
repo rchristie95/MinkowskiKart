@@ -42,7 +42,7 @@ Friction: kartFriction
 Bubblegum: duration, speedFraction, torque, fadeInTime, shieldDuration
 Zipper: duration, force, speedGain, maxSpeedIncrease, fadeOutTime
 Swatter: duration, distance, squashDuration, squashSlowdown
-Plunger: bandMaxLength, bandForce, bandDuration, bandSpeedIncrease, bandFadeOutTime, inFaceTime
+Photon: bandMaxLength, bandForce, bandDuration, bandSpeedIncrease, bandFadeOutTime, inFaceTime
 Startup: time(std::vector<float>/floatVector), boost(std::vector<float>/floatVector)
 Rescue: duration, vertOffset, height
 Explosion: duration, radius, invulnerabilityTime

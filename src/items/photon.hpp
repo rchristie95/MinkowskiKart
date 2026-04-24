@@ -19,8 +19,8 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#ifndef HEADER_MISSILE_HPP
-#define HEADER_MISSILE_HPP
+#ifndef HEADER_PHOTON_HPP
+#define HEADER_PHOTON_HPP
 
 #include <irrString.h>
 using namespace irr;
@@ -35,7 +35,7 @@ class XMLNode;
 /**
   * \ingroup items
   */
-class Plunger : public Flyable
+class Photon : public Flyable
 {
 private:
     /** The rubber band attached to a plunger. */
@@ -49,8 +49,8 @@ private:
     bool m_reverse_mode, m_has_locally_played_sound, m_moved_to_infinity;
 
 public:
-                 Plunger(AbstractKart *kart);
-                ~Plunger();
+                 Photon(AbstractKart *kart);
+                ~Photon();
     static  void init(const XMLNode &node, scene::IMesh* missile);
     virtual bool updateAndDelete(int ticks) OVERRIDE;
     virtual void hitTrack () OVERRIDE;
@@ -78,6 +78,6 @@ public:
     // ------------------------------------------------------------------------
     virtual void onDeleteFlyable() OVERRIDE;
 
-};   // Plunger
+};   // Photon
 
 #endif

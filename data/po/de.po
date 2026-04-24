@@ -79,8 +79,8 @@ msgid "Strike!"
 msgstr "Strike!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
-msgstr "Triff 10 Karts mit einer Bowlingkugel."
+msgid "Hit 10 karts with a black hole."
+msgstr "Triff 10 Karts mit einer Black Holekugel."
 
 #. I18N: ./data/achievements.xml
 msgid "Arch Enemy"
@@ -135,11 +135,11 @@ msgid ""
 msgstr "Gewinne 5 Einzelrennen hintereinander gegen mindestens 3 Computerspieler. Beachte: Wenn du ein Rennen neustartest, zählt es als Niederlage."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Bananenliebhaber"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Sammle mindestens 5 Bananen in einem Rennen."
 
 #. I18N: ./data/achievements.xml
@@ -156,7 +156,7 @@ msgstr "Moskitojäger"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Mach deine Gegner platt wie Moskitos! Zerquetsche in einem Rennen mindestens 5 Gegner mit der Fliegenklatsche."
 
@@ -1493,7 +1493,7 @@ msgstr "Sammle blaue Geschenkboxen ein, sie werden dir Boni geben."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Weich den Bananen aus!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1622,15 +1622,15 @@ msgstr "Kuchen – Wird auf den Gegner geworfen, der am nächsten ist; wirkt am 
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Pömpel – Wirf ihn nach vorne, um einen Gegner zurückzuziehen, oder wirf ihn, während du nach hinten schaust, um die Sicht des Gegners zu blockieren."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
-msgstr "Bowlingkugel – rollt geradeaus, bis sie trifft, sie kann von Wänden abprallen. Wird nach hinten geworfen, wenn du nach hinten schaust."
+msgstr "Black Holekugel – rollt geradeaus, bis sie trifft, sie kann von Wänden abprallen. Wird nach hinten geworfen, wenn du nach hinten schaust."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid "Parachute - slows down all karts in a better position."
@@ -1650,13 +1650,13 @@ msgstr "Basketball – springt zum Spitzenreiter und kann andere Karts auf dem W
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Fliegenklatsche – Zerquetscht nahe Karts und bremst sie dadurch ab. Kann auch benutzt werden, um Fallschirme und Bomben loszuwerden."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Eines der folgenden Dinge wird deinem Kart angehängt, wenn du eine Banane triffst:"
 
@@ -2626,7 +2626,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Schlittern macht dich viel schneller; schlittere, wann immer es sicher ist."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Die Fliegenklatsche kann benutzt werden, um Bomben oder Fallschirme loszuwerden."
 
 #. I18N: ./data/tips.xml
@@ -2659,7 +2659,7 @@ msgstr "Sei vorsichtig, wenn du dich anderen Karts näherst, sie könnten dich a
 msgid ""
 "Basketballs can be destroyed using precise backward shots with a bowling "
 "ball, cake, or plunger."
-msgstr "Basketbälle können mit präzisen Rückwärtsschüssen mit einer Bowlingkugel, einem Kuchen oder Pömpel zerstört werden."
+msgstr "Basketbälle können mit präzisen Rückwärtsschüssen mit einer Black Holekugel, einem Kuchen oder Pömpel zerstört werden."
 
 #. I18N: ./data/tips.xml
 msgid ""
@@ -2669,7 +2669,7 @@ msgstr "Krache anderen Karts nicht ins Heck, das verlangsamt dich."
 
 #. I18N: ./data/tips.xml
 msgid "You can use bowling balls to push and block the ball."
-msgstr "Bowlingkugeln können benutzt werden, um den Fußball zu blocken oder zu schießen."
+msgstr "Black Holekugeln können benutzt werden, um den Fußball zu blocken oder zu schießen."
 
 #. I18N: ./data/tips.xml
 msgid "In soccer, always work as a team for good results."
@@ -2691,7 +2691,7 @@ msgstr "Achte darauf, Nitro im Wert von mindestens zwei großen Flaschen zu spei
 
 #. I18N: ./data/tips.xml
 msgid "Never use the three bowling balls all at the same time."
-msgstr "Benutze niemals alle drei Bowlingkugeln gleichzeitig."
+msgstr "Benutze niemals alle drei Black Holekugeln gleichzeitig."
 
 #. I18N: ./data/tips.xml
 msgid ""
@@ -4620,14 +4620,14 @@ msgstr " (1 Rennen)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
-msgstr "Bowlingkugeltreffer"
+msgid "Black hole hits"
+msgstr "Black Holekugeltreffer"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Fliegenklatschentreffer"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4647,7 +4647,7 @@ msgstr "Treffer auf das selbe Kart"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Gesammelte Bananen"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6741,7 +6741,7 @@ msgstr "Sammle Geschenke und feuer die Waffe mit <%s> ab, um die Kisten wegzuspr
 msgid ""
 "Collect gift boxes, and fire by pressing the bowling icon to blow away these"
 " boxes!"
-msgstr "Sammle Geschenkkisten und mach einen Schuss mit dem Bowlingsymbol, um diese Kisten wegzupusten!"
+msgstr "Sammle Geschenkkisten und mach einen Schuss mit dem Black Holesymbol, um diese Kisten wegzupusten!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:78
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:78
@@ -6755,8 +6755,8 @@ msgstr "Drücke <%s>, um zurückzuschauen.\nSchieße nach hinten, indem du <%s> 
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
-msgstr "Drücke das Spiegel-Symbol, um zurückzuschauen.\nSchieße nach hinten, indem du erst das Spiegel-Symbol und dann das Bowling-Symbol drückst!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
+msgstr "Drücke das Spiegel-Symbol, um zurückzuschauen.\nSchieße nach hinten, indem du erst das Spiegel-Symbol und dann das Black Hole-Symbol drückst!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:98
@@ -6839,7 +6839,7 @@ msgid ""
 " while avoiding other karts as they may overtake you, but don't eat the "
 "bananas! Watch for bowling balls, plungers, bubble gum, and cakes thrown by "
 "your opponents."
-msgstr "Wir haben mehrere Strecken mit verschiedenen Themen für Spieler, die sie genießen können: Fahrten unter Wasser, über ländliches Ackerland, durch den Dschungel oder sogar im Weltraum! Versuche dein Bestes und vermeide dabei andere Karts, da diese möglicherweise überholen, aber esse keine Bananen! Achte auf Bowlingkugeln, Pömpel, Kaugummi und Kuchen, die von deinen Gegnern geworfen werden."
+msgstr "Wir haben mehrere Strecken mit verschiedenen Themen für Spieler, die sie genießen können: Fahrten unter Wasser, über ländliches Ackerland, durch den Dschungel oder sogar im Weltraum! Versuche dein Bestes und vermeide dabei andere Karts, da diese möglicherweise überholen, aber esse keine Bananen! Achte auf Black Holekugeln, Pömpel, Kaugummi und Kuchen, die von deinen Gegnern geworfen werden."
 
 #: net.supertuxkart.SuperTuxKart.metainfo.xml:15
 msgid ""

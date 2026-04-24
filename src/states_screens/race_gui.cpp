@@ -497,7 +497,7 @@ void RaceGUI::renderPlayerView(const Camera *camera, float dt)
 
     bool isSpectatorCam = Camera::getActiveCamera()->isSpectatorMode();
 
-    if (!isSpectatorCam) drawPlungerInFace(camera, dt);
+    if (!isSpectatorCam) drawPhotonInFace(camera, dt);
     if (!isSpectatorCam && relativistic_vfx_manager)
         relativistic_vfx_manager->renderBlackboards();
 

@@ -14,8 +14,8 @@
                         I18N="Tab in help menu" text="Game Modes"/>
                 <icon-button id="page3" width="128" height="128" icon="gui/icons/gift.png"
                         I18N="Tab in help menu" text="Powerups"/>
-                <icon-button id="page4" width="128" height="128" icon="gui/icons/banana.png"
-                        I18N="Tab in help menu" text="Bananas"/>
+                <icon-button id="page4" width="128" height="128" icon="gui/icons/compactification-icon.png"
+                        I18N="Tab in help menu" text="Compactifications"/>
                 <icon-button id="page5" width="128" height="128" icon="gui/icons/story_mode_book.png"
                         I18N="Tab in help menu" text="Story Mode"/>
                 <icon-button id="page6" width="128" height="128" icon="gui/icons/mass.png"
