@@ -223,6 +223,12 @@ void IconButtonWidget::setLabel(const stringw& new_label)
     setLabelFont();
 }
 // -----------------------------------------------------------------------------
+void IconButtonWidget::setLabelColor(const video::SColor& color)
+{
+    if (m_label == NULL) return;
+    m_label->setOverrideColor(color);
+}
+// -----------------------------------------------------------------------------
 void IconButtonWidget::setLabelFont(irr::gui::ScalableFont* font)
 {
     m_font = font;

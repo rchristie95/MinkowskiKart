@@ -161,6 +161,14 @@ struct CosmicStringVFX
     {}
 };
 
+struct CompactificationVFX
+{
+    bool  active;
+    float strength;  // 0 = no effect, 1 = full strip-stretch
+
+    CompactificationVFX() : active(false), strength(0.0f) {}
+};
+
 struct TidalArmVFX
 {
     float              arc_progress;       // 0-1 swing animation
@@ -202,10 +210,11 @@ class RelativisticVFXManager : public NoCopy
 {
 private:
     // Active effect instances (indexed by kart ID or projectile ID)
-    std::vector<WarpBubbleVFX>     m_warp_bubbles;
-    std::vector<TimeDilationVFX>   m_time_dilations;
-    std::vector<MassSpikeVFX>      m_mass_spikes;
-    std::vector<TidalArmVFX>       m_tidal_arms;
+    std::vector<WarpBubbleVFX>       m_warp_bubbles;
+    std::vector<TimeDilationVFX>     m_time_dilations;
+    std::vector<MassSpikeVFX>        m_mass_spikes;
+    std::vector<TidalArmVFX>         m_tidal_arms;
+    std::vector<CompactificationVFX> m_compactifications;
 
     // Blackboard overlays (per-kart, active when hit by Cosmic String backward)
     std::vector<BlackboardOverlay*> m_blackboards;
@@ -253,6 +262,9 @@ public:
     void activateTidalArm(unsigned int kart_id);
     void deactivateTidalArm(unsigned int kart_id);
 
+    void activateCompactification(unsigned int kart_id);
+    void deactivateCompactification(unsigned int kart_id);
+
     // Frame shift (global effect)
     void triggerSuperPosition(const Vec3 &origin);
 
@@ -268,6 +280,7 @@ public:
     const WarpBubbleVFX *getWarpBubble(unsigned int kart_id) const;
     const TimeDilationVFX *getTimeDilation(unsigned int kart_id) const;
     const MassSpikeVFX *getMassSpike(unsigned int kart_id) const;
+    const CompactificationVFX *getCompactification(unsigned int kart_id) const;
     const SuperPositionVFX &getSuperPosition() const { return m_super_position; }
 
     float getGlobalTime() const { return m_global_time; }
