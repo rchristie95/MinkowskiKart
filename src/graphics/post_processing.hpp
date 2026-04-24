@@ -87,6 +87,8 @@ public:
     void renderMotionBlur(const FrameBuffer &in_fbo,
                           FrameBuffer &out_fbo,
                           GLuint depth_stencil_texture);
+    void renderCompactification(const FrameBuffer &source,
+                                FrameBuffer &dest, float strength);
     void renderGlow(const FrameBuffer& quarter_framebuffer) const;
     void renderLightning(core::vector3df intensity);
 

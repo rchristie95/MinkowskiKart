@@ -80,6 +80,7 @@ void RelativisticVFXManager::init(unsigned int num_karts)
     m_time_dilations.resize(num_karts);
     m_mass_spikes.resize(num_karts);
     m_tidal_arms.resize(num_karts);
+    m_compactifications.resize(num_karts);
 }
 
 void RelativisticVFXManager::reset()
@@ -132,6 +133,7 @@ void RelativisticVFXManager::reset()
     m_time_dilations.clear();
     m_mass_spikes.clear();
     m_tidal_arms.clear();
+    m_compactifications.clear();
     m_geodesic_missiles.clear();
     m_black_holes.clear();
     m_wormholes.clear();
@@ -483,6 +485,21 @@ void RelativisticVFXManager::updatePairProduction(PairProductionVFX &vfx,
 }
 
 // ---------------------------------------------------------------------------
+// Compactification
+// ---------------------------------------------------------------------------
+void RelativisticVFXManager::activateCompactification(unsigned int kart_id)
+{
+    if (kart_id >= m_compactifications.size()) return;
+    m_compactifications[kart_id].active = true;
+}
+
+void RelativisticVFXManager::deactivateCompactification(unsigned int kart_id)
+{
+    if (kart_id >= m_compactifications.size()) return;
+    m_compactifications[kart_id].active = false;
+}
+
+// ---------------------------------------------------------------------------
 // Query functions
 // ---------------------------------------------------------------------------
 const WarpBubbleVFX *RelativisticVFXManager::getWarpBubble(unsigned int kart_id) const
@@ -504,6 +521,13 @@ const MassSpikeVFX *RelativisticVFXManager::getMassSpike(unsigned int kart_id) c
     return m_mass_spikes[kart_id].active ? &m_mass_spikes[kart_id] : nullptr;
 }
 
+const CompactificationVFX *RelativisticVFXManager::getCompactification(unsigned int kart_id) const
+{
+    if (kart_id >= m_compactifications.size()) return nullptr;
+    const CompactificationVFX &cvfx = m_compactifications[kart_id];
+    return (cvfx.active || cvfx.strength > 0.0f) ? &cvfx : nullptr;
+}
+
 // ---------------------------------------------------------------------------
 // Main update
 // ---------------------------------------------------------------------------
@@ -522,6 +546,16 @@ void RelativisticVFXManager::update(float dt)
 
     for (unsigned int i = 0; i < m_mass_spikes.size() && i < world->getNumKarts(); i++)
         updateMassSpike(m_mass_spikes[i], dt, world->getKart(i));
+
+    // Ramp compactification strength up/down smoothly (0.4 s full transition)
+    const float ramp = dt / 0.4f;
+    for (auto &cvfx : m_compactifications)
+    {
+        if (cvfx.active)
+            cvfx.strength = std::min(1.0f, cvfx.strength + ramp);
+        else
+            cvfx.strength = std::max(0.0f, cvfx.strength - ramp);
+    }
 
     updateSuperPosition(dt);
 
