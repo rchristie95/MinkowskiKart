@@ -96,6 +96,7 @@ private:
     void   setDefaultVolume();
     void   switchToFastMusic();
     void   setTemporaryVolume(float volume);
+    void   setSpeed(float speed);
     // ------------------------------------------------------------------------
     bool   preStart();
     // ------------------------------------------------------------------------

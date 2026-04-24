@@ -413,9 +413,8 @@ void Powerup::use()
         break;
 
     case PowerupManager::POWERUP_MASS_SPIKE:
-        // Harmonic oscillator: attach a dumbbell-on-spring to the leader.
-        // Does NOT directly slow them down; added mass provides inertia and
-        // the mass oscillates in response to kart motion.
+        // Maxwell-Boltzmann: punish the leader with deterministic Brownian
+        // velocity kicks in the local track-tangent plane.
         for(unsigned int i = 0 ; i < world->getNumKarts(); ++i)
         {
             AbstractKart *kart=world->getKart(i);
@@ -424,11 +423,12 @@ void Powerup::use()
             if(kart->getPosition() == 1)
             {
                 kart->getAttachment()->set(Attachment::ATTACH_MASS_SPIKE,
-                                           stk_config->
-                                           time2Ticks(kp->getAnvilDuration()) );
+                                           stk_config->time2Ticks(
+                                               Attachment::
+                                               getMaxwellBoltzmannDurationSeconds()) );
 
-                // should we position the sound at the kart that is hit,
-                // or the kart "throwing" the anvil? Ideally it should be both.
+                // Position the legacy hit sound near the affected leader if local,
+                // otherwise near the kart that used the powerup.
                 // Meanwhile, don't play it near AI karts since they obviously
                 // don't hear anything
                 if (!has_played_sound)
@@ -498,7 +498,7 @@ void Powerup::use()
             }
 
             // should we position the sound at the kart that is hit,
-            // or the kart "throwing" the anvil? Ideally it should be both.
+            // or the kart using the powerup? Ideally it should be both.
             // Meanwhile, don't play it near AI karts since they obviously
             // don't hear anything
             if (!has_played_sound)

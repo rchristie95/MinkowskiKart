@@ -20,6 +20,7 @@
 #define HEADER_ATTACHMENT_HPP
 
 #include "items/attachment_plugin.hpp"
+#include "utils/vec3.hpp"
 #include "utils/no_copy.hpp"
 #include "utils/types.hpp"
 
@@ -57,7 +58,8 @@ public:
     enum AttachmentType
     {
         ATTACH_FIRST = 0,
-        // It is important that parachute, bomb and anvil stay in this order,
+        // It is important that time dilation, Maxwell-Boltzmann, and bomb stay
+        // in this order,
         // since the attachment type is mapped to a random integer (and bomb
         // must be last, since a bomb will not be given in battle mode).
         ATTACH_TIME_DILATION = 0,   // was ATTACH_PARACHUTE
@@ -113,18 +115,17 @@ private:
     /** Sound for exploding bubble gum shield */
     SFXBase          *m_bubble_explode_sound;
 
-    /** Harmonic-oscillator visual state (dumbbell-on-spring). Tracked only on
-     *  the graphics side, so no rewind/network persistence is needed.
-     *  m_osc_pos is the longitudinal offset of the dumbbell from its rest
-     *  position (positive = forward of rest, negative = behind); m_osc_vel
-     *  is its velocity along that axis. Both are in meters / m*s^-1.
-     *  m_osc_last_kart_fwd_speed tracks kart forward speed between ticks to
-     *  derive kart acceleration, which drives the oscillator via the
-     *  pseudo-force in the kart frame. */
-    float             m_osc_pos;
-    float             m_osc_vel;
-    float             m_osc_last_kart_fwd_speed;
-    bool              m_osc_initialized;
+    /** Maxwell-Boltzmann cadence state. The old anvil/mass-spike attachment
+     *  slot is kept for compatibility, but now applies random tangent-plane
+     *  velocity kicks instead of a visible mass. */
+    int               m_maxwell_ticks_to_next_kick;
+    int               m_maxwell_kick_index;
+    int               m_maxwell_kick_flash_ticks;
+    Vec3              m_maxwell_last_kick_delta_v;
+
+    void resetMaxwellBoltzmannState(int ticks_left);
+    void updateMaxwellBoltzmann(int ticks);
+    void applyMaxwellBoltzmannKick();
 
 public:
           Attachment(AbstractKart* kart);
@@ -143,6 +144,7 @@ public:
     static bool applySwatterStyleSquash(AbstractKart* attacker,
                                         AbstractKart* victim,
                                         bool award_swatter_achievements);
+    static float getMaxwellBoltzmannDurationSeconds();
 
     // ------------------------------------------------------------------------
     /** Sets the type of the attachment, but keeps the old time left value. */
@@ -154,6 +156,13 @@ public:
     /** Returns how much time (in ticks) is left before this attachment is
      *  removed. */
     int16_t getTicksLeft() const                       { return m_ticks_left; }
+    // ------------------------------------------------------------------------
+    int getMaxwellKickFlashTicks() const { return m_maxwell_kick_flash_ticks; }
+    // ------------------------------------------------------------------------
+    const Vec3& getMaxwellLastKickDeltaV() const
+    {
+        return m_maxwell_last_kick_delta_v;
+    }
     // ------------------------------------------------------------------------
     /** Sets how long this attachment will remain attached. */
     void setTicksLeft(int16_t t)                          { m_ticks_left = t; }

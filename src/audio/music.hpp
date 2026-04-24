@@ -35,6 +35,7 @@ public:
     virtual bool pauseMusic  ()                            = 0;
     virtual bool resumeMusic ()                            = 0;
     virtual void setVolume   (float volume)                = 0;
+    virtual void setSpeed    (float speed)                 = 0;
     virtual void update      ()                            = 0;
     virtual bool isPlaying   ()                            = 0;
 

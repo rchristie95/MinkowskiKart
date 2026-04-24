@@ -22,6 +22,7 @@
 
 #include "audio/music_manager.hpp"
 #include "config/user_config.hpp"
+#include "config/stk_config.hpp"
 #include "graphics/2dutils.hpp"
 #include "graphics/camera/camera.hpp"
 #include "graphics/central_settings.hpp"
@@ -33,6 +34,7 @@
 #include "guiengine/scalable_font.hpp"
 #include "io/file_manager.hpp"
 #include "items/attachment_manager.hpp"
+#include "items/attachment.hpp"
 #include "items/powerup.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/abstract_kart_animation.hpp"
@@ -55,6 +57,7 @@
 #include <GlyphLayout.h>
 #include <IrrlichtDevice.h>
 #include <ICameraSceneNode.h>
+#include <cmath>
 
 namespace irr
 {
@@ -454,6 +457,114 @@ void RaceGUIBase::drawPowerupIcons(const AbstractKart* kart,
     }
 #endif
 }   // drawPowerupIcons
+
+// ----------------------------------------------------------------------------
+/** Draws the compact receiver-side Maxwell-Boltzmann status package. */
+void RaceGUIBase::drawBoltzmannStatus(const AbstractKart* kart,
+                                      const core::recti &viewport,
+                                      const core::vector2df &scaling)
+{
+#ifndef SERVER_ONLY
+    if (!kart || kart->hasFinishedRace()) return;
+    const Attachment* attachment = kart->getAttachment();
+    if (!attachment ||
+        attachment->getType() != Attachment::ATTACH_MASS_SPIKE) return;
+
+    const float duration = Attachment::getMaxwellBoltzmannDurationSeconds();
+    const float time_left = stk_config->ticks2Time(attachment->getTicksLeft());
+    const float elapsed = core::clamp(duration - time_left, 0.0f, duration);
+    const float remaining_ratio = core::clamp(time_left / duration, 0.0f, 1.0f);
+    const int tick = World::getWorld() ? World::getWorld()->getTicksSinceStart()
+                                       : 0;
+    const float pulse = 0.5f + 0.5f * sinf((float)tick * 0.18f);
+    const int flash_ticks = attachment->getMaxwellKickFlashTicks();
+    const float flash = flash_ticks > 0
+        ? core::clamp(stk_config->ticks2Time(flash_ticks) / 0.45f, 0.0f, 1.0f)
+        : 0.0f;
+
+    if (elapsed < 0.60f || flash > 0.0f)
+    {
+        const int alpha = (int)(70.0f * std::max(1.0f - elapsed / 0.60f,
+                                                 flash));
+        const video::SColor blue(alpha, 25, 90, 255);
+        const video::SColor red(alpha, 255, 70, 30);
+        const int edge = std::max(8, (int)(14.0f * scaling.Y));
+        GL32_draw2DRectangle(blue, core::rect<s32>(
+            viewport.UpperLeftCorner.X, viewport.UpperLeftCorner.Y,
+            viewport.LowerRightCorner.X, viewport.UpperLeftCorner.Y + edge));
+        GL32_draw2DRectangle(red, core::rect<s32>(
+            viewport.UpperLeftCorner.X, viewport.LowerRightCorner.Y - edge,
+            viewport.LowerRightCorner.X, viewport.LowerRightCorner.Y));
+    }
+
+    video::ITexture *icon = attachment_manager
+        ->getIcon(Attachment::ATTACH_MASS_SPIKE)->getTexture();
+    const int badge = std::max(56, (int)(70.0f * std::min(scaling.X, scaling.Y)
+        * (1.0f + 0.08f * pulse)));
+    const int panel_w = badge + 180;
+    const int panel_h = badge + 42;
+    const int x = viewport.getCenter().X - panel_w / 2;
+    const int y = viewport.getCenter().Y - panel_h / 2;
+
+    const video::SColor back(145, 5, 12, 24);
+    GL32_draw2DRectangle(back, core::rect<s32>(
+        x - 8, y - 8, x + panel_w, y + panel_h));
+
+    if (icon)
+    {
+        const core::rect<s32> source(core::position2d<s32>(0, 0),
+                                     icon->getSize());
+        const video::SColor tint(210, 255, 255, 255);
+        draw2DImage(icon, core::rect<s32>(x, y, x + badge, y + badge),
+                    source, NULL, tint, true);
+    }
+
+    gui::ScalableFont* font = GUIEngine::getSmallFont();
+    font->setBlackBorder(true);
+    font->draw(L"BOLTZMANN!", core::rect<s32>(
+        x + badge + 8, y, x + badge + 150, y + badge / 2),
+        video::SColor(255, 255, 238, 210), false, true);
+
+    const int segments = 10;
+    const int seg_w = std::max(5, badge / 6);
+    const int seg_h = std::max(5, badge / 8);
+    const int filled = (int)ceilf(remaining_ratio * segments);
+    for (int i = 0; i < segments; i++)
+    {
+        const int sx = x + i * (seg_w + 2);
+        const video::SColor color = i < filled
+            ? video::SColor(210, 60 + i * 16, 150, 255 - i * 10)
+            : video::SColor(95, 40, 45, 60);
+        GL32_draw2DRectangle(color, core::rect<s32>(
+            sx, y + badge + 8, sx + seg_w, y + badge + 8 + seg_h));
+    }
+
+    const Vec3& kick = attachment->getMaxwellLastKickDeltaV();
+    if (flash > 0.0f && kick.length2() > 0.0001f)
+    {
+        const bool horizontal = fabsf(kick.getX()) >= fabsf(kick.getZ());
+        const wchar_t *arrow = horizontal
+            ? (kick.getX() >= 0.0f ? L">" : L"<")
+            : (kick.getZ() >= 0.0f ? L"^" : L"v");
+        const int jitter_x = (int)(sinf((float)tick * 1.37f) * 5.0f);
+        const int jitter_y = (int)(cosf((float)tick * 1.91f) * 5.0f);
+        font->draw(arrow, core::rect<s32>(
+            x + badge + 22 + jitter_x, y + badge / 2 + jitter_y,
+            x + badge + 72 + jitter_x, y + badge + 22 + jitter_y),
+            video::SColor((int)(255.0f * flash), 255, 95, 45), true, true);
+    }
+    else
+    {
+        const int jitter_x = (int)(sinf((float)tick * 0.71f) * 3.0f);
+        const int jitter_y = (int)(cosf((float)tick * 0.83f) * 3.0f);
+        font->draw(L"v", core::rect<s32>(
+            x + badge + 28 + jitter_x, y + badge / 2 + jitter_y,
+            x + badge + 66 + jitter_x, y + badge + 20 + jitter_y),
+            video::SColor(145, 120, 210, 255), true, true);
+    }
+    font->setBlackBorder(false);
+#endif
+}   // drawBoltzmannStatus
 
 // ----------------------------------------------------------------------------
 /** Updates lightning related information.
