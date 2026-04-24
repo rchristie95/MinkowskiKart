@@ -232,41 +232,38 @@ jobs:
         uses: actions/download-artifact@v4
       - name: Generate .pdb files
         if: ${{ env.release_tag != '' }}
+        shell: pwsh
         run: |
-          C:\msys64\usr\bin\wget.exe https://github.com/rainers/cv2pdb/releases/download/v0.50/cv2pdb-0.50.zip
-          unzip cv2pdb-0.50.zip
-          cd i686
-          ..\cv2pdb.exe supertuxkart.exe
-          cd ..
-          cd x86_64
-          ..\cv2pdb.exe supertuxkart.exe
+          curl.exe -L -o cv2pdb-0.50.zip https://github.com/rainers/cv2pdb/releases/download/v0.50/cv2pdb-0.50.zip
+          Expand-Archive -Path cv2pdb-0.50.zip -DestinationPath . -Force
+          if (Test-Path i686/supertuxkart.exe) { .\cv2pdb.exe i686/supertuxkart.exe }
+          if (Test-Path x86_64/supertuxkart.exe) { .\cv2pdb.exe x86_64/supertuxkart.exe }
       - name: Downloading stk-assets
         if: ${{ env.release_tag != '' }}
+        shell: pwsh
         run: |
-          C:\msys64\usr\bin\wget.exe https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip
-          mkdir stk-assets
-          cd stk-assets
-          unzip ..\stk-assets-full.zip
+          curl.exe -L -o stk-assets-full.zip https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip
+          New-Item -ItemType Directory -Force -Path stk-assets
+          Expand-Archive -Path stk-assets-full.zip -DestinationPath stk-assets -Force
       - name: Move folders
         shell : bash
         if: ${{ env.release_tag != '' }}
         run: |
           mkdir MinkowskiKart-${{ env.release_tag }}-win
-          mv stk-assets MinkowskiKart-${{ env.release_tag }}-win
-          mkdir MinkowskiKart-${{ env.release_tag }}-win/stk-code
-          mv data MinkowskiKart-${{ env.release_tag }}-win/stk-code
-          mv tools/run_game.bat MinkowskiKart-${{ env.release_tag }}-win
-          mkdir MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-i686
-          mkdir MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-x86_64
-          mkdir MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-armv7
-          mkdir MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-aarch64
-          mv i686 MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-i686/bin
-          mv x86_64 MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-x86_64/bin
-          mv armv7 MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-armv7/bin
-          mv aarch64 MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-aarch64/bin
+          mv stk-assets MinkowskiKart-${{ env.release_tag }}-win/
+          mv data MinkowskiKart-${{ env.release_tag }}-win/
+          mv tools/run_game.bat MinkowskiKart-${{ env.release_tag }}-win/
+          mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/i686
+          mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/x86_64
+          mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/armv7
+          mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/aarch64
+          [ -d i686 ] && mv i686/* MinkowskiKart-${{ env.release_tag }}-win/bin/i686/ || true
+          [ -d x86_64 ] && mv x86_64/* MinkowskiKart-${{ env.release_tag }}-win/bin/x86_64/ || true
+          [ -d armv7 ] && mv armv7/* MinkowskiKart-${{ env.release_tag }}-win/bin/armv7/ || true
+          [ -d aarch64 ] && mv aarch64/* MinkowskiKart-${{ env.release_tag }}-win/bin/aarch64/ || true
           # libwinpthread-1.dll is useless because we statically link
-          rm -f MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-armv7/bin/libwinpthread-1.dll
-          rm -f MinkowskiKart-${{ env.release_tag }}-win/stk-code/build-aarch64/bin/libwinpthread-1.dll
+          rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/armv7/libwinpthread-1.dll
+          rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/aarch64/libwinpthread-1.dll
       - name: Start packaging MinkowskiKart
         if: ${{ env.release_tag != '' }}
         run: |
@@ -275,8 +272,8 @@ jobs:
         shell : bash
         if: ${{ env.release_tag != '' && startsWith(github.ref, 'refs/tags/') }}
         run: |
-          mv tools MinkowskiKart-${{ env.release_tag }}-win/stk-code
-          cd MinkowskiKart-${{ env.release_tag }}-win/stk-code/tools/windows_installer
+          mv tools MinkowskiKart-${{ env.release_tag }}-win/
+          cd MinkowskiKart-${{ env.release_tag }}-win/tools/windows_installer
           for arch in i686 x86_64 aarch64
           do
             cp supertuxkart-github-actions.nsi $arch.nsi
@@ -284,7 +281,9 @@ jobs:
             sed -i "s/define ARCH \"\"/define ARCH \"$arch\"/g" $arch.nsi
             sed -i "s/define VERSION \"\"/define VERSION \"${{ env.release_tag }}\"/g" $arch.nsi
             sed -i "s/OutFile \"\"/OutFile \"MinkowskiKart-${{ env.release_tag }}-installer-$arch.exe\"/g" $arch.nsi
-            for filename in $(ls ../../build-$arch/bin)
+            # Adjust path to binaries for NSIS
+            sed -i "s/..\\..\\build-\$ARCH\\bin/..\\..\\bin\\\$ARCH/g" $arch.nsi
+            for filename in $(ls ../../bin/$arch)
             do
               file="\\\\$filename"
               sed -i "288a\  DELETE /REBOOTOK \"\$INSTDIR$file\"" $arch.nsi
@@ -294,7 +293,7 @@ jobs:
       - name: Run makensis.exe
         if: ${{ env.release_tag != '' && startsWith(github.ref, 'refs/tags/') }}
         run: |
-          cd MinkowskiKart-${{ env.release_tag }}-win\stk-code\tools\windows_installer
+          cd MinkowskiKart-${{ env.release_tag }}-win\tools\windows_installer
           C:\msys64\usr\bin\wget.exe https://nsis.sourceforge.io/mediawiki/images/6/6c/Shelllink.zip
           unzip Shelllink.zip
           Move-Item Unicode\Plugins\ShellLink.dll .
@@ -306,7 +305,7 @@ jobs:
         if: ${{ env.release_tag != '' }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "MinkowskiKart-*.zip, MinkowskiKart-${{ env.release_tag }}-win/stk-code/tools/windows_installer/*.exe"
+          artifacts: "MinkowskiKart-*.zip, MinkowskiKart-${{ env.release_tag }}-win/tools/windows_installer/*.exe"
           tag: ${{ env.release_name }}
           omitBodyDuringUpdate: true
           omitNameDuringUpdate: true
