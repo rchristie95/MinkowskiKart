@@ -185,6 +185,11 @@ Comment: Mixed by Auria from four CC-BY 3.0 sources:
  http://soundbible.com/1217-Metal-Clang.html
  http://freesound.org/people/Stickinthemud/sounds/27528/
 
+Files: helicopter_rescue.ogg
+Copyright: User-provided asset
+License: User-provided/generated asset for this project
+Comment: Copied from C:\Users\robso\Downloads\helecopter_sound.ogg
+
 Files: horn.ogg
 Copyright:
  Copyright 2009 Mike Koenig

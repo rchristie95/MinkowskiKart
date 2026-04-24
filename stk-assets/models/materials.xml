@@ -13,6 +13,8 @@
   <material name="stk_mod_nitroLogo.png" shader="additive" disable-z-write="Y" />
 
   <material name="traffic_light.png" shader="unlit"/>
+  <material name="einstein-referee.png"/>
+  <material name="hawking-helicopter.png"/>
   
   <material name="bowling.png" gloss-map="bowling_spec.png"/>
   
