@@ -1,10 +1,18 @@
-# Build artifacts (keep build/ tracked — contains pre-configured CMake/Ninja files)
-build/bin/
-build/CMakeFiles/
-build/.ninja_deps
-build/.ninja_log
-build/libsupertuxkart.dll.a
+# Build artifacts
+build/
 build-dev/
+
+# Dev tools and pre-compiled dependencies
+.build-tools/
+dependencies-win-x86_64/
+
+# Reference snapshots
+UnmodifiedSTK-reference/
+
+# WIP / unreleased content
+stk-assets/wip-tracks/
+stk-assets/wip-library/
+data/replay/
 *.log
 
 # IDE / OS
