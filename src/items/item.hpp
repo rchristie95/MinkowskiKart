@@ -62,12 +62,12 @@ public:
     {
         ITEM_FIRST,
         ITEM_BONUS_BOX = ITEM_FIRST,
-        ITEM_BANANA,
+        ITEM_COMPACTIFICATION,
         ITEM_SUPER_POSITION,
         ITEM_NITRO_BIG,
         ITEM_NITRO_SMALL,
-        ITEM_BUBBLEGUM,
-        ITEM_BUBBLEGUM_NOLOK,
+        ITEM_WARP_BUBBLE,
+        ITEM_WARP_BUBBLE_NOLOK,
 
         /** For easter egg mode only. */
         ITEM_EASTER_EGG,
@@ -221,9 +221,9 @@ public:
         // triggers and easter eggs should not be switched
         if (m_type == ITEM_EASTER_EGG) return;
 
-        // If we are switching from a Calabi-Yau manifold (ITEM_BANANA) to something
+        // If we are switching from a Calabi-Yau manifold (ITEM_COMPACTIFICATION) to something
         // else, lower it to the original ground position.
-        if (m_type == ITEM_BANANA && type != ITEM_BANANA)
+        if (m_type == ITEM_COMPACTIFICATION && type != ITEM_COMPACTIFICATION)
         {
             m_xyz -= getNormal() * 1.2f;
         }
@@ -244,9 +244,9 @@ public:
         if (m_original_type == ITEM_NONE)
             return true;
 
-        // If we are switching back to a Calabi-Yau manifold (ITEM_BANANA),
+        // If we are switching back to a Calabi-Yau manifold (ITEM_COMPACTIFICATION),
         // raise it back to its correct height.
-        if (m_original_type == ITEM_BANANA && m_type != ITEM_BANANA)
+        if (m_original_type == ITEM_COMPACTIFICATION && m_type != ITEM_COMPACTIFICATION)
         {
             m_xyz += getNormal() * 1.2f;
         }
@@ -260,8 +260,8 @@ public:
     /** Returns if this item is negative, i.e. a banana or bubblegum. */
     bool isNegativeItem() const
     {
-        return m_type == ITEM_BANANA || m_type == ITEM_BUBBLEGUM ||
-               m_type == ITEM_BUBBLEGUM_NOLOK;
+        return m_type == ITEM_COMPACTIFICATION || m_type == ITEM_WARP_BUBBLE ||
+               m_type == ITEM_WARP_BUBBLE_NOLOK;
     }
     // ------------------------------------------------------------------------
     /** Sets how long an item should be disabled. While item itself sets
@@ -432,7 +432,7 @@ public:
         return lc.length2() < m_distance_2;
     }   // hitKart
     // ------------------------------------------------------------------------
-    bool rotating() const               { return getType() != ITEM_BUBBLEGUM; }
+    bool rotating() const               { return getType() != ITEM_WARP_BUBBLE; }
 
 public:
     // ------------------------------------------------------------------------

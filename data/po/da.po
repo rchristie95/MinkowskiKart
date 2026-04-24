@@ -54,7 +54,7 @@ msgid "Strike!"
 msgstr "Strike!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Ram 10 karts med en bowlingkugle."
 
 #. I18N: ./data/achievements.xml
@@ -110,11 +110,11 @@ msgid ""
 msgstr "Vind 5 enkeltløb i træk mod mindst 3 computerstyrede. Bemærk at når et løb genstartes, så tæller det som et tab."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Bananelsker"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Saml mindst 5 bananer i samme løb."
 
 #. I18N: ./data/achievements.xml
@@ -131,7 +131,7 @@ msgstr "Myggejæger"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Behandl dine modstandere som myg! Smask dem mindst 5 gange med fluesmækkeren i samme løb."
 
@@ -1468,7 +1468,7 @@ msgstr "Saml blå gaveæsker, de giver dig powerups."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Undgå bananer!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1597,15 +1597,15 @@ msgstr "Kage - flyver automatisk mod nærmeste fjende. Bedst til korte distancer
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Svupper - kast fremad for at trække an modstander tilbage, eller kast den bagud så en modspiller mister synet."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
-msgstr "Bowlingkugle - går ligeud indtil den rammer. Den kan hoppe tilbage fra vægge. Hvis du kigger tilbage, vil den blive kastet bagud."
+msgstr "Black Holekugle - går ligeud indtil den rammer. Den kan hoppe tilbage fra vægge. Hvis du kigger tilbage, vil den blive kastet bagud."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid "Parachute - slows down all karts in a better position."
@@ -1625,13 +1625,13 @@ msgstr "Basketball - hopper efter den forreste kart og smasker måske andre kart
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Fluesmækker - smasker karts i nærheden, så de kører langsommere. Kan også bruges til at fjerne faldskærme og bomber."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Rammes en banan, kan det medføre, at en af følgende vedhæftes karten:"
 
@@ -2601,7 +2601,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Drifting gør dig meget hurtigere. Gør det når det er sikkert."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Fluesmækkeren kan bruges til at fjerne bomber og faldskærme."
 
 #. I18N: ./data/tips.xml
@@ -4595,14 +4595,14 @@ msgstr " (1 løb)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Træf med bowlingkugle"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Træf med fluesmækker"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4622,7 +4622,7 @@ msgstr "Træf mod den samme kart"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Bananer indsamlet"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6730,7 +6730,7 @@ msgstr "Tryk på <%s> for at kigge bagud.\nAffyr våbnet med <%s> mens der trykk
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Tryk på spejl-ikonet for at se bagud.\nAffyr våbnet bagud ved at holde på spejl-ikonet og stryge mod bowling-ikonet!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

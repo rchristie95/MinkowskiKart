@@ -53,7 +53,7 @@ msgid "Strike!"
 msgstr "Strike!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "ตีรถแข่ง 10 คันด้วยลูกโบว์ลิ่ง"
 
 #. I18N: ./data/achievements.xml
@@ -109,11 +109,11 @@ msgid ""
 msgstr "ชนะการแข่งขันแบบเดี่ยวติดต่อกัน 5 ครั้ง รถแข่ง 3 เอไอ โปรดทราบการเริ่มต้นใหม่ของการแข่งขันจะถือว่าแพ้"
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
-msgstr "Banana Lover"
+msgid "Compactification Catcher"
+msgstr "Compactification Catcher"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "สะสมกล้วยอย่างน้อย 5 ชิ้นในการแข่งขันหนึ่งครั้ง"
 
 #. I18N: ./data/achievements.xml
@@ -130,7 +130,7 @@ msgstr "Mosquito Hunter"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "ใช้ไม้ตียุงตีฝ่ายตรงข้ามอย่างน้อย 5 ครั้งต่อการแข่งขัน"
 
@@ -1410,7 +1410,7 @@ msgstr "รวบรวมกล่องของขวัญสีน้ำเ
 #. I18N: ./data/gui/screens/help1.stkgui
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "หลีกเลี่ยงกล้วย!"
 
 #. I18N: ./data/gui/screens/help1.stkgui
@@ -1539,13 +1539,13 @@ msgstr "เค้ก - โยนที่คู่ต่อสู้ที่ใ
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "ไม้ดูดส้วม - ดึงคู่ต้อสู้หรือทำให้รถด้านหลังมองไม่เห็น"
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "ลูกโบว์ลิ่ง - วิ่งตรงไปโจมตี สามารถสะท้อนกำแพงได้"
 
@@ -1567,13 +1567,13 @@ msgstr "บาสเก็ตบอล-เด้งดึ๋งไปหาอ�
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "ไม้ตีแมลงวัน - ตีรถคู่แข่งให้ช้าลงและสามารถเอาระเบิดออก"
 
 #. I18N: ./data/gui/screens/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "การชนกล้วยทำให้สิ่งต่อไปนี้ติดอยู่กับรถแข่ง:"
 
@@ -2475,7 +2475,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "การลื่นไถลทำให้คุณเร็วขึ้นมากทำอย่างปลอดภัยทุกครั้ง"
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "ไม้ตีแมลงวันสามารถใช้เอาระเบิดตั้งเวลาหรือร่มชูชีพออกไป"
 
 #. I18N: ./data/tips.xml
@@ -4396,14 +4396,14 @@ msgstr " (1 ผู้เล่น)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "โดนลูกโบว์ลิ่ง"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "โดนไม้ตีแมลงวัน"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4423,7 +4423,7 @@ msgstr "ตีกับรถแข่งเดียวกัน"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "รวบรวมกล้วย"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6351,7 +6351,7 @@ msgstr "กด <%s> เพื่อดูย้อนหลัง\nยิงอ�
 #: ../stk-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "กดไอคอนกระจกมองหลัง ยิงอาวุธด้านหลังโดยกดไอคอนกระจกค้างไว้แล้วปัดไปที่ไอคอนโบว์ลิ่ง!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

@@ -51,7 +51,7 @@ class Swatter : public NoCopy, public AttachmentPlugin
 {
 
 private:
-    /** State of the animation, the swatter is successively:
+    /** State of the animation, the Swatter is successively:
      *   - aiming (default state) => it's turning to the nearest target
      *   - going down to the target
      *   - going up from the target
@@ -64,7 +64,7 @@ private:
     };
     AnimationPhase m_animation_phase;
 
-    /** The kart the swatter is aiming at. */
+    /** The kart the Swatter is aiming at. */
     AbstractKart      *m_closest_kart;
 
     SFXBase           *m_swat_sound;
@@ -74,25 +74,25 @@ private:
     /** The scene node of the attachment. */
     scene::IAnimatedMeshSceneNode *m_scene_node;
 
-    /** The scene node where a bomb is saved (in case that the swatter
+    /** The scene node where a bomb is saved (in case that the Swatter
      *  replaces a bomb. */
     scene::IAnimatedMeshSceneNode *m_bomb_scene_node;
 
     int                m_discard_ticks;
 
-    int                m_swatter_duration;
+    int                m_Swatter_duration;
 
     /** Set the bomb remaing ticks so we can set the timer on the removing
      *  bomb animation. */
     int16_t            m_bomb_remaining;
 
-    int16_t            m_swatter_animation_ticks;
+    int16_t            m_Swatter_animation_ticks;
 
-    /** True if the swatter will be discarded now. */
+    /** True if the Swatter will be discarded now. */
     bool               m_discard_now;
 
-    /** True if the swatter animation has been played. */
-    bool               m_played_swatter_animation;
+    /** True if the Swatter animation has been played. */
+    bool               m_played_Swatter_animation;
 public:
              Swatter(AbstractKart *kart, int16_t bomb_ticks, int ticks,
                      Attachment* attachment);
@@ -101,7 +101,7 @@ public:
     bool     updateAndTestFinished() OVERRIDE;
 
     // ------------------------------------------------------------------------
-    /** Returns if the swatter is currently aiming, i.e. can be used to
+    /** Returns if the Swatter is currently aiming, i.e. can be used to
      *  swat an incoming projectile. */
     bool isSwatterReady() const
     {
@@ -119,7 +119,7 @@ private:
     /** If there is a current target, point to it, otherwise adopt the default position */
     void    pointToTarget();
 
-    /** Squash karts or items that are around the end position (determined using a joint) of the swatter */
+    /** Squash karts or items that are around the end position (determined using a joint) of the Swatter */
     void    squashThingsAround();
 };   // Swatter
 

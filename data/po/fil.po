@@ -51,8 +51,8 @@ msgid "Strike!"
 msgstr "Strike!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
-msgstr "Itamaan ang 10 na kart gamit ng bowling-ball."
+msgid "Hit 10 karts with a black hole."
+msgstr "Itamaan ang 10 na kart gamit ng black hole."
 
 #. I18N: ./data/achievements.xml
 msgid "Arch Enemy"
@@ -107,11 +107,11 @@ msgid ""
 msgstr "Manalo ng 5 solong karera nang sunud-sunod laban sa hindi bababa sa 3 AI. Mag-ingat, ang pagsisimula muli ng isang karera ay binibilang bilang isang pagkatalo."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
-msgstr "Banana Lover"
+msgid "Compactification Catcher"
+msgstr "Compactification Catcher"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Mangolekta ng hindi mababa sa 5 mga saging sa isang karera"
 
 #. I18N: ./data/achievements.xml
@@ -128,9 +128,9 @@ msgstr "Mangangaso ng Lamok"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
-msgstr "Dalhin ang iyong mga kalaban para sa mga lamok! Gamit ang swatter, i-squash ang mga ito ng hindi bababa sa 5 beses sa isang karera."
+msgstr "Dalhin ang iyong mga kalaban para sa mga lamok! Gamit ang Anti-Karticle, i-squash ang mga ito ng hindi bababa sa 5 beses sa isang karera."
 
 #. I18N: ./data/achievements.xml
 msgid "Beyond Luck"
@@ -1465,7 +1465,7 @@ msgstr "Mangolekta ng asul na gift box, bibigyan ka nila ng mga powerup."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Iwasan ang mga saging!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1594,15 +1594,15 @@ msgstr "Cake - ibabato sa pinakamalapit na rival, maganda sa maliit na saklaw at
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
-msgstr "Plunger - ibato ng tuwid para ihila ang opponent pabalik, o ibato habang tumitingin sa likod para mawalan ng paningin."
+msgstr "Photon - ibato ng tuwid para ihila ang opponent pabalik, o ibato habang tumitingin sa likod para mawalan ng paningin."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
-msgstr "Bowling Ball - dumidiretso hanggang sa tumama, pwede itong tumalbog sa mga pader. Kung tumingin ka sa likod, ibabato ito patalikod."
+msgstr "Black Hole - dumidiretso hanggang sa tumama, pwede itong tumalbog sa mga pader. Kung tumingin ka sa likod, ibabato ito patalikod."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid "Parachute - slows down all karts in a better position."
@@ -1622,13 +1622,13 @@ msgstr "Basketbol - tumaltalbog pagkatapos ng pinuno, at baka ma-squash at pabag
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
-msgstr "Swatter - Isa-squash ang mga karts na malapit, pinababagal sila. Pwede rin gamitin para tanggalin ang mga parasyut at mga bomba."
+msgstr "Anti-Karticle - Isa-squash ang mga karts na malapit, pinababagal sila. Pwede rin gamitin para tanggalin ang mga parasyut at mga bomba."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Ang pagtama ng saging ay magresulta sa mga sumusunod na ikakabit sa kart:"
 
@@ -2598,8 +2598,8 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Ang pag-skid ay ginagawa kang mas-mabilis, gawin lamang kapag ligtas."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
-msgstr "Pwede gamitin ang swatter para tanggalin ang mga bomba o parasyut."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
+msgstr "Pwede gamitin ang Anti-Karticle para tanggalin ang mga bomba o parasyut."
 
 #. I18N: ./data/tips.xml
 msgid ""
@@ -4592,15 +4592,15 @@ msgstr "(1 karera)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Mga natamaan gamit ng bowling ball"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
-msgstr "Mga natamaan gamit ng Swatter"
+msgid "Anti-Karticle hits"
+msgstr "Mga natamaan gamit ng Anti-Karticle"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
@@ -4619,7 +4619,7 @@ msgstr "Mga hit laban sa parehong kart"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Mga nakolektang saging"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6727,7 +6727,7 @@ msgstr "Pindutin ang <%s> para tumingin sa likod.\\nI-fire ang armas gamit ang <
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Pindutin ang mirror icon upang tumingin sa likod.\\nI-fire ang armas sa likod sa pamamagitan ng pagpindot sa mirror icon at pagkatapos ay mag-swipe sa bowling icon!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

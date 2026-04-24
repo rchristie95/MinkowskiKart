@@ -5,11 +5,16 @@ set "PROJECT_ROOT=%~dp0"
 if "%PROJECT_ROOT:~-1%"=="\" set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
 
 set "NINJA=%PROJECT_ROOT%\.build-tools\ninja\ninja.exe"
+set "CMAKE=%PROJECT_ROOT%\.build-tools\cmake\cmake-4.3.1-windows-x86_64\bin\cmake.exe"
 set "COMPILER_BIN=%PROJECT_ROOT%\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin"
 set "DEPENDENCY_BIN=%PROJECT_ROOT%\dependencies-win-x86_64\bin"
 set "PATH=%COMPILER_BIN%;%DEPENDENCY_BIN%;%PATH%"
 if not exist "%NINJA%" (
     echo Missing bundled Ninja at "%NINJA%".
+    exit /b 1
+)
+if not exist "%CMAKE%" (
+    echo Missing bundled CMake at "%CMAKE%".
     exit /b 1
 )
 
@@ -18,6 +23,12 @@ if not exist "%BUILD_DIR%\build.ninja" (
     call "%PROJECT_ROOT%\configure-dev.bat"
     if errorlevel 1 exit /b !ERRORLEVEL!
 )
+
+echo Refreshing development build files...
+"%CMAKE%" -S "%PROJECT_ROOT%" -B "%BUILD_DIR%"
+if errorlevel 1 exit /b !ERRORLEVEL!
+python "%PROJECT_ROOT%\refresh-dev-build-names.py"
+if errorlevel 1 exit /b !ERRORLEVEL!
 
 if /I "%~1"=="clean" (
     echo Cleaning development build...

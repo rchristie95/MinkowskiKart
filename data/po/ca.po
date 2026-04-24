@@ -52,7 +52,7 @@ msgid "Strike!"
 msgstr "Diana!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Encerta 10 karts amb una bola de bitlles."
 
 #. I18N: ./data/achievements.xml
@@ -108,11 +108,11 @@ msgid ""
 msgstr "Guanya 5 curses individuals seguides contra un mínim de 3 oponents controlats per l'ordinador. Compte, reiniciar una cursa compta com a derrota."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Amant dels plàtans"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Recull un mínim 5 plàtans en una cursa."
 
 #. I18N: ./data/achievements.xml
@@ -129,7 +129,7 @@ msgstr "Caçador de mosquits"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Pren als teus oponents per mosquits! Amb el matamosques, esclafa'ls un mínim de 5 vegades en una cursa."
 
@@ -1466,7 +1466,7 @@ msgstr "Recull les caixes blaves, et donaran millores. "
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Evita els plàtans!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1595,13 +1595,13 @@ msgstr "Pastís - llençat contra el rival més proper, millor a poca distància
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Desembussador - llença'l cap endavant per estirar un oponent pel darrera, o llença'l mentre mires cap enrere per fer que un d'ells perdi visió."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Bola de bitlles - va recte fins que topa amb alguna cosa, rebota a les parets. Si mires darrere teu, serà llençada cap enrere."
 
@@ -1623,13 +1623,13 @@ msgstr "Pilota de bàsquet - rebota empaitant el líder, i pot esclafar i frenar
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Matamosques - esclafarà els karts al teu voltant, frenant-los. També es pot fer servir per eliminar paracaigudes i bombes."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Agafar un plàtan pot provocar que una de les següents coses se t'enganxi al kart:"
 
@@ -2599,7 +2599,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Derrapar et fa anar molt mes ràpid, fes-ho semrpe que sigui segur."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "El matamosques es pot fer servir per eliminar bombes o paracaigudes."
 
 #. I18N: ./data/tips.xml
@@ -4593,14 +4593,14 @@ msgstr "(1 cursa)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Cops amb la bola de bitlles"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Cops amb el matamosques"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4620,7 +4620,7 @@ msgstr "Cops contra el mateix kart"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Plàtans recollits"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6728,7 +6728,7 @@ msgstr "Prem <%s> per mirar enrere.\nDispara l'arma amb <%s> mentre prems <%s> p
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Prem el botó del retrovisor per mirar cap enrere.\nDispara l'arma cap enrere arrossegant la icona del mirall cap a la bola de bitlles!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

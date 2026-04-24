@@ -190,7 +190,7 @@ void RaceGUIBase::reset()
     m_plunger_move_time = 0;
     m_plunger_offset    = core::vector2di(0,0);
     m_plunger_speed     = core::vector2df(0,0);
-    m_plunger_state     = PLUNGER_STATE_INIT;
+    m_plunger_state     = PHOTON_STATE_INIT;
     m_showing_kart_colors = false;
     m_enabled_network_spectator = false;
     clearAllMessages();
@@ -468,7 +468,7 @@ void RaceGUIBase::drawBoltzmannStatus(const AbstractKart* kart,
     if (!kart || kart->hasFinishedRace()) return;
     const Attachment* attachment = kart->getAttachment();
     if (!attachment ||
-        attachment->getType() != Attachment::ATTACH_MASS_SPIKE) return;
+        attachment->getType() != Attachment::ATTACH_MAXWELL_BOLTZMANN) return;
 
     const float duration = Attachment::getMaxwellBoltzmannDurationSeconds();
     const float time_left = stk_config->ticks2Time(attachment->getTicksLeft());
@@ -498,7 +498,7 @@ void RaceGUIBase::drawBoltzmannStatus(const AbstractKart* kart,
     }
 
     video::ITexture *icon = attachment_manager
-        ->getIcon(Attachment::ATTACH_MASS_SPIKE)->getTexture();
+        ->getIcon(Attachment::ATTACH_MAXWELL_BOLTZMANN)->getTexture();
     const int badge = std::max(56, (int)(70.0f * std::min(scaling.X, scaling.Y)
         * (1.0f + 0.08f * pulse)));
     const int panel_w = badge + 180;
@@ -1318,11 +1318,11 @@ void RaceGUIBase::drawPlayerIcon(AbstractKart *kart, int x, int y, int w,
         }
     }
 
-    //Plunger
-    if (kart->getBlockedByPlungerTicks()>0)
+    //Photon
+    if (kart->getBlockedByPhotonTicks()>0)
     {
         video::ITexture *icon_plunger =
-        powerup_manager->getIcon(PowerupManager::POWERUP_COSMIC_STRING)->getTexture();
+        powerup_manager->getIcon(PowerupManager::POWERUP_PHOTON)->getTexture();
         if (icon_plunger != NULL)
         {
             const core::rect<s32> rect(core::position2d<s32>(0,0),
@@ -1369,21 +1369,21 @@ void RaceGUIBase::drawPlayerIcon(AbstractKart *kart, int x, int y, int w,
 /** Draws the plunger-in-face if necessary. Does nothing if there is no
  *  plunger in face atm.
  */
-void RaceGUIBase::drawPlungerInFace(const Camera *camera, float dt)
+void RaceGUIBase::drawPhotonInFace(const Camera *camera, float dt)
 {
 #ifndef SERVER_ONLY
     (void)dt;
     const AbstractKart *kart = camera->getKart();
-    if (kart->getBlockedByPlungerTicks()<=0)
+    if (kart->getBlockedByPhotonTicks()<=0)
     {
-        m_plunger_state = PLUNGER_STATE_INIT;
+        m_plunger_state = PHOTON_STATE_INIT;
         return;
     }
     // Photon hits still use the legacy plunger state for Doppler/item logic,
     // but the old screen-covering blocker is intentionally disabled.
-    m_plunger_state = PLUNGER_STATE_INIT;
+    m_plunger_state = PHOTON_STATE_INIT;
 #endif   // !SERVER_ONLY
-}   // drawPlungerInFace
+}   // drawPhotonInFace
 
 // ----------------------------------------------------------------------------
 void RaceGUIBase::removeReferee()

@@ -275,7 +275,7 @@ ObserverVisualState buildObserverVisualState(
         attachment->getType() == Attachment::ATTACH_COMPACTIFICATION;
 
     if ((kart->isSquashed() && !is_calabi_yau_squash) ||
-        kart->getBlockedByPlungerTicks() > 0)
+        kart->getBlockedByPhotonTicks() > 0)
     {
         doppler_active = true;
     }

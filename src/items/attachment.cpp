@@ -280,14 +280,14 @@ float Attachment::getMaxwellBoltzmannDurationSeconds()
 //-----------------------------------------------------------------------------
 bool Attachment::applySwatterStyleSquash(AbstractKart* attacker,
                                          AbstractKart* victim,
-                                         bool award_swatter_achievements)
+                                         bool award_Swatter_achievements)
 {
     if (!victim)
         return false;
 
     const KartProperties *kp = victim->getKartProperties();
-    const bool success = victim->setSquash(kp->getSwatterSquashDuration(),
-                                           kp->getSwatterSquashSlowdown());
+    const bool success = victim->setSquash(kp->getAntiKarticleSquashDuration(),
+                                           kp->getAntiKarticleSquashSlowdown());
     const bool has_created_explosion_animation =
         success && victim->getKartAnimation() != NULL;
 
@@ -303,18 +303,18 @@ bool Attachment::applySwatterStyleSquash(AbstractKart* attacker,
             ctf->resetKartForSwatterHit(victim->getWorldKartId(), reset_ticks);
         }
 
-        if (attacker && award_swatter_achievements &&
+        if (attacker && award_Swatter_achievements &&
             attacker->getController()->canGetAchievements())
         {
             PlayerManager::addKartHit(victim->getWorldKartId());
             PlayerManager::increaseAchievement(
-                AchievementsStatus::SWATTER_HIT, 1);
+                AchievementsStatus::ANTI_KARTICLE_HIT, 1);
             PlayerManager::increaseAchievement(
                 AchievementsStatus::ALL_HITS, 1);
             if (RaceManager::get()->isLinearRaceMode())
             {
                 PlayerManager::increaseAchievement(
-                    AchievementsStatus::SWATTER_HIT_1RACE, 1);
+                    AchievementsStatus::ANTI_KARTICLE_HIT_1RACE, 1);
                 PlayerManager::increaseAchievement(
                     AchievementsStatus::ALL_HITS_1RACE, 1);
             }
@@ -443,7 +443,7 @@ void Attachment::updateMaxwellBoltzmann(int ticks)
 
 //-----------------------------------------------------------------------------
 /** Sets the attachment a kart has. This will also handle animation to be
- *  played, e.g. when a swatter replaces a bomb.
+ *  played, e.g. when a Swatter replaces a bomb.
  *  \param type The type of the new attachment.
  *  \param time How long this attachment should stay with the kart.
  *  \param current_kart The kart from which an attachment is transferred.
@@ -463,7 +463,7 @@ void Attachment::set(AttachmentType type, int ticks,
     // the associated behavior
     switch(type)
     {
-    case ATTACH_TIDAL_ARM:
+    case ATTACH_ANTI_KARTICLE:
         m_plugin =
             new Swatter(m_kart, was_bomb ? prev_ticks : -1, ticks, this);
         break;
@@ -471,7 +471,7 @@ void Attachment::set(AttachmentType type, int ticks,
         break;
     }   // switch(type)
 
-    if (type == ATTACH_MASS_SPIKE)
+    if (type == ATTACH_MAXWELL_BOLTZMANN)
         ticks = stk_config->time2Ticks(getMaxwellBoltzmannDurationSeconds());
 
     m_type             = type;
@@ -480,7 +480,7 @@ void Attachment::set(AttachmentType type, int ticks,
     m_scaling_end_ticks = World::getWorld()->getTicksSinceStart() +
         stk_config->time2Ticks(0.7f);
 
-    resetMaxwellBoltzmannState(type == ATTACH_MASS_SPIKE ? m_ticks_left : 0);
+    resetMaxwellBoltzmannState(type == ATTACH_MAXWELL_BOLTZMANN ? m_ticks_left : 0);
 
     // Activate relativistic VFX for new attachment
     if (relativistic_vfx_manager)
@@ -495,7 +495,7 @@ void Attachment::set(AttachmentType type, int ticks,
         case ATTACH_TIME_DILATION:
             relativistic_vfx_manager->activateTimeDilation(kid);
             break;
-        case ATTACH_TIDAL_ARM:
+        case ATTACH_ANTI_KARTICLE:
             relativistic_vfx_manager->activateTidalArm(kid);
             break;
         case ATTACH_COMPACTIFICATION:
@@ -519,8 +519,8 @@ void Attachment::set(AttachmentType type, int ticks,
         // if going very slowly or backwards, braking won't remove parachute
         if(initial_speed <= 1.5f) initial_speed = 1.5f;
 
-        float f = initial_speed / kp->getParachuteMaxSpeed();
-        float temp_mult = kp->getParachuteDurationSpeedMult();
+        float f = initial_speed / kp->getTimeDilationMaxSpeed();
+        float temp_mult = kp->getTimeDilationDurationSpeedMult();
 
         // duration can't be reduced by higher speed
         if (temp_mult < 1.0f) temp_mult = 1.0f;
@@ -554,7 +554,7 @@ void Attachment::clear()
         case ATTACH_TIME_DILATION:
             relativistic_vfx_manager->deactivateTimeDilation(kid);
             break;
-        case ATTACH_TIDAL_ARM:
+        case ATTACH_ANTI_KARTICLE:
             relativistic_vfx_manager->deactivateTidalArm(kid);
             break;
         case ATTACH_COMPACTIFICATION:
@@ -647,7 +647,7 @@ void Attachment::rewindTo(BareNetworkString *buffer)
 
     m_type = new_type;
     m_ticks_left = ticks_left;
-    resetMaxwellBoltzmannState(new_type == ATTACH_MASS_SPIKE ? ticks_left : 0);
+    resetMaxwellBoltzmannState(new_type == ATTACH_MAXWELL_BOLTZMANN ? ticks_left : 0);
 }   // rewindTo
 
 // -----------------------------------------------------------------------------
@@ -659,9 +659,9 @@ void Attachment::hitBanana(ItemState *item_state)
 {
     if (m_kart->getController()->canGetAchievements())
     {
-        PlayerManager::increaseAchievement(AchievementsStatus::BANANA, 1);
+        PlayerManager::increaseAchievement(AchievementsStatus::COMPACTIFICATION, 1);
         if (RaceManager::get()->isLinearRaceMode())
-            PlayerManager::increaseAchievement(AchievementsStatus::BANANA_1RACE, 1);
+            PlayerManager::increaseAchievement(AchievementsStatus::COMPACTIFICATION_1RACE, 1);
     }
     //Bubble gum shield effect:
     if(m_type == ATTACH_WARP_BUBBLE ||
@@ -684,13 +684,13 @@ void Attachment::hitBanana(ItemState *item_state)
     }
 
     const KartProperties *kp = m_kart->getKartProperties();
-    if (item_state != NULL && item_state->getType() == Item::ITEM_BANANA)
+    if (item_state != NULL && item_state->getType() == Item::ITEM_COMPACTIFICATION)
     {
         if (m_kart->isInvulnerable() || m_kart->getKartAnimation() != NULL)
             return;
 
         // Visual squash only (no speed reduction); doubled duration
-        const float compact_duration = kp->getParachuteDurationOther() * 2.0f;
+        const float compact_duration = kp->getTimeDilationDurationOther() * 2.0f;
         m_kart->setSquash(compact_duration, 1.0f);
 
         set(ATTACH_COMPACTIFICATION,
@@ -736,9 +736,9 @@ void Attachment::hitBanana(ItemState *item_state)
         item_state->setTicksTillReturn(ticks);
         break;
         }
-    case ATTACH_MASS_SPIKE:
+    case ATTACH_MAXWELL_BOLTZMANN:
         // Maxwell-Boltzmann refreshes to a clean full-duration window.
-        new_attachment = ATTACH_MASS_SPIKE;
+        new_attachment = ATTACH_MAXWELL_BOLTZMANN;
         leftover_ticks  = 0;
         break;
     case ATTACH_TIME_DILATION:
@@ -763,7 +763,7 @@ void Attachment::hitBanana(ItemState *item_state)
         case ATTACH_TIME_DILATION:
         {
             int parachute_ticks = stk_config->time2Ticks(
-                kp->getParachuteDuration()) + leftover_ticks;
+                kp->getTimeDilationDuration()) + leftover_ticks;
             set(ATTACH_TIME_DILATION, parachute_ticks);
             int initial_speed_round = (int)(m_kart->getSpeed() * 100.0f);
             initial_speed_round =
@@ -774,8 +774,8 @@ void Attachment::hitBanana(ItemState *item_state)
             if (m_initial_speed <= 150) m_initial_speed = 150;
             break;
         }
-        case ATTACH_MASS_SPIKE:
-            set(ATTACH_MASS_SPIKE,
+        case ATTACH_MAXWELL_BOLTZMANN:
+            set(ATTACH_MAXWELL_BOLTZMANN,
                 stk_config->time2Ticks(getMaxwellBoltzmannDurationSeconds()));
             break;
         case ATTACH_BOMB:
@@ -877,7 +877,7 @@ void Attachment::update(int ticks)
 
     switch (m_type)
     {
-    case ATTACH_MASS_SPIKE:
+    case ATTACH_MAXWELL_BOLTZMANN:
         updateMaxwellBoltzmann(ticks);
         m_initial_speed = 0;
         break;
@@ -892,12 +892,12 @@ void Attachment::update(int ticks)
         const KartProperties *kp = m_kart->getKartProperties();
 
         float initial_speed = (float)m_initial_speed / 100.f;
-        float f = initial_speed / kp->getParachuteMaxSpeed();
+        float f = initial_speed / kp->getTimeDilationMaxSpeed();
         if (f > 1.0f) f = 1.0f;   // cap fraction
         if (m_kart->getSpeed() <= initial_speed *
-                                 (kp->getParachuteLboundFraction() +
-                                  f * (kp->getParachuteUboundFraction()
-                                     - kp->getParachuteLboundFraction())))
+                                 (kp->getTimeDilationLboundFraction() +
+                                  f * (kp->getTimeDilationUboundFraction()
+                                     - kp->getTimeDilationLboundFraction())))
         {
             m_ticks_left = -1;
         }
@@ -909,14 +909,14 @@ void Attachment::update(int ticks)
     case ATTACH_MAX:
         m_initial_speed = 0;
         break;
-    case ATTACH_TIDAL_ARM:
+    case ATTACH_ANTI_KARTICLE:
         // Everything is done in the plugin.
         m_initial_speed = 0;
         break;
     case ATTACH_NOLOKS_SWATTER:
-    case ATTACH_TIDAL_ARM_ANIM:
+    case ATTACH_ANTI_KARTICLE_ANIM:
         // Should never be called, these symbols are only used as an index for
-        // the model, Nolok's attachment type is ATTACH_TIDAL_ARM
+        // the model, Nolok's attachment type is ATTACH_ANTI_KARTICLE
         assert(false);
         break;
     case ATTACH_BOMB:
@@ -957,7 +957,7 @@ void Attachment::update(int ticks)
                 m_bubble_explode_sound->play();
             }
             if (!m_kart->isGhostKart())
-                Track::getCurrentTrack()->getItemManager()->dropNewItem(Item::ITEM_BUBBLEGUM, m_kart);
+                Track::getCurrentTrack()->getItemManager()->dropNewItem(Item::ITEM_WARP_BUBBLE, m_kart);
         }
         break;
     }   // switch
@@ -982,8 +982,8 @@ void Attachment::updateGraphics(float dt)
         {
         case ATTACH_NOTHING:
             break;
-        case ATTACH_TIDAL_ARM:
-            // Graphical model set in swatter class
+        case ATTACH_ANTI_KARTICLE:
+            // Graphical model set in Swatter class
             break;
         case ATTACH_COMPACTIFICATION:
             // Pure screen-space effect — no attachment mesh
@@ -1015,7 +1015,7 @@ void Attachment::updateGraphics(float dt)
         // Time-dilation no longer renders its legacy trailing parachute mesh.
         // These debuffs are represented through HUD/VFX, not a rear mesh.
         const bool hide_attachment_mesh = (m_type == ATTACH_TIME_DILATION ||
-                                           m_type == ATTACH_MASS_SPIKE    ||
+                                           m_type == ATTACH_MAXWELL_BOLTZMANN    ||
                                            m_type == ATTACH_COMPACTIFICATION);
         m_node->setVisible(!hide_attachment_mesh);
         bool is_shield = m_type == ATTACH_WARP_BUBBLE ||
@@ -1132,6 +1132,6 @@ void Attachment::updateGraphics(float dt)
 float Attachment::weightAdjust() const
 {
     return (m_type == ATTACH_SUPERPOSITION_CAT)
-           ? m_kart->getKartProperties()->getAnvilWeight()
+           ? m_kart->getKartProperties()->getMaxwellBoltzmannWeight()
           : 0.0f;
 }   // weightAdjust

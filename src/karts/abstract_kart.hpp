@@ -278,11 +278,11 @@ public:
     virtual float getFinishTime() const = 0;
     // ------------------------------------------------------------------------
     /** Returns true if the kart has a plunger attached to its face. */
-    virtual int getBlockedByPlungerTicks() const = 0;
+    virtual int getBlockedByPhotonTicks() const = 0;
     // ------------------------------------------------------------------------
     /** Sets that the view is blocked by a plunger. The duration depends on
-     *  the difficulty, see KartPorperties getPlungerInFaceTime. */
-    virtual void blockViewWithPlunger() = 0;
+     *  the difficulty, see KartPorperties getPhotonInFaceTime. */
+    virtual void blockViewWithPhoton() = 0;
     // ------------------------------------------------------------------------
     /** Returns if the kart is currently being squashed. */
     virtual bool isSquashed() const = 0;

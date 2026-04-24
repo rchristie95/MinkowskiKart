@@ -143,7 +143,7 @@ void CaptureTheFlag::reset(bool restart)
 
     FreeForAll::reset(restart);
     m_red_scores = m_blue_scores = 0;
-    m_swatter_reset_kart_ticks.clear();
+    m_Swatter_reset_kart_ticks.clear();
     m_last_captured_flag_ticks = 0;
     m_red_flag_status = m_blue_flag_status = CTFFlag::IN_BASE;
     m_red_flag->resetToBase();
@@ -226,12 +226,12 @@ void CaptureTheFlag::update(int ticks)
 {
     FreeForAll::update(ticks);
 
-    for (auto it = m_swatter_reset_kart_ticks.begin();
-         it != m_swatter_reset_kart_ticks.end();)
+    for (auto it = m_Swatter_reset_kart_ticks.begin();
+         it != m_Swatter_reset_kart_ticks.end();)
     {
         if (it->second < getTicksSinceStart() - stk_config->time2Ticks(8.0f))
         {
-            it = m_swatter_reset_kart_ticks.erase(it);
+            it = m_Swatter_reset_kart_ticks.erase(it);
         }
         else
         {

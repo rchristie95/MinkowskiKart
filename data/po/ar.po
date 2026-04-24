@@ -62,7 +62,7 @@ msgid "Strike!"
 msgstr "ضربة ساحقة!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "اضرب عشر عربات بكرة بولنغ."
 
 #. I18N: ./data/achievements.xml
@@ -118,11 +118,11 @@ msgid ""
 msgstr "فُز بـ 5 سباقات متتاليات ضدّ 3 لاعبين من الذكاء الاصطناعي، واحترس فإعادة السباق تعني خسارتك فيه."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "عاشق الموز"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "اجمع 5 موزات على الأقل في سباق واحد."
 
 #. I18N: ./data/achievements.xml
@@ -139,7 +139,7 @@ msgstr "صيّاد البعوض"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "لطالما كان خصومك بعوضًا! ادعسهم 5 مرات على الأقل في سباق واحد مستخدمًا المنشّة."
 
@@ -1476,7 +1476,7 @@ msgstr "اجمع علب الهدايا الزرقاء، وسوف تعطيك نق
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "تجنّب الموز!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1605,13 +1605,13 @@ msgstr "الكعكة - يتم إلقاؤها على أقرب منافس، وال
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "شفّاط - ارمه مباشرةً لسحب خصم للوراء، أو ارمه وأنت تطالع الخلف لإفقاد شخص بصره."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "كرة البولينج - تذهب مباشرة حتى تضرب، يمكنها أن ترتد عن طريق الجدران. إذا كنت تنظر إلى الوراء، فسيتم قلبه للخلف."
 
@@ -1633,13 +1633,13 @@ msgstr "كرة مضرب - تنطّ حتّى المتزعّم، وقد تسحق �
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "المِنشّة - سوف تسحق العربات بالقرب منك، مما يؤدي إلى إبطائها. يمكن استخدامها أيضًا لإزالة المظلات والقنابل."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "الارتطام بموزة يمكن أن يؤدي إلى تعلق أحد الأشياء التالية بالعربة:"
 
@@ -2609,7 +2609,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "الانزلاق يجعلك أسرع بكثير، افعل ذلك كلما كان آمنًا."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "يمكن استخدام المِنشَّة لإزالة القنابل أو المظلات."
 
 #. I18N: ./data/tips.xml
@@ -4619,14 +4619,14 @@ msgstr "(سباق 1)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "ضربات كرة البولينج"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "ضربات المِنشَّة"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4646,7 +4646,7 @@ msgstr "ضربات العربة نفسها"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "الموز المجموع"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6766,7 +6766,7 @@ msgstr "اضغط <%s> للنظر إلى الخلف.\nأطلق النار من ا
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "اضغط على أيقونة المرآة للنظر خلفك.\nأطلق النار من السلاح خلفك من خلال الضغط على أيقونة المرآة ثم التمرير سريعًا إلى أيقونة البولينج!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

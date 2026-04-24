@@ -53,7 +53,7 @@ msgid "Strike!"
 msgstr "Õnnevise!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Veereta keeglikuuliga pihta 10 kardile."
 
 #. I18N: ./data/achievements.xml
@@ -109,11 +109,11 @@ msgid ""
 msgstr "Võida üksteise järgi 5 võistlust vähemalt 3 AI vastase vastu. Pea meeles, sõidu uuesti alustamine loeb kaotusena."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Pärdik"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Korja ühe sõidu jooksul vähemalt 5 banaani."
 
 #. I18N: ./data/achievements.xml
@@ -130,7 +130,7 @@ msgstr "Sääsejaht"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Lömasta ühe sõidu jooksul vähemalt 5 vastast kärbsepiitsaga."
 
@@ -1410,7 +1410,7 @@ msgstr "Korja rajalt siniseid kingikarpe, need annavad sulle abivõimeid."
 #. I18N: ./data/gui/screens/help1.stkgui
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Hoidu banaanidest!"
 
 #. I18N: ./data/gui/screens/help1.stkgui
@@ -1539,13 +1539,13 @@ msgstr "Tort - viska see oma lähima vastase pihta. Kaval on seda teha vastase l
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "WC-pump - viska otse vastase pihta, et teda enda poole tirida või viska selja taha vaatamise ajal, et vastast ajutiselt pimestada."
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Keeglikuul - veereb otse kuni tabab mõnda karti. Põrkub seintelt tagasi. Tagasi vaatamise ajal saab veeretada tahapoole."
 
@@ -1567,13 +1567,13 @@ msgstr "Korvpall - põrkab liidripositsioonil oleva kardi suunas, seda tabades p
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Kärbsepiits - lömastab lähedal olevad kardid. Kasuta seda endalt langevarju või pommi eemaldamiseks."
 
 #. I18N: ./data/gui/screens/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Banaanile otsasõidul satub sinu kardi külge üks nendest:"
 
@@ -2475,7 +2475,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Libisemine teeb sind kiiremaks, tee seda siis kui on turvaline."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Kärbsepiitsaga saab oma kardilt pommi või langevarju eemaldada."
 
 #. I18N: ./data/tips.xml
@@ -4401,14 +4401,14 @@ msgstr ""
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr ""
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr ""
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4428,7 +4428,7 @@ msgstr ""
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr ""
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6359,7 +6359,7 @@ msgstr "Selja taha vaatamiseks hoia all nuppu <%s>.\nSihi ja tulista selja taha 
 #: ../stk-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr ""
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

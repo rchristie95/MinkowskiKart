@@ -279,7 +279,7 @@ ShaderBasedRenderer* g_stk_sbr = NULL;
 std::array<float, 16>* g_joint_ptr = NULL;
 // ----------------------------------------------------------------------------
 // Black hole world position for gravitational lensing in tonemap.frag
-// Set by Bowling projectile each frame; cleared when no black hole is live.
+// Set by BlackHole projectile each frame; cleared when no black hole is live.
 irr::core::vector3df sp_black_hole_world_pos(0.0f, 0.0f, 0.0f);
 bool sp_black_hole_active = false;
 // Wormhole world position for gravitational lensing in tonemap.frag. Set by

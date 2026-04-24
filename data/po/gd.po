@@ -52,7 +52,7 @@ msgid "Strike!"
 msgstr "Buille!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Buail ri 10 cartaichean le bàla bobhlaireachd."
 
 #. I18N: ./data/achievements.xml
@@ -108,11 +108,11 @@ msgid ""
 msgstr "Buannaich 5 rèisean às dèidh càch a chèile an aghaidh co-dhiù 3 IF. Thoir an aire gun dèid ath-thòiseachadh air rèis a mheasadh mar an do chaill thu i."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Dèidheil air bananathan"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Cruinnich co-dhiù 5 bananathan san aon rèis."
 
 #. I18N: ./data/achievements.xml
@@ -129,7 +129,7 @@ msgstr "Sealgair nam meanbh-chuileag"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Làimhsich na co-fharpaisich ’nam meanbh-chuileagan! Cuir fear ’na spleuchd leis a’ bhualadair co-dhiù 5 tursan san aon rèis."
 
@@ -1409,7 +1409,7 @@ msgstr "Tog bogsaichean tìodhlaic gorma. Bheir iad cumhachdan dhut."
 #. I18N: ./data/gui/screens/help1.stkgui
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Seachnaich bananathan!"
 
 #. I18N: ./data/gui/screens/help1.stkgui
@@ -1538,13 +1538,13 @@ msgstr "Cèic - tilg air an fharpaiseach as fhaisge e, tha i as fhearr air amasa
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Loinid – tilg gu dìreach gus maille a chur air co-fharpaisiche, no tilg a’ coimhead air ais gus fear a dhalladh."
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Bàla bobhlaireachd - roiligidh e gu dìreach gus am buail e is bocaidh e ri ballaichean. Ma tha thu a’ toirt sùil air ais, thèid a thilgeil air do chùlaibh."
 
@@ -1566,13 +1566,13 @@ msgstr "Ball-basgaid – bocaidh e an tòir an toisiche is cuiridh e cartaichean
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Bualadair - cuiridh e cartaichean faisg ort ’nan spleuchd is maille orra. ’S urrainn dhut a chleachdadh airson paraisiutaichean is bomaichean a thoirt air falbh cuideachd."
 
 #. I18N: ./data/gui/screens/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Ma bhuaileas tu ri banana, ’s mathaid gun dèid fear dhe na nithean seo a cheangal ris a’ chart:"
 
@@ -2474,7 +2474,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Bidh thu nas luaithe le sleamhnachadh is cleachd e gach turas a bhios e sàbhailte."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "’S urrainn dhut cuidhteas fhaighinn de bhomaichean is paraisiutaichean leis a’ bhualadair."
 
 #. I18N: ./data/tips.xml
@@ -4410,14 +4410,14 @@ msgstr " (1 rèis)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Buillean bàla bobhlaireachd"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Buillean bualadair"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4437,7 +4437,7 @@ msgstr "Buillean an aghaidh an aon chairt"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Bananathan air an togail"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6374,7 +6374,7 @@ msgstr "Brùth air <%s> gus coimhead air do chùlaibh.\nLoisg an t-arm le <%s> f
 #: ../stk-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Brùth air ìomhaigheag an sgàthain airson coimhead air ais.\nLoisg an t-arm an comhair a chùil le brùthadh air ìomhaigheag an sgàthain ’s a’ grad-shlaighdeadh gu ìomhaigheag a’ bhobhlaidh!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

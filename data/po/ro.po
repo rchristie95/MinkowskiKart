@@ -53,7 +53,7 @@ msgid "Strike!"
 msgstr "Lovitură!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Lovește 10 carturi cu o minge de popice."
 
 #. I18N: ./data/achievements.xml
@@ -109,11 +109,11 @@ msgid ""
 msgstr "Câștigă 5 curse la rând împotriva a cel puțin 3 oponenți roboți. Atenție, repornirea unei curse este considerată o pierdere."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Îndrăgostit de banane"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Colectează cel puțin 5 banane într-o cursă."
 
 #. I18N: ./data/achievements.xml
@@ -130,7 +130,7 @@ msgstr "Vânător de țânțari"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Tratați adversarii ca țânțari! Zdrobește-i de cel puțin 5 ori cu paleta de țânțari într-o cursă."
 
@@ -1467,7 +1467,7 @@ msgstr "Colectați cadourile albastre pentru a primi bonusuri."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Evitați bananele!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1596,13 +1596,13 @@ msgstr "Prăjitura - se aruncă către cel mai apropiat rival, cel mai bine util
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Desfundător - aruncați-l înainte pentru a trage oponentul înapoi, sau aruncați-l în spate pentru a orbi oponentul."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Mingea de popice - va merge drept înainte până va lovi, poate ricoșa din pereți. Dacă vă uitați în spate, va fi aruncată înapoi."
 
@@ -1624,13 +1624,13 @@ msgstr "Mingea de basket - sare înspre lider, și poate strivi sau încetini ca
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Paleta de țânțari - va strivi carturile din apropiere, încetinindu-le. Poate fi folosită și la eliminarea parașutelor sau bombelor."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Atingerea unei banane poate atașa cartului una dintre următoarele:"
 
@@ -2600,7 +2600,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Derapările vă îmbunătățește viteza, aplicați-le ori de câte ori este sigur."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Paleta de țânțari poate fi folosită pentru a elimina bombe sau parașute."
 
 #. I18N: ./data/tips.xml
@@ -4598,14 +4598,14 @@ msgstr " (o cursă)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Lovituri cu mingea de popice"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Lovituri cu paleta de țânțari"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4625,7 +4625,7 @@ msgstr "Lovituri împotriva aceluiași cart"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Banane colectate"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6736,7 +6736,7 @@ msgstr "Apăsați <%s> pentru a privi în spate.\nLansați arma cu <%s> în timp
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Apăsați iconița oglindă pentru a privi în spate.\nLansați arma în spate menținând iconița oglindă și apoi swipe pe iconița de minge de popice!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

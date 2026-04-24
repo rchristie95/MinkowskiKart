@@ -50,7 +50,7 @@ msgid "Strike!"
 msgstr "Ôgnia!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "Cylnij 10 wōzykōw kulōm do kryngli."
 
 #. I18N: ./data/achievements.xml
@@ -106,11 +106,11 @@ msgid ""
 msgstr "Wygrej 5 pojedynczych wyścigōw ze rzyndu przeciwko aby 3 kōmputrōm. Dej pozōr, resztart wyścigu je traktowany jak porażka."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Miyłośnik Bananōw"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Zebier aby 5 bananōw w jednym wyścigu."
 
 #. I18N: ./data/achievements.xml
@@ -127,7 +127,7 @@ msgstr "Łowca Kopruchōw"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Pōmyśl sie, iże twoji przeciwnicy to kopruchy. Splaszcz ich klapaczkōm aby 5 razy we wyścigu."
 
@@ -1407,7 +1407,7 @@ msgstr "Zbiyrej modre kastliki, dadzōm ci bōnusy."
 #. I18N: ./data/gui/screens/help1.stkgui
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Unikej bananōw!"
 
 #. I18N: ./data/gui/screens/help1.stkgui
@@ -1536,13 +1536,13 @@ msgstr "Ciasto - ciepane we nojbliższego przeciwnika, perfekt z bliska i na dug
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Guliksztoper - ciepnij do przodku, żeby chycić przeciwnika, abo ciepnij do zadku, żeby przeciwnik przestoł widzieć."
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "Kula do kryngli - kulo sie do przodku, aż w coś trzaśnie, ôdbijo sie ôd ścian. Jeźli patrzisz do zadku, to kula bydzie puszczōno tyż do zadku.."
 
@@ -1564,13 +1564,13 @@ msgstr "Bal do basketbalu - ôdbijo sie w kerōnku lidera, może splaszczyć i s
 
 #. I18N: ./data/gui/screens/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Klapaczka - splaszczo bliske wōzyki i je spowolnio. Może być tyż użyto, coby wychrōnić falszyrmy i bōmby."
 
 #. I18N: ./data/gui/screens/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Trzaśniyńcie w banan może prziniyś przilepiynie sie do wōzyka jednyj z tych rzeczy:"
 
@@ -2472,7 +2472,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Jedziesz moc warcij, jak sie kiołzdosz. Używej kiołzdanio tam, kaj je to bezpieczne."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Możesz użyć klapaczki, coby pozbyć sie bōmby abo falszyrmu."
 
 #. I18N: ./data/tips.xml
@@ -4403,14 +4403,14 @@ msgstr " (1 wyścig)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "Cylniyńcia kulōm do kryngli"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Cylniyńcia klapaczkōm"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4430,7 +4430,7 @@ msgstr "Szlagi w tyn sōm wōzyk"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Zebrane banany"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6364,7 +6364,7 @@ msgstr "Wciś <%s>, żeby wejzdrzeć do zadku.\nStrzylej <%s>, a wciś <%s>, że
 #: ../stk-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Wciś ikōna zdrzadła, żeby wejzdrzeć do zadku.\nWystrzyl brōń do zadku bez trzimanie ikōny zdrzadła i przeciōngniyńcie do ikōny kryngli!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

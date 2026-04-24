@@ -936,70 +936,70 @@ float KartProperties::getLeanSpeed() const
 }  // getLeanSpeed
 
 // ----------------------------------------------------------------------------
-float KartProperties::getAnvilDuration() const
+float KartProperties::getMaxwellBoltzmannDuration() const
 {
-    return m_cached_characteristic->getAnvilDuration();
-}  // getAnvilDuration
+    return m_cached_characteristic->getMaxwellBoltzmannDuration();
+}  // getMaxwellBoltzmannDuration
 
 // ----------------------------------------------------------------------------
-float KartProperties::getAnvilWeight() const
+float KartProperties::getMaxwellBoltzmannWeight() const
 {
-    return m_cached_characteristic->getAnvilWeight();
-}  // getAnvilWeight
+    return m_cached_characteristic->getMaxwellBoltzmannWeight();
+}  // getMaxwellBoltzmannWeight
 
 // ----------------------------------------------------------------------------
-float KartProperties::getAnvilSpeedFactor() const
+float KartProperties::getMaxwellBoltzmannSpeedFactor() const
 {
-    return m_cached_characteristic->getAnvilSpeedFactor();
-}  // getAnvilSpeedFactor
+    return m_cached_characteristic->getMaxwellBoltzmannSpeedFactor();
+}  // getMaxwellBoltzmannSpeedFactor
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteFriction() const
+float KartProperties::getTimeDilationFriction() const
 {
-    return m_cached_characteristic->getParachuteFriction();
-}  // getParachuteFriction
+    return m_cached_characteristic->getTimeDilationFriction();
+}  // getTimeDilationFriction
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteDuration() const
+float KartProperties::getTimeDilationDuration() const
 {
-    return m_cached_characteristic->getParachuteDuration();
-}  // getParachuteDuration
+    return m_cached_characteristic->getTimeDilationDuration();
+}  // getTimeDilationDuration
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteDurationOther() const
+float KartProperties::getTimeDilationDurationOther() const
 {
-    return m_cached_characteristic->getParachuteDurationOther();
-}  // getParachuteDurationOther
+    return m_cached_characteristic->getTimeDilationDurationOther();
+}  // getTimeDilationDurationOther
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteDurationRankMult() const
+float KartProperties::getTimeDilationDurationRankMult() const
 {
-    return m_cached_characteristic->getParachuteDurationRankMult();
-}  // getParachuteDurationRankMult
+    return m_cached_characteristic->getTimeDilationDurationRankMult();
+}  // getTimeDilationDurationRankMult
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteDurationSpeedMult() const
+float KartProperties::getTimeDilationDurationSpeedMult() const
 {
-    return m_cached_characteristic->getParachuteDurationSpeedMult();
-}  // getParachuteDurationSpeedMult
+    return m_cached_characteristic->getTimeDilationDurationSpeedMult();
+}  // getTimeDilationDurationSpeedMult
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteLboundFraction() const
+float KartProperties::getTimeDilationLboundFraction() const
 {
-    return m_cached_characteristic->getParachuteLboundFraction();
-}  // getParachuteLboundFraction
+    return m_cached_characteristic->getTimeDilationLboundFraction();
+}  // getTimeDilationLboundFraction
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteUboundFraction() const
+float KartProperties::getTimeDilationUboundFraction() const
 {
-    return m_cached_characteristic->getParachuteUboundFraction();
-}  // getParachuteUboundFraction
+    return m_cached_characteristic->getTimeDilationUboundFraction();
+}  // getTimeDilationUboundFraction
 
 // ----------------------------------------------------------------------------
-float KartProperties::getParachuteMaxSpeed() const
+float KartProperties::getTimeDilationMaxSpeed() const
 {
-    return m_cached_characteristic->getParachuteMaxSpeed();
-}  // getParachuteMaxSpeed
+    return m_cached_characteristic->getTimeDilationMaxSpeed();
+}  // getTimeDilationMaxSpeed
 
 // ----------------------------------------------------------------------------
 float KartProperties::getFrictionKartFriction() const
@@ -1008,34 +1008,34 @@ float KartProperties::getFrictionKartFriction() const
 }  // getFrictionKartFriction
 
 // ----------------------------------------------------------------------------
-float KartProperties::getBubblegumDuration() const
+float KartProperties::getWarpBubbleDuration() const
 {
-    return m_cached_characteristic->getBubblegumDuration();
-}  // getBubblegumDuration
+    return m_cached_characteristic->getWarpBubbleDuration();
+}  // getWarpBubbleDuration
 
 // ----------------------------------------------------------------------------
-float KartProperties::getBubblegumSpeedFraction() const
+float KartProperties::getWarpBubbleSpeedFraction() const
 {
-    return m_cached_characteristic->getBubblegumSpeedFraction();
-}  // getBubblegumSpeedFraction
+    return m_cached_characteristic->getWarpBubbleSpeedFraction();
+}  // getWarpBubbleSpeedFraction
 
 // ----------------------------------------------------------------------------
-float KartProperties::getBubblegumTorque() const
+float KartProperties::getWarpBubbleTorque() const
 {
-    return m_cached_characteristic->getBubblegumTorque();
-}  // getBubblegumTorque
+    return m_cached_characteristic->getWarpBubbleTorque();
+}  // getWarpBubbleTorque
 
 // ----------------------------------------------------------------------------
-float KartProperties::getBubblegumFadeInTime() const
+float KartProperties::getWarpBubbleFadeInTime() const
 {
-    return m_cached_characteristic->getBubblegumFadeInTime();
-}  // getBubblegumFadeInTime
+    return m_cached_characteristic->getWarpBubbleFadeInTime();
+}  // getWarpBubbleFadeInTime
 
 // ----------------------------------------------------------------------------
-float KartProperties::getBubblegumShieldDuration() const
+float KartProperties::getWarpBubbleShieldDuration() const
 {
-    return m_cached_characteristic->getBubblegumShieldDuration();
-}  // getBubblegumShieldDuration
+    return m_cached_characteristic->getWarpBubbleShieldDuration();
+}  // getWarpBubbleShieldDuration
 
 // ----------------------------------------------------------------------------
 float KartProperties::getZipperDuration() const
@@ -1068,64 +1068,64 @@ float KartProperties::getZipperFadeOutTime() const
 }  // getZipperFadeOutTime
 
 // ----------------------------------------------------------------------------
-float KartProperties::getSwatterDuration() const
+float KartProperties::getAntiKarticleDuration() const
 {
-    return m_cached_characteristic->getSwatterDuration();
-}  // getSwatterDuration
+    return m_cached_characteristic->getAntiKarticleDuration();
+}  // getAntiKarticleDuration
 
 // ----------------------------------------------------------------------------
-float KartProperties::getSwatterDistance() const
+float KartProperties::getAntiKarticleDistance() const
 {
-    return m_cached_characteristic->getSwatterDistance();
-}  // getSwatterDistance
+    return m_cached_characteristic->getAntiKarticleDistance();
+}  // getAntiKarticleDistance
 
 // ----------------------------------------------------------------------------
-float KartProperties::getSwatterSquashDuration() const
+float KartProperties::getAntiKarticleSquashDuration() const
 {
-    return m_cached_characteristic->getSwatterSquashDuration();
-}  // getSwatterSquashDuration
+    return m_cached_characteristic->getAntiKarticleSquashDuration();
+}  // getAntiKarticleSquashDuration
 
 // ----------------------------------------------------------------------------
-float KartProperties::getSwatterSquashSlowdown() const
+float KartProperties::getAntiKarticleSquashSlowdown() const
 {
-    return m_cached_characteristic->getSwatterSquashSlowdown();
-}  // getSwatterSquashSlowdown
+    return m_cached_characteristic->getAntiKarticleSquashSlowdown();
+}  // getAntiKarticleSquashSlowdown
 
 // ----------------------------------------------------------------------------
-float KartProperties::getPlungerBandMaxLength() const
+float KartProperties::getPhotonBandMaxLength() const
 {
-    return m_cached_characteristic->getPlungerBandMaxLength();
-}  // getPlungerBandMaxLength
+    return m_cached_characteristic->getPhotonBandMaxLength();
+}  // getPhotonBandMaxLength
 
 // ----------------------------------------------------------------------------
-float KartProperties::getPlungerBandForce() const
+float KartProperties::getPhotonBandForce() const
 {
-    return m_cached_characteristic->getPlungerBandForce();
-}  // getPlungerBandForce
+    return m_cached_characteristic->getPhotonBandForce();
+}  // getPhotonBandForce
 
 // ----------------------------------------------------------------------------
-float KartProperties::getPlungerBandDuration() const
+float KartProperties::getPhotonBandDuration() const
 {
-    return m_cached_characteristic->getPlungerBandDuration();
-}  // getPlungerBandDuration
+    return m_cached_characteristic->getPhotonBandDuration();
+}  // getPhotonBandDuration
 
 // ----------------------------------------------------------------------------
-float KartProperties::getPlungerBandSpeedIncrease() const
+float KartProperties::getPhotonBandSpeedIncrease() const
 {
-    return m_cached_characteristic->getPlungerBandSpeedIncrease();
-}  // getPlungerBandSpeedIncrease
+    return m_cached_characteristic->getPhotonBandSpeedIncrease();
+}  // getPhotonBandSpeedIncrease
 
 // ----------------------------------------------------------------------------
-float KartProperties::getPlungerBandFadeOutTime() const
+float KartProperties::getPhotonBandFadeOutTime() const
 {
-    return m_cached_characteristic->getPlungerBandFadeOutTime();
-}  // getPlungerBandFadeOutTime
+    return m_cached_characteristic->getPhotonBandFadeOutTime();
+}  // getPhotonBandFadeOutTime
 
 // ----------------------------------------------------------------------------
-float KartProperties::getPlungerInFaceTime() const
+float KartProperties::getPhotonInFaceTime() const
 {
-    return m_cached_characteristic->getPlungerInFaceTime();
-}  // getPlungerInFaceTime
+    return m_cached_characteristic->getPhotonInFaceTime();
+}  // getPhotonInFaceTime
 
 // ----------------------------------------------------------------------------
 std::vector<float> KartProperties::getStartupTime() const

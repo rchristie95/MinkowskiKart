@@ -63,15 +63,18 @@ public:
         // since the attachment type is mapped to a random integer (and bomb
         // must be last, since a bomb will not be given in battle mode).
         ATTACH_TIME_DILATION = 0,   // was ATTACH_PARACHUTE
-        ATTACH_MASS_SPIKE = 1,      // was ATTACH_ANVIL
+        ATTACH_MAXWELL_BOLTZMANN = 1,      // was ATTACH_ANVIL/MASS_SPIKE
+        ATTACH_MASS_SPIKE = ATTACH_MAXWELL_BOLTZMANN, // compatibility alias
         ATTACH_BOMB = 2,
         // End of fixed order attachments, the rest can be changed.
         ATTACH_SUPERPOSITION_CAT,
-        ATTACH_TIDAL_ARM,           // was ATTACH_SWATTER
+        ATTACH_ANTI_KARTICLE,           // was ATTACH_SWATTER
+        ATTACH_TIDAL_ARM = ATTACH_ANTI_KARTICLE, // compatibility alias
         // Note that the next 2 symbols are only used as an index into the mesh
         // array; it will NEVER be actually assigned as an attachment type
         ATTACH_NOLOKS_SWATTER,
-        ATTACH_TIDAL_ARM_ANIM,      // was ATTACH_SWATTER_ANIM
+        ATTACH_ANTI_KARTICLE_ANIM,      // was ATTACH_SWATTER_ANIM
+        ATTACH_TIDAL_ARM_ANIM = ATTACH_ANTI_KARTICLE_ANIM, // compatibility alias
         ATTACH_WARP_BUBBLE,         // was ATTACH_BUBBLEGUM_SHIELD
         ATTACH_NOLOK_WARP_BUBBLE,   // was ATTACH_NOLOK_BUBBLEGUM_SHIELD
         ATTACH_COMPACTIFICATION,    // Calabi-Yau banana: screen-space compactification
@@ -144,7 +147,7 @@ public:
     void saveState(BareNetworkString *buffer) const;
     static bool applySwatterStyleSquash(AbstractKart* attacker,
                                         AbstractKart* victim,
-                                        bool award_swatter_achievements);
+                                        bool award_Swatter_achievements);
     static float getMaxwellBoltzmannDurationSeconds();
 
     // ------------------------------------------------------------------------
@@ -175,7 +178,7 @@ public:
     /** Returns additional weight for the kart. */
     float weightAdjust() const;
     // ------------------------------------------------------------------------
-    /** Return the currently associated scene node (used by e.g the swatter) */
+    /** Return the currently associated scene node (used by e.g the Swatter) */
     scene::IAnimatedMeshSceneNode* getNode() {return m_node;}
     // ------------------------------------------------------------------------
     void reset()

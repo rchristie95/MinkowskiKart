@@ -452,19 +452,19 @@ void ArenaAI::useItems(const float dt)
     case PowerupManager::POWERUP_WARP_BUBBLE:
         {
             Attachment::AttachmentType type = m_kart->getAttachment()->getType();
-            // Don't use shield when we have a swatter.
-            if (type == Attachment::ATTACH_TIDAL_ARM)
+            // Don't use shield when we have a Swatter.
+            if (type == Attachment::ATTACH_ANTI_KARTICLE)
                 break;
 
             // Check if a flyable (asteroid, ...) is close or a kart nearby
-            // has a swatter attachment. If so, use bubblegum
+            // has a Swatter attachment. If so, use bubblegum
             // as shield
             if ( (!m_kart->isShielded() &&
                    ProjectileManager::get()->projectileIsClose(m_kart,
                                     m_ai_properties->m_shield_incoming_radius)  ) ||
                  (dist_to_kart < 15.0f &&
                   (m_closest_kart->getAttachment()->
-                                       getType() == Attachment::ATTACH_TIDAL_ARM)  )    )
+                                       getType() == Attachment::ATTACH_ANTI_KARTICLE)  )    )
             {
                 m_controls->setFire(true);
                 m_controls->setLookBack(false);
@@ -507,7 +507,7 @@ void ArenaAI::useItems(const float dt)
 
     case PowerupManager::POWERUP_BLACK_HOLE:
         {
-            // if the kart has a shield, do not break it by using a bowling ball.
+            // if the kart has a shield, do not break it by using a black hole.
             if (m_kart->getShieldTime() > min_bubble_time)
                 break;
 
@@ -529,7 +529,7 @@ void ArenaAI::useItems(const float dt)
     case PowerupManager::POWERUP_ANTI_KARTICLE:
         {
             // Squared distance for which the anti-karticle is worth spawning.
-            float d2 = m_kart->getKartProperties()->getSwatterDistance();
+            float d2 = m_kart->getKartProperties()->getAntiKarticleDistance();
             // If the kart has a shield, do not break it by firing a weapon.
             if (m_kart->getShieldTime() > min_bubble_time)
                 break;
@@ -549,8 +549,8 @@ void ArenaAI::useItems(const float dt)
     case PowerupManager::POWERUP_ZIPPER:
         break;   // POWERUP_ZIPPER
 
-    case PowerupManager::POWERUP_COSMIC_STRING:
-        break;   // POWERUP_COSMIC_STRING
+    case PowerupManager::POWERUP_PHOTON:
+        break;   // POWERUP_PHOTON
 
     case PowerupManager::POWERUP_SUPER_POSITION: // Don't handle switch
         m_controls->setFire(true);       // (use it no matter what) for now

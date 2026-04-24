@@ -133,7 +133,7 @@ protected:
     // The flyable class stores the values for each flyable type, e.g.
     // speed, min_height, max_height. These variables must be static,
     // so we need arrays of these variables to have different values
-    // for bowling balls, missiles, ...
+    // for black holes, missiles, ...
 
     /** Speed of the projectile. */
     static float      m_st_speed[PowerupManager::POWERUP_MAX];

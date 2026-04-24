@@ -265,7 +265,7 @@ private:
                           const std::vector<const ItemState *> &items_to_collect,
                           const std::vector<const ItemState *> &items_to_avoid);
     void  handleAsteroid(int item_skill);
-    void  handleBowling(int item_skill);
+    void  handleBlackHole(int item_skill);
     void  handleSwatter(int item_skill);
     void  handleSwitch(int item_skill,
                        const std::vector<const ItemState *> &items_to_collect,

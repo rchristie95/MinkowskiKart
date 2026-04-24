@@ -491,7 +491,7 @@ void SkiddingAI::handleSteering(float dt)
 
         // Potentially adjust the point to aim for in order to either
         // aim to collect item, or steer to avoid a bad item.
-        if(m_ai_properties->m_collect_avoid_items && m_kart->getBlockedByPlungerTicks()<=0)
+        if(m_ai_properties->m_collect_avoid_items && m_kart->getBlockedByPhotonTicks()<=0)
             handleItemCollectionAndAvoidance(&aim_point, last_node);
 
         steer_angle = steerToPoint(aim_point);
@@ -982,7 +982,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
 
     // If the item type is not handled here, ignore it
     Item::ItemType type = item->getType();
-    if( type!=Item::ITEM_BANANA    && type!=Item::ITEM_BUBBLEGUM &&
+    if( type!=Item::ITEM_COMPACTIFICATION    && type!=Item::ITEM_WARP_BUBBLE &&
         type!=Item::ITEM_BONUS_BOX && type!=Item::ITEM_SUPER_POSITION &&
         type!=Item::ITEM_NITRO_BIG && type!=Item::ITEM_NITRO_SMALL  )
         return;
@@ -991,8 +991,8 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
     switch(type)
     {
         // Negative items: avoid them
-        case Item::ITEM_BUBBLEGUM: // fallthrough
-        case Item::ITEM_BANANA: avoid = true;  break;
+        case Item::ITEM_WARP_BUBBLE: // fallthrough
+        case Item::ITEM_COMPACTIFICATION: avoid = true;  break;
 
         // Positive items: try to collect
         case Item::ITEM_NITRO_BIG:
@@ -1077,7 +1077,7 @@ void SkiddingAI::evaluateItems(const ItemState *item, Vec3 kart_aim_direction,
  *  non-random strategies), but two levels may share a strategy for a given item.
  *  \param dt Time step size.
  *  STATE: shield on -> avoid usage of offensive items (with certain tolerance)
- *  STATE: swatter on -> avoid usage of shield
+ *  STATE: Swatter on -> avoid usage of shield
  */
 void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_node, int item_skill)
 {
@@ -1203,11 +1203,11 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
           
     case PowerupManager::POWERUP_BLACK_HOLE:
         {
-            // if the kart has a shield, do not break it by using a bowling ball.
+            // if the kart has a shield, do not break it by using a black hole.
             if((m_kart->getShieldTime() > min_bubble_time) && (stk_config->m_shield_restrict_weapons == true))
                 break;
 
-            handleBowling(item_skill);
+            handleBlackHole(item_skill);
             break;
         }   // POWERUP_BLACK_HOLE
 
@@ -1216,7 +1216,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
         // saving the (potential more valuable nitro) for later
         break;   // POWERUP_ZIPPER
 
-    case PowerupManager::POWERUP_COSMIC_STRING:
+    case PowerupManager::POWERUP_PHOTON:
         {
             // if the kart has a shield, do not break it by using a plunger.
             if((m_kart->getShieldTime() > min_bubble_time) && (stk_config->m_shield_restrict_weapons == true))
@@ -1226,7 +1226,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
             // time before a plunger effect becomes obvious.
             if(m_time_since_last_shot < 5.0f) break;
 
-            // Plungers can be fired backwards and are faster,
+            // Photons can be fired backwards and are faster,
             // so allow more distance for shooting.
             bool fire_backwards = (m_kart_behind && m_kart_ahead &&
                                    m_distance_behind < m_distance_ahead) ||
@@ -1238,7 +1238,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
             if(m_controls->getFire())
                 m_controls->setLookBack(fire_backwards);
             break;
-        }   // POWERUP_COSMIC_STRING
+        }   // POWERUP_PHOTON
 
     case PowerupManager::POWERUP_SUPER_POSITION:
         {
@@ -1249,13 +1249,13 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
     case PowerupManager::POWERUP_TIME_DILATION:
         {
         // Wait one second more than a previous parachute
-        if(m_time_since_last_shot > m_kart->getKartProperties()->getParachuteDurationOther() + 1.0f)
+        if(m_time_since_last_shot > m_kart->getKartProperties()->getTimeDilationDurationOther() + 1.0f)
             m_controls->setFire(true);
         break;
         }// POWERUP_TIME_DILATION
 
-    case PowerupManager::POWERUP_MASS_SPIKE:
-        break;   // POWERUP_MASS_SPIKE
+    case PowerupManager::POWERUP_MAXWELL_BOLTZMANN:
+        break;   // POWERUP_MAXWELL_BOLTZMANN
 
     case PowerupManager::POWERUP_ANTI_KARTICLE:
         {
@@ -1289,7 +1289,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
 /** Handle bubblegum depending on the chosen strategy
  * Level 2 : Use the shield immediately after a wait time
  * Level 3 : Use the shield against flyables except asteroids. Use the shield against bad attachments
- *           and plunger. Use the bubble gum against an enemy close behind, except if holding a swatter.
+ *           and plunger. Use the bubble gum against an enemy close behind, except if holding a Swatter.
  * Level 4 : Level 3, and protect against asteroids too, and use before hitting gum/banana
  * Level 5 : Level 4, and use before hitting item box, and let plunger hit
  *                   (can use the shield after), and use against bomb only when the timer ends
@@ -1305,7 +1305,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
 
     int projectile_types[4]; //[3] wormhole, [2] asteroid, [1] photon, [0] black hole
     projectile_types[0] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_BLACK_HOLE);
-    projectile_types[1] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_COSMIC_STRING);
+    projectile_types[1] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_PHOTON);
     projectile_types[2] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_ASTEROID);
     projectile_types[3] = ProjectileManager::get()->getNearbyProjectileCount(m_kart, shield_radius, PowerupManager::POWERUP_WORMHOLE);
    
@@ -1328,9 +1328,9 @@ void SkiddingAI::handleBubblegum(int item_skill,
        if( !m_kart->isShielded() && projectile_is_close
           && projectile_types[2] == 0)
        {
-          //don't discard swatter against plunger
+          //don't discard Swatter against plunger
           if( projectile_types[1] == 0
-             || (projectile_types[1] >= 1 && type != Attachment::ATTACH_TIDAL_ARM))
+             || (projectile_types[1] >= 1 && type != Attachment::ATTACH_ANTI_KARTICLE))
           {
              m_controls->setFire(true);
              m_controls->setLookBack(false);
@@ -1342,9 +1342,9 @@ void SkiddingAI::handleBubblegum(int item_skill,
     {
        if( !m_kart->isShielded() && projectile_is_close)
        {
-          //don't discard swatter against plunger
+          //don't discard Swatter against plunger
           if( projectile_types[1] == 0
-             || (projectile_types[1] >= 1 && type != Attachment::ATTACH_TIDAL_ARM))
+             || (projectile_types[1] >= 1 && type != Attachment::ATTACH_ANTI_KARTICLE))
           {
              m_controls->setFire(true);
              m_controls->setLookBack(false);
@@ -1368,7 +1368,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
     // Use shield to remove bad attachments
     if( (type == Attachment::ATTACH_BOMB && item_skill != 5)
       || type == Attachment::ATTACH_TIME_DILATION
-      || type == Attachment::ATTACH_MASS_SPIKE )
+      || type == Attachment::ATTACH_MAXWELL_BOLTZMANN )
     {
         m_controls->setFire(true);
         m_controls->setLookBack(false);
@@ -1386,7 +1386,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
     }
 
     //If the kart view is blocked by a plunger, use the shield
-    if(m_kart->getBlockedByPlungerTicks()>0)
+    if(m_kart->getBlockedByPhotonTicks()>0)
     {
         m_controls->setFire(true);
         m_controls->setLookBack(false);
@@ -1458,7 +1458,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
  * Level 2 : Use the asteroid against any close vulnerable enemy, with priority to those ahead and close,
  *           check if the enemy is roughly ahead.
  * Level 3 : Level 2 and don't fire on slower karts
- * Level 4 : Level 3 and fire if the kart has a swatter which may hit us
+ * Level 4 : Level 3 and fire if the kart has a Swatter which may hit us
  * Level 5 : Level 4 and don't fire on a shielded kart if we're just behind (gum)
  *  \param item_skill The skill with which to use the item
  */
@@ -1536,31 +1536,31 @@ void SkiddingAI::handleAsteroid(int item_skill)
         else                    fire_ahead += 25.0f;
     }
 
-    //Try to take out a kart which has a swatter in priority
+    //Try to take out a kart which has a Swatter in priority
     if (item_skill>=4)
     {
-        bool kart_behind_has_swatter = false;
+        bool kart_behind_has_Swatter = false;
         if (m_kart_behind)
         {
-            kart_behind_has_swatter = (m_kart_behind->getAttachment()->getType()
-                                       == Attachment::ATTACH_TIDAL_ARM);
+            kart_behind_has_Swatter = (m_kart_behind->getAttachment()->getType()
+                                       == Attachment::ATTACH_ANTI_KARTICLE);
         }
 
-        bool kart_ahead_has_swatter = false;
+        bool kart_ahead_has_Swatter = false;
         if (m_kart_ahead)
         {
-            kart_ahead_has_swatter = (m_kart_ahead->getAttachment()->getType()
-                                      == Attachment::ATTACH_TIDAL_ARM);
+            kart_ahead_has_Swatter = (m_kart_ahead->getAttachment()->getType()
+                                      == Attachment::ATTACH_ANTI_KARTICLE);
         }
 
-        //If it is slower, the swatter is more dangerous
-        if (kart_ahead_has_swatter)
+        //If it is slower, the Swatter is more dangerous
+        if (kart_ahead_has_Swatter)
         {
             if (kart_ahead_is_slow) fire_ahead += 75.0f;
             else                    fire_ahead += 15.0f;
         }
         //If it is slower, we can wait for it to get faster and closer before firing
-        if (kart_behind_has_swatter)
+        if (kart_behind_has_Swatter)
         {
             if (!kart_behind_is_slow) fire_behind += 25.0f;
         }
@@ -1592,17 +1592,17 @@ void SkiddingAI::handleAsteroid(int item_skill)
 
 
 //-----------------------------------------------------------------------------
-/** Handle the bowling ball depending on the chosen strategy
- * Level 2 : Use the bowling ball against enemies straight ahead
+/** Handle the black hole depending on the chosen strategy
+ * Level 2 : Use the black hole against enemies straight ahead
              or straight behind, and not invulnerable, with a 5 second delay
  * Level 3 : Only 3 seconds of delay
  * Level 4 : Same as level 3
  * Level 5 : Level 4 and don't fire on a shielded kart if we're just behind (gum)
  *  \param item_skill The skill with which to use the item
  */
-void SkiddingAI::handleBowling(int item_skill)
+void SkiddingAI::handleBlackHole(int item_skill)
 {
-    // Leave more time between bowling balls, since they are
+    // Leave more time between black holes, since they are
     // slower, so it should take longer to hit something which
     // can result in changing our target.
     if(item_skill == 2 && m_time_since_last_shot < 5.0f) return;
@@ -1658,7 +1658,7 @@ void SkiddingAI::handleBowling(int item_skill)
         return;
     }
 
-    // Bowling balls are slower, so only fire on closer karts - but when
+    // Black holes are slower, so only fire on closer karts - but when
     // firing backwards, the kart can be further away, since the ball
     // acts a bit like a mine (and the kart is racing towards it, too)
     bool fire_backwards = (straight_behind && !straight_ahead) ||
@@ -1671,13 +1671,13 @@ void SkiddingAI::handleBowling(int item_skill)
     if(m_controls->getFire())
         m_controls->setLookBack(fire_backwards);
     return;
-} //handleBowling
+} //handleBlackHole
 
 //-----------------------------------------------------------------------------
-/** Handle the swatter depending on the chosen strategy
- * Level 2 : Use the swatter immediately after a wait time
- * Level 3 : Use the swatter when enemies are close
- * Level 4 : Level 3 and use the swatter to remove bad attachments
+/** Handle the Swatter depending on the chosen strategy
+ * Level 2 : Use the Swatter immediately after a wait time
+ * Level 3 : Use the Swatter when enemies are close
+ * Level 4 : Level 3 and use the Swatter to remove bad attachments
  * Level 5 : Level 4 and use against bomb only when the timer ends
  *  \param item_skill The skill with which to use the item
  */
@@ -1691,13 +1691,13 @@ void SkiddingAI::handleSwatter(int item_skill)
         return;
     }
     
-    // Use swatter to remove bad attachments
+    // Use Swatter to remove bad attachments
     if((item_skill == 4) || (item_skill == 5))
     {
         if( (type == Attachment::ATTACH_BOMB
              && item_skill == 4)
              || type == Attachment::ATTACH_TIME_DILATION
-             || type == Attachment::ATTACH_MASS_SPIKE )
+             || type == Attachment::ATTACH_MAXWELL_BOLTZMANN )
         {
             m_controls->setFire(true);
             m_controls->setLookBack(false);
@@ -1714,8 +1714,8 @@ void SkiddingAI::handleSwatter(int item_skill)
             }
         }
     }
-     // Squared distance for which the swatter works
-     float d2 = m_kart->getKartProperties()->getSwatterDistance();
+     // Squared distance for which the Swatter works
+     float d2 = m_kart->getKartProperties()->getAntiKarticleDistance();
 
      // Fire if the closest kart ahead or to the back is not already
      // squashed and close enough.
@@ -1820,12 +1820,12 @@ void SkiddingAI::handleSwitch(int item_skill,
        //Bad will store 2 for bananas, 3 for bubble gum
        for(int i=(int)items_to_avoid.size()-1; i>=0; i--)
        {
-           if (items_to_avoid[i]->getType() == Item::ITEM_BUBBLEGUM)
+           if (items_to_avoid[i]->getType() == Item::ITEM_WARP_BUBBLE)
            {
               bad = 3;
               i = -1;
            }
-           else if ( items_to_avoid[i]->getType() == Item::ITEM_BANANA )
+           else if ( items_to_avoid[i]->getType() == Item::ITEM_COMPACTIFICATION )
            {
               bad = 2;
            }
@@ -2033,7 +2033,7 @@ void SkiddingAI::handleAccelerationAndBraking(int ticks)
 
     // Step 4 : handle plunger effect
 
-    if(m_kart->getBlockedByPlungerTicks()>0)
+    if(m_kart->getBlockedByPhotonTicks()>0)
     {
         int item_skill = computeSkill(ITEM_SKILL);
         float accel_threshold = 0.5f;
@@ -2245,7 +2245,7 @@ void SkiddingAI::handleNitroAndZipper(float max_safe_speed)
     if(!m_kart->isOnGround() || m_kart->hasFinishedRace()) return;
    
     // Don't use nitro or zipper when the AI has a plunger in the face!
-    if(m_kart->getBlockedByPlungerTicks()>0)
+    if(m_kart->getBlockedByPhotonTicks()>0)
     {
         if ((nitro_skill < 4) && (item_skill < 5))
             return;
@@ -2269,7 +2269,7 @@ void SkiddingAI::handleNitroAndZipper(float max_safe_speed)
     // benefit. Better wait till later.
     const bool has_slowdown_attachment =
         m_kart->getAttachment()->getType()==Attachment::ATTACH_TIME_DILATION ||
-        m_kart->getAttachment()->getType()==Attachment::ATTACH_MASS_SPIKE;
+        m_kart->getAttachment()->getType()==Attachment::ATTACH_MAXWELL_BOLTZMANN;
     if(has_slowdown_attachment) return;
    
     // Don't compute nitro usage if we don't have nitro
@@ -2343,7 +2343,7 @@ void SkiddingAI::handleNitroAndZipper(float max_safe_speed)
     }
 
     // TODO : if a kart behind and reasonably close goes faster
-    //        and it has a swatter, use nitro to try and dodge the swatter.
+    //        and it has a Swatter, use nitro to try and dodge the Swatter.
    
     // Don't use nitro if building an energy reserve
     if (m_kart->getEnergy() <= energy_reserve)
@@ -3075,7 +3075,7 @@ void SkiddingAI::setSteering(float angle, float dt)
     // The degree of restriction depends on item_skill
 
     //FIXME : the AI speed estimate in curves don't account for this restriction
-    if(m_kart->getBlockedByPlungerTicks()>0)
+    if(m_kart->getBlockedByPhotonTicks()>0)
     {
         int item_skill = computeSkill(ITEM_SKILL);
         float steering_limit = 0.5f;

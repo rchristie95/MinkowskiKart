@@ -94,23 +94,23 @@ public :
            POWERUP_USED                  = 34,
            POWERUP_USED_1RACE            = 35,
            POWERUP_USED_1RACE_MAX        = 36,
-           // Count how many times a bowling ball from the player hit a kart
-           BOWLING_HIT                   = 37,
-           BOWLING_HIT_1RACE             = 38,
-           BOWLING_HIT_1RACE_MAX         = 39,
-           // Count how many times a swatter from the player hit a kart
-           SWATTER_HIT                   = 40,
-           SWATTER_HIT_1RACE             = 41,
-           SWATTER_HIT_1RACE_MAX         = 42,
+           // Count how many times a black hole from the player hit a kart
+           BLACK_HOLE_HIT                   = 37,
+           BLACK_HOLE_HIT_1RACE             = 38,
+           BLACK_HOLE_HIT_1RACE_MAX         = 39,
+           // Count how many times a Swatter from the player hit a kart
+           ANTI_KARTICLE_HIT                   = 40,
+           ANTI_KARTICLE_HIT_1RACE             = 41,
+           ANTI_KARTICLE_HIT_1RACE_MAX         = 42,
            // Count how many times a tidal arm, black hole or asteroid from
            // the player hit a kart (excluding the player's own kart)
            ALL_HITS                      = 43,
            ALL_HITS_1RACE                = 44,
            ALL_HITS_1RACE_MAX            = 45,
            // Count the number of bananas hit
-           BANANA                        = 46,
-           BANANA_1RACE                  = 47,
-           BANANA_1RACE_MAX              = 48,
+           COMPACTIFICATION                        = 46,
+           COMPACTIFICATION_1RACE                  = 47,
+           COMPACTIFICATION_1RACE_MAX              = 48,
            // Count how many times the player skidded
            SKIDDING                      = 49,
            SKIDDING_1RACE                = 50,

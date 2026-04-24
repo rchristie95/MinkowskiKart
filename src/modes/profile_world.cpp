@@ -253,7 +253,7 @@ void ProfileWorld::enterRaceOverState()
         ss << kart->getExplosionTime() << " " << kart->getExplosionCount() << " ";
         ss << kart->getBonusCount() << " " << kart->getBananaCount() << " ";
         ss << kart->getSmallNitroCount() << " " << kart->getLargeNitroCount() << " ";
-        ss << kart->getBubblegumCount() << " " << kart->getOffTrackCount() << " ";
+        ss << kart->getWarpBubbleCount() << " " << kart->getOffTrackCount() << " ";
         Log::verbose("profile", ss.str().c_str());
     }
 
@@ -313,7 +313,7 @@ void ProfileWorld::enterRaceOverState()
                    kart->getExplosionTime(),       kart->getExplosionCount(),
                    kart->getBonusCount(),          kart->getBananaCount(),
                    kart->getSmallNitroCount(),     kart->getLargeNitroCount(),
-                   kart->getBubblegumCount(),      kart->getOffTrackCount(),
+                   kart->getWarpBubbleCount(),      kart->getOffTrackCount(),
                    kart->getEnergy()
                    );
             av_time += kart->getFinishTime();
@@ -325,7 +325,7 @@ void ProfileWorld::enterRaceOverState()
             banana_count    += kart->getBananaCount();
             l_nitro_count   += kart->getLargeNitroCount();
             s_nitro_count   += kart->getSmallNitroCount();
-            bubble_count    += kart->getBubblegumCount();
+            bubble_count    += kart->getWarpBubbleCount();
             expl_time       += kart->getExplosionTime();
             expl_count      += kart->getExplosionCount();
             off_track_count += kart->getOffTrackCount();

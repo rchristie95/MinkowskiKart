@@ -24,7 +24,7 @@
 #include "graphics/sp/sp_dynamic_draw_call.hpp"
 #include "graphics/sp/sp_shader_manager.hpp"
 #include "guiengine/engine.hpp"
-#include "items/plunger.hpp"
+#include "items/photon.hpp"
 #include "items/projectile_manager.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/kart_properties.hpp"
@@ -65,12 +65,12 @@ namespace
  *                 can trigger an explosion)
  *  \param kart    Reference to the kart.
  */
-RubberBand::RubberBand(Plunger *plunger, AbstractKart *kart)
+RubberBand::RubberBand(Photon *plunger, AbstractKart *kart)
           : m_wave_time(0.0f), m_plunger(plunger), m_owner(kart), m_node(NULL),
             m_wave_node(NULL)
 {
     m_hit_kart = NULL;
-    m_attached_state = RB_TO_PLUNGER;
+    m_attached_state = RB_TO_PHOTON;
 
 #ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
@@ -171,7 +171,7 @@ RubberBand::~RubberBand()
 void RubberBand::reset()
 {
     m_hit_kart = NULL;
-    m_attached_state = RB_TO_PLUNGER;
+    m_attached_state = RB_TO_PHOTON;
     updatePosition();
 }   // reset
 
@@ -190,7 +190,7 @@ void RubberBand::updatePosition()
     {
     case RB_TO_KART:    m_end_position = m_hit_kart->getXYZ(); break;
     case RB_TO_TRACK:   m_end_position = m_hit_position;       break;
-    case RB_TO_PLUNGER: m_end_position = m_plunger->getXYZ();
+    case RB_TO_PHOTON: m_end_position = m_plunger->getXYZ();
                         checkForHit(k, m_end_position);        break;
     }   // switch(m_attached_state);
 }   // updatePosition
@@ -292,7 +292,7 @@ void RubberBand::update(int ticks)
 
     // Reverse-fired plungers are visual-only: skip the length-based snap so the
     // wavy photon tail can trail indefinitely while the plunger flies away, and
-    // skip force application entirely (the state never leaves RB_TO_PLUNGER in
+    // skip force application entirely (the state never leaves RB_TO_PHOTON in
     // reverse mode anyway, but we bail early for clarity).
     if (m_plunger->isReverseMode())
         return;
@@ -300,7 +300,7 @@ void RubberBand::update(int ticks)
     // Check for rubber band snapping
     // ------------------------------
     float l = (m_end_position-k).length2();
-    float max_len = kp->getPlungerBandMaxLength();
+    float max_len = kp->getPhotonBandMaxLength();
     if(l>max_len*max_len)
     {
         // Rubber band snaps
@@ -311,9 +311,9 @@ void RubberBand::update(int ticks)
 
     // Apply forces (if applicable)
     // ----------------------------
-    if(m_attached_state!=RB_TO_PLUNGER)
+    if(m_attached_state!=RB_TO_PHOTON)
     {
-        float force = kp->getPlungerBandForce();
+        float force = kp->getPhotonBandForce();
         Vec3 diff   = m_end_position-k;
 
         // detach rubber band if kart gets very close to hit point
@@ -330,10 +330,10 @@ void RubberBand::update(int ticks)
             diff.normalize();
         m_owner->getBody()->applyCentralForce(diff*force);
         m_owner->increaseMaxSpeed(MaxSpeed::MS_INCREASE_RUBBER,
-            kp->getPlungerBandSpeedIncrease(),
+            kp->getPhotonBandSpeedIncrease(),
             /*engine_force*/ 0.0f,
             /*duration*/stk_config->time2Ticks(0.1f),
-            stk_config->time2Ticks(kp->getPlungerBandFadeOutTime()));
+            stk_config->time2Ticks(kp->getPhotonBandFadeOutTime()));
         if(m_attached_state==RB_TO_KART)
             m_hit_kart->getBody()->applyCentralForce(diff*(-force));
     }
@@ -386,7 +386,7 @@ void RubberBand::hit(AbstractKart *kart_hit, const Vec3 *track_xyz)
 {
     // More than one report of a hit. This can happen if the raycast detects
     // a hit as well as the bullet physics.
-    if(m_attached_state!=RB_TO_PLUNGER) return;
+    if(m_attached_state!=RB_TO_PHOTON) return;
 
 
     // A kart was hit

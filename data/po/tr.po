@@ -58,8 +58,8 @@ msgid "Strike!"
 msgstr "Strike!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
-msgstr "Bowling topları ile 10 araç vur."
+msgid "Hit 10 karts with a black hole."
+msgstr "Black Hole topları ile 10 araç vur."
 
 #. I18N: ./data/achievements.xml
 msgid "Arch Enemy"
@@ -114,11 +114,11 @@ msgid ""
 msgstr "En az 3 Yapay zekaya karşı arka arkaya 5 tek yarış kazanın. Dikkat edin, bir yarışı yeniden başlatmak bir kayıp olarak sayılır."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "Muzsever"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "Bir yarışta en az 5 muz topla."
 
 #. I18N: ./data/achievements.xml
@@ -135,7 +135,7 @@ msgstr "Sivrisinek Avcısı"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "Rakiplerini sivrisineklermiş gibi gör! Onları bir yarışta sinek raketiyle en az 5 kere ez."
 
@@ -1472,7 +1472,7 @@ msgstr "Mavi hediye kutuları topla, onlar sana güç artışı verecek."
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "Muzlardan kaç!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1601,15 +1601,15 @@ msgstr "Kek - en yakın rakibe atılmış, en iyi kısa menzillerde ve uzun boyl
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "Pompa - rakibi geri çekmek için düz atın veya arkaya bakarak birinin görüşünü engellemek için atın."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
-msgstr "Bowling Topu - Vuruncaya kadar düz gider, duvarlardan sekebilir. Geriye bakarsanız geriye doğru atılır."
+msgstr "Black Hole Topu - Vuruncaya kadar düz gider, duvarlardan sekebilir. Geriye bakarsanız geriye doğru atılır."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid "Parachute - slows down all karts in a better position."
@@ -1629,13 +1629,13 @@ msgstr "Basket Topu - liderin arkasından zıplar ve önündeki araçları ezip 
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "Sineklik - kartları yavaşlatır, yaklaştırır. Paraşüt ve bombaları kaldırmak için de kullanılabilir."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "Bir muzun vurulması, aşağıdakilerden birinin karta bağlanmasıyla sonuçlanabilir:"
 
@@ -2605,7 +2605,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "Patinaj sizi çok daha hızlı yapar, güvenli olduğunda yapın."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "Sineklik bombaları veya paraşütleri engellemek için kullanılabilir."
 
 #. I18N: ./data/tips.xml
@@ -4599,14 +4599,14 @@ msgstr " (1 yarış)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
-msgstr "Bowling topu vuruşları"
+msgid "Black hole hits"
+msgstr "Black Hole topu vuruşları"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "Sineklik vuruşları"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4626,7 +4626,7 @@ msgstr "Aynı araca karşı başarı"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "Muz toplayıcı"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6734,7 +6734,7 @@ msgstr "Arkaya bakmak için <%s> tuşuna basın.\n<%s> tuşuna basarken silahı 
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "Geriye bakmak için ayna simgesine basın.\nAyna simgesini tutarak ve bowling simgesine kaydırarak silahı ateşleyin!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

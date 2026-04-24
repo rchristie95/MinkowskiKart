@@ -72,13 +72,13 @@ void ItemManager::loadDefaultItemMeshes()
 
     // A temporary mapping of items to names used in the XML file:
     std::map<ItemState::ItemType, std::string> item_names;
-    item_names[ItemState::ITEM_BANANA     ] = "banana";
+    item_names[ItemState::ITEM_COMPACTIFICATION     ] = "compactification";
     item_names[ItemState::ITEM_BONUS_BOX  ] = "bonus-box";
     item_names[ItemState::ITEM_SUPER_POSITION] = "super-position";
-    item_names[ItemState::ITEM_BUBBLEGUM  ] = "bubblegum";
+    item_names[ItemState::ITEM_WARP_BUBBLE  ] = "warp-bubble";
     item_names[ItemState::ITEM_NITRO_BIG  ] = "nitro-big";
     item_names[ItemState::ITEM_NITRO_SMALL] = "nitro-small";
-    item_names[ItemState::ITEM_BUBBLEGUM_NOLOK] = "bubblegum-nolok";
+    item_names[ItemState::ITEM_WARP_BUBBLE_NOLOK] = "warp-bubble-nolok";
     item_names[ItemState::ITEM_EASTER_EGG ] = "easter-egg";
 
     const std::string file_name = file_manager->getAsset("items.xml");
@@ -305,7 +305,7 @@ Item* ItemManager::dropNewItem(ItemState::ItemType type,
         if (!material_hit) return NULL;
         normal.normalize();
         pos = hit_point;
-        if (type == ItemState::ITEM_BANANA)
+        if (type == ItemState::ITEM_COMPACTIFICATION)
         {
             pos += kart->getTrans().getBasis() * Vec3(0, 1.2f, 0);
         }
@@ -319,9 +319,9 @@ Item* ItemManager::dropNewItem(ItemState::ItemType type,
     }
 
     ItemState::ItemType mesh_type = type;
-    if (type == ItemState::ITEM_BUBBLEGUM && kart->getIdent() == "nolok")
+    if (type == ItemState::ITEM_WARP_BUBBLE && kart->getIdent() == "nolok")
     {
-        mesh_type = ItemState::ITEM_BUBBLEGUM_NOLOK;
+        mesh_type = ItemState::ITEM_WARP_BUBBLE_NOLOK;
     }
 
     Item* item = new Item(type, pos, normal, m_item_mesh[mesh_type],
@@ -358,7 +358,7 @@ Item* ItemManager::placeItem(ItemState::ItemType type, const Vec3& xyz,
     ItemState::ItemType mesh_type = type;
 
     Vec3 pos = xyz;
-    if (type == ItemState::ITEM_BANANA)
+    if (type == ItemState::ITEM_COMPACTIFICATION)
     {
         // Calabi-Yau model origin is likely at its center, so lift it up.
         pos += normal * 1.2f;
@@ -423,8 +423,8 @@ void  ItemManager::checkItemHit(AbstractKart* kart)
 
         // Shielded karts can simply drive over bubble gums without any effect
         if ( kart->isShielded() &&
-             ( (*i)->getType() == ItemState::ITEM_BUBBLEGUM      ||
-               (*i)->getType() == ItemState::ITEM_BUBBLEGUM_NOLOK  ) )
+             ( (*i)->getType() == ItemState::ITEM_WARP_BUBBLE      ||
+               (*i)->getType() == ItemState::ITEM_WARP_BUBBLE_NOLOK  ) )
         {
             continue;
         }
@@ -468,7 +468,7 @@ void ItemManager::reset()
             i++;
             continue;
         }
-        if((*i)->canBeUsedUp() || (*i)->getType()==ItemState::ITEM_BUBBLEGUM)
+        if((*i)->canBeUsedUp() || (*i)->getType()==ItemState::ITEM_WARP_BUBBLE)
         {
             deleteItem( *i );
             i++;
@@ -694,7 +694,7 @@ bool ItemManager::randomItemsForArena(const AlignedArray<btTransform>& pos)
         const unsigned j = random_numbers[i] % 10;
         ItemState::ItemType type = (j > BONUS_BOX ? ItemState::ITEM_BONUS_BOX :
             j > NITRO_BIG ? ItemState::ITEM_NITRO_BIG :
-            j > NITRO_SMALL ? ItemState::ITEM_NITRO_SMALL : ItemState::ITEM_BANANA);
+            j > NITRO_SMALL ? ItemState::ITEM_NITRO_SMALL : ItemState::ITEM_COMPACTIFICATION);
 
         ArenaNode* an = ag->getNode(used_location[i]);
         Vec3 loc = an->getCenter();

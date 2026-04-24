@@ -101,7 +101,7 @@ public:
         CUSTOM_HORN,    //!< Replaces default horn
         CUSTOM_CRASH,   //!< Played when colliding with another kart
         CUSTOM_WIN,     //!< Played when racer wins
-        CUSTOM_EXPLODE, //!< Played when struck by bowling ball or dynamite
+        CUSTOM_EXPLODE, //!< Played when struck by black hole or dynamite
         CUSTOM_GOO,     //!< Played when driving through goo
         CUSTOM_PASS,    //!< Played when passing another kart
         CUSTOM_ZIPPER,  //!< Played when kart hits zipper

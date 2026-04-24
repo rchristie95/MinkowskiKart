@@ -65,7 +65,7 @@ msgid "Strike!"
 msgstr "בול פגיעה!"
 
 #. I18N: ./data/achievements.xml
-msgid "Hit 10 karts with a bowling-ball."
+msgid "Hit 10 karts with a black hole."
 msgstr "פגיעה ב־10 מכוניות עם כדור באולינג"
 
 #. I18N: ./data/achievements.xml
@@ -121,11 +121,11 @@ msgid ""
 msgstr "ניצחון ב־5 מרוצים בודדים ברצף, נגד 3 מתחרים מדומים או יותר. זהירות, התחלת מרוץ מחדש נחשבת כהפסד."
 
 #. I18N: ./data/achievements.xml
-msgid "Banana Lover"
+msgid "Compactification Catcher"
 msgstr "מזל חלקלק"
 
 #. I18N: ./data/achievements.xml
-msgid "Collect at least 5 bananas in one race."
+msgid "Hit at least 5 compactifications in one race."
 msgstr "החלקה מ־5 בננות לפחות במרוץ אחד."
 
 #. I18N: ./data/achievements.xml
@@ -142,7 +142,7 @@ msgstr "צֵיד יתושים"
 
 #. I18N: ./data/achievements.xml
 msgid ""
-"Take your opponents for mosquitos! With the swatter, squash them at least 5 "
+"Take your opponents for mosquitos! With the Anti-Karticle, squash them at least 5 "
 "times in a race."
 msgstr "מחיצה של מתחרים אחרים עם מחבט היתושים, לפחות 5 פעמים במרוץ. מוחצים את היריבים כמו יתושים!"
 
@@ -1479,7 +1479,7 @@ msgstr "יש לאסוף את קופסאות המתנה הכחולות, הן יע
 #. I18N: In the help menu
 #: ../stk-assets/tracks/tutorial/scripting.as:49
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:49
-msgid "Avoid bananas!"
+msgid "Avoid compactifications!"
 msgstr "זהירות מבננות!"
 
 #. I18N: ./data/gui/screens/help/help1.stkgui
@@ -1608,13 +1608,13 @@ msgstr "עוגה - נועדה לירייה על היריב הקרוב, יעיל�
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Plunger - throw straight to pull an opponent back, or throw while looking "
+"Photon - throw straight to pull an opponent back, or throw while looking "
 "back to make one lose sight."
 msgstr "פומפה - נזרקת קדימה למשיכת יריבים לאחור, או נזרקת במבט לאחור כדי לעוור יריבים."
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Bowling Ball - goes straight until it strikes, it can bounce off walls. If "
+"Black Hole - goes straight until it strikes, it can bounce off walls. If "
 "you are looking back, it will be thrown backwards."
 msgstr "כדור באולינג - נע ישר עד שהוא פוגע, הוא יכול לנתר מקירות. במבט לאחור, הוא יכול להיזרק לאחור."
 
@@ -1636,13 +1636,13 @@ msgstr "כדורסל - מקפץ בעקבות המכונית המובילה, וע
 
 #. I18N: ./data/gui/screens/help/help3.stkgui
 msgid ""
-"Swatter - will squash karts close by, slowing them down. Can also be used to"
+"Anti-Karticle - will squash karts close by, slowing them down. Can also be used to"
 " remove parachutes and bombs."
 msgstr "מחבט יתושים - מוחץ מכוניות סמוכות ומאט אותן. אפשר להשתמש בו גם להסרת מצנחים ופצצות."
 
 #. I18N: ./data/gui/screens/help/help4.stkgui
 msgid ""
-"Hitting a banana can result in one of the following being attached to the "
+"Hitting a compactification can result in one of the following being attached to the "
 "kart:"
 msgstr "היתקלות בבננה תצמיד למכונית את אחד מהדברים הבאים:"
 
@@ -2612,7 +2612,7 @@ msgid "Skidding makes you much faster, do it whenever safe."
 msgstr "ההחלקה מגבירה מאוד את המהירות, מומלץ להשתמש בה כשאין סיכון."
 
 #. I18N: ./data/tips.xml
-msgid "The swatter can be used to remove bombs or parachutes."
+msgid "The Anti-Karticle can be used to remove bombs or parachutes."
 msgstr "מחבט היתושים מסוגל להסיר מהמכונית שלך פצצות ומצנחים."
 
 #. I18N: ./data/tips.xml
@@ -4610,14 +4610,14 @@ msgstr "(מרוץ אחד)"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:238
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:240
-msgid "Bowling ball hits"
+msgid "Black hole hits"
 msgstr "פגיעות מכדור באולינג"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:242
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:244
-msgid "Swatter hits"
+msgid "Anti-Karticle hits"
 msgstr "חבטות במחבט היתושים"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -4637,7 +4637,7 @@ msgstr "לפגוע באותה המכונית"
 #. added to multiple different goals.
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:252
 #: src/states_screens/dialogs/achievement_progress_dialog.cpp:254
-msgid "Bananas collected"
+msgid "Compactifications"
 msgstr "בננות שנאספו"
 
 #. I18N: A goal for achievements. If this text is in (), it's a precision
@@ -6748,7 +6748,7 @@ msgstr "בשביל להביט לאחור, לוחצים על <%s>.\nאפשר לי
 #: ../supertuxkart-assets/tracks/tutorial/scripting.as:88
 msgid ""
 "Press the mirror icon to look behind.\n"
-"Fire the weapon behind by holding the mirror icon and then swiping to the bowling icon!"
+"Fire the weapon behind by holding the mirror icon and then swiping to the black hole icon!"
 msgstr "בשביל להביט לאחור, לוחצים על סמל המראה.\nאפשר לירות את כלי הנשק לאחור בעזרת החזקת סמל המראה לחוץ ולחיצה על סמל כדור הבאולינג!"
 
 #: ../stk-assets/tracks/tutorial/scripting.as:98

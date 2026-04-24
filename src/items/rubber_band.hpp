@@ -39,7 +39,7 @@ namespace irr
 }
 
 class AbstractKart;
-class Plunger;
+class Photon;
 
 /** This class is used together with the pluger to display a rubber band from
  *  the shooting kart to the plunger.
@@ -50,7 +50,7 @@ class RubberBand : public NoCopy
 public:
 enum RubberBandTo
 {
-    RB_TO_PLUNGER = 0, /**< Rubber band is attached to plunger.    */
+    RB_TO_PHOTON = 0, /**< Rubber band is attached to plunger.    */
     RB_TO_KART,        /**< Rubber band is attached to a kart hit. */
     RB_TO_TRACK        /**< Rubber band is attached to track.      */
 };
@@ -60,7 +60,7 @@ private:
     /** If rubber band is attached to track, the coordinates. */
     Vec3                m_hit_position;
     /** The plunger the rubber band is attached to. */
-    Plunger            *m_plunger;
+    Photon            *m_plunger;
     /** The kart who shot this plunger. */
     AbstractKart       *m_owner;
 
@@ -84,7 +84,7 @@ private:
     void updatePosition();
 
 public:
-         RubberBand(Plunger *plunger, AbstractKart *kart);
+         RubberBand(Photon *plunger, AbstractKart *kart);
         ~RubberBand();
     void reset();
     void updateGraphics(float dt);
