@@ -61,6 +61,7 @@ public:
     virtual bool pauseMusic();
     virtual bool resumeMusic();
     virtual void setVolume(float volume);
+    virtual void setSpeed(float speed);
     virtual bool isPlaying();
 
 protected:

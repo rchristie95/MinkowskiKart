@@ -94,11 +94,6 @@ void RelativisticVFXManager::reset()
     {
         if (td.halo_emitter) { delete td.halo_emitter; td.halo_emitter = nullptr; }
     }
-    for (auto &ms : m_mass_spikes)
-    {
-        if (ms.downward_emitter) { delete ms.downward_emitter; ms.downward_emitter = nullptr; }
-        if (ms.spark_emitter) { delete ms.spark_emitter; ms.spark_emitter = nullptr; }
-    }
     for (auto &ta : m_tidal_arms)
     {
         if (ta.arc_emitter) { delete ta.arc_emitter; ta.arc_emitter = nullptr; }
@@ -287,69 +282,24 @@ void RelativisticVFXManager::updateTimeDilation(TimeDilationVFX &vfx, float dt,
 }
 
 // ---------------------------------------------------------------------------
-// Mass Spike
+// Legacy mass-spike VFX slot
 // ---------------------------------------------------------------------------
 void RelativisticVFXManager::activateMassSpike(unsigned int kart_id)
 {
     if (kart_id >= m_mass_spikes.size()) return;
-    MassSpikeVFX &ms = m_mass_spikes[kart_id];
-    ms.compression_factor = 1.0f;
-    ms.ground_ripple = 1.0f;
-
-#ifndef SERVER_ONLY
-    AbstractKart *kart = World::getWorld()->getKart(kart_id);
-    if (!ms.downward_emitter)
-    {
-        ParticleKindManager *pkm = ParticleKindManager::get();
-        ParticleKind *particles = pkm->getParticles("mass_spike_gravity.xml");
-        if (particles)
-        {
-            ms.downward_emitter = new ParticleEmitter(
-                particles, kart->getXYZ(), kart->getNode());
-        }
-    }
-    if (!ms.spark_emitter)
-    {
-        ParticleKindManager *pkm = ParticleKindManager::get();
-        ParticleKind *particles = pkm->getParticles("mass_spike_sparks.xml");
-        if (particles)
-        {
-            ms.spark_emitter = new ParticleEmitter(
-                particles, kart->getXYZ(), kart->getNode());
-        }
-    }
-#endif
+    m_mass_spikes[kart_id].active = false;
 }
 
 void RelativisticVFXManager::deactivateMassSpike(unsigned int kart_id)
 {
     if (kart_id >= m_mass_spikes.size()) return;
-    MassSpikeVFX &ms = m_mass_spikes[kart_id];
-    ms.compression_factor = 0;
-    ms.ground_ripple = 0;
-#ifndef SERVER_ONLY
-    if (ms.downward_emitter) { delete ms.downward_emitter; ms.downward_emitter = nullptr; }
-    if (ms.spark_emitter) { delete ms.spark_emitter; ms.spark_emitter = nullptr; }
-#endif
+    m_mass_spikes[kart_id].active = false;
 }
 
 void RelativisticVFXManager::updateMassSpike(MassSpikeVFX &vfx, float dt,
                                               AbstractKart *kart)
 {
-    if (vfx.compression_factor <= 0) return;
-
-    // Ground ripple oscillation
-    vfx.ground_ripple = 0.7f + 0.3f * sinf(m_global_time * 4.0f);
-
-    // Sparks increase with speed
-    float speed = kart->getSpeed();
-    vfx.strain_sparks = std::min(1.0f, speed / 20.0f);
-
-#ifndef SERVER_ONLY
-    Vec3 pos = kart->getXYZ();
-    if (vfx.downward_emitter) vfx.downward_emitter->setPosition(pos);
-    if (vfx.spark_emitter) vfx.spark_emitter->setPosition(pos);
-#endif
+    vfx.active = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -551,8 +501,7 @@ const TimeDilationVFX *RelativisticVFXManager::getTimeDilation(unsigned int kart
 const MassSpikeVFX *RelativisticVFXManager::getMassSpike(unsigned int kart_id) const
 {
     if (kart_id >= m_mass_spikes.size()) return nullptr;
-    return m_mass_spikes[kart_id].compression_factor > 0
-        ? &m_mass_spikes[kart_id] : nullptr;
+    return m_mass_spikes[kart_id].active ? &m_mass_spikes[kart_id] : nullptr;
 }
 
 // ---------------------------------------------------------------------------

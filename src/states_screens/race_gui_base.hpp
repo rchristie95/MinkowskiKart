@@ -213,6 +213,9 @@ protected:
     void drawPowerupIcons      (const AbstractKart* kart,
                                 const core::recti &viewport,
                                 const core::vector2df &scaling);
+    void drawBoltzmannStatus   (const AbstractKart* kart,
+                                const core::recti &viewport,
+                                const core::vector2df &scaling);
     void drawGlobalMusicDescription();
     void drawGlobalReadySetGo();
     void drawGlobalGoal();
