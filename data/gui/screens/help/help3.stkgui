@@ -14,8 +14,8 @@
                         I18N="Tab in help menu" text="Game Modes"/>
                 <icon-button id="page3" width="128" height="128" icon="gui/icons/gift.png"
                         I18N="Tab in help menu" text="Powerups"/>
-                <icon-button id="page4" width="128" height="128" icon="gui/icons/compactification-icon.png"
-                        I18N="Tab in help menu" text="Compactifications"/>
+                <icon-button id="page4" width="128" height="128" icon="gui/icons/calabi_yau_translucent_128.png"
+                        I18N="Tab in help menu" text="Hazards"/>
                 <icon-button id="page5" width="128" height="128" icon="gui/icons/story_mode_book.png"
                         I18N="Tab in help menu" text="Story Mode"/>
                 <icon-button id="page6" width="128" height="128" icon="gui/icons/mass.png"
@@ -34,13 +34,13 @@
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/warp-bubble-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Warp Bubble: Wrap your kart in a local spacetime bubble. Blocks one incoming hit, clears attached hazards, and ignores sticky track traps."/>
+                    <bubble proportion="1" height="100%" text="Warp Bubble: Wrap your kart in a local spacetime bubble allowing faster than light travel along the track. Also blocks one incoming hit, clears attached hazards, and ignores sticky track traps."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                     <icon align="center" width="8%" height="100%" icon="gui/icons/zipper_collect.png"/>
+                     <icon align="center" width="8%" height="100%" icon="gui/icons/saturn_v_128x128.png"/>
                      <spacer width="3%" height="100%"/>
-                     <bubble proportion="1" height="100%" text="Zipper - will give you a strong speed boost. But beware of not losing control of your kart!"/>
+                     <bubble proportion="1" height="100%" text="Rocket Booster - will give you a strong speed boost. But beware of not losing control of your kart!"/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
@@ -53,38 +53,38 @@
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/photon-icon.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Photon: Fire an exchanged particle on a moving blue light-wave. Hook racers or walls ahead, or hit a racer behind you with a relativistic Doppler flare."/>
+                    <bubble proportion="1" height="100%" text="Photon: Fire an attractive virtual particle. Hook walls or other racers, blinding them with the relativistic Doppler effect."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/black-hole-icon.png"/>
                     <spacer width="3%" height="100%"/>
                     <bubble proportion="1" height="100%"
-                            text="Pocket Black Hole: Throw a tiny unstable singularity that curves out and back. Great if you aim it well. Terrible if you do not."/>
+                            text="Primordial Black Hole: Throw a small black hole that curves out and back. Great if you aim it well. Terrible if you end up spaghettified, Mama Mia!"/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                     <icon align="center" width="8%" height="100%" icon="gui/icons/time-dilation-icon.png"/>
                     <spacer width="3%" height="100%"/>
-        <bubble proportion="1" height="100%" text="Time-Dilation Field: Trap every other racer in a relativistic slowdown zone. Their speed and acceleration drop while the world smears around them."/>
+        <bubble proportion="1" height="100%" text="Variable Speed of Light: Halve the speed of light for your fellow racers and not yourself. Laugh while their world smears around them."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
-                    <icon align="center" width="8%" height="100%" icon="gui/icons/swap-icon.png"/>
+                    <icon align="center" width="8%" height="100%" icon="gui/icons/cat_box_superposition_128_transparent.png"/>
                     <spacer width="3%" height="100%"/>
-                    <bubble proportion="1" height="100%" text="Super Position: Compactifications and item boxes collapse into a shared pickup. Touch one to get either a random powerup or an immediate Compactification hit."/>
+                    <bubble proportion="1" height="100%" text="Superposition: Both an angry cat and a powerup until you look inside and find out."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                      <icon align="center" width="8%" height="100%" icon="gui/icons/asteroid-icon.png"/>
                      <spacer width="3%" height="100%"/>
-                     <bubble proportion="1" height="100%" text="Asteroid: Launch a dense rocky projectile that slams racers and bleeds off their momentum on impact."/>
+                     <bubble proportion="1" height="100%" text="Asteroid: Nothing too fancy here, throw a big rock at your fellow racers."/>
                 </div>
 
                 <div width="100%" proportion="1" layout="horizontal-row">
                      <icon align="center" width="8%" height="100%" icon="gui/icons/anti-karticle-icon.png"/>
                      <spacer width="3%" height="100%"/>
-                     <bubble proportion="1" height="100%" text="Anti-Karticle: Create an inverted clone that mirrors your motion backward and knocks racers aside."/>
+                     <bubble proportion="1" height="100%" text="Anti-Karticle: Fire a photon and an anti-you that mirrors your motion backward and knocks racers aside."/>
                 </div>
 
             </box>
