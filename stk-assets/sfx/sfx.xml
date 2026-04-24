@@ -39,6 +39,7 @@
    <sfx filename="gp_end.ogg"           volume="1.0" positional="false" />
    <sfx filename="grab_collectable.ogg" volume="1.0" positional="false" />
    <sfx filename="hammer.ogg"           volume="1.0" positional="true" rolloff="0.05" />
+   <sfx filename="helicopter_rescue.ogg" volume="1.0" positional="false" />
    <sfx filename="horn.ogg"             volume="0.9" positional="true" rolloff="0.2"  />
    <sfx filename="inflate.ogg"          volume="1.0" positional="true"  rolloff="0.1" />
    

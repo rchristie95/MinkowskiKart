@@ -30,6 +30,7 @@
 #include "karts/explosion_animation.hpp"
 #include "karts/kart.hpp"
 #include "karts/kart_properties.hpp"
+#include "karts/rescue_animation.hpp"
 #include "karts/skidding.hpp"
 #include "modes/soccer_world.hpp"
 #include "physics/btKart.hpp"
@@ -527,6 +528,7 @@ CameraNormal::CameraNormal(Camera::CameraType type,  int camera_index,
     m_rc_forward     = btVector3(0, 0, 1);
     m_rc_up          = btVector3(0, 1, 0);
     m_rc_initialized = false;
+    m_rescue_camera_blend = 0.0f;
     reset();
     m_camera->setNearValue(1.0f);
 
@@ -803,10 +805,25 @@ void CameraNormal::update(float dt)
     if(!m_kart) return;
 
     m_camera->setNearValue(1.0f);
+    RescueAnimation* rescue_animation =
+        dynamic_cast<RescueAnimation*>(m_kart->getKartAnimation());
+    const float rescue_target = rescue_animation
+        ? rescue_animation->getDropOffProgress() : 0.0f;
+    const float rescue_tc = rescue_target > m_rescue_camera_blend
+        ? 0.18f : 0.75f;
+    m_rescue_camera_blend += (rescue_target - m_rescue_camera_blend) *
+        getSmoothAlpha(dt, rescue_tc);
+    if (!rescue_animation && m_rescue_camera_blend < 0.01f)
+    {
+        m_rescue_camera_blend = 0.0f;
+        m_rc_initialized = false;
+    }
+    const bool use_rescue_camera = rescue_animation ||
+        m_rescue_camera_blend > 0.0f;
 
     // Relativity close-chase uses a dedicated pipeline that bypasses all
     // the legacy offset/smoothing machinery (which causes jitter and clipping).
-    if (useRelativityCloseChase(getMode()))
+    if (useRelativityCloseChase(getMode()) && !use_rescue_camera)
     {
         ExplosionAnimation* ea =
             dynamic_cast<ExplosionAnimation*>(m_kart->getKartAnimation());
@@ -824,6 +841,13 @@ void CameraNormal::update(float dt)
 
     getCameraSettings(getMode(), &above_kart, &cam_angle, &side_way,
                                  &distance, &smoothing, &cam_roll_angle);
+    if (m_rescue_camera_blend > 0.0f)
+    {
+        const float b = m_rescue_camera_blend;
+        distance *= 1.0f + 0.75f * b;
+        above_kart += 1.0f * b;
+        cam_angle += 8.0f * DEGREE_TO_RAD * b;
+    }
 
     // If an explosion is happening, stop moving the camera,
     // but keep it target on the kart.
@@ -860,7 +884,7 @@ void CameraNormal::update(float dt)
         moveCamera(dt, false, above_kart, cam_angle, distance);
     }
     m_camera->setNearValue(1.0f);
-    m_camera->setFOV(getBaseFov());
+    m_camera->setFOV(getBaseFov() * (1.0f + 0.12f * m_rescue_camera_blend));
 }   // update
 
 // ----------------------------------------------------------------------------

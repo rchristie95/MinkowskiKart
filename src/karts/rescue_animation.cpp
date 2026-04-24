@@ -18,6 +18,8 @@
 
 #include "karts/rescue_animation.hpp"
 
+#include "audio/sfx_base.hpp"
+#include "audio/sfx_manager.hpp"
 #include "config/user_config.hpp"
 #include "graphics/referee.hpp"
 #include "items/attachment.hpp"
@@ -52,6 +54,7 @@ RescueAnimation::RescueAnimation(AbstractKart* kart, bool is_auto_rescue)
                : AbstractKartAnimation(kart, "RescueAnimation")
 {
     m_referee = NULL;
+    m_helicopter_sound = NULL;
     btTransform prev_trans = kart->getTrans();
     // Get the required final physical transform for network, then reset back
     // to the original transform
@@ -73,6 +76,7 @@ RescueAnimation::RescueAnimation(AbstractKart* kart, bool is_auto_rescue)
     float velocity = max_height / timer;
 
     init(rescue_transform, velocity);
+    startHelicopterSound();
     m_kart->getAttachment()->clear();
 
     // Add a hit unless it was auto-rescue
@@ -109,9 +113,34 @@ RescueAnimation::RescueAnimation(AbstractKart* kart, BareNetworkString* b)
                : AbstractKartAnimation(kart, "RescueAnimation")
 {
     m_referee = NULL;
+    m_helicopter_sound = NULL;
     restoreBasicState(b);
     restoreData(b);
+    startHelicopterSound();
 }   // RescueAnimation
+
+//-----------------------------------------------------------------------------
+void RescueAnimation::startHelicopterSound()
+{
+    if (m_helicopter_sound != NULL || SFXManager::get() == NULL)
+        return;
+
+    m_helicopter_sound =
+        SFXManager::get()->createSoundSource("helicopter_rescue");
+    if (m_helicopter_sound != NULL)
+        m_helicopter_sound->play();
+}   // startHelicopterSound
+
+//-----------------------------------------------------------------------------
+void RescueAnimation::stopHelicopterSound()
+{
+    if (m_helicopter_sound == NULL)
+        return;
+
+    m_helicopter_sound->stop();
+    m_helicopter_sound->deleteSFX();
+    m_helicopter_sound = NULL;
+}   // stopHelicopterSound
 
 //-----------------------------------------------------------------------------
 void RescueAnimation::restoreData(BareNetworkString* b)
@@ -146,6 +175,7 @@ void RescueAnimation::init(const btTransform& rescue_transform,
  */
 RescueAnimation::~RescueAnimation()
 {
+    stopHelicopterSound();
     m_kart->getBody()->setLinearVelocity(btVector3(0, 0, 0));
     m_kart->getBody()->setAngularVelocity(btVector3(0, 0, 0));
     if (m_referee && m_kart->getNode())
@@ -190,9 +220,22 @@ void RescueAnimation::updateGraphics(float dt)
         m_referee = new Referee(*m_kart);
         m_kart->getNode()->addChild(m_referee->getSceneNode());
     }
-    m_referee->setAnimationFrameWithCreatedTicks(m_created_ticks);
+    m_referee->updateRescueVisuals(m_created_ticks);
     AbstractKartAnimation::updateGraphics(dt);
 }   // updateGraphics
+
+// ----------------------------------------------------------------------------
+float RescueAnimation::getDropOffProgress() const
+{
+    const int ticks = World::getWorld()->getTicksSinceStart();
+    if (ticks <= m_rescue_moment)
+        return 0.0f;
+
+    const int drop_ticks = std::max(1, m_end_ticks - m_rescue_moment);
+    const float progress = (float)(ticks - m_rescue_moment) /
+                           (float)drop_ticks;
+    return std::max(0.0f, std::min(progress, 1.0f));
+}   // getDropOffProgress
 
 // ----------------------------------------------------------------------------
 void RescueAnimation::saveState(BareNetworkString* buffer)
