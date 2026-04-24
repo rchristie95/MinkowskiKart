@@ -162,7 +162,7 @@ jobs:
         run: |
           make -j4
           cd ..
-          mv COPYING tools
+          [ -f COPYING ] && mv COPYING tools || true
       - name: Upload binaries of MinGW
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: actions/upload-artifact@v4
