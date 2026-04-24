@@ -637,7 +637,17 @@ void Powerup::hitSuperPosition(ItemState *item_state)
 
     if ((base_seed & 1ULL) == 0)
     {
+        // Box outcome: warp bubble does not block collection.
         hitBonusBox(*item_state);
+        return;
+    }
+
+    // Cat outcome: warp bubble absorbs the debuff (shield consumed, no slow).
+    Attachment *attachment = m_kart->getAttachment();
+    if (attachment->getType() == Attachment::ATTACH_WARP_BUBBLE ||
+        attachment->getType() == Attachment::ATTACH_NOLOK_WARP_BUBBLE)
+    {
+        attachment->clear();
         return;
     }
 
@@ -645,7 +655,7 @@ void Powerup::hitSuperPosition(ItemState *item_state)
         SFXManager::get()->quickSound("cat_meow");
 
     const KartProperties *kp = m_kart->getKartProperties();
-    m_kart->getAttachment()->set(
+    attachment->set(
         Attachment::ATTACH_SUPERPOSITION_CAT,
         stk_config->time2Ticks(kp->getAnvilDuration()));
     m_kart->adjustSpeed(kp->getAnvilSpeedFactor() * 0.5f);

@@ -30,6 +30,7 @@
 #include "graphics/rtts.hpp"
 #include "graphics/shared_gpu_objects.hpp"
 #include "graphics/stk_tex_manager.hpp"
+#include "graphics/relativistic_vfx.hpp"
 #include "graphics/texture_shader.hpp"
 #include "graphics/weather.hpp"
 #include "graphics/sp/sp_dynamic_draw_call.hpp"
@@ -577,6 +578,25 @@ public:
 };   // MotionBlurShader
 
 // ============================================================================
+class CompactificationShader : public TextureShader<CompactificationShader, 1, float>
+{
+public:
+    CompactificationShader()
+    {
+        loadProgram(OBJECT, GL_VERTEX_SHADER, "screenquad.vert",
+                            GL_FRAGMENT_SHADER, "compactification.frag");
+        assignUniforms("compactification_strength");
+        assignSamplerNames(0, "tex", ST_BILINEAR_CLAMPED_FILTERED);
+    }   // CompactificationShader
+    // ------------------------------------------------------------------------
+    void render(const FrameBuffer &source, float strength)
+    {
+        setTextureUnits(source.getRTT()[0]);
+        drawFullScreenEffect(strength);
+    }   // render
+};   // CompactificationShader
+
+// ============================================================================
 class GodFadeShader : public TextureShader<GodFadeShader, 1, video::SColorf>
 {
 public:
@@ -1021,6 +1041,15 @@ void PostProcessing::renderMotionBlur(const FrameBuffer &in_fbo,
 
 
 // ----------------------------------------------------------------------------
+void PostProcessing::renderCompactification(const FrameBuffer &source,
+                                             FrameBuffer &dest, float strength)
+{
+    dest.bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    CompactificationShader::getInstance()->render(source, strength);
+}   // renderCompactification
+
+// ----------------------------------------------------------------------------
 void PostProcessing::renderDoF(const FrameBuffer &framebuffer, GLuint color_texture, GLuint depth_stencil_texture)
 {
     DepthOfFieldShader::getInstance()->render(framebuffer, color_texture, depth_stencil_texture);
@@ -1282,6 +1311,24 @@ FrameBuffer *PostProcessing::render(scene::ICameraSceneNode * const camnode,
             renderMotionBlur(*in_fbo, *out_fbo, irr_driver->getDepthStencilTexture());
         }
         PROFILER_POP_CPU_MARKER();
+    }
+
+    // Compactification: Calabi-Yau manifold screen warp for the banana debuff
+    if (isRace && World::getWorld() && relativistic_vfx_manager)
+    {
+        Camera *cam = Camera::getActiveCamera();
+        if (cam && cam->getKart())
+        {
+            unsigned int kid = cam->getKart()->getWorldKartId();
+            const CompactificationVFX *cvfx =
+                relativistic_vfx_manager->getCompactification(kid);
+            if (cvfx && cvfx->strength > 0.0f)
+            {
+                // out_fbo holds the current frame; in_fbo is the spare buffer
+                renderCompactification(*out_fbo, *in_fbo, cvfx->strength);
+                std::swap(in_fbo, out_fbo);
+            }
+        }
     }
 
     // Handle lightning rendering

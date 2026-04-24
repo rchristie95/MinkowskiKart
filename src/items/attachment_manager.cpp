@@ -55,6 +55,7 @@ static const initAttachmentType iat[]=
     {Attachment::ATTACH_TIDAL_ARM_ANIM,   "swatter_anim.spm",     "swatter-icon.png"             },
     {Attachment::ATTACH_WARP_BUBBLE,      "bubblegum_shield.spm", "shield-icon.png"              },
     {Attachment::ATTACH_NOLOK_WARP_BUBBLE, "bubblegum_shield_nolok.spm", "shield-icon.png"              },
+    {Attachment::ATTACH_COMPACTIFICATION, "parachute.spm",         "banana.png"                   },
     {Attachment::ATTACH_MAX,              "",                     ""                             },
 };
 
