@@ -1,5 +1,7 @@
 @echo off
 
+set SUPERTUXKART_DATADIR=%~dp0
+
 if %PROCESSOR_ARCHITECTURE%==x86 (
 Pushd %~dp0\bin\i686\
 supertuxkart.exe
