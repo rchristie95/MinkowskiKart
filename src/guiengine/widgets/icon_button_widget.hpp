@@ -28,7 +28,7 @@ namespace irr
         class IGUIStaticText;
         class ScalableFont;
     }
-    namespace video { class ITexture;       }
+    namespace video { class ITexture; class SColor; }
 }
 
 #include "guiengine/widget.hpp"
@@ -124,6 +124,7 @@ namespace GUIEngine
           * \note         Calling this method on a button without label will have no effect
           */
         void setLabelFont(irr::gui::ScalableFont* font);
+        void setLabelColor(const irr::video::SColor& color);
 
         /**
          * Change the texture used for this icon.

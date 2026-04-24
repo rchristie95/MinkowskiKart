@@ -74,6 +74,7 @@ public:
         ATTACH_TIDAL_ARM_ANIM,      // was ATTACH_SWATTER_ANIM
         ATTACH_WARP_BUBBLE,         // was ATTACH_BUBBLEGUM_SHIELD
         ATTACH_NOLOK_WARP_BUBBLE,   // was ATTACH_NOLOK_BUBBLEGUM_SHIELD
+        ATTACH_COMPACTIFICATION,    // Calabi-Yau banana: screen-space compactification
         ATTACH_MAX,
         ATTACH_NOTHING
     };

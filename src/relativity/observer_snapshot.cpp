@@ -272,7 +272,7 @@ ObserverVisualState buildObserverVisualState(
 
     const Attachment* attachment = kart->getAttachment();
     const bool is_calabi_yau_squash = kart->isSquashed() && attachment &&
-        attachment->getType() == Attachment::ATTACH_TIME_DILATION;
+        attachment->getType() == Attachment::ATTACH_COMPACTIFICATION;
 
     if ((kart->isSquashed() && !is_calabi_yau_squash) ||
         kart->getBlockedByPlungerTicks() > 0)

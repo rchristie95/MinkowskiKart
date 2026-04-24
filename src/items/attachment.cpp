@@ -498,6 +498,9 @@ void Attachment::set(AttachmentType type, int ticks,
         case ATTACH_TIDAL_ARM:
             relativistic_vfx_manager->activateTidalArm(kid);
             break;
+        case ATTACH_COMPACTIFICATION:
+            relativistic_vfx_manager->activateCompactification(kid);
+            break;
         default: break;
         }
     }
@@ -553,6 +556,9 @@ void Attachment::clear()
             break;
         case ATTACH_TIDAL_ARM:
             relativistic_vfx_manager->deactivateTidalArm(kid);
+            break;
+        case ATTACH_COMPACTIFICATION:
+            relativistic_vfx_manager->deactivateCompactification(kid);
             break;
         default: break;
         }
@@ -683,11 +689,12 @@ void Attachment::hitBanana(ItemState *item_state)
         if (m_kart->isInvulnerable() || m_kart->getKartAnimation() != NULL)
             return;
 
-        // Visual squash only (no speed reduction)
-        m_kart->setSquash(kp->getParachuteDurationOther(), 1.0f);
+        // Visual squash only (no speed reduction); doubled duration
+        const float compact_duration = kp->getParachuteDurationOther() * 2.0f;
+        m_kart->setSquash(compact_duration, 1.0f);
 
-        set(ATTACH_TIME_DILATION,
-            stk_config->time2Ticks(kp->getParachuteDurationOther()));
+        set(ATTACH_COMPACTIFICATION,
+            stk_config->time2Ticks(compact_duration));
         return;
     }
 
@@ -897,6 +904,7 @@ void Attachment::update(int ticks)
         }
         break;
     case ATTACH_SUPERPOSITION_CAT:
+    case ATTACH_COMPACTIFICATION:
     case ATTACH_NOTHING:   // Nothing to do, but complete all cases for switch
     case ATTACH_MAX:
         m_initial_speed = 0;
@@ -977,6 +985,9 @@ void Attachment::updateGraphics(float dt)
         case ATTACH_TIDAL_ARM:
             // Graphical model set in swatter class
             break;
+        case ATTACH_COMPACTIFICATION:
+            // Pure screen-space effect — no attachment mesh
+            break;
         default:
             m_node->setMesh(attachment_manager->getMesh(m_type));
             break;
@@ -1004,7 +1015,8 @@ void Attachment::updateGraphics(float dt)
         // Time-dilation no longer renders its legacy trailing parachute mesh.
         // These debuffs are represented through HUD/VFX, not a rear mesh.
         const bool hide_attachment_mesh = (m_type == ATTACH_TIME_DILATION ||
-                                           m_type == ATTACH_MASS_SPIKE);
+                                           m_type == ATTACH_MASS_SPIKE    ||
+                                           m_type == ATTACH_COMPACTIFICATION);
         m_node->setVisible(!hide_attachment_mesh);
         bool is_shield = m_type == ATTACH_WARP_BUBBLE ||
                         m_type == ATTACH_NOLOK_WARP_BUBBLE;

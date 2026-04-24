@@ -28,6 +28,7 @@
 #include "guiengine/dialog_queue.hpp"
 #include "guiengine/scalable_font.hpp"
 #include "guiengine/widgets/button_widget.hpp"
+#include "guiengine/widgets/icon_button_widget.hpp"
 #include "guiengine/widgets/label_widget.hpp"
 #include "guiengine/widgets/list_widget.hpp"
 #include "guiengine/widgets/ribbon_widget.hpp"
@@ -139,6 +140,15 @@ void MainMenuScreen::beforeAddingWidget()
 void MainMenuScreen::init()
 {
     Screen::init();
+
+    // White labels so they read against the dark background image.
+    const video::SColor white(255, 255, 255, 255);
+    static const char* const TOP_BTNS[] = { "story", "new", "multiplayer", "online", "addons" };
+    for (const char* id : TOP_BTNS)
+    {
+        IconButtonWidget* btn = getWidget<IconButtonWidget>(id);
+        if (btn) btn->setLabelColor(white);
+    }
 
     m_user_id = getWidget<ButtonWidget>("user-id");
     assert(m_user_id);
