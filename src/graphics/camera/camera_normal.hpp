@@ -61,6 +61,7 @@ private:
     btVector3       m_rc_forward;       // smoothed support-frame forward
     btVector3       m_rc_up;            // smoothed support-frame up/road normal
     bool            m_rc_initialized;   // false until first update seeds the state
+    float           m_rescue_camera_blend;
 
     void updateRelativityCamera(float dt);
     void moveCamera(float dt, bool smooth, float above_kart,
