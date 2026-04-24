@@ -107,12 +107,16 @@ jobs:
           name: ${{ steps.sysroot.outputs.lowercase }}-${{ matrix.arch }}
           path: ${{ steps.sysroot.outputs.lowercase }}-${{ matrix.arch }}
   packaging:
-    name: Packaging STK
+    name: Packaging MinkowskiKart
     needs: build
     runs-on: macos-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          submodules: false
       - name: Configure packaging name for git default branch
         if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
         run: |
@@ -153,19 +157,12 @@ jobs:
           echo "${{ env.release_pre }}"
       - name: Download binaries
         uses: actions/download-artifact@v4
-      #- name: Mask developer name
-      #  run: |
-      #    echo "::add-mask::${{ secrets.MAC_DEVELOPER_NAME }}"
-      #- name: Import certificates
-      #  if: ${{ env.release_tag != '' }}
-      #  uses: apple-actions/import-codesign-certs@v1
-      #  with:
-      #    p12-file-base64: ${{ secrets.MAC_DEVELOPER_ID_P12_FILE }}
-      #    p12-password: ${{ secrets.MAC_DEVELOPER_ID_P12_PASSWORD }}
-      - name: Run dylibbundler and sign STK
+      - name: Download stk-assets
         if: ${{ env.package_tag != '' }}
-      #  env:
-      #    developer_id: "Developer ID Application: ${{ secrets.MAC_DEVELOPER_NAME }} (${{ secrets.MAC_DEVELOPER_TEAM }})"
+        run: |
+          wget https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip
+      - name: Run dylibbundler and sign macOS build
+        if: ${{ env.package_tag != '' }}
         run: |
           wget https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-macosx.tar.xz
           tar xf dependencies-macosx.tar.xz
@@ -178,40 +175,50 @@ jobs:
           # We use SDL_Vulkan_LoadLibrary for 10.9 compatibility, so otool -L supertuxkart has no libMoltenVK.dylib
           cp ./dependencies-macosx/lib/libMoltenVK.dylib ./macosx-arm64/supertuxkart.app/Contents/libs/
           cd ./macosx-arm64/supertuxkart.app/Contents/Resources/data
-          wget https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip
-          unzip stk-assets-full.zip
-          rm stk-assets-full.zip
+          unzip -q ../../../../../stk-assets-full.zip
           cd ../../../../..
           mv ./macosx-arm64/supertuxkart.app MinkowskiKart.app
           # Use Ad Hoc certificate for now, previous certificate has been expired.
           codesign --force -s - MinkowskiKart.app/Contents/libs/*.dylib
           codesign --force --deep -s - MinkowskiKart.app
-          #codesign --force --sign "$developer_id" SuperTuxKart.app/Contents/libs/*.dylib
-          #codesign --force --options=runtime --deep --sign "$developer_id" SuperTuxKart.app
-      #- name: "Notarize release build"
-      #  if: ${{ env.release_tag != '' && github.ref != 'refs/heads/master' }}
-      #  run: |
-      #    ditto -c -k --sequesterRsrc --keepParent SuperTuxKart.app tmp.zip
-      #    xcrun notarytool submit tmp.zip --apple-id ${{ secrets.STK_NOTARIZATION_USERNAME }} \
-      #                                    --password ${{ secrets.STK_NOTARIZATION_PASSWORD }} \
-      #                                    --team-id ${{ secrets.MAC_DEVELOPER_TEAM }} --wait
-      #    xcrun stapler staple SuperTuxKart.app
-      - name: Archive
+      - name: Archive macOS app
         if: ${{ env.package_tag != '' }}
         run: |
           ditto -c -k --sequesterRsrc --keepParent MinkowskiKart.app MinkowskiKart-${{ env.package_tag }}-mac.zip
-      - name: Upload packaged zip
+      - name: Package iOS IPA
+        if: ${{ env.package_tag != '' }}
+        run: |
+          mkdir -p Payload
+          if [ -d "iphoneos-arm64/supertuxkart.app" ]; then
+            cp -r iphoneos-arm64/supertuxkart.app Payload/MinkowskiKart.app
+          else
+            mkdir -p Payload/MinkowskiKart.app
+            cp iphoneos-arm64/supertuxkart Payload/MinkowskiKart.app/MinkowskiKart 2>/dev/null || true
+          fi
+          # Embed stk-assets and repo data into the app bundle
+          mkdir -p Payload/MinkowskiKart.app/data
+          unzip -q stk-assets-full.zip -d Payload/MinkowskiKart.app/data/
+          cp -r data/. Payload/MinkowskiKart.app/data/
+          codesign --force --deep -s - Payload/MinkowskiKart.app
+          zip -r MinkowskiKart-${{ env.package_tag }}-ios.ipa Payload/
+      - name: Upload macOS zip artifact
         if: ${{ env.package_tag != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MinkowskiKart-mac
           path: MinkowskiKart-${{ env.package_tag }}-mac.zip
+      - name: Upload iOS IPA artifact
+        if: ${{ env.package_tag != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: MinkowskiKart-ios
+          path: MinkowskiKart-${{ env.package_tag }}-ios.ipa
       - name: Create release
         if: ${{ env.release_tag != '' }}
         uses: ncipollo/release-action@v1.8.8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "MinkowskiKart-${{ env.package_tag }}-mac.zip"
+          artifacts: "MinkowskiKart-${{ env.package_tag }}-mac.zip,MinkowskiKart-${{ env.package_tag }}-ios.ipa"
           tag: ${{ env.release_name }}
           omitBodyDuringUpdate: true
           omitNameDuringUpdate: true

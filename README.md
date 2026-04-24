@@ -91,60 +91,98 @@ Current relativistic presentation includes:
 - time-dilation VFX and Maxwell-Boltzmann Brownian kick spheres
 - wormhole portal visuals
 
-## Building The Project
+## Building The Project (Windows)
 
-This project uses CMake and Ninja for compilation.
+This project uses CMake and Ninja with the llvm-mingw toolchain.
 
-### Prerequisites
-
-- LLVM-MinGW toolchain in `.build-tools/llvm-mingw`
-- Ninja in `.build-tools/ninja`
-
-### Standard Build
-
-1. Clone the repository with its tracked `build/`, `.build-tools/`, and
-   `dependencies-win-x86_64/` directories intact.
-2. From the repo root, run:
+### 1. Install CMake
 
 ```powershell
-.\compile.bat
+winget install --id Kitware.CMake -e --accept-package-agreements --accept-source-agreements
 ```
 
-3. The executable will be generated at `build\bin\supertuxkart.exe`.
+### 2. Download llvm-mingw
 
-### Dev Build
+Download the Windows x86_64 zip from the
+[llvm-mingw releases page](https://github.com/mstorsjo/llvm-mingw/releases)
+and extract it into `.build-tools\llvm-mingw\` so the layout is:
 
-For normal local iteration, prefer the untracked `build-dev/` directory:
-
-1. Configure once:
-
-```powershell
-.\configure-dev.bat
+```
+.build-tools\llvm-mingw\llvm-mingw-<date>-msvcrt-x86_64\bin\x86_64-w64-mingw32-clang.exe
 ```
 
-2. Build incrementally:
+`compile.bat` specifically expects the `20260407` release. Any recent release
+should work if you adjust the path in `compile.bat`.
 
-```powershell
-.\compile-dev.bat
+### 3. Download Ninja
+
+Download `ninja-win.zip` from the
+[Ninja releases page](https://github.com/ninja-build/ninja/releases) and
+extract `ninja.exe` into `.build-tools\ninja\`.
+
+### 4. Download the Windows dependencies
+
+```bash
+curl -L -o deps.zip https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-win-x86_64.zip
+unzip deps.zip
 ```
 
-3. Force a clean rebuild when needed:
+This extracts `dependencies-win-x86_64\` into the repo root.
 
-```powershell
-.\compile-dev.bat full
+### 5. Configure with CMake
+
+```bash
+LLVM_PREFIX=".build-tools/llvm-mingw/llvm-mingw-20260407-msvcrt-x86_64"
+NINJA=".build-tools/ninja/ninja.exe"
+
+cmake -S . -B build -G Ninja \
+  -DCMAKE_MAKE_PROGRAM="$NINJA" \
+  -DLLVM_ARCH=x86_64 \
+  -DLLVM_PREFIX="$LLVM_PREFIX" \
+  -DCMAKE_TOOLCHAIN_FILE="cmake/Toolchain-llvm-mingw.cmake" \
+  -DCHECK_ASSETS=OFF \
+  -DUSE_DIRECTX=OFF \
+  -DUSE_WIIUSE=OFF
 ```
 
-4. Clean without rebuilding:
+`-DUSE_WIIUSE=OFF` is required on Windows with llvm-mingw because the WinHID
+headers are not bundled. `-DCHECK_ASSETS=OFF` skips the asset presence check
+at configure time.
 
-```powershell
-.\compile-dev.bat clean
+### 6. Build
+
+```bash
+.build-tools/ninja/ninja.exe -C build -j4
 ```
 
-5. The dev executable will be generated at `build-dev\bin\supertuxkart.exe`.
+The executable is output to `build\bin\supertuxkart.exe`.
+
+### 7. Post-build setup
+
+Copy the runtime DLLs next to the executable:
+
+```bash
+cp dependencies-win-x86_64/bin/*.dll build/bin/
+```
+
+Create the replay directory (required by the asset loader):
+
+```bash
+mkdir -p data/replay
+```
+
+### 8. Run
+
+```bat
+run.bat
+```
+
+This launches `build\bin\supertuxkart.exe` with `--root-data=../../data`.
+The asset loader automatically discovers `stk-assets\` from that path.
 
 ### Packaging
 
-The packaging flow is driven by `package.ps1`. It now prefers the current repo
+The packaging flow is driven by `package.ps1`. It prefers the current repo
 build output from `build-dev\bin` and falls back to `build\bin`, while shipping
 the current repo `data/` and `stk-assets/` content.
 

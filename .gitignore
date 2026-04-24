@@ -12,7 +12,6 @@ UnmodifiedSTK-reference/
 # WIP / unreleased content
 stk-assets/wip-tracks/
 stk-assets/wip-library/
-data/replay/
 *.log
 
 # IDE / OS
