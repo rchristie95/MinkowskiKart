@@ -102,18 +102,8 @@ struct TimeDilationVFX
 
 struct MassSpikeVFX
 {
-    float              compression_factor; // how much chassis is squished
-    float              ground_ripple;      // compressed-space ripples
-    float              strain_sparks;      // spark rate under load
-#ifndef SERVER_ONLY
-    ParticleEmitter   *downward_emitter;
-    ParticleEmitter   *spark_emitter;
-#endif
-    MassSpikeVFX() : compression_factor(0), ground_ripple(0),
-                     strain_sparks(0)
-#ifndef SERVER_ONLY
-                     , downward_emitter(nullptr), spark_emitter(nullptr)
-#endif
+    bool active;
+    MassSpikeVFX() : active(false)
     {}
 };
 

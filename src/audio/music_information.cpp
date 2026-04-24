@@ -368,6 +368,13 @@ void MusicInformation::setTemporaryVolume(float volume)
 }
 
 //-----------------------------------------------------------------------------
+void MusicInformation::setSpeed(float speed)
+{
+    if (m_normal_music != NULL) m_normal_music->setSpeed(speed);
+    if (m_fast_music   != NULL) m_fast_music->setSpeed(speed);
+}
+
+//-----------------------------------------------------------------------------
 /** If there is a fast music available, switch to it.
  *  */
 void MusicInformation::switchToFastMusic()

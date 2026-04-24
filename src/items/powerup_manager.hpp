@@ -143,8 +143,9 @@ public:
                       POWERUP_WORMHOLE,                      // replaces the old RUBBERBALL slot
                       POWERUP_GEODESIC_MISSILE = POWERUP_WORMHOLE, // compatibility alias
                       POWERUP_TIME_DILATION,                 // was PARACHUTE - slowdown
-                      POWERUP_MASS_SPIKE,                    // was ANVIL; now HARMONIC OSCILLATOR (dumbbell on spring)
-                      POWERUP_HARMONIC_OSCILLATOR = POWERUP_MASS_SPIKE, // preferred alias
+                      POWERUP_MASS_SPIKE,                    // was ANVIL; now Maxwell-Boltzmann
+                      POWERUP_MAXWELL_BOLTZMANN = POWERUP_MASS_SPIKE, // preferred alias
+                      POWERUP_HARMONIC_OSCILLATOR = POWERUP_MASS_SPIKE, // compatibility alias
                       POWERUP_LAST=POWERUP_MASS_SPIKE,
                       POWERUP_MAX
     };
