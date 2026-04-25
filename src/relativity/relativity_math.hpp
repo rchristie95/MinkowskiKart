@@ -56,6 +56,9 @@ float getMinimumAdjustableCLight();
 float getMaximumAdjustableCLight();
 float getCLightSliderFraction(float c_light);
 float getWarpBubbleRadius();
+// Resets the c-light ramp interpolation state. Call on race teardown so that
+// each new race begins from the configured baseline rather than mid-ramp.
+void  resetCurrentCLight();
 // Sets the active slider-backed c_light, clamped to the adjustable range.
 // The current runtime powerup state decides whether this writes to the normal
 // slider or the powerup slider. If applied_c_light is non-null it receives

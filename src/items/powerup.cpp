@@ -38,7 +38,6 @@
 #include "physics/triangle_mesh.hpp"
 #include "tracks/track.hpp"
 #include "utils/string_utils.hpp"
-#include "utils/log.hpp" //TODO: remove after debugging is done
 
 namespace
 {
