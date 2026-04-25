@@ -1,0 +1,45 @@
+name: update-release
+on:
+  workflow_dispatch:
+    inputs:
+      target_tag:
+        description: 'Release tag to update (e.g. version_1)'
+        required: true
+        default: 'version_1'
+
+permissions:
+  contents: write
+
+jobs:
+  copy-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy latest preview assets to target release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TARGET: ${{ github.event.inputs.target_tag }}
+        run: |
+          # Find the latest win and mac zips from the preview release
+          WIN_URL=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith("-win.zip"))] | sort_by(.updatedAt) | last | .url')
+          MAC_URL=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith("-mac.zip"))] | sort_by(.updatedAt) | last | .url')
+          IOS_URL=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith(".ipa"))] | sort_by(.updatedAt) | last | .url')
+
+          WIN_NAME=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith("-win.zip"))] | sort_by(.updatedAt) | last | .name')
+          MAC_NAME=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith("-mac.zip"))] | sort_by(.updatedAt) | last | .name')
+          IOS_NAME=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith(".ipa"))] | sort_by(.updatedAt) | last | .name')
+
+          echo "Copying: $WIN_NAME, $MAC_NAME, $IOS_NAME -> $TARGET"
+
+          wget -q -O "$WIN_NAME" "$WIN_URL"
+          wget -q -O "$MAC_NAME" "$MAC_URL"
+          wget -q -O "$IOS_NAME" "$IOS_URL"
+
+          gh release upload "$TARGET" "$WIN_NAME" "$MAC_NAME" "$IOS_NAME" \
+            --repo "$REPO" --clobber
