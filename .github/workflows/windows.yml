@@ -250,10 +250,11 @@ jobs:
         if: ${{ env.release_tag != '' }}
         run: |
           mkdir MinkowskiKart-${{ env.release_tag }}-win
-          # Merge stk-assets and repo data into a single data folder
-          mkdir -p MinkowskiKart-${{ env.release_tag }}-win/data
-          cp -r stk-assets/* MinkowskiKart-${{ env.release_tag }}-win/data/
-          cp -r data/* MinkowskiKart-${{ env.release_tag }}-win/data/
+          # Keep stk-assets and data as separate siblings so the game's
+          # file manager can find them (it expects data/ and stk-assets/
+          # in the same root directory)
+          cp -r stk-assets MinkowskiKart-${{ env.release_tag }}-win/stk-assets
+          cp -r data MinkowskiKart-${{ env.release_tag }}-win/data
           mv tools/run_game.bat MinkowskiKart-${{ env.release_tag }}-win/
           mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/i686
           mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/x86_64
@@ -283,18 +284,15 @@ jobs:
             sed -i "s/define ARCH \"\"/define ARCH \"$arch\"/g" $arch.nsi
             sed -i "s/define VERSION \"\"/define VERSION \"${{ env.release_tag }}\"/g" $arch.nsi
             sed -i "s/OutFile \"\"/OutFile \"MinkowskiKart-${{ env.release_tag }}-installer-$arch.exe\"/g" $arch.nsi
-            # Adjust path to binaries for NSIS
+            # Adjust binary path from old stk-code/build-$arch/bin to bin/$arch
             sed -i "s/..\\..\\build-\$ARCH\\bin/..\\..\\bin\\\$ARCH/g" $arch.nsi
-            # Adjust path to stk-assets/data for NSIS (merged)
-            sed -i "s/..\\..\\..\\stk-assets/..\\..\\data/g" $arch.nsi
-            # The data path is already ..\..\data in the original NSI
             for filename in $(ls ../../bin/$arch)
             do
               file="\\\\$filename"
               sed -i "288a\  DELETE /REBOOTOK \"\$INSTDIR$file\"" $arch.nsi
             done
           done
-          mv ../COPYING ../..
+          [ -f ../COPYING ] && mv ../COPYING ../.. || true
       - name: Run makensis.exe
         if: ${{ env.release_tag != '' && startsWith(github.ref, 'refs/tags/') }}
         run: |
@@ -312,6 +310,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "MinkowskiKart-*.zip, MinkowskiKart-${{ env.release_tag }}-win/tools/windows_installer/*.exe"
           tag: ${{ env.release_name }}
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
           allowUpdates: true
           replacesArtifacts: true
           prerelease: ${{ env.release_pre }}

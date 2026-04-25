@@ -223,4 +223,5 @@ jobs:
           omitBodyDuringUpdate: true
           omitNameDuringUpdate: true
           allowUpdates: true
+          replacesArtifacts: true
           prerelease: ${{ env.release_pre }}
