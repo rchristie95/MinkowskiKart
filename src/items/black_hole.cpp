@@ -31,8 +31,6 @@
 #include "karts/abstract_kart.hpp"
 #include "modes/linear_world.hpp"
 
-#include "utils/log.hpp" //TODO: remove after debugging is done
-
 #include <ISceneManager.h>
 #include <ISceneNode.h>
 #include <IBillboardSceneNode.h>
@@ -153,9 +151,9 @@ bool BlackHole::updateAndDelete(int ticks)
 
     const AbstractKart *kart=0;
     Vec3        direction;
-    float       minDistance;
-    getClosestKart(&kart, &minDistance, &direction);
-    if(kart && minDistance<m_st_max_distance_squared)   // move black hole towards kart
+    float       minDistSquared;
+    getClosestKart(&kart, &minDistSquared, &direction);
+    if(kart && minDistSquared<m_st_max_distance_squared)   // move black hole towards kart
     {
         // limit angle, so that the black hole does not turn
         // around to hit a kart behind
@@ -193,7 +191,7 @@ bool BlackHole::updateAndDelete(int ticks)
             if(vlen==0.0f) {
                 v = btVector3(.5f, .0, 0.5f);  // avoid 0 div.
             }
- //           m_body->setLinearVelocity(v*(m_speed/sqrt(vlen)));
+            m_body->setLinearVelocity(v*(m_speed/sqrt(vlen)));
         }   // vlen < 0.8*m_speed*m_speed
     }   // hat< m_max_height
 

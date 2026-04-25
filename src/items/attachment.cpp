@@ -765,13 +765,8 @@ void Attachment::hitBanana(ItemState *item_state)
             int parachute_ticks = stk_config->time2Ticks(
                 kp->getTimeDilationDuration()) + leftover_ticks;
             set(ATTACH_TIME_DILATION, parachute_ticks);
-            int initial_speed_round = (int)(m_kart->getSpeed() * 100.0f);
-            initial_speed_round =
-                irr::core::clamp(initial_speed_round, -32768, 32767);
-            m_initial_speed = (int16_t)initial_speed_round;
-            // if going very slowly or backwards,
-            // braking won't remove parachute
-            if (m_initial_speed <= 150) m_initial_speed = 150;
+            // m_initial_speed is set inside set() based on the kart's current
+            // speed; no need to recompute it here.
             break;
         }
         case ATTACH_MAXWELL_BOLTZMANN:

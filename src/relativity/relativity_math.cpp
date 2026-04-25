@@ -55,6 +55,14 @@ const float APPARENT_NORMAL_SAMPLE_DISTANCE = 0.20f;
 unsigned int g_velocity_clamp_count = 0;
 unsigned int g_response_scale_count = 0;
 
+// C-light ramp state. Kept at file scope so that resetCurrentCLight() can
+// clear it between races without the stale mid-ramp artefact described in
+// the bug report.
+bool   g_clight_initialized    = false;
+float  g_clight_ramp_start     = 0.0f;
+float  g_clight_last_target    = 0.0f;
+double g_clight_ramp_start_time = 0.0;
+
 bool isFiniteVector(const btVector3& v)
 {
     return std::isfinite((double)v.x()) &&
@@ -142,8 +150,26 @@ btVector3 getRelativisticEmissionRelativePosition(
     if (discriminant < btScalar(0.0f))
         return relative;
 
-    const btScalar emission_dt = (-b + btSqrt(discriminant)) / a;
-    if (emission_dt > btScalar(0.0f) || emission_dt < btScalar(-1000.0f))
+    // The equation a*t^2 + 2*b*t + c = 0 has two roots. We need the one
+    // that represents a past emission time (t <= 0) within a plausible
+    // range. Try both roots and pick the first valid one.
+    const btScalar sqrt_disc = btSqrt(discriminant);
+    const btScalar roots[2] = {
+        (-b + sqrt_disc) / a,
+        (-b - sqrt_disc) / a
+    };
+    btScalar emission_dt = btScalar(0.0f);
+    bool found = false;
+    for (int i = 0; i < 2; i++)
+    {
+        if (roots[i] <= btScalar(0.0f) && roots[i] >= btScalar(-1000.0f))
+        {
+            emission_dt = roots[i];
+            found = true;
+            break;
+        }
+    }
+    if (!found)
         return relative;
 
     return relative + object_velocity * emission_dt;
@@ -328,49 +354,50 @@ float getCurrentCLight()
         ? active_target.m_target_c_light
         : getConfiguredNormalCLight();
 
-    // State preserved between calls to interpolate smoothly. Safe because the
-    // shader uniform update (the only caller that runs per-frame) is single
-    // threaded on the main thread.
-    static bool s_initialized = false;
-    static float s_ramp_start_c_light = 0.0f;
-    static float s_last_target = 0.0f;
-    static double s_ramp_start_time = 0.0;
-
     const double now = StkTime::getRealTime();
-    if (!s_initialized)
+    if (!g_clight_initialized)
     {
-        s_initialized = true;
-        s_ramp_start_c_light = target_c_light;
-        s_last_target = target_c_light;
-        s_ramp_start_time = now - kCLightRampSeconds;
+        g_clight_initialized    = true;
+        g_clight_ramp_start     = target_c_light;
+        g_clight_last_target    = target_c_light;
+        g_clight_ramp_start_time = now - kCLightRampSeconds;
     }
-    else if (target_c_light != s_last_target)
+    else if (target_c_light != g_clight_last_target)
     {
         // Begin a new ramp from wherever we currently are toward the new
         // target. Computing the current interpolated value first means a
         // mid-transition reversal doesn't pop.
-        const double prev_elapsed = now - s_ramp_start_time;
+        const double prev_elapsed = now - g_clight_ramp_start_time;
         const double prev_t = prev_elapsed >= kCLightRampSeconds ? 1.0
             : std::max(0.0, prev_elapsed / kCLightRampSeconds);
-        const float current = (float)((1.0 - prev_t) * s_ramp_start_c_light
-            + prev_t * s_last_target);
-        s_ramp_start_c_light = current;
-        s_last_target = target_c_light;
-        s_ramp_start_time = now;
+        const float current = (float)((1.0 - prev_t) * g_clight_ramp_start
+            + prev_t * g_clight_last_target);
+        g_clight_ramp_start      = current;
+        g_clight_last_target     = target_c_light;
+        g_clight_ramp_start_time = now;
     }
 
-    const double elapsed = now - s_ramp_start_time;
+    const double elapsed = now - g_clight_ramp_start_time;
     const double t = elapsed >= kCLightRampSeconds ? 1.0
         : std::max(0.0, elapsed / kCLightRampSeconds);
     // Smoothstep for a gentler ease-in/ease-out.
     const double smooth_t = t * t * (3.0 - 2.0 * t);
-    const float c_light = (float)((1.0 - smooth_t) * s_ramp_start_c_light
-        + smooth_t * s_last_target);
+    const float c_light = (float)((1.0 - smooth_t) * g_clight_ramp_start
+        + smooth_t * g_clight_last_target);
 
     if (stk_config)
         stk_config->m_relativity_c_light = c_light;
     return c_light;
 }   // getCurrentCLight
+
+// ----------------------------------------------------------------------------
+void resetCurrentCLight()
+{
+    // Force re-initialisation on the next call to getCurrentCLight() so that
+    // the new race always starts from the configured baseline rather than from
+    // wherever the previous race's ramp left off.
+    g_clight_initialized = false;
+}   // resetCurrentCLight
 
 // ----------------------------------------------------------------------------
 float getMinimumAdjustableCLight()

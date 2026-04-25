@@ -67,6 +67,7 @@
 #include "race/history.hpp"
 #include "race/race_manager.hpp"
 #include "relativity/relativity_math.hpp"
+#include "relativity/observer_snapshot.hpp"
 #include "replay/replay_play.hpp"
 #include "replay/replay_recorder.hpp"
 #include "scriptengine/script_engine.hpp"
@@ -638,6 +639,9 @@ World::~World()
 
     if (relativistic_vfx_manager)
         relativistic_vfx_manager->reset();
+
+    Relativity::clearAllVisualMotionFilters();
+    Relativity::resetCurrentCLight();
 
     // In case that a race is aborted (e.g. track not found) track is 0.
     if (m_process_type == PT_MAIN)

@@ -126,8 +126,4 @@ public:
     void             getMinimapPositions(std::vector<Vec3>* positions) const;
 };   // Wormhole
 
-// Keep the legacy internal type name available for existing includes/build
-// rules while the outward gameplay symbol becomes Wormhole.
-using Wormhole = Wormhole;
-
 #endif
