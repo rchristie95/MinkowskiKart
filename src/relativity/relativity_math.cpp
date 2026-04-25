@@ -160,7 +160,7 @@ btVector3 getRelativisticEmissionRelativePosition(
     };
     btScalar emission_dt = btScalar(0.0f);
     bool found = false;
-    for (int i = 0; i < 2; i++)
+    for (size_t i = 0; i < 2; i++)
     {
         if (roots[i] <= btScalar(0.0f) && roots[i] >= btScalar(-1000.0f))
         {
