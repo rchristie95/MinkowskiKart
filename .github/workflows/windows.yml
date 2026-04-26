@@ -255,6 +255,9 @@ jobs:
           # in the same root directory)
           cp -r stk-assets MinkowskiKart-${{ env.release_tag }}-win/stk-assets
           cp -r data MinkowskiKart-${{ env.release_tag }}-win/data
+          # replay/ is required by the file manager but upload-artifact strips
+          # hidden files so .gitkeep doesn't survive — ensure the dir exists
+          mkdir -p MinkowskiKart-${{ env.release_tag }}-win/data/replay
           mv tools/run_game.bat MinkowskiKart-${{ env.release_tag }}-win/
           mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/i686
           mkdir -p MinkowskiKart-${{ env.release_tag }}-win/bin/x86_64
