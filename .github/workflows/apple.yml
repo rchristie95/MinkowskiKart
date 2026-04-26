@@ -167,18 +167,18 @@ jobs:
           wget https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-macosx.tar.xz
           tar xf dependencies-macosx.tar.xz
           HOMEBREW_NO_AUTO_UPDATE=1 brew install dylibbundler
-          lipo -create ./macosx-x86_64/supertuxkart.app/Contents/MacOS/supertuxkart ./macosx-arm64/supertuxkart.app/Contents/MacOS/supertuxkart -output ./macosx-arm64/supertuxkart.app/Contents/MacOS/supertuxkart
-          chmod 755 ./macosx-arm64/supertuxkart.app/Contents/MacOS/supertuxkart
+          lipo -create ./macosx-x86_64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart ./macosx-arm64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart -output ./macosx-arm64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart
+          chmod 755 ./macosx-arm64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart
           install_name_tool -delete_rpath @loader_path/Frameworks ./dependencies-macosx/lib/libSDL2.dylib
           install_name_tool -delete_rpath @executable_path/Frameworks ./dependencies-macosx/lib/libSDL2.dylib
-          dylibbundler -od -b -x ./macosx-arm64/supertuxkart.app/Contents/MacOS/supertuxkart -d ./macosx-arm64/supertuxkart.app/Contents/libs/ -p @executable_path/../libs/ -s ./dependencies-macosx/lib -ns
-          # We use SDL_Vulkan_LoadLibrary for 10.9 compatibility, so otool -L supertuxkart has no libMoltenVK.dylib
-          cp ./dependencies-macosx/lib/libMoltenVK.dylib ./macosx-arm64/supertuxkart.app/Contents/libs/
-          cd ./macosx-arm64/supertuxkart.app/Contents/Resources/data
+          dylibbundler -od -b -x ./macosx-arm64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart -d ./macosx-arm64/MinkowskiKart.app/Contents/libs/ -p @executable_path/../libs/ -s ./dependencies-macosx/lib -ns
+          # We use SDL_Vulkan_LoadLibrary for 10.9 compatibility, so otool -L MinkowskiKart has no libMoltenVK.dylib
+          cp ./dependencies-macosx/lib/libMoltenVK.dylib ./macosx-arm64/MinkowskiKart.app/Contents/libs/
+          cd ./macosx-arm64/MinkowskiKart.app/Contents/Resources/data
           unzip -q ../../../../../stk-assets-full.zip
           mkdir -p replay
           cd ../../../../..
-          mv ./macosx-arm64/supertuxkart.app MinkowskiKart.app
+          mv ./macosx-arm64/MinkowskiKart.app MinkowskiKart.app
           # Use Ad Hoc certificate for now, previous certificate has been expired.
           codesign --force -s - MinkowskiKart.app/Contents/libs/*.dylib
           codesign --force --deep -s - MinkowskiKart.app
@@ -191,7 +191,7 @@ jobs:
         run: |
           # Launch straight into a race; check the process is still alive after 10s
           # (meaning it got past init and into the race), then kill at 20s
-          MinkowskiKart.app/Contents/MacOS/supertuxkart \
+          MinkowskiKart.app/Contents/MacOS/MinkowskiKart \
             --no-start-screen --track=sandtrack --kart=tux --laps=1 --ai-num=1 \
             > smoke_out.txt 2>&1 &
           SMOKE_PID=$!
@@ -213,11 +213,11 @@ jobs:
         if: ${{ env.package_tag != '' }}
         run: |
           mkdir -p Payload
-          if [ -d "iphoneos-arm64/supertuxkart.app" ]; then
-            cp -r iphoneos-arm64/supertuxkart.app Payload/MinkowskiKart.app
+          if [ -d "iphoneos-arm64/MinkowskiKart.app" ]; then
+            cp -r iphoneos-arm64/MinkowskiKart.app Payload/MinkowskiKart.app
           else
             mkdir -p Payload/MinkowskiKart.app
-            cp iphoneos-arm64/supertuxkart Payload/MinkowskiKart.app/MinkowskiKart 2>/dev/null || true
+            cp iphoneos-arm64/MinkowskiKart Payload/MinkowskiKart.app/MinkowskiKart 2>/dev/null || true
           fi
           # Embed stk-assets and repo data into the app bundle
           mkdir -p Payload/MinkowskiKart.app/data
