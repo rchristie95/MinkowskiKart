@@ -185,6 +185,18 @@ jobs:
         if: ${{ env.package_tag != '' }}
         run: |
           ditto -c -k --sequesterRsrc --keepParent MinkowskiKart.app MinkowskiKart-${{ env.package_tag }}-mac.zip
+      - name: Smoke test macOS executable
+        if: ${{ env.package_tag != '' }}
+        run: |
+          # Run the binary with a 20s timeout; graphics will fail headless — we only
+          # care that it gets past asset discovery without "Not all assets found"
+          timeout 20 MinkowskiKart.app/Contents/MacOS/supertuxkart > smoke_out.txt 2>&1 || true
+          cat smoke_out.txt
+          if grep -q "Not all assets found" smoke_out.txt; then
+            echo "Smoke test FAILED: asset layout is broken"
+            exit 1
+          fi
+          echo "Smoke test passed"
       - name: Package iOS IPA
         if: ${{ env.package_tag != '' }}
         run: |
