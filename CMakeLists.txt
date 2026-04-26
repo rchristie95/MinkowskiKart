@@ -593,13 +593,8 @@ if(APPLE AND NOT IOS)
     set_target_properties(supertuxkart PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/data/SuperTuxKart-Info.plist)
 
-    if(CMAKE_GENERATOR MATCHES "Xcode")
-        add_custom_command(TARGET supertuxkart POST_BUILD
-            COMMAND ln -f -s ${PROJECT_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}/\${CONFIGURATION}/supertuxkart.app/Contents/Resources)
-    else()
-        add_custom_command(TARGET supertuxkart POST_BUILD
-            COMMAND ln -f -s ${PROJECT_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}/bin/supertuxkart.app/Contents/Resources)
-    endif()
+    add_custom_command(TARGET supertuxkart POST_BUILD
+        COMMAND ln -f -s ${PROJECT_SOURCE_DIR}/data $<TARGET_BUNDLE_CONTENT_DIR:supertuxkart>/Resources)
 else()
     if (NOT WIN32)
         find_library(PTHREAD_LIBRARY NAMES pthread ${PTHREAD_NAMES} PATHS ${PROJECT_SOURCE_DIR}/${DEPENDENCIES}/lib)
