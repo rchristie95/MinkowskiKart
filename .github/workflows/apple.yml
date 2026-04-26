@@ -176,6 +176,7 @@ jobs:
           cp ./dependencies-macosx/lib/libMoltenVK.dylib ./macosx-arm64/supertuxkart.app/Contents/libs/
           cd ./macosx-arm64/supertuxkart.app/Contents/Resources/data
           unzip -q ../../../../../stk-assets-full.zip
+          mkdir -p replay
           cd ../../../../..
           mv ./macosx-arm64/supertuxkart.app MinkowskiKart.app
           # Use Ad Hoc certificate for now, previous certificate has been expired.
