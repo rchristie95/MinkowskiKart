@@ -483,6 +483,27 @@ void CameraNormal::updateRelativityCamera(float dt)
     m_rc_pos = next_pos;
     m_rc_target = desired_tgt;
 
+    // Compactification tilt: smoothly level the camera to the horizon when
+    // the Calabi-Yau strip-stretch VFX is active.  The shader stretches a
+    // thin horizontal band centred on the screen; with the normal look-at
+    // point 3.1m ahead and 0.56m up the camera looks ~4.6° downward, so
+    // that band lands on the road.  We blend the look-at target from
+    // desired_tgt toward a far point directly along support_forward at
+    // camera eye height, making the view direction parallel to the track
+    // surface so the horizon sits at screen centre.
+    if (relativistic_vfx_manager)
+    {
+        const CompactificationVFX *cvfx =
+            relativistic_vfx_manager->getCompactification(kart->getWorldKartId());
+        if (cvfx && cvfx->active && cvfx->strength > 0.0f)
+        {
+            // Horizon target: 100 m straight ahead along the track plane,
+            // at the same height as the camera eye.
+            const btVector3 horizon_tgt = m_rc_pos + support_forward * 100.0f;
+            m_rc_target = m_rc_target.lerp(horizon_tgt, cvfx->strength);
+        }
+    }
+
     m_camera->setPosition(core::vector3df(
         m_rc_pos.getX(), m_rc_pos.getY(), m_rc_pos.getZ()));
     m_camera->setTarget(core::vector3df(

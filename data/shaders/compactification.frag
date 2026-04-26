@@ -8,9 +8,11 @@ void main()
     vec2 uv = gl_FragCoord.xy / u_screen;
 
     // Strip spans 1/32 on each side of centre — the middle 1/16 of the screen
-    // centred on the track tangent plane (approximated as screen centre).
-    const float strip_lo = 14.0 / 32.0;  // 0.4375
-    const float strip_hi = 16.0 / 32.0;  // 0.5
+    // centred on the horizon (screen centre = y 0.5 with a level camera).
+    // Previously the strip topped out at 0.5 so its midpoint was at 0.469,
+    // landing on road rather than horizon.  Shifted up by 1/32 to centre it.
+    const float strip_lo = 15.0 / 32.0;  // 0.46875
+    const float strip_hi = 17.0 / 32.0;  // 0.53125
 
     // Full compactification maps every output row to a source row inside the strip.
     float y_compacted = mix(strip_lo, strip_hi, uv.y);
