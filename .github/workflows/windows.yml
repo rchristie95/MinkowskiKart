@@ -199,6 +199,14 @@ jobs:
     needs: build
     runs-on: windows-2022
     steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          submodules: false
+      - name: Stash custom stk-assets before upstream download overwrites them
+        shell: bash
+        run: |
+          mv stk-assets stk-assets-custom
       - name: Configure packaging name for git default branch
         shell : bash
         if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
@@ -265,6 +273,7 @@ jobs:
           # file manager can find them (it expects data/ and stk-assets/
           # in the same root directory)
           cp -r stk-assets MinkowskiKart-${{ env.release_tag }}-win/stk-assets
+          cp -r stk-assets-custom/. MinkowskiKart-${{ env.release_tag }}-win/stk-assets/
           cp -r data MinkowskiKart-${{ env.release_tag }}-win/data
           # replay/ is required by the file manager but upload-artifact strips
           # hidden files so .gitkeep doesn't survive — ensure the dir exists
