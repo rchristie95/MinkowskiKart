@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2006-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -39,7 +39,7 @@ class SFXBase;
 /** This objects is permanently available in a kart and stores information
  *  about addons. If a kart has no attachment, this object will have the
  *  attachment type ATTACH_NOTHING. This way other tests for attachment
- *  in STK do not have to additionally test if there is an attachment, all
+ *  in MK do not have to additionally test if there is an attachment, all
  *  tests for a type will always be valid.
  *  Certain attachments need additional coding, this is supported by
  *  a 'plugin' mechanism: This attachment will forward certain calls to

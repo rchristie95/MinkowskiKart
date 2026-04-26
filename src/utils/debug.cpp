@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Lionel Fuentes
 //
 //  This program is free software; you can redistribute it and/or
@@ -1385,10 +1385,10 @@ bool onEvent(const SEvent &event)
             sub->addItem(L"Start recording (Ctrl + Print Screen)", DEBUG_START_RECORDING);
             sub->addItem(L"Stop recording (Ctrl + Print Screen)", DEBUG_STOP_RECORDING);
 #else
-            sub->addItem(L"Recording unavailable, STK was compiled without\n"
-                          "recording support.  Please re-compile STK with\n"
+            sub->addItem(L"Recording unavailable, MK was compiled without\n"
+                          "recording support.  Please re-compile MK with\n"
                           "libopenglrecorder to enable recording.  If you got\n"
-                          "SuperTuxKart from your distribution's repositories,\n"
+                          "MinkowskiKart from your distribution's repositories,\n"
                           "please use the official binaries, or contact your\n"
                           "distributions's package mantainer.");
 #endif

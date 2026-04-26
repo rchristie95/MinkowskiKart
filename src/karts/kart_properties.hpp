@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2006-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2006-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -172,7 +172,7 @@ private:
     Vec3  m_gravity_center_shift;
 
 public:
-    /** STK can add an impulse to push karts away from the track in case
+    /** MK can add an impulse to push karts away from the track in case
      *  of a kart-track collision. This can be done in two ways: either
      *  apply the impulse in the direction of the normal, or towards the
      *  driveline. The later works nice as long as the kart is driving
@@ -337,7 +337,7 @@ public:
                                           {return m_collision_terrain_impulse;}
 
     // ------------------------------------------------------------------------
-    /** Returns what kind of impulse STK should use in case of a kart-track
+    /** Returns what kind of impulse MK should use in case of a kart-track
      *  collision. */
     TerrainImpulseType getTerrainImpulseType() const
                                              { return m_terrain_impulse_type; }

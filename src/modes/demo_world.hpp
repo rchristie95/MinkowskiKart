@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2012-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -23,9 +23,9 @@
 
 class Kart;
 
-/** \brief This class is used to show a demo of STK (e.g. after being
+/** \brief This class is used to show a demo of MK (e.g. after being
  *  idle for a certain amount of time, or on certain command line options.
- *  This allows STK to be used as a demo in a shop.
+ *  This allows MK to be used as a demo in a shop.
  *  \ingroup modes
  */
 class DemoWorld : public ProfileWorld

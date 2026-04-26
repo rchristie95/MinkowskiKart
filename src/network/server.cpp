@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Glenn De Jonghe
 //
 //  This program is free software; you can redistribute it and/or
@@ -157,8 +157,8 @@ Server::Server(const XMLNode& server_info) : m_supports_encrytion(true)
     xml.get("official", &m_official);
     if (m_official)
     {
-        m_server_owner_name = L"\u2606\u2605STK\u2605\u2606";
-        m_server_owner_lower_case_name = "stk";
+        m_server_owner_name = L"\u2606\u2605MK\u2605\u2606";
+        m_server_owner_lower_case_name = "mk";
         return;
     }
 

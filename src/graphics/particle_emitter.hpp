@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2011-2015  Joerg Henrichs, Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -44,7 +44,7 @@ class Track;
 class ParticleEmitter : public NoCopy
 {
 private:
-    /** STK particle systems. */
+    /** MK particle systems. */
     STKParticle*                     m_node;
 
     Vec3                             m_position;

@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -51,7 +51,7 @@ void AbstractStateManager::enterGameState()
 {
     if (GUIEngine::isNoGraphics())
     {
-        // No graphics STK won't push dialog
+        // No graphics MK won't push dialog
         setGameState(GAME);
         return;
     }

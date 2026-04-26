@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Glenn De Jonghe
 //
 //  This program is free software; you can redistribute it and/or
@@ -141,7 +141,7 @@ public:
     /** Returns the ID of this server. */
     const uint32_t getServerId() const { return m_server_id; }
     // ------------------------------------------------------------------------
-    /** Returns the user id in STK addon server of the server owner (WAN). */
+    /** Returns the user id in MK addon server of the server owner (WAN). */
     const uint32_t getServerOwner() const { return m_server_owner; }
     // ------------------------------------------------------------------------
     uint16_t getPrivatePort() const { return m_private_port; }

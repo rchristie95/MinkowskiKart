@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -58,7 +58,7 @@ namespace GUIEngine
      *
      * This is really only the irrLicht events bit, not to be confused with my own simple events dispatched
      * mainly through AbstractStateManager, and also to widgets (this class is some kind of bridge between
-     * the base irrLicht GUI engine and the STK layer on top of it)
+     * the base irrLicht GUI engine and the MK layer on top of it)
      *
      * \ingroup guiengine
      */

@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -242,7 +242,7 @@ bool WorldWithRank::isOnRoad(unsigned int kart_index) const
  *  case that a collision with the track happens during resetAllKarts: at this
  *  time m_kart_track_sector is not initialised (and has size 0), so it would
  *  trigger this assert. While this normally does not happen, it is useful for
- *  track designers that STK does not crash.
+ *  track designers that MK does not crash.
  *  \param kart Kart for which to return the sector.
  */
 int WorldWithRank::getSectorForKart(const AbstractKart *kart) const

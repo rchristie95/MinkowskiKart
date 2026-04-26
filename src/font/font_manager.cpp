@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -895,7 +895,7 @@ void FontManager::loadFonts()
 }   // loadFonts
 
 // ----------------------------------------------------------------------------
-/** Unit testing that will try to load all translations in STK, and discover if
+/** Unit testing that will try to load all translations in MK, and discover if
  *  there is any characters required by it are not supported in \ref
  *  m_normal_ttf.
  */

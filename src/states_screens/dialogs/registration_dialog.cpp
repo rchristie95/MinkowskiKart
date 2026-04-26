@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Glenn De Jonghe
 //
 //  This program is free software; you can redistribute it and/or
@@ -41,8 +41,8 @@ RegistrationDialog::RegistrationDialog() :
     LabelWidget* terms_widget = getWidget<LabelWidget>("terms");
 
     core::stringw terms = _("Please read the terms and conditions "
-        "for SuperTuxKart at '%s'. You must agree "
-        "to these terms in order to register an account for STK. "
+        "for MinkowskiKart at '%s'. You must agree "
+        "to these terms in order to register an account for MK. "
         "If you have any questions or comments regarding these "
         "terms, one of the members of the development team would gladly "
         "assist you.",

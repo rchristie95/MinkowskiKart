@@ -1,7 +1,7 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015 Ingo Ruhnke <grumbel@gmx.de>
-//  Copyright (C) 2006-2015 SuperTuxKart-Team
+//  Copyright (C) 2006-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -330,7 +330,7 @@ void MainLoop::updateRace(int ticks, bool fast_forward)
 
 //-----------------------------------------------------------------------------
 /** Run the actual main loop.
- *  The sequence in which various parts of STK are updated is:
+ *  The sequence in which various parts of MK are updated is:
  *  - Determine next time step size (`getLimitedDt`). This takes maximum fps
  *    into account (i.e. sleep if the fps would be too high), and will actually
  *    slow down the in-game clock if the fps are too low (if more than 3/60 of
@@ -383,10 +383,10 @@ void MainLoop::updateRace(int ticks, bool fast_forward)
  *    input handling follows late)
  *  - Updates the wiimote manager. This will read the data of all wiimotes
  *    and feed the corresponding events to the irrlicht event system.
- *  - Updates the STK internal gui engine. This updates all widgets, and
+ *  - Updates the MK internal gui engine. This updates all widgets, and
  *    e.g. takes care of the rotation of the karts in the KartSelection
  *    screen using the ModelViewWidget.
- *  - Updates STK's irrlicht driver `IrrDriver::update()`:
+ *  - Updates MK's irrlicht driver `IrrDriver::update()`:
  *    - Calls Irrlicht's `beginScene()` .
  *    - Renders the scene (several times with different viewport if
  *      split screen is being used)
@@ -520,7 +520,7 @@ void MainLoop::run()
             else if (!exist_host && !GUIEngine::isNoGraphics())
             {
                 // Avoid leaking widgets (model view especially) when closing
-                // STK, it crashes when vulkan validation is on if closing
+                // MK, it crashes when vulkan validation is on if closing
                 // during kart selection screen
                 MainMenuScreen* mms = MainMenuScreen::getInstance();
                 if (GUIEngine::getCurrentScreen() != mms)
@@ -776,7 +776,7 @@ void MainLoop::renderGUI(int phase, int loop_index, int loop_size)
 /* EOF */
 
 #ifdef IOS_STK
-// For iOS STK we need to make sure no rendering command is executed after pause
+// For iOS MK we need to make sure no rendering command is executed after pause
 // so we need a handle_app_event callback
 #include "SDL_events.h"
 extern "C" int handle_app_event(void* userdata, SDL_Event* event)

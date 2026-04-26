@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015 Steve Baker <sjbaker1@airmail.net>
 //  Copyright (C) 2008-2015 Steve Baker, Joerg Henrichs
 //
@@ -58,7 +58,7 @@ struct TextureSearchPath
 class FileManager : public NoCopy
 {
 public:
-    /** The various asset types (and directories) STK might request.
+    /** The various asset types (and directories) MK might request.
      *  The last entry ASSET_COUNT specifies the number of entries. */
     enum AssetType {ASSET_MIN,
                     CHALLENGE=ASSET_MIN,

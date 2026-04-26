@@ -1,5 +1,5 @@
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2019 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2019 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -110,7 +110,7 @@ DownloadAssets::DownloadAssets()
     getWidget<LabelWidget>("size")->setText(size, false);
 
     // I18N: In download assets dialog
-    core::stringw msg = _("SuperTuxKart will download full assets "
+    core::stringw msg = _("MinkowskiKart will download full assets "
         "(including high quality textures and music) for better "
         "gaming experience, this will use your mobile data if you don't have "
         "a wifi connection.");
@@ -118,7 +118,7 @@ DownloadAssets::DownloadAssets()
     if (SDL_IsAndroidTV())
     {
         // I18N: In download assets dialog
-        msg = _("SuperTuxKart will download full assets "
+        msg = _("MinkowskiKart will download full assets "
             "(including high quality textures and music) for better "
             "gaming experience.");
     }

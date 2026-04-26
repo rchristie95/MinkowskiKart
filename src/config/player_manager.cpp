@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2012-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -227,7 +227,7 @@ void PlayerManager::initRemainingData()
         m_player_data->getNodes("player", player_nodes);
     for (unsigned int i = 0; i<m_all_players.size(); i++)
     {
-        // On the first time STK is run, there is no player data,
+        // On the first time MK is run, there is no player data,
         // so just initialise the story and achievement data
         // structures
         if (!m_player_data)

@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2011-2015 Joerg Henrichs
 //                2013 Glenn De Jonghe
 //
@@ -92,9 +92,9 @@ namespace Online
         /** Cancel this request if it is active. */
         Synchronised<bool>              m_cancel;
 
-        /** If this request can be aborted (at the end of STK). Most requests
+        /** If this request can be aborted (at the end of MK). Most requests
          *  can, except the (final) logout and client-quit/signout-request,
-         *  which must be finished even when STK is quitting. */
+         *  which must be finished even when MK is quitting. */
         Synchronised<bool>              m_is_abortable;
 
         /** Set to though if the reply of the request is in and callbacks are

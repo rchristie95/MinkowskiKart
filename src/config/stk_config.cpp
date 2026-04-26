@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2006-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -91,7 +91,7 @@ STKConfig::~STKConfig()
 
 //-----------------------------------------------------------------------------
 /** Loads the stk configuration file. After loading it checks if all necessary
- *  values are actually defined, otherwise an error message is printed and STK
+ *  values are actually defined, otherwise an error message is printed and MK
  *  is aborted.
  *  /param filename Name of the configuration file to load.
  */
@@ -404,7 +404,7 @@ void STKConfig::getAllData(const XMLNode * root)
             else if (s == "cuda"                                   ) *p |= 512;
             else
             {
-                Log::fatal("STK-Config",
+                Log::fatal("MK-Config",
                            "Unknown option '%s' for solver-mode - ignored.",
                            s.c_str());
             }

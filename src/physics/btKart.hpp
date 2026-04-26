@@ -105,7 +105,7 @@ private:
     /** Index of the forward axis. */
     int                 m_indexForwardAxis;
 
-    /** The STK kart object which uses this vehicle. This is mostly used to
+    /** The MK kart object which uses this vehicle. This is mostly used to
      *  get access to the kart properties, which also define physics
      *  properties. */
     Kart               *m_kart;
@@ -136,7 +136,7 @@ public:
     /** Constructor to create a car from an existing rigidbody.
      *  \param chassis The rigid body to use as chassis.
      *  \param raycaster The raycast object to use.
-     *  \paran kart The STK kart object that uses this vehicle
+     *  \paran kart The MK kart object that uses this vehicle
      *         (this is used to get access to the kart properties).
      */
                        btKart(btRigidBody* chassis,

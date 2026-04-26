@@ -1,5 +1,5 @@
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2019 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2019 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -200,7 +200,7 @@ stk_inet_pton6(const char *src, void *dest)
 }
 
 // ============================================================================
-// Android STK seems to crash when using inet_ntop so we copy it from linux
+// Android MK seems to crash when using inet_ntop so we copy it from linux
 static const char *
 stk_inet_ntop4(const u_char *src, char *dst, socklen_t size)
 {

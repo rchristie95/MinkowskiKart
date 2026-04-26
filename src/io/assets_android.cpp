@@ -1,5 +1,5 @@
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2014-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2014-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -91,7 +91,7 @@ void AssetsAndroid::init()
 
     std::string app_dir_name = ANDROID_APP_DIR_NAME;
 
-    // Check if STK data for current version is available somewhere
+    // Check if MK data for current version is available somewhere
     for (std::string path : paths)
     {
         Log::info("AssetsAndroid", "Check data files in: %s", path.c_str());
@@ -118,13 +118,13 @@ void AssetsAndroid::init()
     }
     
     // If data for current version is not available, then try to find any other
-    // version, so that we won't accidentaly create second STK directory in
+    // version, so that we won't accidentaly create second MK directory in
     // different place
     if (m_stk_dir.size() == 0)
     {
         for (std::string path : paths)
         {
-            Log::info("AssetsAndroid", "Check data files for different STK "
+            Log::info("AssetsAndroid", "Check data files for different MK "
                                        "version in: %s", path.c_str());
                                        
             if (!isWritable(path))
@@ -193,7 +193,7 @@ void AssetsAndroid::init()
         }
     }
 
-    // We can't continue if STK dir has not been found
+    // We can't continue if MK dir has not been found
     if (m_stk_dir.size() == 0)
     {
         Log::fatal("AssetsAndroid", "Fatal error: Couldn't find Supertuxkart "
@@ -464,7 +464,7 @@ bool AssetsAndroid::extractFile(std::string filename)
 }
 
 //-----------------------------------------------------------------------------
-/** A function that removes whole STK data directory
+/** A function that removes whole MK data directory
  */
 void AssetsAndroid::removeData()
 {

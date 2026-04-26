@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Lucas Baudin
 //            (C) 2011-2015 Joerg Henrichs
 //            (C) 2013-2015 Glenn De Jonghe
@@ -77,8 +77,8 @@ namespace Online
         *  server etc).
         *  IPERM_NOT_ASKED: The user needs to be asked if he wants to
         *                   grant permission
-        *  IPERM_ALLOWED:   STK is allowed to access server.
-        *  IPERM_NOT_ALLOWED: STK must not access external servers. */
+        *  IPERM_ALLOWED:   MK is allowed to access server.
+        *  IPERM_NOT_ALLOWED: MK must not access external servers. */
         enum InternetPermission
         {
             IPERM_NOT_ASKED   = 0,
@@ -99,7 +99,7 @@ namespace Online
             /** Signal an abort in case that a download is still happening. */
             Synchronised<bool>        m_abort;
 
-            /** Signal an pause before STK goes into background in iOS. */
+            /** Signal an pause before MK goes into background in iOS. */
             std::atomic_bool m_paused;
 
             /** The polling interval while a game is running. */

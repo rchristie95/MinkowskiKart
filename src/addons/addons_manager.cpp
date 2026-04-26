@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Lucas Baudin
 //
 //  This program is free software; you can redistribute it and/or
@@ -110,7 +110,7 @@ void AddonsManager::init(const XMLNode *xml,
         setErrorState();
         NewsManager::get()->addNewsMessage(
             NewsManager::NTYPE_MAINMENU,
-            _("Failed to connect to the SuperTuxKart add-ons server."));
+            _("Failed to connect to the MinkowskiKart add-ons server."));
         return;
     }
 
@@ -640,7 +640,7 @@ bool AddonsManager::uninstall(const Addon &addon)
 // ----------------------------------------------------------------------------
 /** Saves the information about installed addons and cached icons to
  *  addons_installed.xml. If this is not called, information about downloaded
- *  icons is lost (and will trigger a complete redownload when STK is started
+ *  icons is lost (and will trigger a complete redownload when MK is started
  *  next time).
  */
 void AddonsManager::saveInstalled()

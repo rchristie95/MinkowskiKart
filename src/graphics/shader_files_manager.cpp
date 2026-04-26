@@ -1,5 +1,5 @@
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -150,7 +150,7 @@ ShaderFilesManager::SharedShader ShaderFilesManager::loadShader
     // Some drivers report that the compute shaders extension is available,
     // but they report only OpenGL 3.x version, and thus these extensions
     // must be enabled manually. Otherwise the shaders compilation will fail
-    // because STK tries to use extensions which are available, but disabled
+    // because MK tries to use extensions which are available, but disabled
     // by default.
     if (type == GL_COMPUTE_SHADER)
     {

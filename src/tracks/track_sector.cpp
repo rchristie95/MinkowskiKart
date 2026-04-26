@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2011-2015  Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -149,7 +149,7 @@ void TrackSector::rescue()
     // Using the predecessor has the additional advantage (besides punishing
     // the player a bit more) that it makes it less likely to fall in a
     // rescue loop since the kart moves back on each attempt. At this stage
-    // STK does not keep track of where the kart is coming from, so always
+    // MK does not keep track of where the kart is coming from, so always
     // use the first predecessor, which is the one on the main driveline.
     m_current_graph_node = DriveGraph::get()->getNode(m_current_graph_node)
                                             ->getPredecessor(0);

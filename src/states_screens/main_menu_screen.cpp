@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -704,7 +704,7 @@ void MainMenuScreen::onDisabledItemClicked(const std::string& item)
             new MessageDialog( _("Sorry, an error occurred while contacting "
                                  "the add-ons website. Make sure you are "
                                  "connected to the Internet and that "
-                                 "SuperTuxKart is not blocked by a firewall"));
+                                 "MinkowskiKart is not blocked by a firewall"));
         }
         else if (addons_manager->isLoading())
         {
@@ -729,7 +729,7 @@ bool MainMenuScreen::onEscapePressed()
         }   // onConfirm
     };   // ConfirmClose
 
-    new MessageDialog(_("Are you sure you want to quit STK?"),
+    new MessageDialog(_("Are you sure you want to quit MK?"),
         MessageDialog::MESSAGE_DIALOG_YESNO, new ConfirmClose(),
         true/*delete_listener*/);
     return false;

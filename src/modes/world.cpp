@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2006-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2006-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -1279,7 +1279,7 @@ void World::update(int ticks)
 }   // update
 
 // ----------------------------------------------------------------------------
-/** Only updates the track. The order in which the various parts of STK are
+/** Only updates the track. The order in which the various parts of MK are
  *  updated is quite important (i.e. the track can't be updated as part of
  *  the standard update call):
  *  the track must be updated after updating the karts (otherwise the

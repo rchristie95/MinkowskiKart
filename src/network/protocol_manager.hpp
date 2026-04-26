@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2013-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2013-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -63,7 +63,7 @@ class STKPeer;
  *     events (i.e. messages), and updates each protocol using
  *     Protocol::update().
  *
- *  Since the STK main loop is not thread safe, any game changing events must
+ *  Since the MK main loop is not thread safe, any game changing events must
  *  (e.g. events that push a new screen, ...) be processed synchronoysly.
  *  On the other hand, asynchronous updates will be handled much more
  *  frequently, so synchronous updates should be avoided as much as possible.
@@ -79,9 +79,9 @@ class STKPeer;
  *  Events received by ENET are queried and then handled by STKHost::mainLoop.
  *  Besides messages these events also include connection and disconnection
  *  notifications. Protocols can decide to receives those notifications or
- *  not. The Enet events are converted into STK events, which store e.g. the
+ *  not. The Enet events are converted into MK events, which store e.g. the
  *  sender as STKPeer info, and the message data is converted into a
- *  NetworkString. This STK event is then forwarded to the corresponding
+ *  NetworkString. This MK event is then forwarded to the corresponding
  *  protocols.
  *
  *  There are some protocols that can have more than one instance running at

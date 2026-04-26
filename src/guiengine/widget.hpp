@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
@@ -678,7 +678,7 @@ namespace GUIEngine
 
         /**
          * \brief adds a particular badge to this widget.
-         * The STK widget toolkit has support for "badges". Badges are icon overlays displayed
+         * The MK widget toolkit has support for "badges". Badges are icon overlays displayed
          * on the corner of a widget; they are useful to convey information visually.
          */
         void setBadge(BadgeType badge_bit)

@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
 
 class FaceTTF;
 
-/** A font which uses a more cartonish style TTF to render big numbers in STK.
+/** A font which uses a more cartonish style TTF to render big numbers in MK.
  *  \ingroup font
  */
 class DigitFace : public FontWithFace

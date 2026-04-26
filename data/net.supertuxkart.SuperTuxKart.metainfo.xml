@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>net.supertuxkart.SuperTuxKart</id>
+  <id>net.supertuxkart.MinkowskiKart</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0+</project_license>
   <launchable type="desktop-id">supertuxkart.desktop</launchable>
-  <name>SuperTuxKart</name>
+  <name>MinkowskiKart</name>
   <summary>A 3D open-source kart racing game</summary>
   <summary xml:lang="zh-Hant-TW">3D 開源卡丁車賽車遊戲</summary>
   <summary xml:lang="zh-Hant-HK">3D 開源卡丁車賽車遊戲</summary>
@@ -51,48 +51,48 @@
   <summary xml:lang="ar">لعبة سباق سيارات ثلاثية الأبعاد مفتوحة المصدر</summary>
   <description>
     <p>
-      Karts. Nitro. Action! SuperTuxKart is a 3D open-source arcade racer with a variety of characters, tracks, and modes to play. Our aim is to create a game that is more fun than realistic, and provide an enjoyable experience for all ages.
+      Karts. Nitro. Action! MinkowskiKart is a 3D open-source arcade racer with a variety of characters, tracks, and modes to play. Our aim is to create a game that is more fun than realistic, and provide an enjoyable experience for all ages.
     </p>
-    <p xml:lang="zh-Hant-TW">卡丁車。氮氣。行動！ SuperTuxKart 是一款 3D 開源卡丁車賽車遊戲，具有多種角色，賽道和遊戲模式。我們的目標是創造一款比逼真更有趣的遊戲，並為所有年齡層的用戶提供愉悅的體驗。</p>
-    <p xml:lang="zh-Hant-HK">卡丁車。氮氣。行動！ SuperTuxKart 是一款 3D 開源卡丁車賽車遊戲，具有多種角色，賽道和遊戲模式。我們的目標是創造一款比逼真更有趣的遊戲，並為所有年齡層的用戶提供愉悅的體驗。</p>
-    <p xml:lang="zh-Hans-CN">引擎轰鸣，燃气喷涌，正是赛车启动时！SuperTuxKart 是一款开源的三维街机赛车游戏，内含多种角色、赛道和游戏模式。我们的目标是创造一款比现实世界的卡丁车更有趣的、老少皆宜的游戏。</p>
-    <p xml:lang="tr">Araçlar. Nitro. Aksiyon! SuperTuxKart çeşitli karakterler, pistler ve oyun modlarına sahip 3D açık kaynaklı bir yarış oyunudur. Amacımız gerçekçiden çok eğlenceli bir oyun yaratmak ve her yaştaki insanın tadını çıkarabileceği bir deneyim sağlamaktır. </p>
-    <p xml:lang="th">รถแข่ง ไนโตร. แอกชั่น! SuperTuxKart เป็นเกมโอเพ่นซอร์สแข่งรถแบบอาเขต 3 มิติที่มีตัวละคร สนามแข่ง และโหมดต่างๆ ให้เล่นมากมาย เป้าหมายของเราคือการสร้างเกมที่สนุกกว่าความเป็นจริง และมอบประสบการณ์ที่สนุกสนานสำหรับทุกวัย</p>
-    <p xml:lang="sv">Karter. Nitro. Handling! SuperTuxKart är en 3D-arkadracer med öppen källkod med en mängd olika karaktärer, banor och lägen att spela. Vårt mål är att skapa ett spel som är roligare än realistiskt och ger en trevlig upplevelse för alla åldrar.</p>
+    <p xml:lang="zh-Hant-TW">卡丁車。氮氣。行動！ MinkowskiKart 是一款 3D 開源卡丁車賽車遊戲，具有多種角色，賽道和遊戲模式。我們的目標是創造一款比逼真更有趣的遊戲，並為所有年齡層的用戶提供愉悅的體驗。</p>
+    <p xml:lang="zh-Hant-HK">卡丁車。氮氣。行動！ MinkowskiKart 是一款 3D 開源卡丁車賽車遊戲，具有多種角色，賽道和遊戲模式。我們的目標是創造一款比逼真更有趣的遊戲，並為所有年齡層的用戶提供愉悅的體驗。</p>
+    <p xml:lang="zh-Hans-CN">引擎轰鸣，燃气喷涌，正是赛车启动时！MinkowskiKart 是一款开源的三维街机赛车游戏，内含多种角色、赛道和游戏模式。我们的目标是创造一款比现实世界的卡丁车更有趣的、老少皆宜的游戏。</p>
+    <p xml:lang="tr">Araçlar. Nitro. Aksiyon! MinkowskiKart çeşitli karakterler, pistler ve oyun modlarına sahip 3D açık kaynaklı bir yarış oyunudur. Amacımız gerçekçiden çok eğlenceli bir oyun yaratmak ve her yaştaki insanın tadını çıkarabileceği bir deneyim sağlamaktır. </p>
+    <p xml:lang="th">รถแข่ง ไนโตร. แอกชั่น! MinkowskiKart เป็นเกมโอเพ่นซอร์สแข่งรถแบบอาเขต 3 มิติที่มีตัวละคร สนามแข่ง และโหมดต่างๆ ให้เล่นมากมาย เป้าหมายของเราคือการสร้างเกมที่สนุกกว่าความเป็นจริง และมอบประสบการณ์ที่สนุกสนานสำหรับทุกวัย</p>
+    <p xml:lang="sv">Karter. Nitro. Handling! MinkowskiKart är en 3D-arkadracer med öppen källkod med en mängd olika karaktärer, banor och lägen att spela. Vårt mål är att skapa ett spel som är roligare än realistiskt och ger en trevlig upplevelse för alla åldrar.</p>
     <p xml:lang="sr-Cyrl">Колица. Нитро. Акање! Супертаксколица је аркадна просторна тркачка игра слободног кода са мноштвом ликова, стаза и начина играња. Наш циљ је да створимо игру која ће бити више забавна него ли природног изгледа, и која може пружити пријатно искуство свим нараштајима.</p>
-    <p xml:lang="sl">Vozila. Nitro. Akcija! SuperTuxKart je 3D odprtokodna arkadna dirkalnica s pestrim naborom voznikov, stez in igralnih načinov. Namen igre je prej zabava kot realizem in prijetna izkušnja za igralce vseh starosti.</p>
-    <p xml:lang="sk">Motokáry. Nitro. Akcia! SuperTuxKart je 3D závodná hra v štýle arkády s otvoreným zdrojovým kódom a množstvom postáv, tratí a herných režimov. Našim cieľom je vytvoriť hru,  v ktorej ide viac o zábavu ako o autentickosť a poskytnúť dobrý herný zážitok hráčovi každého veku.</p>
-    <p xml:lang="rue">Моторвозикы. Нітро. Екшен! SuperTuxKart се 3ьохмірна аркадна гонитва яка має одкрытый зачаточный код, тай рузні особы, автомапы и режімы для бавкы. Наша цїль учинити бавку яка май весела, чим реалістічна и натїшит бавлячув усьых рокув.</p>
-    <p xml:lang="ru">Карты. Нитро. Скорость! SuperTuxKart — это свободная трёхмерная аркадная гоночная игра с множеством персонажей, трасс и режимов. Прежде всего мы стремимся создать весёлую и приятную игру, подходящую для всех возрастов.</p>
-    <p xml:lang="ro">Carturi. Nitro. Acțiune! SuperTuxKart este un joc de curse 3D cu sursa deschisă și conține o varietate de caractere, piste, și moduri de joc. Scopul nostru este să creăm un joc care este mai amuzant decât realistic, și să oferim o experiență agreabilă pentru toate vârstele.</p>
-    <p xml:lang="pt-BR">Karts. Nitro. Ação! O SuperTuxKart é um jogo de corrida tridimensional e de código aberto, com grande variedade de personagens, pistas e modos de jogo. Focamos mais na diversão do que no realismo, procurando agradar a todas as idades.</p>
-    <p xml:lang="pt">Karts. Nitro. Ação! SuperTuxKart é um arcada de corrida 3D em código aberto com uma variedade de personagens, pistas e modos para jogar. O nosso objetivo é criar um jogo que seja mais divertido do que realista, e propiciar uma experiência agradável para todas as idades.</p>
-    <p xml:lang="pl">Gokarty. Nitro. Akcja! SuperTuxKart to trójwymiarowa zręcznościowa gra wyścigowa open-source z wieloma postaciami, trasami i trybami gry. Naszym celem jest stworzenie gry, która będzie bardziej zabawna niż realistyczna i zapewni przyjemne wrażenia dla wszystkich grup wiekowych.</p>
-    <p xml:lang="oc">Karts. Nitròs. Accion ! SuperTuxKart es un jòc de corsa 3D de còde dobèrt amb una granda varietat de personatges, traces, e mòdes de jòc. La nòstra tòca es de crear un jòc qu'es mai amusant que los reals, e de provesir una bona experiéncia per totas las edats.</p>
-    <p xml:lang="nn">Racerkøyretøy – nitroar – action! SuperTuxKart eit racerspel i 3D, med open kjeldekode og mange ulike køyretøy, baner og spel­modusar. Målet er eit spel med meir vekt på underhaldning enn på realisme – eit som gjev mykje moro for folk i alle aldrar.</p>
-    <p xml:lang="nl">Karts, turbogas, actie! SuperTuxKart is een opensource 3D-racespel met diverse personages, parcours en spelmodi. Ons doel is niet om een zo realistisch mogelijk spel te maken, maar gewoon een spel dat leuk is. Een spel waar iedereen - ongeacht leeftijd - plezier aan beleeft.</p>
+    <p xml:lang="sl">Vozila. Nitro. Akcija! MinkowskiKart je 3D odprtokodna arkadna dirkalnica s pestrim naborom voznikov, stez in igralnih načinov. Namen igre je prej zabava kot realizem in prijetna izkušnja za igralce vseh starosti.</p>
+    <p xml:lang="sk">Motokáry. Nitro. Akcia! MinkowskiKart je 3D závodná hra v štýle arkády s otvoreným zdrojovým kódom a množstvom postáv, tratí a herných režimov. Našim cieľom je vytvoriť hru,  v ktorej ide viac o zábavu ako o autentickosť a poskytnúť dobrý herný zážitok hráčovi každého veku.</p>
+    <p xml:lang="rue">Моторвозикы. Нітро. Екшен! MinkowskiKart се 3ьохмірна аркадна гонитва яка має одкрытый зачаточный код, тай рузні особы, автомапы и режімы для бавкы. Наша цїль учинити бавку яка май весела, чим реалістічна и натїшит бавлячув усьых рокув.</p>
+    <p xml:lang="ru">Карты. Нитро. Скорость! MinkowskiKart — это свободная трёхмерная аркадная гоночная игра с множеством персонажей, трасс и режимов. Прежде всего мы стремимся создать весёлую и приятную игру, подходящую для всех возрастов.</p>
+    <p xml:lang="ro">Carturi. Nitro. Acțiune! MinkowskiKart este un joc de curse 3D cu sursa deschisă și conține o varietate de caractere, piste, și moduri de joc. Scopul nostru este să creăm un joc care este mai amuzant decât realistic, și să oferim o experiență agreabilă pentru toate vârstele.</p>
+    <p xml:lang="pt-BR">Karts. Nitro. Ação! O MinkowskiKart é um jogo de corrida tridimensional e de código aberto, com grande variedade de personagens, pistas e modos de jogo. Focamos mais na diversão do que no realismo, procurando agradar a todas as idades.</p>
+    <p xml:lang="pt">Karts. Nitro. Ação! MinkowskiKart é um arcada de corrida 3D em código aberto com uma variedade de personagens, pistas e modos para jogar. O nosso objetivo é criar um jogo que seja mais divertido do que realista, e propiciar uma experiência agradável para todas as idades.</p>
+    <p xml:lang="pl">Gokarty. Nitro. Akcja! MinkowskiKart to trójwymiarowa zręcznościowa gra wyścigowa open-source z wieloma postaciami, trasami i trybami gry. Naszym celem jest stworzenie gry, która będzie bardziej zabawna niż realistyczna i zapewni przyjemne wrażenia dla wszystkich grup wiekowych.</p>
+    <p xml:lang="oc">Karts. Nitròs. Accion ! MinkowskiKart es un jòc de corsa 3D de còde dobèrt amb una granda varietat de personatges, traces, e mòdes de jòc. La nòstra tòca es de crear un jòc qu'es mai amusant que los reals, e de provesir una bona experiéncia per totas las edats.</p>
+    <p xml:lang="nn">Racerkøyretøy – nitroar – action! MinkowskiKart eit racerspel i 3D, med open kjeldekode og mange ulike køyretøy, baner og spel­modusar. Målet er eit spel med meir vekt på underhaldning enn på realisme – eit som gjev mykje moro for folk i alle aldrar.</p>
+    <p xml:lang="nl">Karts, turbogas, actie! MinkowskiKart is een opensource 3D-racespel met diverse personages, parcours en spelmodi. Ons doel is niet om een zo realistisch mogelijk spel te maken, maar gewoon een spel dat leuk is. Een spel waar iedereen - ongeacht leeftijd - plezier aan beleeft.</p>
     <p xml:lang="ml">കാർട്ടുകൾ. നൈട്രോ. ആക്ഷൻ! സൂപ്പർടക്സ്കാർട്ട് വൈവിധ്യമാർന്ന കഥാപാത്രങ്ങളും, സ്ഥലങ്ങളും, കളിക്കുവാൻ പല മോഡുകളും അണിനിരക്കുന്ന ഒരു സ്വതന്ത്ര 3D ആർക്കേഡ് റേസറാണ്. യാഥാർത്ഥ്യം എന്നതിലുപരി രസകരമായ, എല്ലാ പ്രായക്കാരിലും ആസ്വാദ്യാനുഭവം ഉളവാക്കുന്ന ഒരു ഗെയിം സൃഷ്ടിക്കുക എന്നതാണ് ഞങ്ങളുടെ ലക്ഷ്യം.</p>
     <p xml:lang="mk">Возила. Нитро. Акција! Супертукскарт е 3Д отворен-код аркаден тркач со разновидност од ликови, стази и режими за играње. Нашата цел е да создадеме игра која што е повеќе интересна отколку реална, и да обезбедиме пријатно искуство за сите возрасти. </p>
     <p xml:lang="ko">카트. 니트로. 액션! 슈퍼턱스카트는 다양한 캐릭터, 트랙, 플레이모드를 가진 3D아케이드 경주입니다. 우리의 목표는 현실보다 재밌는 게임을 개발하고, 모든 연령대에 재밌는 경험을 제공하는 것입니다.</p>
-    <p xml:lang="ja">カート、ニトロ、アクション! SuperTuxKartは3Dオープンソースのアーケードレースゲームで、様々なキャラクター、トラック、モードが遊べます。私たちは、リアルさよりも楽しさを追求し、あらゆる年齢層の方に楽しんでいただけるゲームを目指しています。</p>
-    <p xml:lang="it">Kart. Nitro. Azione! SuperTuxKart è un gioco open-source 3D di corsa con vari personaggi, piste e modalità giocabili. Il nostro obbiettivo è quello di creare un gioco che sia più divertente che realistico e che fornisca una piacevole esperienza per qualunque età.</p>
-    <p xml:lang="id">Kart. Nitro. Mulai! SuperTuxKart adalah sebuah permainan balap 3D sumber-terbuka dengan sejumlah karakter, lintasan, dan mode untuk dimainkan. Target kami adalah membuat sebuah permainan yang lebih mengarah ke kesenangan daripada realistis, dan memberikan pengalaman yang mengasyikkan untuk semua umur.</p>
-    <p xml:lang="hu">Gokartok. Nitró. Akcíó! A SuperTuxKart egy 3D-s, nyílt forráskódú versenyjáték számos karakterrel, pályával és játékmóddal. A célunk, hogy a játék szórakoztatóbb legyen, mintsem valósághű, és szórakoztató élményt nyújtson minden korosztálynak.</p>
-    <p xml:lang="he">מכוניות. גז טורבו. אקשן! SuperTuxKart הוא משחק ארקייד תלת־ממדי בקוד פתוח של תחרויות מרוץ עם מגוון דמויות, מסלולים, ומצבי משחק. מטרתנו ליצור משחק מהנה יותר מהמציאות, ולספק חוויה מהנה לכל הגילאים.</p>
-    <p xml:lang="gl">Karts. Nitro. Action! SuperTuxKart é un xogo de carreiras arcade en 3D de código aberto con varios personaxes, circuítos e modos para xogar. O noso obxectivo é crear un xogo que sexa máis divertido que realista e ofrecer unha experiencia agradable para todas as idades.</p>
+    <p xml:lang="ja">カート、ニトロ、アクション! MinkowskiKartは3Dオープンソースのアーケードレースゲームで、様々なキャラクター、トラック、モードが遊べます。私たちは、リアルさよりも楽しさを追求し、あらゆる年齢層の方に楽しんでいただけるゲームを目指しています。</p>
+    <p xml:lang="it">Kart. Nitro. Azione! MinkowskiKart è un gioco open-source 3D di corsa con vari personaggi, piste e modalità giocabili. Il nostro obbiettivo è quello di creare un gioco che sia più divertente che realistico e che fornisca una piacevole esperienza per qualunque età.</p>
+    <p xml:lang="id">Kart. Nitro. Mulai! MinkowskiKart adalah sebuah permainan balap 3D sumber-terbuka dengan sejumlah karakter, lintasan, dan mode untuk dimainkan. Target kami adalah membuat sebuah permainan yang lebih mengarah ke kesenangan daripada realistis, dan memberikan pengalaman yang mengasyikkan untuk semua umur.</p>
+    <p xml:lang="hu">Gokartok. Nitró. Akcíó! A MinkowskiKart egy 3D-s, nyílt forráskódú versenyjáték számos karakterrel, pályával és játékmóddal. A célunk, hogy a játék szórakoztatóbb legyen, mintsem valósághű, és szórakoztató élményt nyújtson minden korosztálynak.</p>
+    <p xml:lang="he">מכוניות. גז טורבו. אקשן! MinkowskiKart הוא משחק ארקייד תלת־ממדי בקוד פתוח של תחרויות מרוץ עם מגוון דמויות, מסלולים, ומצבי משחק. מטרתנו ליצור משחק מהנה יותר מהמציאות, ולספק חוויה מהנה לכל הגילאים.</p>
+    <p xml:lang="gl">Karts. Nitro. Action! MinkowskiKart é un xogo de carreiras arcade en 3D de código aberto con varios personaxes, circuítos e modos para xogar. O noso obxectivo é crear un xogo que sexa máis divertido que realista e ofrecer unha experiencia agradable para todas as idades.</p>
     <p xml:lang="gd">Cartaichean. Naidhtreo. Steall ort! ’S e geama rèisidh 3D le bun-tùs fosgailte a th’ ann an SuperTxKart le pailteas phearsachan, slighean is modhan cluiche. Tha sinn ag amas geama a chruthachadh a tha spòrsail seach fìor-riochdail ’s a bhios tlachdmhor do chluicheadairean de gach aois.</p>
-    <p xml:lang="fr">Karts. Nitro. Action ! SuperTuxKart est un jeu de course arcade en 3D avec une variété de personnages, pistes et modes de jeu. Notre objectif est de créer un jeu orienté vers le divertissement plutôt que le réalisme et d'offrir une expérience agréable pour les joueurs de tous ages.</p>
-    <p xml:lang="fil">Mga Kart, Nitro, Aksyon! Ang SuperTuxKart ay isang 3D at open-source na arcade racer na may iba't ibang character, track, at modes na laruin. Ang aming layunin ay lumikha ng isang laro na mas masaya kaysa makatotohanan, at magbigay ng kasiya-siyang karanasan para sa lahat ng edad. </p>
-    <p xml:lang="fi">Ajokit. Nitrot. Toimintaa! SuperTuxKart on 3D avoimen lähdekoodin kolikkopelityylinen kilvanajopeli jossa on kirjava valikoima erilaisia hahmoja, ratoja, ja pelityyppejä. Tavoitteenamme on luoda peli joka on enemmänkin hauska kuin todenmukainen, sekä tarjota nautittava pelikokemus kaikenikäisille.</p>
-    <p xml:lang="es">Karts. Nitro. ¡Acción! SuperTuxKart es un juego de carreras 3D de código abierto con una gran variedad de personajes, circuitos y formas de jugar. Nuestro objectivo es crear un juego que sea más divertido que realista, y proporcionar una experiencia agradable para todas las edades.</p>
-    <p xml:lang="el">Καρτ. Nitro. Πάμε! To SuperTuxKart είναι ένα τρισδιάστατο, ανοικτού λογισμικού ηλεκτρονικό παιχνίδι αγώνων δρόμου, με ποικιλία χαρακτήρων, πιστών και κατηγοριών για να παίξετε. Στόχος μας είναι να φτιάξουμε ένα παιχνίδι το οποίο είναι περισσότερο διασκεδαστικό παρά ρεαλιστικό και να παρέχει μια ευχάριστη εμπειρία για όλες τις ηλικίες. </p>
-    <p xml:lang="de">Karts. Nitro. Action! SuperTuxKart ist ein Open-Source 3D-Arcade-Rennspiel mit einer Vielzahl von Charakteren, Strecken und Spielmodi. Unser Ziel ist es, ein Spiel zu schaffen, das mehr Spaß macht als realistisch ist, und eine unterhaltsame Erfahrung für alle Altersgruppen bietet.</p>
-    <p xml:lang="da">Karts. nitro. action! SuperTuxKart er en 3D-arkaderacer i open source med et udvalg af karakterer, spor og tilstande som kan spilles. Vores mål er at skabe et spil som er mere sjovt end det er realistisk og give alle aldersgrupper en god oplevelse.</p>
-    <p xml:lang="cy">Cartiau. Nitro. Antur! Mae SuperTuxKart yn gêm rasio arcêd cod agored 3D gydag amrywiaeth o gymeriadau, traciau a moddau i'w chwarae. Ein nod yw creu gêm sy'n fwy o hwyl na realistig, ac yn cynnig profiad pleserus i bob oed.</p>
-    <p xml:lang="cs">Motokáry. Nitro. Akce! SuperTuxKart je 3D arkádová závodní hra s otevřeným zdrojovým kódem, která nabízí různé postavy, tratě a režimy. Naším cílem je vytvořit hru, která je spíš zábavnější než realistická a poskytne příjemný zážitek všem věkovým skupinám.</p>
-    <p xml:lang="ca">Karts. Nitro. Acció! El SuperTuxKart és un joc de curses 3D de codi obert amb una gran varietat de personatges, circuits i maneres de jugar. El nostre objectiu és crear un joc que sigui més divertit que realista, i proporcionar una experiència agradable per a totes les edats.</p>
+    <p xml:lang="fr">Karts. Nitro. Action ! MinkowskiKart est un jeu de course arcade en 3D avec une variété de personnages, pistes et modes de jeu. Notre objectif est de créer un jeu orienté vers le divertissement plutôt que le réalisme et d'offrir une expérience agréable pour les joueurs de tous ages.</p>
+    <p xml:lang="fil">Mga Kart, Nitro, Aksyon! Ang MinkowskiKart ay isang 3D at open-source na arcade racer na may iba't ibang character, track, at modes na laruin. Ang aming layunin ay lumikha ng isang laro na mas masaya kaysa makatotohanan, at magbigay ng kasiya-siyang karanasan para sa lahat ng edad. </p>
+    <p xml:lang="fi">Ajokit. Nitrot. Toimintaa! MinkowskiKart on 3D avoimen lähdekoodin kolikkopelityylinen kilvanajopeli jossa on kirjava valikoima erilaisia hahmoja, ratoja, ja pelityyppejä. Tavoitteenamme on luoda peli joka on enemmänkin hauska kuin todenmukainen, sekä tarjota nautittava pelikokemus kaikenikäisille.</p>
+    <p xml:lang="es">Karts. Nitro. ¡Acción! MinkowskiKart es un juego de carreras 3D de código abierto con una gran variedad de personajes, circuitos y formas de jugar. Nuestro objectivo es crear un juego que sea más divertido que realista, y proporcionar una experiencia agradable para todas las edades.</p>
+    <p xml:lang="el">Καρτ. Nitro. Πάμε! To MinkowskiKart είναι ένα τρισδιάστατο, ανοικτού λογισμικού ηλεκτρονικό παιχνίδι αγώνων δρόμου, με ποικιλία χαρακτήρων, πιστών και κατηγοριών για να παίξετε. Στόχος μας είναι να φτιάξουμε ένα παιχνίδι το οποίο είναι περισσότερο διασκεδαστικό παρά ρεαλιστικό και να παρέχει μια ευχάριστη εμπειρία για όλες τις ηλικίες. </p>
+    <p xml:lang="de">Karts. Nitro. Action! MinkowskiKart ist ein Open-Source 3D-Arcade-Rennspiel mit einer Vielzahl von Charakteren, Strecken und Spielmodi. Unser Ziel ist es, ein Spiel zu schaffen, das mehr Spaß macht als realistisch ist, und eine unterhaltsame Erfahrung für alle Altersgruppen bietet.</p>
+    <p xml:lang="da">Karts. nitro. action! MinkowskiKart er en 3D-arkaderacer i open source med et udvalg af karakterer, spor og tilstande som kan spilles. Vores mål er at skabe et spil som er mere sjovt end det er realistisk og give alle aldersgrupper en god oplevelse.</p>
+    <p xml:lang="cy">Cartiau. Nitro. Antur! Mae MinkowskiKart yn gêm rasio arcêd cod agored 3D gydag amrywiaeth o gymeriadau, traciau a moddau i'w chwarae. Ein nod yw creu gêm sy'n fwy o hwyl na realistig, ac yn cynnig profiad pleserus i bob oed.</p>
+    <p xml:lang="cs">Motokáry. Nitro. Akce! MinkowskiKart je 3D arkádová závodní hra s otevřeným zdrojovým kódem, která nabízí různé postavy, tratě a režimy. Naším cílem je vytvořit hru, která je spíš zábavnější než realistická a poskytne příjemný zážitek všem věkovým skupinám.</p>
+    <p xml:lang="ca">Karts. Nitro. Acció! El MinkowskiKart és un joc de curses 3D de codi obert amb una gran varietat de personatges, circuits i maneres de jugar. El nostre objectiu és crear un joc que sigui més divertit que realista, i proporcionar una experiència agradable per a totes les edats.</p>
     <p xml:lang="bg">Колички. Азот. Екшън! Супер Тъкс Карт е 3-измерна състезателна игра с отворен код, която включва множество персонажи, писти и режими на игра. Целта ни е да създадем игра, която е повече забавна, отколкото реалистична – такава, която предоставя приятно изживяване за хора от всички възрасти.</p>
-    <p xml:lang="be-Cyrl">Карты. Нітра. Старт! SuperTuxKart - гэта 3D аркадныя гонкі з адкрытым зыходным кодам і разнастайнымі персанажамі, трасамі і рэжымамі гульні. Наша мэта - стварыць гульню, ад якой гульцы любога ўзросту атрымаюць задавальненне, з большым акцэнтам на працэсс гульні, чым на рэалістычнасць.</p>
+    <p xml:lang="be-Cyrl">Карты. Нітра. Старт! MinkowskiKart - гэта 3D аркадныя гонкі з адкрытым зыходным кодам і разнастайнымі персанажамі, трасамі і рэжымамі гульні. Наша мэта - стварыць гульню, ад якой гульцы любога ўзросту атрымаюць задавальненне, з большым акцэнтам на працэсс гульні, чым на рэалістычнасць.</p>
     <p xml:lang="ar">شغل العربة. جهز النيترو. انطلق! لعبة سوبرتكس‌كارت هي لعبة سباق ثلاثية الأبعاد ومفتوحة المصدر، وفيها مجموعة متنوعة من الشخصيات والمسارات وأنماط اللعب. هدفنا ابتكار لعبة ممتعة أكثر من كونها واقعية، وتوفر تجربة ممتعة لجميع الأعمار.</p>
     <p>
       We have several tracks with various themes for players to enjoy, from driving underwater, rural farmlands, jungles or even in space! Try your best while avoiding other karts as they may overtake you, but don't eat the bananas! Watch for black holes, photons, warp bubbles, and asteroids launched by your opponents.
@@ -108,7 +108,7 @@
     <p xml:lang="rue">У нас пару автомап из рузным мотивом для бавлячув од подводного шоферованя, сілськых готарьств, джунґлув вадь онь у космосови! Старайте ся як лем можете, оббігавучи другі возикы, айбо не їчте бананы! Позирайте за боулінґ-лобдами, протычками ай жвачками из колачами, котрі мечут ваші противникы.</p>
     <p xml:lang="ru">У нас для игроков есть несколько треков с различными темами — гонки под водой, по сельской местности, по джунглям и даже в космосе! Испытайте себя в соревновании с другими картами, но ни в коем случае не ешьте бананы! Следите за шарами для боулинга, поршнями, жевательной резинкой и пирожными, брошенными вашими противниками.</p>
     <p xml:lang="ro">Avem câteva piste cu teme diferite pentru distracția jucătorilor, de la condusul pe sub apă, prin fermele rurale, jungle și chiar în spațiu! Încercați pe cât posibil să evitați alte carturi în timp ce vă depășesc, dar nu mâncați banane! Atenție la mingile de popice, desfundătoarele, gumele de mestecat, sau prăjiturile aruncate de oponenții voștri.</p>
-    <p xml:lang="pt-BR">Há diversos tipos de pistas no SuperTuxKart. Temos pistas debaixo d'água, no meio rural, na selva e até mesmo no espaço! Abuse de suas habilidades na direção para se desviar dos outros karts e das bananas, e tome cuidado com as bolas de boliche, os chicletes, as tortas e os desentupidores atirados pelos adversários.</p>
+    <p xml:lang="pt-BR">Há diversos tipos de pistas no MinkowskiKart. Temos pistas debaixo d'água, no meio rural, na selva e até mesmo no espaço! Abuse de suas habilidades na direção para se desviar dos outros karts e das bananas, e tome cuidado com as bolas de boliche, os chicletes, as tortas e os desentupidores atirados pelos adversários.</p>
     <p xml:lang="pt">Temos uma variedade de pistas com diferentes temas para os jogadores desfrutarem, desde corridas debaixo de água, quintas rurais, selvas e até no espaço! Dá o teu melhor a desviar-te de outros karts à medida que (possivelmente) te ultrapassam, só não comas as bananas! Cuidado com bolas de bólingue, desentupidores, pastilhas elásticas e bolos atirados pelos teus adversários.</p>
     <p xml:lang="pl">Mamy dla graczy kilka torów z różnymi motywami, od jazdy pod wodą, przez wiejskie pola uprawne, dżungle, a nawet w kosmosie! Postaraj się jechać jak najlepiej, unikając innych gokartów, ponieważ mogą cię wyprzedzić, ale nie jedz bananów! Uważaj na kule do kręgli, odtykaczki, gumę balonową i ciastka rzucane przez przeciwników. </p>
     <p xml:lang="nn">Me har fleire baner du kan køyra på – med spennande tema som djuphavet, bonde­landet, jungelen og verds­rommet! Køyr så godt du kan, for å unngå at motstandarane klarar å komma forbi deg. Og ikkje et bananane! Pass deg òg for bowling­kulene, suge­koppane, tyggisane og kakene som motstandarane prøver å hiva på deg for å øydeleggja.</p>
@@ -382,55 +382,55 @@
       <caption xml:lang="ar">كرة قدم</caption>
     </screenshot>
   </screenshots>
-  <developer_name>SuperTuxKart Team</developer_name>
-  <developer_name xml:lang="zh-Hant-TW">SuperTuxKart 團隊</developer_name>
-  <developer_name xml:lang="zh-Hant-HK">SuperTuxKart 團隊</developer_name>
-  <developer_name xml:lang="zh-Hans-CN">SuperTuxKart开发团队</developer_name>
-  <developer_name xml:lang="uk">Команда SuperTuxKart</developer_name>
-  <developer_name xml:lang="tt">SuperTuxKart Такымы</developer_name>
-  <developer_name xml:lang="tr">SuperTuxKart Takımı</developer_name>
-  <developer_name xml:lang="th">SuperTuxKart Team</developer_name>
-  <developer_name xml:lang="sv">SuperTuxKart-team</developer_name>
+  <developer_name>MinkowskiKart Team</developer_name>
+  <developer_name xml:lang="zh-Hant-TW">MinkowskiKart 團隊</developer_name>
+  <developer_name xml:lang="zh-Hant-HK">MinkowskiKart 團隊</developer_name>
+  <developer_name xml:lang="zh-Hans-CN">MinkowskiKart开发团队</developer_name>
+  <developer_name xml:lang="uk">Команда MinkowskiKart</developer_name>
+  <developer_name xml:lang="tt">MinkowskiKart Такымы</developer_name>
+  <developer_name xml:lang="tr">MinkowskiKart Takımı</developer_name>
+  <developer_name xml:lang="th">MinkowskiKart Team</developer_name>
+  <developer_name xml:lang="sv">MinkowskiKart-team</developer_name>
   <developer_name xml:lang="sr-Cyrl">Дружина СуперТаксКолица</developer_name>
-  <developer_name xml:lang="sl">Ekipa SuperTuxKart</developer_name>
-  <developer_name xml:lang="sk">SuperTuxKart tím</developer_name>
-  <developer_name xml:lang="rue">SuperTuxKart Турба</developer_name>
-  <developer_name xml:lang="ru">Команда SuperTuxKart</developer_name>
-  <developer_name xml:lang="ro">Echipa SuperTuxKart </developer_name>
-  <developer_name xml:lang="pt-BR">A equipe do SuperTuxKart</developer_name>
-  <developer_name xml:lang="pt">Equipa SuperTuxKart</developer_name>
-  <developer_name xml:lang="pl">SuperTuxKart Team</developer_name>
-  <developer_name xml:lang="oc">Còla de SuperTuxKart</developer_name>
-  <developer_name xml:lang="nn">SuperTuxKart-utviklarlaget</developer_name>
-  <developer_name xml:lang="nl">Het SuperTuxKart-team</developer_name>
+  <developer_name xml:lang="sl">Ekipa MinkowskiKart</developer_name>
+  <developer_name xml:lang="sk">MinkowskiKart tím</developer_name>
+  <developer_name xml:lang="rue">MinkowskiKart Турба</developer_name>
+  <developer_name xml:lang="ru">Команда MinkowskiKart</developer_name>
+  <developer_name xml:lang="ro">Echipa MinkowskiKart </developer_name>
+  <developer_name xml:lang="pt-BR">A equipe do MinkowskiKart</developer_name>
+  <developer_name xml:lang="pt">Equipa MinkowskiKart</developer_name>
+  <developer_name xml:lang="pl">MinkowskiKart Team</developer_name>
+  <developer_name xml:lang="oc">Còla de MinkowskiKart</developer_name>
+  <developer_name xml:lang="nn">MinkowskiKart-utviklarlaget</developer_name>
+  <developer_name xml:lang="nl">Het MinkowskiKart-team</developer_name>
   <developer_name xml:lang="ml">സൂപ്പർടക്സ്കാർട്ട് കൂട്ടായ്മ</developer_name>
   <developer_name xml:lang="mk">СуперТуксКарт Тим</developer_name>
-  <developer_name xml:lang="lt">SuperTuxKart komanda</developer_name>
+  <developer_name xml:lang="lt">MinkowskiKart komanda</developer_name>
   <developer_name xml:lang="ko">슈퍼턱스카트 팀</developer_name>
-  <developer_name xml:lang="ja">SuperTuxKartチーム</developer_name>
-  <developer_name xml:lang="it">Il team di SuperTuxKart</developer_name>
-  <developer_name xml:lang="id">Tim SuperTuxKart</developer_name>
-  <developer_name xml:lang="hu">A SuperTuxKart csapat</developer_name>
-  <developer_name xml:lang="hi">SuperTuxKart टीम</developer_name>
-  <developer_name xml:lang="he">צוות SuperTuxKart</developer_name>
-  <developer_name xml:lang="gl">Equipo SuperTuxKart</developer_name>
-  <developer_name xml:lang="gd">Sgioba SuperTuxKart</developer_name>
-  <developer_name xml:lang="ga">Foireann SuperTuxKart</developer_name>
-  <developer_name xml:lang="fr">L'équipe SuperTuxKart</developer_name>
-  <developer_name xml:lang="fil">SuperTuxKart Team</developer_name>
-  <developer_name xml:lang="fi">SuperTuxKart-tiimi</developer_name>
-  <developer_name xml:lang="eu">SuperTuxKart taldea</developer_name>
+  <developer_name xml:lang="ja">MinkowskiKartチーム</developer_name>
+  <developer_name xml:lang="it">Il team di MinkowskiKart</developer_name>
+  <developer_name xml:lang="id">Tim MinkowskiKart</developer_name>
+  <developer_name xml:lang="hu">A MinkowskiKart csapat</developer_name>
+  <developer_name xml:lang="hi">MinkowskiKart टीम</developer_name>
+  <developer_name xml:lang="he">צוות MinkowskiKart</developer_name>
+  <developer_name xml:lang="gl">Equipo MinkowskiKart</developer_name>
+  <developer_name xml:lang="gd">Sgioba MinkowskiKart</developer_name>
+  <developer_name xml:lang="ga">Foireann MinkowskiKart</developer_name>
+  <developer_name xml:lang="fr">L'équipe MinkowskiKart</developer_name>
+  <developer_name xml:lang="fil">MinkowskiKart Team</developer_name>
+  <developer_name xml:lang="fi">MinkowskiKart-tiimi</developer_name>
+  <developer_name xml:lang="eu">MinkowskiKart taldea</developer_name>
   <developer_name xml:lang="et">Mängu autorid</developer_name>
-  <developer_name xml:lang="es">El equipo de SuperTuxKart.</developer_name>
-  <developer_name xml:lang="eo">SuperTuxKart Teamo</developer_name>
-  <developer_name xml:lang="el">Ομάδα SuperTuxKart</developer_name>
-  <developer_name xml:lang="de">SuperTuxKart-Team</developer_name>
-  <developer_name xml:lang="da">SuperTuxKart-teamet</developer_name>
-  <developer_name xml:lang="cy">Tîm SuperTuxKart</developer_name>
-  <developer_name xml:lang="cs">Tým SuperTuxKart</developer_name>
-  <developer_name xml:lang="ca">L'equip del SuperTuxKart</developer_name>
+  <developer_name xml:lang="es">El equipo de MinkowskiKart.</developer_name>
+  <developer_name xml:lang="eo">MinkowskiKart Teamo</developer_name>
+  <developer_name xml:lang="el">Ομάδα MinkowskiKart</developer_name>
+  <developer_name xml:lang="de">MinkowskiKart-Team</developer_name>
+  <developer_name xml:lang="da">MinkowskiKart-teamet</developer_name>
+  <developer_name xml:lang="cy">Tîm MinkowskiKart</developer_name>
+  <developer_name xml:lang="cs">Tým MinkowskiKart</developer_name>
+  <developer_name xml:lang="ca">L'equip del MinkowskiKart</developer_name>
   <developer_name xml:lang="bg">Екипът на Супар Тъкс Карт</developer_name>
-  <developer_name xml:lang="be-Cyrl">Каманда SuperTuxKart</developer_name>
+  <developer_name xml:lang="be-Cyrl">Каманда MinkowskiKart</developer_name>
   <developer_name xml:lang="ar">فريق سوبرتكس‌كارت</developer_name>
   <update_contact>supertuxkart-devel@lists.sourceforge.net</update_contact>
   <url type="homepage">https://supertuxkart.net</url>

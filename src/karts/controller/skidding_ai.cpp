@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015 Steve Baker <sjbaker1@airmail.net>
 //  Copyright (C) 2006-2015 Eduardo Hernandez Munoz
 //  Copyright (C) 2008-2015 Joerg Henrichs
@@ -2742,7 +2742,7 @@ void SkiddingAI::findNonCrashingPointNew(Vec3 *result, int *last_node)
         if( steps < 3 ) steps = 3;
 
         // That shouldn't happen, but since we had one instance of
-        // STK hanging, add an upper limit here (usually it's at most
+        // MK hanging, add an upper limit here (usually it's at most
         // 20 steps)
         if( steps>1000) steps = 1000;
 

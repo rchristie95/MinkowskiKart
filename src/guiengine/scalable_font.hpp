@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -106,7 +106,7 @@ public:
     /** gets the sprite bank */
     virtual IGUISpriteBank* getSpriteBank() const;
     // ------------------------------------------------------------------------
-    /** returns the sprite number from a given character, unused in STK */
+    /** returns the sprite number from a given character, unused in MK */
     virtual u32 getSpriteNoFromChar(const wchar_t *c) const       { return 0; }
     // ------------------------------------------------------------------------
     // Below is not used:

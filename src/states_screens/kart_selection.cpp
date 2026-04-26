@@ -1,6 +1,6 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //
-//  Copyright (C) 2006-2015 SuperTuxKart-Team
+//  Copyright (C) 2006-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -1136,7 +1136,7 @@ void KartSelectionScreen::onFocusChanged(GUIEngine::Widget* previous,
     if (!previous || !focus)
         return;
 
-    // TODO : In the STK Evolution branch, ensure things work properly with the handicap spinner
+    // TODO : In the MK Evolution branch, ensure things work properly with the handicap spinner
 
     // Manually ensure that the player name spinner get selected appropriately
     GUIEngine::SpinnerWidget* kart_class = getWidget<GUIEngine::SpinnerWidget>("kart_class");

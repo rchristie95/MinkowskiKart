@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2013-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2013-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -1791,7 +1791,7 @@ void ClientLobby::handleClientCommand(const std::string& cmd)
                 msg = msg.substr(0, msg.size() - 2);
                 NetworkingLobby::getInstance()->addMoreServerInfo(
                     StringUtils::utf8ToWide
-                    (std::string("STK addon: ") + msg));
+                    (std::string("MK addon: ") + msg));
             }
         }
     }

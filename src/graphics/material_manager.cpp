@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015 Steve Baker <sjbaker1@airmail.net>
 //  Copyright (C) 2010-2015 Steve Baker, Joerg Henrichs
 //
@@ -434,7 +434,7 @@ void MaterialManager::unloadAllTextures()
     for (int i = 0; i < m_shared_material_index; i++)
     {
         // Global particle textures will stay until exit
-        // STK, which avoid hangs when lazy-loading the texture when being
+        // MK, which avoid hangs when lazy-loading the texture when being
         // triggered.
         Material* m = m_materials[i];
         if (!ParticleKindManager::get()->isGlobalParticleMaterial(m)

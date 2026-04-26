@@ -1,6 +1,6 @@
 
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015 Steve Baker <sjbaker1@airmail.net>
 //  Copyright (C) 2011-2015 Joerg Henrichs, Marianne Gagnon
 //
@@ -20,9 +20,9 @@
 
 
 /**
- * \mainpage SuperTuxKart developer documentation
+ * \mainpage MinkowskiKart developer documentation
  *
- * This document contains the developer documentation for SuperTuxKart,
+ * This document contains the developer documentation for MinkowskiKart,
  * including the list of modules, the list of classes, the API reference,
  * and some pages that describe in more depth some parts of the code/engine.
  *
@@ -69,8 +69,8 @@
 # challenges -> modes
  guiengine -> challenges
  online_manager -> addons
- online_manager -> "STK Server"
- "STK Server" -> online_manager
+ online_manager -> "MK Server"
+ "MK Server" -> online_manager
  karts -> replay
  replay
  # force karts and tracks on the same level, looks better this way
@@ -102,16 +102,16 @@
    file (which contains options usually not edited by the player) and the input
    configuration file.
  \li \ref font :
-   This module stores font files and tools used to draw characters in STK.
+   This module stores font files and tools used to draw characters in MK.
  \li \ref graphics :
    This module contains the core graphics engine, that is mostly a thin layer
-   on top of irrlicht providing some additional features we need for STK
+   on top of irrlicht providing some additional features we need for MK
    (like particles, more scene node types, mesh manipulation tools, material
    management, etc...)
  \li \ref guiengine :
    Contains the generic GUI engine (contains the widgets and the backing logic
    for event handling, the skin, screens and dialogs). See module @ref states_screens
-   for the actual STK GUI screens. Note that all input comes through this module
+   for the actual MK GUI screens. Note that all input comes through this module
    too.
  \li \ref widgetsgroup :
    Contains the various types of widgets supported by the GUI engine.
@@ -120,7 +120,7 @@
  \li \ref io :
   Contains generic utility classes for file I/O (especially XML handling).
  \li \ref items :
-   Defines the various collectibles and weapons of STK.
+   Defines the various collectibles and weapons of MK.
  \li \ref karts :
    Contains classes that deal with the properties, models and physics
    of karts.
@@ -137,7 +137,7 @@
    in group Modes. Handles highscores, grands prix, number of karts, which
    track was selected, etc.
  \li \ref states_screens :
-   Contains the various screens and dialogs of the STK user interface,
+   Contains the various screens and dialogs of the MK user interface,
    using the facilities of the guiengine module. Also contains the
    stack of menus and handles state management (in-game vs menu).
  \li \ref tracks :
@@ -578,7 +578,7 @@ void cmdLineHelp()
 {
     fprintf(stdout,
     "Usage: %s [OPTIONS]\n\n"
-    "Run SuperTuxKart, a go-kart racing game that features "
+    "Run MinkowskiKart, a go-kart racing game that features "
     "Tux and friends.\n\n"
     "Options:\n"
     "  -N,  --no-start-screen  Immediately start race without showing a "
@@ -616,7 +616,7 @@ void cmdLineHelp()
     "  -f,  --fullscreen       Use fullscreen display.\n"
     "  -w,  --windowed         Use windowed display (default).\n"
     "  -s,  --screensize=WxH   Set the display size (e.g. 320x200).\n"
-    "  -v,  --version          Print version of SuperTuxKart.\n"
+    "  -v,  --version          Print version of MinkowskiKart.\n"
     "       --trackdir=DIR     A directory from which additional tracks are "
                               "loaded.\n"
     "       --seed=n           Seed for random number generation to provide reproducible behavior.\n"
@@ -685,13 +685,13 @@ void cmdLineHelp()
     "       --log=N            Set the verbosity to a value between\n"
     "                          0 (Debug) and 5 (Only Fatal messages)\n"
     "       --logbuffer=N      Buffers up to N lines log lines before writing.\n"
-    "       --root=DIR         Path to add to the list of STK root directories.\n"
+    "       --root=DIR         Path to add to the list of MK root directories.\n"
     "                          You can specify more than one by separating them\n"
     "                          with colons (:).\n"
     "       --cutscene=NAME    Launch the specified track as a cutscene.\n"
     "                          This is for internal debugging use only.\n"
     "       --gfx-preset=n     Set the graphics settings to the selected preset.\n"
-    "                          Valid values for this STK version are between 1 and 7.\n"
+    "                          Valid values for this MK version are between 1 and 7.\n"
     "                          Other graphic command-line parameters will override the preset.\n"
     "       --enable-glow      Enable glow effect.\n"
     "       --disable-glow     Disable glow effect.\n"
@@ -750,7 +750,7 @@ void cmdLineHelp()
     "                                      fullscreen window, eg. HDMI-0\n"
 #endif
     "\n"
-    "You can visit SuperTuxKart's homepage at "
+    "You can visit MinkowskiKart's homepage at "
     "https://supertuxkart.net\n\n",
     CommandLine::getExecName().c_str()
     );
@@ -760,7 +760,7 @@ void cmdDebugHelp()
 {
     fprintf(stdout,
     "Usage: %s [OPTIONS]\n\n"
-    "Run SuperTuxKart, a go-kart racing game that features "
+    "Run MinkowskiKart, a go-kart racing game that features "
     "Tux and friends.\n\n"
     "Debug options (some work only if artist debug mode is enabled):\n"
     "       --debug=s                   s=all Log everything, s=addons Log addons management,\n"
@@ -795,7 +795,7 @@ void cmdDebugHelp()
     "                                   debugging client/server item management.\n"
     "       --network-item-debugging    Print item handling debug information.\n"
     "\n"
-    "You can visit SuperTuxKart's homepage at "
+    "You can visit MinkowskiKart's homepage at "
     "https://supertuxkart.net\n\n",
     CommandLine::getExecName().c_str()
     );
@@ -825,7 +825,7 @@ int handleCmdLineOutputModifier()
     if(CommandLine::has("--version") || CommandLine::has("-v"))
     {
         Log::info("main", "==============================");
-        Log::info("main", "SuperTuxKart, %s.", STK_VERSION ) ;
+        Log::info("main", "MinkowskiKart, %s.", STK_VERSION ) ;
         Log::info("main", "==============================");
         cleanUserConfig();
         exit(0);
@@ -885,7 +885,7 @@ int handleCmdLinePreliminary()
     if(CommandLine::has("--stk-config", &s))
     {
         stk_config->load(file_manager->getAsset(s));
-        Log::info("main", "STK config will be read from %s.",s.c_str());
+        Log::info("main", "MK config will be read from %s.",s.c_str());
     }
     if(CommandLine::has("--render-driver", &s))
         UserConfigParams::m_render_driver = s;
@@ -1092,7 +1092,7 @@ int handleCmdLinePreliminary()
     {
         srand(n);
         RandomGenerator::seed(n);
-        Log::info("main", "STK using random seed (%d)", n);
+        Log::info("main", "MK using random seed (%d)", n);
     }
 
     if (CommandLine::has("--disable-addon-karts"))
@@ -2140,7 +2140,7 @@ void askForInternetPermission()
     };   // ConfirmServer
 
     MessageDialog *dialog =
-    new MessageDialog(_("SuperTuxKart may connect to a server "
+    new MessageDialog(_("MinkowskiKart may connect to a server "
         "to download add-ons and notify you of updates.") + L"\n\n"
         + _("Please read our privacy policy at %s.", "https://supertuxkart.net/Privacy")
         + L"\n\n" + _("Would you like this feature to be enabled? (To change this setting "
@@ -2458,7 +2458,7 @@ int main(int argc, char *argv[])
                 {
                     MessageDialog *dialog =
                         new MessageDialog(_("Your screen resolution is too "
-                                            "low to run STK."),
+                                            "low to run MK."),
                                             /*from queue*/ true);
                     GUIEngine::DialogQueue::get()->pushDialog(dialog);
                 }
@@ -2529,7 +2529,7 @@ int main(int argc, char *argv[])
                     #endif
                     MessageDialog *dialog = new MessageDialog(_(
                         "Your graphics driver appears to be very old. Please "
-                        "check if an update is available. SuperTuxKart "
+                        "check if an update is available. MinkowskiKart "
                         "recommends a driver supporting %s or better. The game "
                         "will likely still run, but in a reduced-graphics mode.",
                         version),
@@ -2541,7 +2541,7 @@ int main(int argc, char *argv[])
                 Log::warn("OpenGL", "OpenGL version is too old!");
             }
 
-            // Note that on the very first run of STK internet status is set to
+            // Note that on the very first run of MK internet status is set to
             // "not asked", so the report will only be sent in the next run.
             if(UserConfigParams::m_internet_status==Online::RequestManager::IPERM_ALLOWED)
             {
@@ -2664,7 +2664,7 @@ int main(int argc, char *argv[])
     {
         Log::flushBuffers();
         Log::error("main", "Exception caught : %s.",e.what());
-        Log::error("main", "Aborting SuperTuxKart.");
+        Log::error("main", "Aborting MinkowskiKart.");
         Log::flushBuffers();
     }
 
@@ -2809,7 +2809,7 @@ static void cleanSuperTuxKart()
     // the NewsManager thread should have finished quite early on anyway.
     // But still give them some additional time to finish. It avoids a
     // race condition where a thread might access the file manager after it
-    // was deleted (in cleanUserConfig below), but before STK finishes and
+    // was deleted (in cleanUserConfig below), but before MK finishes and
     // the OS takes all threads down.
 
 #ifndef SERVER_ONLY

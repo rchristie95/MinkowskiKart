@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #define HEADER_FONT_MANAGER_HPP
 
 /** \defgroup font Font
- *  This module stores font files and tools used to draw characters in STK.
+ *  This module stores font files and tools used to draw characters in MK.
  */
 
 #include "utils/leak_check.hpp"
@@ -44,13 +44,13 @@
 
 class FontWithFace;
 
-/** This class stores all font files required in STK.
+/** This class stores all font files required in MK.
  *  \ingroup font
  */
 class FontManager : public NoCopy
 {
 private:
-    /** Stores all \ref FontWithFace used in STK. */
+    /** Stores all \ref FontWithFace used in MK. */
     std::vector<FontWithFace*>               m_fonts;
 
 #ifndef SERVER_ONLY
@@ -60,7 +60,7 @@ private:
     /** List of TTF files for complex text shaping. */
     std::vector<FT_Face>                     m_faces;
 
-    /** TTF file for digit font in STK. */
+    /** TTF file for digit font in MK. */
     FT_Face                                  m_digit_face;
 
     /** DPI used when shaping, each face will apply an inverse of this and the

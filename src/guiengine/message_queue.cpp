@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2014-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
 #include <atomic>
 #include <memory>
 
-// Can be removed later when android STK uses SDL2
+// Can be removed later when android MK uses SDL2
 #ifdef IOS_STK
 #include "SDL_keyboard.h"
 #endif

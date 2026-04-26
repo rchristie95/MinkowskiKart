@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -207,7 +207,7 @@ namespace GUIEngine
     /**
       * \brief class containing render params for the
       * 'drawBoxFromStretchableTexture' function see \ref skin for more
-      * information about skinning in STK
+      * information about skinning in MK
       * \ingroup guiengine
       */
     class BoxRenderParams
@@ -273,7 +273,7 @@ namespace GUIEngine
     // ========================================================================
     /**
       * \brief Object used to render the GUI widgets
-      * see \ref skin for more information about skinning in STK
+      * see \ref skin for more information about skinning in MK
       * \ingroup guiengine
       */
     class Skin : public gui::IGUISkin

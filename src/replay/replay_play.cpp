@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2012-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -136,7 +136,7 @@ bool ReplayPlay::addReplayFile(const std::string& fn, bool custom_replay, int ca
     }
     else if (version > getCurrentReplayVersion())
     {
-        Log::warn("Replay", "Replay is version '%d', STK replay version is '%d', skipped '%s'",
+        Log::warn("Replay", "Replay is version '%d', MK replay version is '%d', skipped '%s'",
                   version, getCurrentReplayVersion(), fn.c_str());
         return false;
     }
@@ -148,7 +148,7 @@ bool ReplayPlay::addReplayFile(const std::string& fn, bool custom_replay, int ca
         fgets(s, 1023, fd);
         if(sscanf(s, "stk_version: %1023s", s1) != 1)
         {
-            Log::warn("Replay", "No STK release version found in replay file, '%s'.", fn.c_str());
+            Log::warn("Replay", "No MK release version found in replay file, '%s'.", fn.c_str());
             return false;
         }
         rd.m_stk_version = s1;
@@ -276,7 +276,7 @@ bool ReplayPlay::addReplayFile(const std::string& fn, bool custom_replay, int ca
     Track* t = track_manager->getTrack(rd.m_track_name);
     if (t == NULL)
     {
-        Log::warn("Replay", "Track '%s' used in replay '%s' not found in STK!",
+        Log::warn("Replay", "Track '%s' used in replay '%s' not found in MK!",
         rd.m_track_name.c_str(), fn.c_str());
         return false;
     }
@@ -440,7 +440,7 @@ void ReplayPlay::readKartData(FILE *fd, char *next_line, bool second_replay)
         // Check for EV_TRANSFORM event:
         // -----------------------------
 
-        // Up to STK 0.9.3 replays
+        // Up to MK 0.9.3 replays
         if (rd.m_replay_version == 3)
         {
             if(sscanf(s, "%f  %f %f %f  %f %f %f %f  %f  %f  %f %f %f %f  %d %d %d %d %d\n",
@@ -488,7 +488,7 @@ void ReplayPlay::readKartData(FILE *fd, char *next_line, bool second_replay)
             }
         }
 
-        //version 4 replays (STK 1.0 and higher)
+        //version 4 replays (MK 1.0 and higher)
         else
         {
             if(sscanf(s, "%f  %f %f %f  %f %f %f %f  %f  %f  %f %f %f %f %d  %d %f %d %d %d  %f %d %d %d %d %d\n",

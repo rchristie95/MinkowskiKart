@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Glenn De Jonghe
 //
 //  This program is free software; you can redistribute it and/or
@@ -231,7 +231,7 @@ namespace Online
         // We localize the string from the server if possible ; a 0 from wcscmp indicates a string match
         // TODO: it would be better to simply have the server send error codes,
         //       however this solution doesn't require a server-side change or more importantly
-        //       doesn't prevent previous STK versions from interpreting the server message.
+        //       doesn't prevent previous MK versions from interpreting the server message.
         if (wcscmp(info.c_str(), password_length.c_str()) == 0)
             info = _("The password must be between %i and %i characters long!", 8, 60);
         else if (wcscmp(info.c_str(), username_char.c_str()) == 0)
@@ -327,7 +327,7 @@ namespace Online
         public:
             /** Sign out request, which have the highest priority (same as
              *  quit-stk request). This allows the final logout request at
-             *  the end of STK to be handled, even if a quit request gets
+             *  the end of MK to be handled, even if a quit request gets
              *  added (otherwise if quit has higher priority, the quit can
              *  be executed before signout, resulting in players not being
              *  logged out properly). It also guarantees that the logout

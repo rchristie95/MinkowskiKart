@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -391,7 +391,7 @@ void IrrDriver::createListOfVideoModes()
             const int w = modes->getVideoModeResolution(i).Width;
             const int h = modes->getVideoModeResolution(i).Height;
 #ifndef MOBILE_STK
-            // Mobile STK reports only 1 desktop (phone) resolution at native scale
+            // Mobile MK reports only 1 desktop (phone) resolution at native scale
             if ((h < MIN_SUPPORTED_HEIGHT || w < MIN_SUPPORTED_WIDTH) &&
                 (!(h==600 && w==800 && UserConfigParams::m_artist_debug_mode) &&
                 (!(h==720 && w==1280 && ALLOW_1280_X_720 == true))))
@@ -701,7 +701,7 @@ begin:
 
     // Some drivers are able to create OpenGL 3.1 context, but shader-based
     // pipeline doesn't work for them. For example some radeon drivers
-    // support only GLSL 1.3 and it causes STK to crash. We should force to use
+    // support only GLSL 1.3 and it causes MK to crash. We should force to use
     // fixed pipeline in this case.
     if (!GUIEngine::isNoGraphics() &&
         (GraphicsRestrictions::isDisabled(GraphicsRestrictions::GR_FORCE_LEGACY_DEVICE) ||
@@ -862,8 +862,8 @@ begin:
     // Only change video driver settings if we are showing graphics
     if (!GUIEngine::isNoGraphics())
     {
-        m_device->setWindowClass("SuperTuxKart");
-        m_device->setWindowCaption(L"SuperTuxKart");
+        m_device->setWindowClass("MinkowskiKart");
+        m_device->setWindowCaption(L"MinkowskiKart");
         m_device->getVideoDriver()
             ->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, true);
         m_device->getVideoDriver()
@@ -1031,7 +1031,7 @@ core::position2di IrrDriver::getMouseLocation()
 }
 
 // --------------------------------------------------------------------------------------------
-/** Moves the STK main window to coordinates (x,y)
+/** Moves the MK main window to coordinates (x,y)
  *  \return true on success, false on failure
  *          (always true on Linux at the moment)
  */
@@ -1240,7 +1240,7 @@ void IrrDriver::cancelResChange()
 // --------------------------------------------------------------------------------------------
 /** Prints statistics about rendering, e.g. number of drawn and culled
  *  triangles etc. Note that printing this information will also slow
- *  down STK.
+ *  down MK.
  */
 void IrrDriver::printRenderStats()
 {
@@ -1766,7 +1766,7 @@ void IrrDriver::removeCameraSceneNode(scene::ICameraSceneNode *camera)
 
 // --------------------------------------------------------------------------------------------
 /** Loads a texture from a file and returns the texture object. This is just
- *  a convenient wrapper which loads the texture from a STK asset directory.
+ *  a convenient wrapper which loads the texture from a MK asset directory.
  *  It calls the file manager to get the full path, then calls the normal
  *  getTexture() function.s
  *  \param type The FileManager::AssetType of the texture.
@@ -2346,9 +2346,9 @@ void IrrDriver::setRecording(bool val)
         ogrStopCapture();
     }
 #else
-    Log::error("Recorder", "Recording unavailable, STK was compiled without "
-               "recording support.  Please re-compile STK with libopenglrecorder "
-               "to enable recording.  If you got SuperTuxKart from your distribution's "
+    Log::error("Recorder", "Recording unavailable, MK was compiled without "
+               "recording support.  Please re-compile MK with libopenglrecorder "
+               "to enable recording.  If you got MinkowskiKart from your distribution's "
                "repositories, please use the official binaries, or contact your "
                "distributions's package mantainers.");
 #endif

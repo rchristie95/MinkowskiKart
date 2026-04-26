@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -682,7 +682,7 @@ void BaseUserScreen::doDeletePlayer()
     GUIEngine::ModalDialog::dismiss();
 
     // Special case: the current player was deleted. We have to make sure
-    // that there is still a current player (all of STK depends on that).
+    // that there is still a current player (all of MK depends on that).
     if(!PlayerManager::getCurrentPlayer())
     {
         for(unsigned int i=0; i<PlayerManager::get()->getNumPlayers(); i++)

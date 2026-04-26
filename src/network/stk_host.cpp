@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2013-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2013-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -163,7 +163,7 @@ std::shared_ptr<LobbyProtocol> STKHost::create(ChildLoop* cl)
  *    table). The user picks one (or in case of quick play one is picked
  *    randomly), and then instantiates STKHost with the id of this server.
  *    STKHost then triggers ConnectToServer, which do the following:
- *       1. Register the client with the STK host ('join-server-key' command,
+ *       1. Register the client with the MK host ('join-server-key' command,
  *          into the table 'server_conn'). Its public ip address and port will
  *          be registerd with a AES key and iv set by client.
  *       2. Run ConnectToServer::tryConnect for 30 seconds to connect to server,
@@ -724,7 +724,7 @@ void STKHost::setPublicAddress(short family)
         else
         {
             // Erase from user config in stun, if it's provide by SRV records
-            // from STK then it will be re-added next time, and STK team will
+            // from MK then it will be re-added next time, and MK team will
             // remove it if it stops working
             stun_map.erase(untried_server.back().first);
             untried_server.pop_back();
@@ -1227,7 +1227,7 @@ void STKHost::mainLoop(ProcessType pt)
 /** Handles a direct request given to a socket. This is typically a LAN
  *  request, but can also be used if the server is public (i.e. not behind
  *  a fire wall) to allow direct connection to the server (without using the
- *  STK server). It checks for any messages (i.e. a LAN broadcast requesting
+ *  MK server). It checks for any messages (i.e. a LAN broadcast requesting
  *  server details or a connection request) and if a valid LAN server-request
  *  message is received, will answer with a message containing server details
  *  (and sender IP address and port).

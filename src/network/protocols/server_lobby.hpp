@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2018 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2018 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -55,7 +55,7 @@ public:
     enum ServerState : unsigned int
     {
         SET_PUBLIC_ADDRESS,       // Waiting to receive its public ip address
-        REGISTER_SELF_ADDRESS,    // Register with STK online server
+        REGISTER_SELF_ADDRESS,    // Register with MK online server
         WAITING_FOR_START_GAME,   // In lobby, waiting for (auto) start game
         SELECTING,                // kart, track, ... selection started
         LOAD_WORLD,               // Server starts loading world

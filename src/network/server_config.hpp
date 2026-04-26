@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2018 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2018 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -88,7 +88,7 @@ namespace ServerConfig
         StringToUIntServerConfigParam;
     // ========================================================================
     SERVER_CFG_PREFIX StringServerConfigParam m_server_name
-        SERVER_CFG_DEFAULT(StringServerConfigParam("STK Server", "server-name",
+        SERVER_CFG_DEFAULT(StringServerConfigParam("MK Server", "server-name",
         "Name of server, encode in XML if you want to use unicode "
         "characters."));
 
@@ -96,7 +96,7 @@ namespace ServerConfig
         SERVER_CFG_DEFAULT(IntServerConfigParam(0, "server-port",
         "Port used in server, if you specify 0, it will use the server port "
         "specified in stk_config.xml. If you wish to use a random port, "
-        "set random-server-port to '1' in user config. STK will automatically "
+        "set random-server-port to '1' in user config. MK will automatically "
         "switch to a random port if the port you specify fails to be bound."));
 
     SERVER_CFG_PREFIX IntServerConfigParam m_server_mode
@@ -148,7 +148,7 @@ namespace ServerConfig
     SERVER_CFG_PREFIX StringServerConfigParam m_motd
         SERVER_CFG_DEFAULT(StringServerConfigParam("",
         "motd", "Message of today shown in lobby, you can enter encoded XML "
-        "words here or a file.txt and let STK load it."));
+        "words here or a file.txt and let MK load it."));
 
     SERVER_CFG_PREFIX BoolServerConfigParam m_chat
         SERVER_CFG_DEFAULT(BoolServerConfigParam(true, "chat",
@@ -175,7 +175,7 @@ namespace ServerConfig
     SERVER_CFG_PREFIX FloatServerConfigParam m_validation_timeout
         SERVER_CFG_DEFAULT(FloatServerConfigParam(20.0f, "validation-timeout",
         "Timeout in seconds for validation of clients in wan, currently "
-        "STK will use the stk-addons server to share AES key between the client "
+        "MK will use the stk-addons server to share AES key between the client "
         "and server."));
 
     SERVER_CFG_PREFIX BoolServerConfigParam m_validating_player
@@ -192,8 +192,8 @@ namespace ServerConfig
     SERVER_CFG_PREFIX BoolServerConfigParam m_ipv6_connection
         SERVER_CFG_DEFAULT(BoolServerConfigParam(true, "ipv6-connection",
         "Enable to allow IPv6 connection if you have a public IPv6 address. "
-        "STK currently uses dual-stack mode which requires server to have both "
-        "IPv4 and IPv6 and listen to same port. If STK detects your server "
+        "MK currently uses dual-stack mode which requires server to have both "
+        "IPv4 and IPv6 and listen to same port. If MK detects your server "
         "has no public IPv6 address or port differs between IPv4 and IPv6 "
         "then it will use IPv4 only socket. For system which doesn't support "
         "dual-stack socket (like OpenBSD) you may fail to be connected by "
@@ -224,7 +224,7 @@ namespace ServerConfig
         "Clients below this value will be rejected from joining this server. "
         "It's determined by number of official tracks in client / number of "
         "official tracks in server, setting this value too high will prevent "
-        "android players from joining this server, because STK android apk "
+        "android players from joining this server, because MK android apk "
         "has some official tracks removed."));
 
     SERVER_CFG_PREFIX IntServerConfigParam m_min_start_game_players
@@ -360,14 +360,14 @@ namespace ServerConfig
     SERVER_CFG_PREFIX BoolServerConfigParam m_sql_management
         SERVER_CFG_DEFAULT(BoolServerConfigParam(false,
         "sql-management",
-        "Use sql database for handling server stats and maintenance, STK "
+        "Use sql database for handling server stats and maintenance, MK "
         "needs to be compiled with sqlite3 supported."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_database_file
         SERVER_CFG_DEFAULT(StringServerConfigParam("stkservers.db",
         "database-file",
         "Database filename for sqlite to use, it can be shared for all "
-        "servers created in this machine, and STK will create specific table "
+        "servers created in this machine, and MK will create specific table "
         "for each server. You need to create the database yourself first, see "
         "NETWORKING.md for details"));
 
@@ -384,7 +384,7 @@ namespace ServerConfig
         "IPv4 ban list table name, you need to create the table first, see "
         "NETWORKING.md for details, empty to disable. "
         "This table can be shared for all servers if you use the same name. "
-        "STK can auto kick active peer from ban list (update per minute) which"
+        "MK can auto kick active peer from ban list (update per minute) which"
         "allows live kicking peer by inserting record to database."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_ipv6_ban_table
@@ -393,7 +393,7 @@ namespace ServerConfig
         "IPv6 ban list table name, you need to create the table first, see "
         "NETWORKING.md for details, empty to disable. "
         "This table can be shared for all servers if you use the same name. "
-        "STK can auto kick active peer from ban list (update per minute) "
+        "MK can auto kick active peer from ban list (update per minute) "
         "which allows live kicking peer by inserting record to database."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_online_id_ban_table
@@ -402,7 +402,7 @@ namespace ServerConfig
         "Online ID ban list table name, you need to create the table first, "
         "see NETWORKING.md for details, empty to disable. "
         "This table can be shared for all servers if you use the same name. "
-        "STK can auto kick active peer from ban list (update per minute) "
+        "MK can auto kick active peer from ban list (update per minute) "
         "which allows live kicking peer by inserting record to database."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_player_reports_table

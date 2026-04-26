@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2006-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -154,7 +154,7 @@ void History::Save()
     }
 
     const int num_karts = world->getNumKarts();
-    fprintf(fd, "STK-version:      %s\n",   STK_VERSION);
+    fprintf(fd, "MK-version:      %s\n",   STK_VERSION);
     fprintf(fd, "History-version:  %d\n",   1);
     fprintf(fd, "numkarts:         %d\n",   num_karts);
     fprintf(fd, "numplayers:       %d\n", RaceManager::get()->getNumPlayers());
@@ -217,11 +217,11 @@ void History::Load()
                    "Old history file format is not supported anymore.");
     }
 
-    if (sscanf(s,"STK-version: %1023s",s1)!=1)
+    if (sscanf(s,"MK-version: %1023s",s1)!=1)
         Log::fatal("History", "No Version information found in history "
                               "file (bogus history file).");
     if (strcmp(s1,STK_VERSION))
-        Log::warn("History", "History is version '%s', STK version is '%s'.",
+        Log::warn("History", "History is version '%s', MK version is '%s'.",
                   s1, STK_VERSION);
 
     if (fgets(s, 1023, fd) == NULL)

@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015  Ingo Ruhnke <grumbel@gmx.de>
 //  Copyright (C) 2006-2015  Joerg Henrichs
 //

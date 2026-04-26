@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Lucas Baudin, Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -365,9 +365,9 @@ void ServerSelection::eventCallback(GUIEngine::Widget* widget,
                                     const std::string& name,
                                     const int playerID)
 {
-    //I18N: Message shown to user if no IPv4 detected by STK
+    //I18N: Message shown to user if no IPv4 detected by MK
     auto v4 = _("No IPv4 detected, you may not be able to join any servers.");
-    //I18N: Message shown to user if no IPv6 detected by STK
+    //I18N: Message shown to user if no IPv6 detected by MK
     auto v6 = _("No IPv6 detected, you may not be able to join any servers.");
     if (name == "back")
     {

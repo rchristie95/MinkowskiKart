@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -22,7 +22,7 @@
 /**
  * \defgroup graphics
  * This module contains the core graphics engine, that is mostly a thin layer
- * on top of irrlicht providing some additional features we need for STK
+ * on top of irrlicht providing some additional features we need for MK
  * (like particles, more scene node types, mesh manipulation tools, material
  * management, etc...)
  */

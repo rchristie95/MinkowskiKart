@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2014-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -267,7 +267,7 @@ const std::string& getOSVersion()
 
 // ----------------------------------------------------------------------------
 /** If the configuration of this installation has not been reported for the
- *  current version, collect the hardware statistics and send it to STK's
+ *  current version, collect the hardware statistics and send it to MK's
  *  server.
  */
 void reportHardwareStats()
@@ -279,7 +279,7 @@ void reportHardwareStats()
         return;
 
     // Version of the hw report, which is stored in the DB. If new fields
-    // are added, increase this version. Each STK installation will report
+    // are added, increase this version. Each MK installation will report
     // its configuration only once (per version number). So if the version
     // number is increased, a new report will be sent.
     const int report_version = 1;
@@ -371,9 +371,9 @@ void reportHardwareStats()
     json.finish();
 
     // ------------------------------------------------------------------------
-    /** A small class which sends the HW report to the STK server. On
+    /** A small class which sends the HW report to the MK server. On
      *  completion, it will either update the last-submitted-hw-report version,
-     *  or log an error message (in which case next time STK is started it
+     *  or log an error message (in which case next time MK is started it
      *  wil try again to log the report).
      */
     class HWReportRequest : public Online::HTTPRequest

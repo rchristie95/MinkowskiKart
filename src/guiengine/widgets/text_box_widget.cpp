@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -179,7 +179,7 @@ EventPropagation TextBoxWidget::focused(const int playerID)
 {
     assert(playerID == 0); // No support for multiple players in text areas!
 
-    // special case : to work, the text box must receive "irrLicht focus", STK focus is not enough
+    // special case : to work, the text box must receive "irrLicht focus", MK focus is not enough
     GUIEngine::getGUIEnv()->setFocus(m_element);
     setWithinATextBox(true);
     return EVENT_LET;

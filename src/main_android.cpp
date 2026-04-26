@@ -1,5 +1,5 @@
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016-2017 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016-2017 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -104,7 +104,7 @@ extern "C" int SDL_main(int argc, char *argv[])
 void override_default_params_for_mobile()
 {
     // It has an effect only on the first run, when config file is created.
-    // So that we can still modify these params in STK options and user's
+    // So that we can still modify these params in MK options and user's
     // choice will be then remembered.
     
     // Set smaller texture size to avoid high RAM usage
@@ -237,7 +237,7 @@ void override_default_params_for_mobile()
     // Enable screen keyboard
     UserConfigParams::m_screen_keyboard = 1;
     
-    // It shouldn't matter, but STK is always run in fullscreen on android
+    // It shouldn't matter, but MK is always run in fullscreen on android
     UserConfigParams::m_fullscreen = true;
     
     // Make sure that user can play every track even if there are installed

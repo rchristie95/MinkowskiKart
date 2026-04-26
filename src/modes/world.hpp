@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2004-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2004-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -266,7 +266,7 @@ public:
     virtual bool showLapsTarget() { return false; }
     // ------------------------------------------------------------------------
     /** Returns the number of laps for a given kart. Only valid when
-     *  raceHasLaps() - otherwise STK will abort. */
+     *  raceHasLaps() - otherwise MK will abort. */
     virtual int getFinishedLapsOfKart(unsigned int kart_index) const
     {
         assert(false); return -1; // remove compiler warning

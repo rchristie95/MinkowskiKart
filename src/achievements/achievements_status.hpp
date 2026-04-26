@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Glenn De Jonghe
 //            (C) 2014-2015 Joerg Henrichs
 //
@@ -35,7 +35,7 @@ class XMLNode;
  *  of this class is stored in each PlayerProfile. It stores a map of
  *  achievements ids to instances of Achievement. Each achievement in
  *  turn stores either fulfilled achievements, or the current state of
- *  an achievement (e.g. an achievement to race every track in STK needs
+ *  an achievement (e.g. an achievement to race every track in MK needs
  *  to keep information about which tracks have already been used.)
 */
 

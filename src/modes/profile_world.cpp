@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -62,7 +62,7 @@ ProfileWorld::ProfileWorld()
 //-----------------------------------------------------------------------------
 /** Sets profile mode off again.
  *  Needed because demo mode's closing allows the player to continue playing
- *  STK. If we didn't set it off, profile mode would stay activated.
+ *  MK. If we didn't set it off, profile mode would stay activated.
  */
 ProfileWorld::~ProfileWorld()
 {

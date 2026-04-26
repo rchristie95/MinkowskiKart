@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2012-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -107,7 +107,7 @@ public:
             return m_y[m_y.size()-1];
 
         // Now x must be between two points in m_x
-        // The array size in STK are pretty small (typically 3 or 4),
+        // The array size in MK are pretty small (typically 3 or 4),
         // so not worth the effort to do a binary search
         for(unsigned int i=1; i<m_x.size(); i++)
         {

@@ -1,6 +1,6 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //
-//  Copyright (C) 2012-2015 SuperTuxKart-Team
+//  Copyright (C) 2012-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -1474,7 +1474,7 @@ void InputManager::setMode(InputDriverMode new_mode)
                     m_sensed_input_high_kbd.clear();
 
                     // The order is deliberate just in case someone starts
-                    // to make STK multithreaded: m_sensed_input must not be
+                    // to make MK multithreaded: m_sensed_input must not be
                     // 0 when mode == INPUT_SENSE_PREFER_{AXIS,BUTTON}.
                     m_mode = MENU;
 

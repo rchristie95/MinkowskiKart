@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015 Steve Baker <sjbaker1@airmail.net>
 //  Copyright (C) 2008-2015 Steve Baker, Joerg Henrichs
 //
@@ -89,7 +89,7 @@ std::string              FileManager::m_stdout_dir;
 bool macSetBundlePathIfRelevant(std::string& data_dir)
 {
     Log::debug("[FileManager]", "Checking whether we are using an app bundle... ");
-    // the following code will enable STK to find its data when placed in an
+    // the following code will enable MK to find its data when placed in an
     // app bundle on mac OS X.
     // returns true if path is set, returns false if path was not set
     char path[1024];
@@ -230,7 +230,7 @@ FileManager::FileManager()
 #ifdef MOBILE_STK
     m_stk_assets_download_dir = getenv("HOME");
 #ifdef IOS_STK
-    m_stk_assets_download_dir += "/Library/Application Support/SuperTuxKart/stk-assets/";
+    m_stk_assets_download_dir += "/Library/Application Support/MinkowskiKart/stk-assets/";
 #elif defined (ANDROID)
     m_stk_assets_download_dir += "/stk-assets/";
 #else
@@ -434,7 +434,7 @@ void FileManager::init()
     // Clean up left-over files in addons/tmp that are older than 24h
     // ==============================================================
     // (The 24h delay is useful when debugging a problem with a zip file)
-    // We do when starting STK because for mobile STK destructor of file
+    // We do when starting MK because for mobile MK destructor of file
     // manager may never be called if only home button is pressed
     std::set<std::string> allfiles;
     std::string tmp=getAddonsFile("tmp");
@@ -1025,7 +1025,7 @@ void FileManager::checkAndCreateConfigDir()
             m_user_config_dir = "";
         }
         m_user_config_dir += "/Library/Application Support/";
-        const std::string CONFIGDIR("SuperTuxKart");
+        const std::string CONFIGDIR("MinkowskiKart");
         m_user_config_dir += CONFIGDIR;
 
 #elif defined(__HAIKU__)
@@ -1040,7 +1040,7 @@ void FileManager::checkAndCreateConfigDir()
             m_user_config_dir = getenv("HOME");
             m_user_config_dir += "/config/settings";
         }
-        m_user_config_dir += "/SuperTuxKart";
+        m_user_config_dir += "/MinkowskiKart";
 
 #else
 
@@ -1111,7 +1111,7 @@ void FileManager::checkAndCreateAddonsDir()
     m_addons_dir  = m_user_config_dir+"addons/";
 #elif defined(__APPLE__)
     m_addons_dir  = getenv("HOME");
-    m_addons_dir += "/Library/Application Support/SuperTuxKart/Addons/";
+    m_addons_dir += "/Library/Application Support/MinkowskiKart/Addons/";
 #elif defined(__HAIKU__)
     m_addons_dir  = m_user_config_dir+"addons/";
 #else
@@ -1150,7 +1150,7 @@ void FileManager::checkAndCreateScreenshotDir()
     m_screenshot_dir  = m_user_config_dir+"screenshots/";
 #elif defined(__APPLE__)
     m_screenshot_dir  = getenv("HOME");
-    m_screenshot_dir += "/Library/Application Support/SuperTuxKart/Screenshots/";
+    m_screenshot_dir += "/Library/Application Support/MinkowskiKart/Screenshots/";
 #else
     m_screenshot_dir  = checkAndCreateLinuxDir("XDG_DATA_HOME", "supertuxkart",
                                           ".local/share", ".stkscreenshots");
@@ -1176,7 +1176,7 @@ void FileManager::checkAndCreateReplayDir()
     m_replay_dir = m_user_config_dir + "replay/";
 #elif defined(__APPLE__)
     m_replay_dir  = getenv("HOME");
-    m_replay_dir += "/Library/Application Support/SuperTuxKart/replay/";
+    m_replay_dir += "/Library/Application Support/MinkowskiKart/replay/";
 #else
     m_replay_dir = checkAndCreateLinuxDir("XDG_DATA_HOME", "supertuxkart",
                                           ".local/share", ".supertuxkart");
@@ -1202,7 +1202,7 @@ void FileManager::checkAndCreateCachedTexturesDir()
     m_cached_textures_dir = m_user_config_dir + "cached-textures/";
 #elif defined(__APPLE__)
     m_cached_textures_dir = getenv("HOME");
-    m_cached_textures_dir += "/Library/Application Support/SuperTuxKart/CachedTextures/";
+    m_cached_textures_dir += "/Library/Application Support/MinkowskiKart/CachedTextures/";
 #else
     m_cached_textures_dir = checkAndCreateLinuxDir("XDG_CACHE_HOME", "supertuxkart", ".cache/", ".");
     m_cached_textures_dir += "cached-textures/";
@@ -1227,7 +1227,7 @@ void FileManager::checkAndCreateGPDir()
     m_gp_dir = m_user_config_dir + "grandprix/";
 #elif defined(__APPLE__)
     m_gp_dir  = getenv("HOME");
-    m_gp_dir += "/Library/Application Support/SuperTuxKart/grandprix/";
+    m_gp_dir += "/Library/Application Support/MinkowskiKart/grandprix/";
 #else
     m_gp_dir = checkAndCreateLinuxDir("XDG_DATA_HOME", "supertuxkart",
                                           ".local/share", ".supertuxkart");
@@ -1568,7 +1568,7 @@ bool FileManager::removeDirectory(const std::string &name) const
             // used to remove addons), and it limits the damage in case
             // of any bugs - i.e. if name should be "/" or so.
             // We need to remove whole data directory on Android though, i.e.
-            // when we install newer STK version and new assets are extracted.
+            // when we install newer MK version and new assets are extracted.
             // So enable it only for Android for now.
             #ifdef MOBILE_STK
             removeDirectory(file);

@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2011-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -350,7 +350,7 @@ void NewsManager::updateNews(const XMLNode *xml, const std::string &filename)
         // a new read on the next start, instead of waiting
         // for some time).
         file_manager->removeFile(filename);
-        NewsMessage n(_("Failed to connect to the SuperTuxKart add-ons server."), -1);
+        NewsMessage n(_("Failed to connect to the MinkowskiKart add-ons server."), -1);
 
         for (int type = 0; type < NTYPE_COUNT; type++)
         {
@@ -548,7 +548,7 @@ const int NewsManager::getNextNewsID(NewsType type)
  *  must be of the form "type comp version".
  *  Type must be 'stkversion'
  *  comp must be one of "<", "=", ">"
- *  version must be a valid STK version string
+ *  version must be a valid MK version string
  *  \param cond The list of conditions
  *  \return True if all conditions are true.
  */

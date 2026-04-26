@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Glenn De Jonghe
 //
 //  This program is free software; you can redistribute it and/or
@@ -94,7 +94,7 @@ ServersManager::~ServersManager()
 
 // ----------------------------------------------------------------------------
 /** Returns a WAN update-list-of-servers request. It queries the
- *  STK server for an up-to-date list of servers.
+ *  MK server for an up-to-date list of servers.
  */
 std::shared_ptr<ServerList> ServersManager::getWANRefreshRequest() const
 {

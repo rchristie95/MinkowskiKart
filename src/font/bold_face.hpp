@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
 
 class FaceTTF;
 
-/** A font which uses regular TTFs to render title or important message in STK
+/** A font which uses regular TTFs to render title or important message in MK
  *  with a bold outline, it shares the same \ref FaceTTF with \ref RegularFace.
  *  \ingroup font
  */

@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2008-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -81,7 +81,7 @@ ChallengeData::ChallengeData(const std::string& filename)
     if(!unlock_manager->isSupportedVersion(*this))
     {
         Log::warn("ChallengeData", "Challenge <%s> is older "
-                  "or newer than this version of STK, will be ignored.\n",
+                  "or newer than this version of MK, will be ignored.\n",
                   filename.c_str());
         return;
     }
@@ -340,8 +340,8 @@ void ChallengeData::error(const char *id) const
 
 // ----------------------------------------------------------------------------
 /** Checks if this challenge is valid, i.e. contains a valid track or a valid
- *  GP. If incorrect data are found, STK is aborted with an error message.
- *  (otherwise STK aborts when trying to do this challenge, which is worse).
+ *  GP. If incorrect data are found, MK is aborted with an error message.
+ *  (otherwise MK aborts when trying to do this challenge, which is worse).
  */
 void ChallengeData::check() const
 {

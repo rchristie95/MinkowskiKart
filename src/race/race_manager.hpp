@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2006-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2006-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -88,7 +88,7 @@ static const std::string IDENT_LAP_TRIAL("LAP_TRIAL"       );
 class RaceManager
 {
 public:
-    /** The major types or races supported in STK
+    /** The major types or races supported in MK
     */
     enum MajorRaceModeType
     {

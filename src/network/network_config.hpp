@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -88,7 +88,7 @@ private:
 
     bool m_done_adding_network_players;
 
-    /** True if this STK instance is an AI instance which is used for server
+    /** True if this MK instance is an AI instance which is used for server
      *  AI. (usually used together with ai-handling in server config) */
     bool m_network_ai_instance;
 
@@ -124,7 +124,7 @@ private:
     std::set<std::string> m_server_capabilities;
 
     /** For IPv6 only network we try to detect the NAT64 prefix so we can
-     *  use it to connect to ipv4 only servers. STK assumes that for all ipv4
+     *  use it to connect to ipv4 only servers. MK assumes that for all ipv4
      *  addresses they use the same prefix for each initIPTest. */
     std::string m_nat64_prefix;
     std::array<uint32_t, 8> m_nat64_prefix_data;

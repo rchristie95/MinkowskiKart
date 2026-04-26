@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2011-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -38,7 +38,7 @@ private:
 
 public:
     /** Convert an irrlicht vector3df into the internal (bullet) format.
-     *  Irrlicht's and STK's axis are different (STK: Z up, irrlicht: Y up).
+     *  Irrlicht's and MK's axis are different (MK: Z up, irrlicht: Y up).
      *  We might want to change this as well, makes it easier to work with
      *  bullet and irrlicht together, without having to swap indices (bullet
      *  can handle any axis ordering). Note that toIrrVector swaps the

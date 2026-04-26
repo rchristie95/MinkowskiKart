@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Lucas Baudin
 //            (C) 2014-2015 Joerg Henrichs
 //            (C) 2013-2015 Glenn De Jonghe
@@ -215,7 +215,7 @@ namespace Online
 
         // Signal that the request manager can now be deleted.
         // We signal this even before cleaning up memory, since there's no
-        // need to keep the user waiting for STK to exit.
+        // need to keep the user waiting for MK to exit.
         me->setCanBeDeleted();
 
         // At this stage we have the lock for m_request_queue

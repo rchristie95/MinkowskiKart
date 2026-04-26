@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -224,7 +224,7 @@ namespace SkinConfig
     }   // parseColor
     // ------------------------------------------------------------------------
     /**
-      * \brief loads skin information from a STK skin file
+      * \brief loads skin information from a MK skin file
       * \throw std::runtime_error if file cannot be read
       */
     static void loadFromFile(std::string file, bool clear_prev_params, std::vector<std::string>& skin_paths)
@@ -3117,7 +3117,7 @@ video::SColor Skin::getColor (EGUI_DEFAULT_COLOR color) const
 const wchar_t*  Skin::getDefaultText (EGUI_DEFAULT_TEXT text) const
 {
     // No idea what this is for
-    return L"SuperTuxKart";
+    return L"MinkowskiKart";
 }   // getDefaultText
 
 // -----------------------------------------------------------------------------

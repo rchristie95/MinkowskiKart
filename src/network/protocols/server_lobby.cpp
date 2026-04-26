@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2013-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2013-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -177,7 +177,7 @@ ServerLobby::ServerLobby() : LobbyProtocol()
     if (ServerConfig::m_ranked)
     {
         Log::info("ServerLobby", "This server will submit ranking scores to "
-            "the STK addons server. Don't bother hosting one without the "
+            "the MK addons server. Don't bother hosting one without the "
             "corresponding permissions, as they would be rejected.");
 
         m_ranking = std::make_shared<Ranking>();
@@ -495,7 +495,7 @@ void ServerLobby::handleChat(Event* event)
         // currently written by the server. The server would have
         // to send a warning for interpretation by the client to
         // allow proper translation. Also, this string can only be
-        // triggered with modified STK clients anyways.
+        // triggered with modified MK clients anyways.
         core::stringw warn = "Don't try to impersonate others!";
         chat->addUInt8(LE_CHAT).encodeString16(warn);
         event->getPeer()->sendPacket(chat, true/*reliable*/);
@@ -643,7 +643,7 @@ bool ServerLobby::notifyEventAsynchronous(Event* event)
 
 //-----------------------------------------------------------------------------
 #ifdef ENABLE_SQLITE3
-/* Every 1 minute STK will poll database:
+/* Every 1 minute MK will poll database:
  * 1. Set disconnected time to now for non-exists host.
  * 2. Clear expired player reports if necessary
  * 3. Kick active peer from ban list
@@ -780,7 +780,7 @@ void ServerLobby::writePlayerReport(Event* event)
 }   // writePlayerReport
 
 //-----------------------------------------------------------------------------
-/** Find out the public IP server or poll STK server asynchronously. */
+/** Find out the public IP server or poll MK server asynchronously. */
 void ServerLobby::asynchronousUpdate()
 {
     if (m_rs_state.load() == RS_ASYNC_RESET)
@@ -812,7 +812,7 @@ void ServerLobby::asynchronousUpdate()
     if (allowJoinedPlayersWaiting() || (m_game_setup->isGrandPrix() &&
         m_state.load() == WAITING_FOR_START_GAME))
     {
-        // Only poll the STK server if server has been registered.
+        // Only poll the MK server if server has been registered.
         if (m_server_id_online.load() != 0 &&
             m_state.load() != REGISTER_SELF_ADDRESS)
             checkIncomingConnectionRequests();
@@ -835,7 +835,7 @@ void ServerLobby::asynchronousUpdate()
     case SET_PUBLIC_ADDRESS:
     {
         // In case of LAN we don't need our public address or register with the
-        // STK server, so we can directly go to the accepting clients state.
+        // MK server, so we can directly go to the accepting clients state.
         if (NetworkConfig::get()->isLAN())
         {
             m_state = WAITING_FOR_START_GAME;
@@ -874,7 +874,7 @@ void ServerLobby::asynchronousUpdate()
             updatePlayerList();
             break;
         }
-        // Register this server with the STK server. This will block
+        // Register this server with the MK server. This will block
         // this thread, because there is no need for the protocol manager
         // to react to any requests before the server is registered.
         if (m_server_registering.expired() && m_server_id_online.load() == 0)
@@ -1701,7 +1701,7 @@ void ServerLobby::update(int ticks)
 }   // update
 
 //-----------------------------------------------------------------------------
-/** Register this server (i.e. its public address) with the STK server
+/** Register this server (i.e. its public address) with the MK server
  *  so that clients can find it. It blocks till a response from the
  *  stk server is received (this function is executed from the
  *  ProtocolManager thread). The information about this client is added
@@ -1797,7 +1797,7 @@ void ServerLobby::registerServer(bool first_time)
 }   // registerServer
 
 //-----------------------------------------------------------------------------
-/** Unregister this server (i.e. its public address) with the STK server,
+/** Unregister this server (i.e. its public address) with the MK server,
  *  currently when karts enter kart selection screen it will be done or quit
  *  stk.
  */
@@ -2159,7 +2159,7 @@ void ServerLobby::startSelection(const Event *event)
 }   // startSelection
 
 //-----------------------------------------------------------------------------
-/** Query the STK server for connection requests. For each connection request
+/** Query the MK server for connection requests. For each connection request
  *  start a ConnectToPeer protocol.
  */
 void ServerLobby::checkIncomingConnectionRequests()

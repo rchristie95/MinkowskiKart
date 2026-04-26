@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -195,7 +195,7 @@ void Screen::parseScreenFileDiv(irr::io::IXMLReader* xml, PtrVector<Widget>& app
                 }
                 else
                 {
-                    Log::warn("Screen::parseScreenFileDiv", "unknown tag found in STK GUI file '%s'", xml->getNodeName());
+                    Log::warn("Screen::parseScreenFileDiv", "unknown tag found in MK GUI file '%s'", xml->getNodeName());
                     continue;
                 }
 

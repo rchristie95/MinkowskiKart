@@ -605,7 +605,7 @@ void btKart::updateVehicle( btScalar step )
         m_chassisBody->setWorldTransform(t);
         // Also apply the rotation to the interpolated world transform.
         // This is important (at least if the rotation is only applied
-        // in one frame) since STK will actually use the interpolated
+        // in one frame) since MK will actually use the interpolated
         // transform, which would otherwise only be updated one frame
         // later, resulting in a one-frame incorrect rotation of the
         // kart, or a strongly 'visual jolt' of the kart

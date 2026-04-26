@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -23,7 +23,7 @@
  * \defgroup guiengine
  * Contains the generic GUI engine (contains the widgets and the backing logic
  * for event handling, the skin, screens and dialogs). See module @ref states_screens
- * for the actual STK GUI screens. Note that all input comes through this module
+ * for the actual MK GUI screens. Note that all input comes through this module
  * too.
  */
 

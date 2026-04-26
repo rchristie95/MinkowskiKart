@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -174,7 +174,7 @@ void Log::printMessage(int level, const char *component, const char *format,
     }
 
 #ifdef MOBILE_STK
-    // Mobile STK already has timestamp logging in console
+    // Mobile MK already has timestamp logging in console
     std::string server_prefix = "Server";
 #else
     std::string server_prefix = StkTime::getLogTime();
@@ -249,7 +249,7 @@ void Log::writeLine(const char *line, int level)
             android_LogPriority alp;
             switch (level)
             {
-                // STK is using the levels slightly different from android
+                // MK is using the levels slightly different from android
                 // (debug lowest, verbose above it; while android reverses
                 // this order. So to get the same behaviour (e.g. filter
                 // out debug message, but still get verbose, we swap
@@ -262,7 +262,7 @@ void Log::writeLine(const char *line, int level)
             case LL_FATAL:   alp = ANDROID_LOG_FATAL;   break;
             default:         alp = ANDROID_LOG_FATAL;
             }
-            __android_log_print(alp, "SuperTuxKart", "%s", line);
+            __android_log_print(alp, "MinkowskiKart", "%s", line);
 #elif defined(IOS_STK)
             CIrrDeviceiOS::debugPrint(line);
 #else
@@ -284,7 +284,7 @@ void Log::writeLine(const char *line, int level)
 #ifdef WIN32
     if (level >= LL_FATAL)
     {
-        MessageBoxA(NULL, line, "SuperTuxKart - Fatal error", MB_OK);
+        MessageBoxA(NULL, line, "MinkowskiKart - Fatal error", MB_OK);
     }
 #endif
 }   // _fluhBuffers

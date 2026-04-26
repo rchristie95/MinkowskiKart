@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2024 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2024 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -406,7 +406,7 @@ void DatabaseConnector::initServerStatsTable()
         "    username TEXT NOT NULL, -- First player name in the host (if the host has splitscreen player)\n"
         "    player_num INTEGER UNSIGNED NOT NULL, -- Number of player(s) from the host, more than 1 if it has splitscreen player\n"
         "    country_code TEXT NULL DEFAULT NULL, -- 2-letter country code of the host\n"
-        "    version TEXT NOT NULL, -- SuperTuxKart version of the host\n"
+        "    version TEXT NOT NULL, -- MinkowskiKart version of the host\n"
         "    os TEXT NOT NULL, -- Operating system of the host\n"
         "    connected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when connected\n"
         "    disconnected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when disconnected (saved when disconnected)\n"

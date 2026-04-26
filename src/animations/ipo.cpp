@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015  Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -246,7 +246,7 @@ void Ipo::IpoData::approximateBezier(float t0, float t1,
 // ----------------------------------------------------------------------------
 /** Approximates the length of a bezier curve using a simple Euler
  *  approximation by dividing the interval [t0, t1] into 10 pieces. Good enough
- *  for our needs in STK.
+ *  for our needs in MK.
  *  \param t0, t1 Approximate for t in [t0, t1].
  *  \param p0, p1 The start and end point of the curve.
  *  \param h0, h1 The control points for the corresponding points.

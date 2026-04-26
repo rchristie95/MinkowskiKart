@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2010-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2010-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -112,7 +112,7 @@ namespace GUIEngine
         void resetAndSetStack(Screen* screens[]);
 
         /**
-         * \brief Used in no graphics STK to enter menu screen (when server is
+         * \brief Used in no graphics MK to enter menu screen (when server is
          * idle state)
          */
         void enterMenuState() { setGameState(MENU); }
@@ -175,7 +175,7 @@ namespace GUIEngine
 
         // --------------------------------------------------------------------
         /** Returns the number of screens on the stack. Is used to decide
-         *  if exiting a screen would cause STK to end or not. */
+         *  if exiting a screen would cause MK to end or not. */
         unsigned int getMenuStackSize() const
         {
             return (unsigned int)m_menu_stack.size();

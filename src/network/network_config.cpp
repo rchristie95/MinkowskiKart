@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -132,7 +132,7 @@ void NetworkConfig::initSystemIP()
 }   // initSystemIP
 
 /** \class NetworkConfig
- *  This class is the interface between STK and the online code, particularly
+ *  This class is the interface between MK and the online code, particularly
  *  STKHost. It stores all online related properties (e.g. if this is a server
  *  or a host, name of the server, maximum number of players, ip address, ...).
  *  They can either be set from the GUI code, or via the command line (for a

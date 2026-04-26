@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2007-2015 Joerg Henrichs
 //
 //  Physics improvements and linear intersection algorithm by

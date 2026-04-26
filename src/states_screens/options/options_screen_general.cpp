@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -79,12 +79,12 @@ void OptionsScreenGeneral::init()
 #ifdef MOBILE_STK
     if (ExtractMobileAssets::hasFullAssets())
     {
-        // I18N: For mobile version for STK, uninstall the downloaded assets
+        // I18N: For mobile version for MK, uninstall the downloaded assets
         getWidget("assets_settings")->setText(_("Uninstall full game assets"));
     }
     else
     {
-        // I18N: For mobile version for STK, install the full game assets which
+        // I18N: For mobile version for MK, install the full game assets which
         // will download from stk server
         getWidget("assets_settings")->setText(_("Install full game assets"));
     }

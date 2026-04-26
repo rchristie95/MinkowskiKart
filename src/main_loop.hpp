@@ -1,7 +1,7 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2004-2015 Ingo Ruhnke <grumbel@gmx.de>
-//  Copyright (C) 2006-2015 SuperTuxKart-Team
+//  Copyright (C) 2006-2015 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -73,7 +73,7 @@ public:
     void setAllowLargeDt(bool enable) { m_allow_large_dt = enable; }
     void renderGUI(int phase, int loop_index=-1, int loop_size=-1);
     // ------------------------------------------------------------------------
-    /** Returns true if STK is to be stoppe. */
+    /** Returns true if MK is to be stoppe. */
     bool isAborted() const { return m_abort; }
     // ------------------------------------------------------------------------
     void setFrameBeforeLoadingWorld()  { m_frame_before_loading_world = true; }

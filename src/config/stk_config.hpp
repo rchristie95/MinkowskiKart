@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2006-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -41,7 +41,7 @@ class MusicInformation;
 class XMLNode;
 
 /**
- * \brief Global STK configuration information.
+ * \brief Global MK configuration information.
  * Parameters here can be tuned without recompilation, but the user shouldn't actually modify
  * them. It also includes the list of default kart physics parameters which are used for
  * each kart (but which can be overwritten for each kart, too).
@@ -237,7 +237,7 @@ public:
     std::string m_stun_ipv4;
     std::string m_stun_ipv6;
 
-    /** Lists of TTF files used in STK. */
+    /** Lists of TTF files used in MK. */
     std::vector<std::string> m_normal_ttf;
     std::vector<std::string> m_digit_ttf;
     std::string m_color_emoji_ttf;
@@ -295,7 +295,7 @@ public:
     /** If true, use the prototype preferred-frame relativistic mechanics. */
     bool m_relativity_enabled;
 
-    /** Game-scale c_light, in STK coordinate meters per second. */
+    /** Game-scale c_light, in MK coordinate meters per second. */
     float m_relativity_c_light;
 
     /** Maximum beta allowed before the velocity safety clamp applies. */

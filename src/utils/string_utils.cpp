@@ -1,8 +1,8 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //
 //  Copyright (C) 2004-2015  Steve Baker <sjbaker1@airmail.net>,
 //  Copyright (C) 2004-2015  Ingo Ruhnke <grumbel@gmx.de>
-//  Copyright (C) 2006-2015  SuperTuxKart-Team
+//  Copyright (C) 2006-2015  MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -1198,7 +1198,7 @@ namespace StringUtils
                                                  const std::string& user_agent)
     {
         std::pair<std::string, std::string> ret;
-        // '#^(SuperTuxKart/[a-z0-9\\.\\-_]+)( \\(.*\\))?$#'
+        // '#^(MinkowskiKart/[a-z0-9\\.\\-_]+)( \\(.*\\))?$#'
         std::vector<std::string> out = split(user_agent, '/');
         if (out.size() != 2 || out[1].empty() || out[1].back() != ')')
             return ret;
@@ -1213,7 +1213,7 @@ namespace StringUtils
     // ------------------------------------------------------------------------
     std::string getUserAgentString()
     {
-        std::string uagent(std::string("SuperTuxKart/") + STK_VERSION);
+        std::string uagent(std::string("MinkowskiKart/") + STK_VERSION);
 #if defined(__SWITCH__)
         uagent += (std::string)" (Switch)";
 #elif defined(IOS_STK)

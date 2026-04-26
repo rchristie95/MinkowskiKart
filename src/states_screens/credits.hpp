@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2009-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@ using namespace irr;
 class CreditsSection;
 
 /**
- * \brief Screen where STK credits are shown
+ * \brief Screen where MK credits are shown
  * \ingroup states_screens
  */
 class CreditsScreen : public GUIEngine::Screen,

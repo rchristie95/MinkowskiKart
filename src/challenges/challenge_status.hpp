@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2008-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -45,7 +45,7 @@ class XMLNode;
   *  solve it), or solved. This status is stored for each difficulty level.
   *  This data is saved to and loaded from the players.xml file.
   *  A StoryModeStatus instance will store an array of ChallengeStatuses,
-  *  one for each Challenge in STK.
+  *  one for each Challenge in MK.
   *
   * \ingroup challenges
   */

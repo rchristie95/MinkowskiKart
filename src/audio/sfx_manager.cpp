@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2008-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -484,7 +484,7 @@ void SFXManager::mainLoop(void *obj)
 
     // Signal that the sfx manager can now be deleted.
     // We signal this even before cleaning up memory, since there is no
-    // need to keep the user waiting for STK to exit.
+    // need to keep the user waiting for MK to exit.
     me->setCanBeDeleted();
 
 #ifndef __SWITCH__

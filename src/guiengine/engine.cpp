@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Marianne Gagnon
 //
 //  This program is free software; you can redistribute it and/or
@@ -93,7 +93,7 @@ namespace GUIEngine
  \section widgets Widgets
  <HR>
 
- This section describes the widgets you can use in STK's GUI XML files. The
+ This section describes the widgets you can use in MK's GUI XML files. The
  upper-case name starting with WTYPE_* is the internal name of the widget
  (see the WidgetType enum).
 
@@ -299,7 +299,7 @@ namespace GUIEngine
  <em> Name in XML files: </em> \c "icon"
 
  give an icon to the widget. Property contents is the path to the file, by
- default relative to the /data directory of STK (several methods of
+ default relative to the /data directory of MK (several methods of
  IconButtonWidget and DynamicRibbon can enable you to use absolute paths if
  you wish, however).
 
@@ -582,12 +582,12 @@ namespace GUIEngine
 
  \subsection Widget Widget
 
- SuperTuxKart's GUIEngine::Widget class is a wrapper for the underlying
+ MinkowskiKart's GUIEngine::Widget class is a wrapper for the underlying
  irrlicht classes. This is needed for a couple reasons :
- - irrlicht widgets do not do everything we want; so many STK widgets act as
+ - irrlicht widgets do not do everything we want; so many MK widgets act as
    composite widgets (create multiple irrlicht widgets and adds logic so they
    behave as a whole to the end-user)
- - STK widgets have a longer life-span than their underlying irrlicht
+ - MK widgets have a longer life-span than their underlying irrlicht
    counterparts. This is simply an optimisation measure to prevent having to
    seek the file to disk everytime a screen switch occurs.
 
@@ -640,10 +640,10 @@ namespace GUIEngine
  may need to get your hands dirty. Take a look at
  GUIEngine::Screen::manualRemoveWidget() and
  GUIEngine::Screen::manualAddWidget() if you wish to dynamically modify the
- STK widget tree at runtime. If you get into this, be very careful about the
+ MK widget tree at runtime. If you get into this, be very careful about the
  relationship
- between the STK widget tree and the irrlicht widget tree. If you
- \c manualRemoveWidget() a STK widget that is currently visible on screen,
+ between the MK widget tree and the irrlicht widget tree. If you
+ \c manualRemoveWidget() a MK widget that is currently visible on screen,
  this does not remove its associated irrlicht widget; call
  \c widget->getIrrlichtElement()->remove() for that. When you removed a
  widget from a Screen you are also responsible to call
@@ -655,8 +655,8 @@ namespace GUIEngine
  widget so that it is added to the irrlicht GUI environment).
 
  As a final note, note that the GUIEngine::Skin depends on both the irrlicht
- widget and the STK widget to render widgets properly. So adding an irrlicht
- IGUIElement without having its SuperTuxKart GUIEngine::Widget accessible
+ widget and the MK widget to render widgets properly. So adding an irrlicht
+ IGUIElement without having its MinkowskiKart GUIEngine::Widget accessible
  through the current GUIEngine::Screen (or a modal dialog) may result in
  rendering glitches.
 

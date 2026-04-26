@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2006-2015 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2006-2015 MinkowskiKart-Team
 //  Modelled after Supertux's configfile.h
 //
 //  This program is free software; you can redistribute it and/or
@@ -589,7 +589,7 @@ namespace UserConfigParams
     PARAM_PREFIX IntUserConfigParam         m_screen_keyboard
             PARAM_DEFAULT( IntUserConfigParam(0, "screen_keyboard_status",
             &m_multitouch_group,
-            "STK screen keyboard status: 0 = disabled, 1 = enabled") );
+            "MK screen keyboard status: 0 = disabled, 1 = enabled") );
 
     // ---- GP start order
     PARAM_PREFIX GroupUserConfigParam        m_gp_start_order
@@ -1475,7 +1475,7 @@ namespace UserConfigParams
 
 // ============================================================================
 /**
-  * \brief Class for managing general STK user configuration data.
+  * \brief Class for managing general MK user configuration data.
   * \ingroup config
   */
 class UserConfig : public NoCopy

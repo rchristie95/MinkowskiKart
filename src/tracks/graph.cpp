@@ -1,6 +1,6 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2016 SuperTuxKart Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2016 MinkowskiKart Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -713,7 +713,7 @@ void Graph::findRoadSector(const Vec3& xyz, int *sector,
 //-----------------------------------------------------------------------------
 /** findOutOfRoadSector finds the sector where XYZ is, but as it name
     implies, it is more accurate for the outside of the track than the
-    inside, and for STK's needs the accuracy on top of the track is
+    inside, and for MK's needs the accuracy on top of the track is
     unacceptable; but if this was a 2D function, the accuracy for out
     of road sectors would be perfect.
 
@@ -724,7 +724,7 @@ void Graph::findRoadSector(const Vec3& xyz, int *sector,
     The SIDE argument is used to speed up the function only; if we know
     that XYZ is on the left or right side of the track, we know that
     the closest driveline must be the one that matches that condition.
-    In reality, the side used in STK is the one from the previous frame,
+    In reality, the side used in MK is the one from the previous frame,
     but in order to move from one side to another a point would go
     through the middle, that is handled by findRoadSector() which doesn't
     has speed ups based on the side.

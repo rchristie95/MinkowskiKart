@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2016 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or

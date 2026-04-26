@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //
 //  Copyright (C) 2013-2015 Lionel Fuentes
 //
@@ -100,7 +100,7 @@
             else
                 getCallStack(callstack);
 
-            std::string msg =   "SuperTuxKart crashed!\n"
+            std::string msg =   "MinkowskiKart crashed!\n"
                                 "If you continue to encounter this issue, please hit Ctrl+C to copy this error "
                                 "to the clipboard and report the problem to the developers on our bug tracker:\n"
                                 "https://github.com/supertuxkart/stk-code/issues\n"
@@ -108,7 +108,7 @@
                                 "Call stack:\n";
             msg += callstack;
             Log::error("StackTrace", "%s", msg.c_str());
-            MessageBoxA(NULL, msg.c_str(), "SuperTuxKart crashed!", MB_ICONERROR | MB_OK);
+            MessageBoxA(NULL, msg.c_str(), "MinkowskiKart crashed!", MB_ICONERROR | MB_OK);
         }   // winCrashHandler
 
         // --------------------------------------------------------------------
@@ -365,7 +365,7 @@
 
     namespace CrashReporting
     {
-        // BFD of current running STK binary, only can be useful
+        // BFD of current running MK binary, only can be useful
         // if compiled with debug symbols
         static bfd *m_stk_bfd = NULL;
 
@@ -411,11 +411,11 @@
             if (m_stk_bfd == NULL)
             {
                 Log::warn("CrashReporting", "Failed loading or missing BFD of "
-                          "STK binary, no backtrace available when reporting");
+                          "MK binary, no backtrace available when reporting");
                 exit(0);
             }
 
-            Log::error("CrashReporting", "STK has crashed! Backtrace info:");
+            Log::error("CrashReporting", "MK has crashed! Backtrace info:");
             std::string stack;
             getCallStack(stack);
 

@@ -1,5 +1,5 @@
-//  SuperTuxKart - a fun racing game with go-kart
-//  Copyright (C) 2020 SuperTuxKart-Team
+//  MinkowskiKart - a fun racing game with go-kart
+//  Copyright (C) 2020 MinkowskiKart-Team
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -285,7 +285,7 @@ void SDLController::updateAutoCenter(int state)
 #ifdef ANDROID
 void SDLController::handleDirectScanCode(const SDL_Event& event)
 {
-    // Android STK has custom changes in SDL2 to allow gamepad with unknown
+    // Android MK has custom changes in SDL2 to allow gamepad with unknown
     // button to use scan code directly
     input_manager->dispatchInput(Input::IT_STICKBUTTON,
         m_irr_event.JoystickEvent.Joystick, event.jbutton.button,

@@ -1,5 +1,5 @@
 //
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 Glenn De Jonghe
 //            (C) 2014-2015 Joerg Henrichs
 //
@@ -44,7 +44,7 @@ WebAchievementsStatus::WebAchievementsStatus(int version, std::map<uint32_t, Ach
     GamerzillaInitGame(&g);
     g.version = version;
     g.short_name = strdup("supertuxkart");
-    g.name = strdup("SuperTuxKart");
+    g.name = strdup("MinkowskiKart");
     g.image = strdup(main_image.c_str());
     for (auto const &i : info)
     {

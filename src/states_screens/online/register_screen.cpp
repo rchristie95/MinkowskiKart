@@ -1,4 +1,4 @@
-//  SuperTuxKart - a fun racing game with go-kart
+//  MinkowskiKart - a fun racing game with go-kart
 //  Copyright (C) 2014-2015 Joerg Henrichs
 //
 //  This program is free software; you can redistribute it and/or
@@ -100,7 +100,7 @@ void RegisterScreen::init()
     ribbon->setVisible(m_existing_player == NULL);
     Screen::init();
 
-    // If there is no player (i.e. first start of STK), try to pick
+    // If there is no player (i.e. first start of MK), try to pick
     // a good default name
     stringw username = "";
     if(m_existing_player)
@@ -177,7 +177,7 @@ void RegisterScreen::setRename(PlayerProfile *player)
 }   // setRename
 
 // -----------------------------------------------------------------------------
-/** Will be called first time STK is started, when the 'internet yes/no' dialog
+/** Will be called first time MK is started, when the 'internet yes/no' dialog
  *  is closed. Adjust the state of the online checkbox depending on that
  *  answer.
  */
@@ -561,7 +561,7 @@ bool RegisterScreen::onEscapePressed()
         // Must be first time start, and player cancelled player creation
         // so quit stk. At this stage there are two menus on the stack:
         // 1) The UserScreen,  2) RegisterStreen
-        // Popping them both will trigger STK to close.
+        // Popping them both will trigger MK to close.
         StateManager::get()->popMenu();
         return true;
     }
