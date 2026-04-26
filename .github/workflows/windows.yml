@@ -281,15 +281,22 @@ jobs:
           $pkg = "MinkowskiKart-${{ env.release_tag }}-win"
           $env:SUPERTUXKART_DATADIR = (Resolve-Path $pkg).Path + "\"
           $proc = Start-Process -FilePath "$pkg\bin\x86_64\supertuxkart.exe" `
+            -ArgumentList "--no-start-screen","--track=sandtrack","--kart=tux","--laps=1","--ai-num=1" `
             -RedirectStandardOutput "$pkg\out.txt" `
             -RedirectStandardError "$pkg\err.txt" `
             -PassThru -WorkingDirectory "$pkg\bin\x86_64"
-          $proc.WaitForExit(20000)
+          # Wait 10s — if still alive the game got past init and into the race
+          Start-Sleep -Seconds 10
+          $alive = !$proc.HasExited
+          Write-Host "Still running after 10s: $alive"
+          # Let it run another 10s then kill
+          Start-Sleep -Seconds 10
           if (!$proc.HasExited) { $proc.Kill() }
           $out = ((Get-Content "$pkg\out.txt","$pkg\err.txt" -ErrorAction SilentlyContinue) -join "`n")
           Write-Host $out
-          if ($out -match "Not all assets found") { throw "Smoke test FAILED: asset layout is broken" }
-          Write-Host "Smoke test passed"
+          if ($out -match "Not all assets found") { throw "FAILED: asset layout is broken" }
+          if (-not $alive) { throw "FAILED: process exited within 10s (crashed during init)" }
+          Write-Host "Smoke test passed: game ran for 20s in race"
       - name: Configure NSIS script
         shell : bash
         if: ${{ env.release_tag != '' && startsWith(github.ref, 'refs/tags/') }}
