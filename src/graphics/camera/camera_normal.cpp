@@ -35,6 +35,7 @@
 #include "modes/soccer_world.hpp"
 #include "physics/btKart.hpp"
 #include "physics/triangle_mesh.hpp"
+#include "graphics/relativistic_vfx.hpp"
 #include "relativity/relativity_math.hpp"
 #include "tracks/track.hpp"
 #include "tracks/track_object_manager.hpp"
@@ -847,6 +848,27 @@ void CameraNormal::update(float dt)
         distance *= 1.0f + 0.75f * b;
         above_kart += 1.0f * b;
         cam_angle += 8.0f * DEGREE_TO_RAD * b;
+    }
+
+    // Compactification tilt: smoothly level the camera when the Calabi-Yau
+    // strip-stretch effect is active.  The shader samples a horizontal band
+    // centred on the screen; if the camera is angled down, that band is
+    // mostly road surface.  We blend cam_angle and above_kart toward zero
+    // as strength rises so the camera looks parallel to the track before
+    // the middle strip is selected and stretched.  cvfx->strength is already
+    // smoothly ramped 0→1 over ~0.4 s by the VFX manager, so no extra
+    // smoothing state is needed here.
+    if (relativistic_vfx_manager)
+    {
+        const CompactificationVFX *cvfx =
+            relativistic_vfx_manager->getCompactification(
+                m_kart->getWorldKartId());
+        if (cvfx && cvfx->active && cvfx->strength > 0.0f)
+        {
+            const float s = cvfx->strength;   // 0 = normal, 1 = full effect
+            cam_angle  *= (1.0f - s);         // tilt toward horizon
+            above_kart *= (1.0f - s);         // target point drops to kart level
+        }
     }
 
     // If an explosion is happening, stop moving the camera,
