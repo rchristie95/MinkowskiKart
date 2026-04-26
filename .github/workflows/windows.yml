@@ -236,8 +236,8 @@ jobs:
         run: |
           curl.exe -L -o cv2pdb-0.50.zip https://github.com/rainers/cv2pdb/releases/download/v0.50/cv2pdb-0.50.zip
           Expand-Archive -Path cv2pdb-0.50.zip -DestinationPath . -Force
-          if (Test-Path i686/supertuxkart.exe) { .\cv2pdb.exe i686/supertuxkart.exe }
-          if (Test-Path x86_64/supertuxkart.exe) { .\cv2pdb.exe x86_64/supertuxkart.exe }
+          if (Test-Path i686/MinkowskiKart.exe) { .\cv2pdb.exe i686/MinkowskiKart.exe }
+          if (Test-Path x86_64/MinkowskiKart.exe) { .\cv2pdb.exe x86_64/MinkowskiKart.exe }
       - name: Downloading stk-assets
         if: ${{ env.release_tag != '' }}
         shell: pwsh
@@ -280,7 +280,7 @@ jobs:
         run: |
           $pkg = "MinkowskiKart-${{ env.release_tag }}-win"
           $env:SUPERTUXKART_DATADIR = (Resolve-Path $pkg).Path + "\"
-          $proc = Start-Process -FilePath "$pkg\bin\x86_64\supertuxkart.exe" `
+          $proc = Start-Process -FilePath "$pkg\bin\x86_64\MinkowskiKart.exe" `
             -ArgumentList "--no-start-screen","--track=sandtrack","--kart=tux","--laps=1","--ai-num=1" `
             -RedirectStandardOutput "$pkg\out.txt" `
             -RedirectStandardError "$pkg\err.txt" `

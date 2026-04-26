@@ -52,7 +52,7 @@ if /I "%~1"=="full" (
     call :sync_runtime
     if errorlevel 1 exit /b !ERRORLEVEL!
     echo.
-    echo Development build successful! Executable is in build-dev\bin\supertuxkart.exe
+    echo Development build successful! Executable is in build-dev\bin\MinkowskiKart.exe
     exit /b 0
 )
 
@@ -72,14 +72,14 @@ if not "%BUILD_EXIT%"=="0" (
     exit /b %BUILD_EXIT%
 )
 
-if exist "%BUILD_DIR%\bin\supertuxkart.exe" (
+if exist "%BUILD_DIR%\bin\MinkowskiKart.exe" (
     call :sync_runtime
     if errorlevel 1 exit /b %ERRORLEVEL%
 )
 
 echo.
 if /I "%TARGET%"=="supertuxkart" (
-    echo Development build successful! Executable is in build-dev\bin\supertuxkart.exe
+    echo Development build successful! Executable is in build-dev\bin\MinkowskiKart.exe
 ) else (
     echo Development build successful!
 )

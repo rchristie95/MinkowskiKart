@@ -646,6 +646,8 @@ else()
     endif()
 endif()
 
+set_target_properties(supertuxkart PROPERTIES OUTPUT_NAME "MinkowskiKart")
+
 # SQLITE
 if(USE_SQLITE3)
     find_library(SQLITE3_LIBRARY NAMES sqlite3 libsqlite3)

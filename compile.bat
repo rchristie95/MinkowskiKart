@@ -35,4 +35,4 @@ if not "%BUILD_EXIT%"=="0" (
 )
 
 echo.
-echo Compilation successful! Executable is in build\bin\supertuxkart.exe
+echo Compilation successful! Executable is in build\bin\MinkowskiKart.exe

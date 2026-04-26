@@ -9,7 +9,7 @@ set "PATH=%BIN_DIR%;%PATH%"
 
 echo Starting SuperTuxKart...
 cd /d "%BIN_DIR%"
-.\supertuxkart.exe --root-data=../../data %*
+.\MinkowskiKart.exe --root-data=../../data %*
 
 if %ERRORLEVEL% neq 0 (
     echo.
