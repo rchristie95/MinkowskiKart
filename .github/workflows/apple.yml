@@ -176,6 +176,7 @@ jobs:
           cp ./dependencies-macosx/lib/libMoltenVK.dylib ./macosx-arm64/MinkowskiKart.app/Contents/libs/
           cd ./macosx-arm64/MinkowskiKart.app/Contents/Resources/data
           unzip -q ../../../../../stk-assets-full.zip
+          cp -r ../../../../../stk-assets/. .
           mkdir -p replay
           cd ../../../../..
           mv ./macosx-arm64/MinkowskiKart.app MinkowskiKart.app
@@ -222,6 +223,7 @@ jobs:
           # Embed stk-assets and repo data into the app bundle
           mkdir -p Payload/MinkowskiKart.app/data
           unzip -q stk-assets-full.zip -d Payload/MinkowskiKart.app/data/
+          cp -r stk-assets/. Payload/MinkowskiKart.app/data/
           cp -r data/. Payload/MinkowskiKart.app/data/
           codesign --force --deep -s - Payload/MinkowskiKart.app
           zip -r MinkowskiKart-${{ env.package_tag }}-ios.ipa Payload/
