@@ -8,6 +8,11 @@ on:
       - '*'
   pull_request: {}
   workflow_dispatch:
+    inputs:
+      target_release:
+        description: 'Release name to upload to (e.g., version_1 or preview)'
+        required: false
+        default: 'preview'
 
 permissions:
   contents: write
@@ -132,9 +137,9 @@ jobs:
       - name: Configure packaging name for manual runs
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "release_tag=" >> $GITHUB_ENV
-          echo "release_name=" >> $GITHUB_ENV
-          echo "package_tag=manual-`date +%Y%m%d`-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "release_tag=${{ github.event.inputs.target_release }}" >> $GITHUB_ENV
+          echo "release_name=${{ github.event.inputs.target_release }}" >> $GITHUB_ENV
+          echo "package_tag=git`date +%Y%m%d`" >> $GITHUB_ENV
       - name: Configure packaging name for non-releasing branch
         if: ${{ github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/') }}
         run: |
