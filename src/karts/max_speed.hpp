@@ -51,6 +51,7 @@ public:
           MS_DECREASE_AI,
           MS_DECREASE_BUBBLE,
           MS_DECREASE_SQUASH,
+          MS_DECREASE_COMPACTIFICATION,
           MS_DECREASE_MAX};
 
 private:

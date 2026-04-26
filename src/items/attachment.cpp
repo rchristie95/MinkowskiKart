@@ -26,6 +26,7 @@
 #include "config/player_manager.hpp"
 #include "config/stk_config.hpp"
 #include "config/user_config.hpp"
+#include "karts/max_speed.hpp"
 #include "graphics/explosion.hpp"
 #include "graphics/hit_effect.hpp"
 #include "graphics/irr_driver.hpp"
@@ -500,6 +501,14 @@ void Attachment::set(AttachmentType type, int ticks,
             break;
         case ATTACH_COMPACTIFICATION:
             relativistic_vfx_manager->activateCompactification(kid);
+            // 5 m/s top-speed penalty for the duration of the effect.
+            // Fades in over 0.4 s to match the VFX strength ramp.
+            {
+                const float emax = m_kart->getKartProperties()->getEngineMaxSpeed();
+                m_kart->setSlowdown(MaxSpeed::MS_DECREASE_COMPACTIFICATION,
+                                    std::max(0.0f, (emax - 5.0f) / emax),
+                                    stk_config->time2Ticks(0.4f));
+            }
             break;
         default: break;
         }
@@ -559,6 +568,9 @@ void Attachment::clear()
             break;
         case ATTACH_COMPACTIFICATION:
             relativistic_vfx_manager->deactivateCompactification(kid);
+            // Release the top-speed penalty (fraction=1.0 restores instantly).
+            m_kart->setSlowdown(MaxSpeed::MS_DECREASE_COMPACTIFICATION,
+                                1.0f, 0);
             break;
         default: break;
         }
