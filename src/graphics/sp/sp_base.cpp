@@ -95,6 +95,11 @@ struct RelativityMotionState
 std::unordered_map<const scene::ISceneNode*, RelativityMotionState>
     g_relativity_motion_states;
 
+// Scene nodes belonging to animated track objects (ThreeDAnimation-driven).
+// Their per-frame Bezier position deltas are not real translational velocities,
+// so we always return zero velocity for them to avoid relativistic stutter.
+std::unordered_set<const scene::ISceneNode*> g_animated_track_nodes;
+
 // Per-frame cache: kart root scene node -> kart's physics coordinate velocity.
 // Built once per frame by prepareDrawCalls(); consumed by addObject() to assign
 // the same authoritative velocity to every scene node in a kart's subtree, so
@@ -114,6 +119,12 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
                                      const core::vector3df& position)
 {
     if (!Relativity::isEnabled() || !node || !isFiniteVector(position))
+        return core::vector3df(0.0f, 0.0f, 0.0f);
+
+    // Animated track objects (balloons, etc.) are stationary in the world
+    // frame; their Bezier-driven position deltas are visual-only and must not
+    // be fed into the relativistic shader as real velocities.
+    if (g_animated_track_nodes.count(node))
         return core::vector3df(0.0f, 0.0f, 0.0f);
 
     RelativityMotionState& state = g_relativity_motion_states[node];
@@ -1705,6 +1716,20 @@ void setMaxTextureSize()
         UserConfigParams::m_max_texture_size : 2048;
     sp_max_texture_size.store(max);
 }   // setMaxTextureSize
+
+// ----------------------------------------------------------------------------
+void registerAnimatedTrackNode(const scene::ISceneNode* node)
+{
+    if (node)
+        g_animated_track_nodes.insert(node);
+}   // registerAnimatedTrackNode
+
+// ----------------------------------------------------------------------------
+void unregisterAnimatedTrackNode(const scene::ISceneNode* node)
+{
+    if (node)
+        g_animated_track_nodes.erase(node);
+}   // unregisterAnimatedTrackNode
 
 }
 

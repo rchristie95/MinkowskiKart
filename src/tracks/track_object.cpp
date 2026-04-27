@@ -24,6 +24,7 @@
 #include "graphics/lod_node.hpp"
 #include "graphics/material.hpp"
 #include "graphics/material_manager.hpp"
+#include "graphics/sp/sp_base.hpp"
 #include "graphics/sp/sp_mesh_buffer.hpp"
 #include "graphics/sp/sp_mesh_node.hpp"
 #include "io/file_manager.hpp"
@@ -365,6 +366,16 @@ void TrackObject::init(const XMLNode &xml_node, scene::ISceneNode* parent,
         try
         {
             m_animator = new ThreeDAnimation(xml_node, this);
+#ifndef SERVER_ONLY
+            // Tell the relativistic renderer that this node's position changes
+            // are Bezier-animation deltas, not real translational velocity.
+            // Without this the relativistic shader stutters on animated objects
+            // like the snowtuxpeak balloons (large cyclic Bezier curves).
+            TrackObjectPresentationSceneNode* tops =
+                dynamic_cast<TrackObjectPresentationSceneNode*>(m_presentation);
+            if (tops && tops->getNode())
+                SP::registerAnimatedTrackNode(tops->getNode());
+#endif
         }
         catch (std::runtime_error& e)
         {
@@ -452,6 +463,15 @@ void TrackObject::onWorldReady()
  */
 TrackObject::~TrackObject()
 {
+#ifndef SERVER_ONLY
+    if (m_animator)
+    {
+        TrackObjectPresentationSceneNode* tops =
+            dynamic_cast<TrackObjectPresentationSceneNode*>(m_presentation);
+        if (tops && tops->getNode())
+            SP::unregisterAnimatedTrackNode(tops->getNode());
+    }
+#endif
     delete m_presentation;
     delete m_animator;
 }   // ~TrackObject
