@@ -145,11 +145,7 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
     if (!isFiniteVector(delta) || delta.getLengthSQ() >
         max_expected_delta * max_expected_delta)
     {
-        // Implausibly large delta (e.g. animated track objects like balloons
-        // whose Bezier curves produce huge per-frame world-space jumps).
-        // Keep the previous velocity estimate rather than resetting to zero —
-        // resetting creates an alternating zero/non-zero pattern each frame
-        // that feeds visible stutter into the relativistic shader.
+        state.m_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
         return state.m_velocity;
     }
 
