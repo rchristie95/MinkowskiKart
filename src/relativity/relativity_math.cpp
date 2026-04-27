@@ -44,7 +44,6 @@ const double MIN_C_LIGHT = 0.001;
 const double MAX_BETA_EPSILON = 1.0e-9;
 const double MIN_GAMMA_RESPONSE_DELTA = 1.0e-6;
 const float DEFAULT_NORMAL_C_LIGHT = 1000.0f;
-const float DEFAULT_POWERUP_C_LIGHT = 30.0f;
 const float MIN_ADJUSTABLE_C_LIGHT = 15.0f;
 const float MAX_ADJUSTABLE_C_LIGHT = 1000.0f;
 const float DEFAULT_WARP_BUBBLE_RADIUS = 3.5f;
@@ -201,9 +200,8 @@ float getConfiguredNormalCLightValue()
 
 float getConfiguredPowerupCLightValue()
 {
-    return clampFiniteCLight(
-        (float)UserConfigParams::m_relativity_powerup_c_light,
-        DEFAULT_POWERUP_C_LIGHT);
+    // Warp-bubble c_light is always 10× the normal c_light; not user-adjustable.
+    return 10.0f * getConfiguredNormalCLightValue();
 }   // getConfiguredPowerupCLightValue
 
 void getAdjustableCLightBounds(float* min_c_light,
@@ -455,12 +453,6 @@ bool setCurrentCLight(float c_light,
 
     const ActiveCLightTarget active_target = getActiveLocalPlayerCLightTarget();
     if (active_target.m_active &&
-        active_target.m_kind == AbstractKart::C_LIGHT_TARGET_POWERUP)
-    {
-        UserConfigParams::m_relativity_powerup_c_light =
-            (int)std::lround((double)clamped_c_light);
-    }
-    else if (active_target.m_active &&
              active_target.m_kind == AbstractKart::C_LIGHT_TARGET_HALF_NORMAL)
     {
         const float normal_c_light = std::max(min_c_light,

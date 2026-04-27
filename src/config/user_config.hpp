@@ -1362,11 +1362,6 @@ namespace UserConfigParams
                                              &m_relativity_group,
                                              "Configured c_light during normal driving (30-1000)") );
 
-    PARAM_PREFIX IntUserConfigParam        m_relativity_powerup_c_light
-            PARAM_DEFAULT( IntUserConfigParam(30, "c_light_powerup",
-                                             &m_relativity_group,
-                                             "Configured c_light when a powerup is active (30-1000)") );
-
     PARAM_PREFIX FloatUserConfigParam      m_relativity_max_beta
             PARAM_DEFAULT( FloatUserConfigParam(0.95f, "max_beta",
                                                &m_relativity_group,

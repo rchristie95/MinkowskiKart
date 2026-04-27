@@ -116,12 +116,6 @@ void OptionsScreenRelativity::init()
     normal_w->setValue(cLightToIndex(
         (int)UserConfigParams::m_relativity_normal_c_light));
 
-    SpinnerWidget* powerup_w = getWidget<SpinnerWidget>("powerup_c_light");
-    assert(powerup_w != NULL);
-    populateCLightSpinner(powerup_w);
-    powerup_w->setValue(cLightToIndex(
-        (int)UserConfigParams::m_relativity_powerup_c_light));
-
     SpinnerWidget* beta_w = getWidget<SpinnerWidget>("max_beta");
     assert(beta_w != NULL);
     populateMaxBetaSpinner(beta_w);
@@ -162,14 +156,6 @@ void OptionsScreenRelativity::eventCallback(Widget* widget,
         assert(w != NULL);
         const int c_light = indexToCLight(w->getValue());
         UserConfigParams::m_relativity_normal_c_light = c_light;
-        Relativity::getCurrentCLight();
-    }
-    else if (name == "powerup_c_light")
-    {
-        SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
-        assert(w != NULL);
-        const int c_light = indexToCLight(w->getValue());
-        UserConfigParams::m_relativity_powerup_c_light = c_light;
         Relativity::getCurrentCLight();
     }
     else if (name == "max_beta")

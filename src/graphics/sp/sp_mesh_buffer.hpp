@@ -227,7 +227,7 @@ public:
         m_ins_dat[dct].push_back(id);
     }
     // ------------------------------------------------------------------------
-    void recreateVAO(unsigned i);
+    bool recreateVAO(unsigned i);
     // ------------------------------------------------------------------------
     video::S3DVertexSkinnedMesh* getSPMVertex()
     {

@@ -224,12 +224,12 @@ void SPMeshBuffer::uploadGLMesh()
 }   // uploadGLMesh
 
 // ----------------------------------------------------------------------------
-void SPMeshBuffer::recreateVAO(unsigned i)
+bool SPMeshBuffer::recreateVAO(unsigned i)
 {
 #ifndef SERVER_ONLY
     if (!m_shaders[0])
     {
-        return;
+        return false;
     }
     bool use_2_uv = std::get<2>(m_stk_material[0])->use2UV();
     bool use_tangents = m_shaders[0]->useTangents();
@@ -389,8 +389,11 @@ void SPMeshBuffer::recreateVAO(unsigned i)
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    return true;
+#else
+    return false;
 #endif
-}   // uploadGLMesh
+}   // recreateVAO
 
 // ----------------------------------------------------------------------------
 void SPMeshBuffer::uploadInstanceData()
@@ -412,8 +415,15 @@ void SPMeshBuffer::uploadInstanceData()
         }
         if (new_size != m_gl_instance_size[i])
         {
+            const unsigned old_size = m_gl_instance_size[i];
             m_gl_instance_size[i] = new_size;
-            recreateVAO(i);
+            if (!recreateVAO(i))
+            {
+                // Shader not ready yet; revert size so we retry next frame
+                // and skip upload to avoid writing beyond the existing buffer.
+                m_gl_instance_size[i] = old_size;
+                continue;
+            }
         }
         if (CVS->isARBBufferStorageUsable())
         {
