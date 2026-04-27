@@ -7,21 +7,23 @@
         <button id="stk-website" height="fit" align="right" />
     </div>
 
-    <div x="2%" y="2%" width="96%" height="96%" layout="vertical-row">
-        <icon id="logo" align="center" proportion="4" width="100%" icon="gui/icons/logo_slim.png"/>
+    <!-- MK link buttons: top-level absolutely-positioned (same pattern as back/stk-website)
+         so they are guaranteed to receive click events independently of the animated_area box. -->
+    <button id="github-mk"      x="1%"  y="92%" width="23%" height="6%" text="MinkowskiKart on GitHub"/>
+    <button id="scholar"        x="26%" y="92%" width="23%" height="6%" text="scholar.google.com/citations"/>
+    <button id="email"          x="51%" y="92%" width="23%" height="6%" text="robson.christie1995@gmail.com"/>
+    <button id="openrelativity" x="76%" y="92%" width="23%" height="6%" text="OpenRelativity on GitHub"/>
+
+    <div x="2%" y="2%" width="96%" height="90%" layout="vertical-row">
+        <icon id="logo" align="center" proportion="4" width="100%" icon="gui/icons/logo_mk.png"/>
 
         <div x="0" y="0" width="100%" proportion="1" layout="horizontal-row">
             <button proportion="2" id="tab-mk"  width="fit" align="center" text="MinkowskiKart"/>
             <button proportion="2" id="tab-stk" width="fit" align="center" text="SuperTuxKart"/>
             <spacer proportion="4"/>
-            <button proportion="2" id="donate"  width="fit" align="center" text="Donate"/>
+            <button proportion="2" id="donate"  width="fit" align="center" text="Donate to STK"/>
         </div>
 
         <box id="animated_area" width="100%" proportion="9" padding="0"/>
-
-        <div width="100%" proportion="2" layout="horizontal-row">
-            <button id="scholar" proportion="1" width="fit" align="center" text="scholar.google.com/citations"/>
-            <button id="email"   proportion="1" width="fit" align="center" text="robson.christie1995@gmail.com"/>
-        </div>
     </div>
 </stkgui>

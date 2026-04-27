@@ -29,6 +29,7 @@ using irr::core::stringc;
 #include "guiengine/screen.hpp"
 #include "guiengine/widget.hpp"
 #include "guiengine/widgets/button_widget.hpp"
+#include "guiengine/widgets/icon_button_widget.hpp"
 #include "io/file_manager.hpp"
 #include "online/link_helper.hpp"
 #include "states_screens/state_manager.hpp"
@@ -224,10 +225,10 @@ void CreditsScreen::init()
     link->setText("supertuxkart.net");
     onResize(); // Ensure the icon-button is properly sized
 
-    // Always start on the SuperTuxKart panel
-    m_show_mk_panel = false;
-    getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(false);
-    getWidget<GUIEngine::ButtonWidget>("email")->setVisible(false);
+    // Default to the MinkowskiKart panel — MK buttons start visible (same
+    // pattern as the always-visible donate button) so link clicks work reliably.
+    m_show_mk_panel = true;
+    getWidget<GUIEngine::ButtonWidget>("donate")->setVisible(false);
 
     reset();
     updateAreaSize();
@@ -283,9 +284,15 @@ void CreditsScreen::drawMKPanel()
         y += lh + lh / 4;
     };
 
-    drawLine(L"MinkowskiKart is built on top of SuperTuxKart by Robson Christie.");
+    drawLine(L"MinkowskiKart, by Robson Christie, is built on top of SuperTuxKart.");
     y += lh / 2;
-    drawLine(L"If you liked these additions, check out my more technical work");
+    drawLine(L"A huge thanks to the SuperTuxKart team for the incredible open-source");
+    drawLine(L"game that made this possible!");
+    y += lh / 2;
+    drawLine(L"The relativistic effects were heavily inspired by MIT Game Lab's");
+    drawLine(L"OpenRelativity — a brilliant toolkit for visualising special relativity.");
+    y += lh / 2;
+    drawLine(L"Check out my more technical work, find OpenRelativity,");
     drawLine(L"or reach out if you find any bugs:");
 }   // drawMKPanel
 
@@ -453,15 +460,31 @@ void CreditsScreen::eventCallback(GUIEngine::Widget* widget,
     else if (name == "tab-mk")
     {
         m_show_mk_panel = true;
+        getWidget<GUIEngine::ButtonWidget>("donate")->setVisible(false);
+        getWidget<GUIEngine::ButtonWidget>("github-mk")->setVisible(true);
         getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(true);
         getWidget<GUIEngine::ButtonWidget>("email")->setVisible(true);
+        getWidget<GUIEngine::ButtonWidget>("openrelativity")->setVisible(true);
+        getWidget<GUIEngine::IconButtonWidget>("logo")->setImage(
+            "gui/icons/logo_mk.png",
+            GUIEngine::IconButtonWidget::ICON_PATH_TYPE_RELATIVE);
     }
     else if (name == "tab-stk")
     {
         m_show_mk_panel = false;
+        getWidget<GUIEngine::ButtonWidget>("donate")->setVisible(true);
+        getWidget<GUIEngine::ButtonWidget>("github-mk")->setVisible(false);
         getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(false);
         getWidget<GUIEngine::ButtonWidget>("email")->setVisible(false);
+        getWidget<GUIEngine::ButtonWidget>("openrelativity")->setVisible(false);
+        getWidget<GUIEngine::IconButtonWidget>("logo")->setImage(
+            "gui/icons/logo_slim.png",
+            GUIEngine::IconButtonWidget::ICON_PATH_TYPE_RELATIVE);
         reset();
+    }
+    else if (name == "github-mk")
+    {
+        Online::LinkHelper::openURL("https://github.com/rchristie95/MinkowskiKart");
     }
     else if (name == "scholar")
     {
@@ -471,6 +494,11 @@ void CreditsScreen::eventCallback(GUIEngine::Widget* widget,
     else if (name == "email")
     {
         Online::LinkHelper::openURL("mailto:robson.christie1995@gmail.com");
+    }
+    else if (name == "openrelativity")
+    {
+        Online::LinkHelper::openURL(
+            "https://github.com/MIT-Game-Lab/OpenRelativity");
     }
 }
 
