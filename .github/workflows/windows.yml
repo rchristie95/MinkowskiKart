@@ -319,7 +319,7 @@ jobs:
           Write-Host "Smoke test passed: game ran for 20s in race"
       - name: Configure NSIS script
         shell : bash
-        if: ${{ env.release_tag != '' && startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ env.release_tag != '' }}
         run: |
           mv tools MinkowskiKart-${{ env.release_tag }}-win/
           cd MinkowskiKart-${{ env.release_tag }}-win/tools/windows_installer
@@ -340,7 +340,7 @@ jobs:
           done
           [ -f ../COPYING ] && mv ../COPYING ../.. || true
       - name: Run makensis.exe
-        if: ${{ env.release_tag != '' && startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ env.release_tag != '' }}
         run: |
           cd MinkowskiKart-${{ env.release_tag }}-win\tools\windows_installer
           C:\msys64\usr\bin\wget.exe https://nsis.sourceforge.io/mediawiki/images/6/6c/Shelllink.zip
