@@ -71,7 +71,9 @@ class CreditsScreen : public GUIEngine::Screen,
     void drawEntries();
 
     bool m_is_victory_music;
+    bool m_show_mk_panel;
     void updateAreaSize();
+    void drawMKPanel();
 public:
 
 

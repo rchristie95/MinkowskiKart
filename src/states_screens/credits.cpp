@@ -114,6 +114,7 @@ bool CreditsScreen::getLineAsWide(std::ifstream& file, core::stringw* out)
 CreditsScreen::CreditsScreen() : Screen("credits.stkgui")
 {
     m_is_victory_music = false;
+    m_show_mk_panel    = false;
 }   // CreditsScreen
 
 // ----------------------------------------------------------------------------
@@ -223,6 +224,11 @@ void CreditsScreen::init()
     link->setText("supertuxkart.net");
     onResize(); // Ensure the icon-button is properly sized
 
+    // Always start on the SuperTuxKart panel
+    m_show_mk_panel = false;
+    getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(false);
+    getWidget<GUIEngine::ButtonWidget>("email")->setVisible(false);
+
     reset();
     updateAreaSize();
 }   // init
@@ -263,8 +269,36 @@ void CreditsScreen::reset()
 
 // ----------------------------------------------------------------------------
 
+void CreditsScreen::drawMKPanel()
+{
+    video::SColor color = GUIEngine::getSkin()->getColor("credits_text::neutral");
+    const int lh = GUIEngine::getFontHeight();
+
+    int y = m_y + m_h / 8;
+    auto drawLine = [&](const wchar_t* text)
+    {
+        GUIEngine::getFont()->draw(text,
+            core::recti(m_x, y, m_x + m_w, y + lh),
+            color, true /* center h */, true /* center v */, NULL, true);
+        y += lh + lh / 4;
+    };
+
+    drawLine(L"MinkowskiKart is built on top of SuperTuxKart by Robson Christie.");
+    y += lh / 2;
+    drawLine(L"If you liked these additions, check out my more technical work");
+    drawLine(L"or reach out if you find any bugs:");
+}   // drawMKPanel
+
+// ----------------------------------------------------------------------------
+
 void CreditsScreen::onDraw(float elapsed_time)
 {
+    if (m_show_mk_panel)
+    {
+        drawMKPanel();
+        return;
+    }
+
     // TODO : make credits display speed configurable with control buttons
     float m_speed = 1.0f;
     m_time_til_next_step -= elapsed_time * m_speed;
@@ -408,15 +442,35 @@ void CreditsScreen::eventCallback(GUIEngine::Widget* widget,
     {
         StateManager::get()->escapePressed();
     }
-    if (name == "donate")
+    else if (name == "donate")
     {
-        // Open donation page
         Online::LinkHelper::openURL(stk_config->m_donate_url);
     }
-    if (name == "stk-website")
+    else if (name == "stk-website")
     {
-        // Open stk website main page
         Online::LinkHelper::openURL(stk_config->m_stk_website_url);
+    }
+    else if (name == "tab-mk")
+    {
+        m_show_mk_panel = true;
+        getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(true);
+        getWidget<GUIEngine::ButtonWidget>("email")->setVisible(true);
+    }
+    else if (name == "tab-stk")
+    {
+        m_show_mk_panel = false;
+        getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(false);
+        getWidget<GUIEngine::ButtonWidget>("email")->setVisible(false);
+        reset();
+    }
+    else if (name == "scholar")
+    {
+        Online::LinkHelper::openURL(
+            "https://scholar.google.com/citations?user=a5gRu_gAAAAJ&hl=en");
+    }
+    else if (name == "email")
+    {
+        Online::LinkHelper::openURL("mailto:robson.christie1995@gmail.com");
     }
 }
 
