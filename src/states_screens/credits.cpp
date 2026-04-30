@@ -286,14 +286,14 @@ void CreditsScreen::drawMKPanel()
 
     drawLine(L"MinkowskiKart, by Robson Christie, is built on top of SuperTuxKart.");
     y += lh / 2;
-    drawLine(L"A huge thanks to the SuperTuxKart team for the incredible open-source");
+    drawLine(L"The SuperTuxKart team have made an incredible open-source");
     drawLine(L"game that made this possible!");
     y += lh / 2;
     drawLine(L"The relativistic effects were heavily inspired by MIT Game Lab's");
-    drawLine(L"OpenRelativity — a brilliant toolkit for visualising special relativity.");
+    drawLine(L"OpenRelativity — an awesome toolkit for visualising special relativity.");
     y += lh / 2;
-    drawLine(L"Check out my more technical work, find OpenRelativity,");
-    drawLine(L"or reach out if you find any bugs:");
+    drawLine(L"Check out my more technical work on google scholar, find OpenRelativity on github,");
+    drawLine(L"or reach out via the gmail address below you find any bugs:");
 }   // drawMKPanel
 
 // ----------------------------------------------------------------------------

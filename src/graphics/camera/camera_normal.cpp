@@ -72,6 +72,12 @@ const int   RC_SWEEP_MAX_STEPS = 16;
 const float RC_MIN_FORWARD_OFFSET = -0.80f;
 const float RC_MIN_UP_OFFSET      = 0.60f;
 
+const float RESCUE_DROPOFF_DISTANCE_BOOST = 3.25f;
+const float RESCUE_DROPOFF_HEIGHT_BOOST   = 2.25f;
+const float RESCUE_DROPOFF_PITCH_BOOST    = 14.0f * DEGREE_TO_RAD;
+const float RESCUE_DROPOFF_FOV_BOOST      = 0.32f;
+const float RESCUE_BASE_CAMERA_BLEND      = 0.38f;
+
 float clamp01(float value)
 {
     return std::max(0.0f, std::min(value, 1.0f));
@@ -830,9 +836,11 @@ void CameraNormal::update(float dt)
     RescueAnimation* rescue_animation =
         dynamic_cast<RescueAnimation*>(m_kart->getKartAnimation());
     const float rescue_target = rescue_animation
-        ? rescue_animation->getDropOffProgress() : 0.0f;
+        ? std::max(RESCUE_BASE_CAMERA_BLEND,
+                   rescue_animation->getDropOffProgress())
+        : 0.0f;
     const float rescue_tc = rescue_target > m_rescue_camera_blend
-        ? 0.18f : 0.75f;
+        ? 0.08f : 0.75f;
     m_rescue_camera_blend += (rescue_target - m_rescue_camera_blend) *
         getSmoothAlpha(dt, rescue_tc);
     if (!rescue_animation && m_rescue_camera_blend < 0.01f)
@@ -866,9 +874,9 @@ void CameraNormal::update(float dt)
     if (m_rescue_camera_blend > 0.0f)
     {
         const float b = m_rescue_camera_blend;
-        distance *= 1.0f + 0.75f * b;
-        above_kart += 1.0f * b;
-        cam_angle += 8.0f * DEGREE_TO_RAD * b;
+        distance *= 1.0f + RESCUE_DROPOFF_DISTANCE_BOOST * b;
+        above_kart += RESCUE_DROPOFF_HEIGHT_BOOST * b;
+        cam_angle += RESCUE_DROPOFF_PITCH_BOOST * b;
     }
 
     // Compactification tilt: smoothly level the camera when the Calabi-Yau
@@ -927,7 +935,8 @@ void CameraNormal::update(float dt)
         moveCamera(dt, false, above_kart, cam_angle, distance);
     }
     m_camera->setNearValue(1.0f);
-    m_camera->setFOV(getBaseFov() * (1.0f + 0.12f * m_rescue_camera_blend));
+    m_camera->setFOV(getBaseFov() *
+        (1.0f + RESCUE_DROPOFF_FOV_BOOST * m_rescue_camera_blend));
 }   // update
 
 // ----------------------------------------------------------------------------
@@ -1149,4 +1158,3 @@ void CameraNormal::clearTVCameras()
         }
     }
 } // clearTVCameras
-
