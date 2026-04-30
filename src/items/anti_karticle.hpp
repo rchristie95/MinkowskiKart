@@ -156,14 +156,14 @@ inline void AntiKarticle::onFireFlyable()
 
     m_max_lifespan = stk_config->time2Ticks(lifetime());
 
-    if (relativistic_vfx_manager)
+    if (RelativisticVFXManager::get())
     {
         const btVector3 forward =
             m_owner->getTrans().getBasis().getColumn(2).normalized();
         const uint32_t seed =
             (uint32_t)(World::getWorld()->getTicksSinceStart() * 1103515245u) ^
             (uint32_t)(m_owner->getWorldKartId() * 2654435761u);
-        relativistic_vfx_manager->triggerPairProduction(
+        RelativisticVFXManager::get()->triggerPairProduction(
             getXYZ(), forward, m_owner->getNormal(), seed);
     }
 }   // onFireFlyable

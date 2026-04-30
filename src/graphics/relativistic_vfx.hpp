@@ -100,12 +100,6 @@ struct TimeDilationVFX
     {}
 };
 
-struct MassSpikeVFX
-{
-    bool active;
-    MassSpikeVFX() : active(false)
-    {}
-};
 
 struct SuperPositionVFX
 {
@@ -194,7 +188,7 @@ struct PairProductionVFX
     Vec3               axis;
     Vec3               normal;
 #ifndef SERVER_ONLY
-    std::shared_ptr<SP::SPDynamicDrawCall> wave_draw_call[2];
+    std::shared_ptr<SP::SPDynamicDrawCall> wave_draw_call;
 #endif
     PairProductionVFX() : age(0), lifetime(0.75f), wave_time(0),
                           origin(0, 0, 0), axis(1, 0, 0), normal(0, 1, 0)
@@ -212,7 +206,6 @@ private:
     // Active effect instances (indexed by kart ID or projectile ID)
     std::vector<WarpBubbleVFX>       m_warp_bubbles;
     std::vector<TimeDilationVFX>     m_time_dilations;
-    std::vector<MassSpikeVFX>        m_mass_spikes;
     std::vector<TidalArmVFX>         m_tidal_arms;
     std::vector<CompactificationVFX> m_compactifications;
 
@@ -233,8 +226,6 @@ private:
                           AbstractKart *kart);
     void updateTimeDilation(TimeDilationVFX &vfx, float dt,
                             AbstractKart *kart);
-    void updateMassSpike(MassSpikeVFX &vfx, float dt,
-                         AbstractKart *kart);
     void updateSuperPosition(float dt);
     void updatePairProduction(PairProductionVFX &vfx, float dt);
     void destroyPairProduction(PairProductionVFX &vfx);
@@ -256,9 +247,6 @@ public:
     void activateTimeDilation(unsigned int kart_id);
     void deactivateTimeDilation(unsigned int kart_id);
 
-    void activateMassSpike(unsigned int kart_id);
-    void deactivateMassSpike(unsigned int kart_id);
-
     void activateTidalArm(unsigned int kart_id);
     void deactivateTidalArm(unsigned int kart_id);
 
@@ -279,7 +267,6 @@ public:
     // Query for rendering
     const WarpBubbleVFX *getWarpBubble(unsigned int kart_id) const;
     const TimeDilationVFX *getTimeDilation(unsigned int kart_id) const;
-    const MassSpikeVFX *getMassSpike(unsigned int kart_id) const;
     const CompactificationVFX *getCompactification(unsigned int kart_id) const;
     const SuperPositionVFX &getSuperPosition() const { return m_super_position; }
 
@@ -289,7 +276,5 @@ public:
     static void create();
     static void destroy();
 };
-
-extern RelativisticVFXManager *relativistic_vfx_manager;
 
 #endif // HEADER_RELATIVISTIC_VFX_HPP

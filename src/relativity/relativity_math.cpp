@@ -34,7 +34,6 @@
 #include "utils/log.hpp"
 #include "utils/time.hpp"
 
-#include <assert.h>
 #include <cmath>
 #include <limits>
 
@@ -46,6 +45,9 @@ const double MIN_GAMMA_RESPONSE_DELTA = 1.0e-6;
 const float DEFAULT_NORMAL_C_LIGHT = 1000.0f;
 const float MIN_ADJUSTABLE_C_LIGHT = 15.0f;
 const float MAX_ADJUSTABLE_C_LIGHT = 1000.0f;
+// Must match C_LIGHT_STEP in options_screen_relativity.cpp so that
+// setCurrentCLight stores values that align with what the slider can express.
+const int C_LIGHT_SNAP_STEP = 5;
 const float DEFAULT_WARP_BUBBLE_RADIUS = 3.5f;
 const float VISUAL_STABILITY_RADIUS = 0.45f;
 const float VISUAL_STABILITY_FADE_WIDTH = 0.65f;
@@ -61,6 +63,11 @@ bool   g_clight_initialized    = false;
 float  g_clight_ramp_start     = 0.0f;
 float  g_clight_last_target    = 0.0f;
 double g_clight_ramp_start_time = 0.0;
+
+// Per-tick cache: avoids recomputing the ramp for every warped object in the
+// same render frame. Keyed by World tick; -1 forces recompute on first use.
+static int   g_clight_cache_tick  = -1;
+static float g_clight_cache_value = DEFAULT_NORMAL_C_LIGHT;
 
 bool isFiniteVector(const btVector3& v)
 {
@@ -149,23 +156,27 @@ btVector3 getRelativisticEmissionRelativePosition(
     if (discriminant < btScalar(0.0f))
         return relative;
 
-    // The equation a*t^2 + 2*b*t + c = 0 has two roots. We need the one
-    // that represents a past emission time (t <= 0) within a plausible
-    // range. Try both roots and pick the first valid one.
+    // The equation a*t^2 + 2*b*t + c = 0 has two roots; one retarded (past
+    // emission) and one advanced (future). The physical retarded time is the
+    // largest negative root — the most recent past emission event. Picking
+    // whichever root appears first in the array is wrong when both roots are
+    // negative: the wrong (older) emission is selected.
     const btScalar sqrt_disc = btSqrt(discriminant);
-    const btScalar roots[2] = {
-        (-b + sqrt_disc) / a,
-        (-b - sqrt_disc) / a
-    };
+    const btScalar root0 = (-b + sqrt_disc) / a;
+    const btScalar root1 = (-b - sqrt_disc) / a;
+
+    // Candidate: most-recent past root (largest value that is still <= 0).
     btScalar emission_dt = btScalar(0.0f);
     bool found = false;
-    for (size_t i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
-        if (roots[i] <= btScalar(0.0f) && roots[i] >= btScalar(-1000.0f))
+        const btScalar r = (i == 0) ? root0 : root1;
+        if (r > btScalar(0.0f) || r < btScalar(-1000.0f))
+            continue;
+        if (!found || r > emission_dt)
         {
-            emission_dt = roots[i];
+            emission_dt = r;
             found = true;
-            break;
         }
     }
     if (!found)
@@ -265,13 +276,13 @@ namespace Relativity
 float getConfiguredNormalCLight()
 {
     return getConfiguredNormalCLightValue();
-}   // getConfiguredNormalCLight
+}
 
 // ----------------------------------------------------------------------------
 float getConfiguredPowerupCLight()
 {
     return getConfiguredPowerupCLightValue();
-}   // getConfiguredPowerupCLight
+}
 
 ApparentSurfaceHit::ApparentSurfaceHit()
     : m_hit(false),
@@ -280,7 +291,7 @@ ApparentSurfaceHit::ApparentSurfaceHit()
       m_apparent_point(0.0f, 0.0f, 0.0f),
       m_apparent_normal(0.0f, 1.0f, 0.0f),
       m_visual_fade(0.0f),
-      m_material(NULL)
+      m_material(nullptr)
 {
 }   // ApparentSurfaceHit
 
@@ -336,7 +347,8 @@ bool isPowerupCLightActive()
 }   // isPowerupCLightActive
 
 // ----------------------------------------------------------------------------
-float getCurrentCLight()
+// Compute the ramped c_light value without any caching or side effects.
+static float computeCurrentCLight()
 {
     // Relativity never turns "off" here: normal driving always uses the
     // configured baseline c_light, and active on-kart powerup effects only
@@ -350,7 +362,7 @@ float getCurrentCLight()
     const ActiveCLightTarget active_target = getActiveLocalPlayerCLightTarget();
     const float target_c_light = active_target.m_active
         ? active_target.m_target_c_light
-        : getConfiguredNormalCLight();
+        : getConfiguredNormalCLightValue();
 
     const double now = StkTime::getRealTime();
     if (!g_clight_initialized)
@@ -380,12 +392,28 @@ float getCurrentCLight()
         : std::max(0.0, elapsed / kCLightRampSeconds);
     // Smoothstep for a gentler ease-in/ease-out.
     const double smooth_t = t * t * (3.0 - 2.0 * t);
-    const float c_light = (float)((1.0 - smooth_t) * g_clight_ramp_start
+    return (float)((1.0 - smooth_t) * g_clight_ramp_start
         + smooth_t * g_clight_last_target);
+}   // computeCurrentCLight
 
-    if (stk_config)
-        stk_config->m_relativity_c_light = c_light;
-    return c_light;
+// ----------------------------------------------------------------------------
+float getCurrentCLight()
+{
+    // Cache the ramp result once per World tick so that rendering code calling
+    // this for every warped object in the scene doesn't recompute the ramp or
+    // poll kart targets on each call.
+    const World* world = World::getWorld();
+    const int tick = world ? world->getTicksSinceStart() : -1;
+    if (tick != g_clight_cache_tick || !g_clight_initialized)
+    {
+        const float c_light = computeCurrentCLight();
+        g_clight_cache_value = c_light;
+        g_clight_cache_tick  = tick;
+        // Write to stk_config once per tick rather than once per call site.
+        if (stk_config)
+            stk_config->m_relativity_c_light = c_light;
+    }
+    return g_clight_cache_value;
 }   // getCurrentCLight
 
 // ----------------------------------------------------------------------------
@@ -393,8 +421,10 @@ void resetCurrentCLight()
 {
     // Force re-initialisation on the next call to getCurrentCLight() so that
     // the new race always starts from the configured baseline rather than from
-    // wherever the previous race's ramp left off.
+    // wherever the previous race's ramp left off. Also invalidate the per-tick
+    // cache so the first call after reset never serves a stale value.
     g_clight_initialized = false;
+    g_clight_cache_tick  = -1;
 }   // resetCurrentCLight
 
 // ----------------------------------------------------------------------------
@@ -451,19 +481,26 @@ bool setCurrentCLight(float c_light,
     const float clamped_c_light = std::max(min_c_light,
         std::min(max_c_light, c_light));
 
+    // Round to the slider's step granularity so that stored values are always
+    // representable by the options-screen spinner.
+    auto snapToStep = [&](float v) -> int {
+        const int raw = (int)std::lround((double)v / C_LIGHT_SNAP_STEP)
+                        * C_LIGHT_SNAP_STEP;
+        return std::max((int)min_c_light,
+                        std::min((int)max_c_light, raw));
+    };
+
     const ActiveCLightTarget active_target = getActiveLocalPlayerCLightTarget();
     if (active_target.m_active &&
              active_target.m_kind == AbstractKart::C_LIGHT_TARGET_HALF_NORMAL)
     {
         const float normal_c_light = std::max(min_c_light,
             std::min(max_c_light, clamped_c_light * 2.0f));
-        UserConfigParams::m_relativity_normal_c_light =
-            (int)std::lround((double)normal_c_light);
+        UserConfigParams::m_relativity_normal_c_light = snapToStep(normal_c_light);
     }
     else
     {
-        UserConfigParams::m_relativity_normal_c_light =
-            (int)std::lround((double)clamped_c_light);
+        UserConfigParams::m_relativity_normal_c_light = snapToStep(clamped_c_light);
     }
 
     const float current_c_light = getCurrentCLight();
@@ -997,28 +1034,33 @@ btVector3 scaleResponse(const btVector3& response_vector,
 // ----------------------------------------------------------------------------
 void unitTesting()
 {
+// Use Log::fatal instead of assert() so tests fire in release builds too.
+#define MK_CHECK(cond) \
+    do { if (!(cond)) Log::fatal("Relativity::unitTesting", \
+                                 "Test failed: %s (line %d)", #cond, __LINE__); \
+    } while(0)
+
     const double c_light = 80.0;
     const double gamma_06c = gammaForSpeed(0.6 * c_light, c_light);
     (void)gamma_06c;
-    assert(std::fabs(gammaForSpeed(0.0, c_light) - 1.0) < 0.000001);
-    assert(std::fabs(gamma_06c - 1.25) < 0.000001);
-    assert(std::fabs(properDt(1.0, 2.0) - 0.5) < 0.000001);
+    MK_CHECK(std::fabs(gammaForSpeed(0.0, c_light) - 1.0) < 0.000001);
+    MK_CHECK(std::fabs(gamma_06c - 1.25) < 0.000001);
+    MK_CHECK(std::fabs(properDt(1.0, 2.0) - 0.5) < 0.000001);
 
     bool was_clamped = false;
     btVector3 v = clampVelocityToC(btVector3(100.0f, 0.0f, 0.0f),
                                    78.4f, &was_clamped);
     (void)v;
-    assert(was_clamped);
-    assert(std::fabs((double)v.length() - 78.4) < 0.001);
+    MK_CHECK(was_clamped);
+    MK_CHECK(std::fabs((double)v.length() - 78.4) < 0.001);
 
     const float scaled_force =
         scaleLongitudinalForce(100.0f, 0.6f * (float)c_light,
                                (float)c_light);
     (void)scaled_force;
-    assert(std::fabs((double)scaled_force - 51.2) < 0.001);
-    assert(scaleLongitudinalForce(-100.0f, 0.6f * (float)c_light,
-                                  (float)c_light)
-           == -100.0f);
+    MK_CHECK(std::fabs((double)scaled_force - 51.2) < 0.001);
+    MK_CHECK(scaleLongitudinalForce(-100.0f, 0.6f * (float)c_light,
+                                    (float)c_light) == -100.0f);
 
     if (stk_config)
     {
@@ -1030,14 +1072,12 @@ void unitTesting()
         (void)max_c_light;
         (void)original_c_light;
         (void)adjusted_speed;
-        assert(setCurrentCLight(0.5f, &adjusted_speed));
-        assert(std::fabs((double)adjusted_speed - min_c_light)
-               < 0.0001);
-        assert(std::fabs((double)getCLightSliderFraction(
-            min_c_light)) < 0.0001);
-        assert(std::fabs((double)getCLightSliderFraction(
-            max_c_light) - 1.0) < 0.0001);
-        assert(setCurrentCLight(original_c_light));
+        MK_CHECK(setCurrentCLight(0.5f, &adjusted_speed));
+        MK_CHECK(std::fabs((double)adjusted_speed - min_c_light) < 0.0001);
+        MK_CHECK(std::fabs((double)getCLightSliderFraction(min_c_light)) < 0.0001);
+        MK_CHECK(std::fabs((double)getCLightSliderFraction(max_c_light) - 1.0)
+                 < 0.0001);
+        MK_CHECK(setCurrentCLight(original_c_light));
     }
 
     btVector3 scaled_response =
@@ -1045,12 +1085,12 @@ void unitTesting()
                                     btVector3(48.0f, 0.0f, 0.0f),
                                     (float)c_light);
     (void)scaled_response;
-    assert(std::fabs((double)scaled_response.getX() - 40.96) < 0.01);
-    assert(std::fabs((double)scaled_response.getY() - 32.0) < 0.01);
+    MK_CHECK(std::fabs((double)scaled_response.getX() - 40.96) < 0.01);
+    MK_CHECK(std::fabs((double)scaled_response.getY() - 32.0) < 0.01);
 
-    assert(getRecommendedPhysicsSubsteps(0.10f) == 1);
-    assert(getRecommendedPhysicsSubsteps(0.65f) == 3);
-    assert(getRecommendedPhysicsSubsteps(0.95f) == 6);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.10f) == 1);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.65f) == 3);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.95f) == 6);
 
     const float effective_mass_parallel = getDirectionalEffectiveMass(
         200.0f, btVector3(48.0f, 0.0f, 0.0f), btVector3(1.0f, 0.0f, 0.0f),
@@ -1060,13 +1100,13 @@ void unitTesting()
         (float)c_light);
     (void)effective_mass_parallel;
     (void)effective_mass_perpendicular;
-    assert(effective_mass_parallel > effective_mass_perpendicular);
+    MK_CHECK(effective_mass_parallel > effective_mass_perpendicular);
 
     const float collision_impulse = computeCollisionImpulseMagnitude(
         btVector3(1.0f, 0.0f, 0.0f), btVector3(20.0f, 0.0f, 0.0f), 200.0f,
         btVector3(0.0f, 0.0f, 0.0f), 200.0f, 0.1f, (float)c_light);
     (void)collision_impulse;
-    assert(collision_impulse > 0.0f);
+    MK_CHECK(collision_impulse > 0.0f);
 
     ObserverVisualState test_observer;
     test_observer.m_valid = true;
@@ -1078,122 +1118,94 @@ void unitTesting()
     const btVector3 warped = applyVisualPosition(
         btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f),
         1.0f);
-    assert(warped.x() > 5.0f);
+    MK_CHECK(warped.x() > 5.0f);
 
-    // betaForSpeed direct tests
-    assert(std::fabs(betaForSpeed(0.0, c_light)) < 0.000001);
-    assert(std::fabs(betaForSpeed(0.6 * c_light, c_light) - 0.6) < 0.000001);
+    MK_CHECK(std::fabs(betaForSpeed(0.0, c_light)) < 0.000001);
+    MK_CHECK(std::fabs(betaForSpeed(0.6 * c_light, c_light) - 0.6) < 0.000001);
     {
-        // Speed at exactly c must be clamped to just below 1.0
         const double beta_at_c = betaForSpeed(c_light, c_light);
-        assert(beta_at_c > 0.9999 && beta_at_c < 1.0);
-        // Speed beyond c must also be clamped to just below 1.0
-        const double beta_twice_c =
-            betaForSpeed(2.0 * c_light, c_light);
-        assert(beta_twice_c > 0.9999 && beta_twice_c < 1.0);
-        // c_light below the minimum threshold must return 0
-        assert(std::fabs(betaForSpeed(0.5 * c_light, 0.0)) < 0.000001);
+        MK_CHECK(beta_at_c > 0.9999 && beta_at_c < 1.0);
+        const double beta_twice_c = betaForSpeed(2.0 * c_light, c_light);
+        MK_CHECK(beta_twice_c > 0.9999 && beta_twice_c < 1.0);
+        MK_CHECK(std::fabs(betaForSpeed(0.5 * c_light, 0.0)) < 0.000001);
     }
 
-    // properDt edge cases
-    assert(std::fabs(properDt(0.0, 2.0)) < 0.000001);     // zero dt -> 0
-    assert(std::fabs(properDt(-1.0, 2.0)) < 0.000001);    // negative dt -> 0
-    // gamma < 1.0 is physically invalid; returns coordinate_dt unchanged
-    assert(std::fabs(properDt(1.0, 0.5) - 1.0) < 0.000001);
+    MK_CHECK(std::fabs(properDt(0.0, 2.0)) < 0.000001);
+    MK_CHECK(std::fabs(properDt(-1.0, 2.0)) < 0.000001);
+    MK_CHECK(std::fabs(properDt(1.0, 0.5) - 1.0) < 0.000001);
 
-    // updateState
     {
         RelativisticState state;
-        // Null state pointer must not crash
-        updateState(NULL, btVector3(0.0f, 0.0f, 0.0f), 0.0, 1.0, c_light);
+        updateState(nullptr, btVector3(0.0f, 0.0f, 0.0f), 0.0, 1.0, c_light);
 
         updateState(&state,
                     btVector3((float)(0.6 * c_light), 0.0f, 0.0f),
                     0.6 * c_light, 1.0, c_light);
-        assert(std::fabs(state.m_beta - 0.6) < 0.000001);
-        assert(std::fabs(state.m_gamma - 1.25) < 0.00001);
-        assert(std::fabs(state.m_coordinate_time_s - 1.0) < 0.000001);
-        // proper_time = coordinate_dt / gamma = 1.0 / 1.25 = 0.8
-        assert(std::fabs(state.m_proper_time_s - 0.8) < 0.00001);
-        assert(std::fabs((double)state.m_coordinate_velocity.getX() -
-                         0.6 * c_light)
-               < 0.01);
+        MK_CHECK(std::fabs(state.m_beta - 0.6) < 0.000001);
+        MK_CHECK(std::fabs(state.m_gamma - 1.25) < 0.00001);
+        MK_CHECK(std::fabs(state.m_coordinate_time_s - 1.0) < 0.000001);
+        MK_CHECK(std::fabs(state.m_proper_time_s - 0.8) < 0.00001);
+        MK_CHECK(std::fabs((double)state.m_coordinate_velocity.getX() -
+                           0.6 * c_light) < 0.01);
 
-        // Negative dt must not advance either time accumulator
         const double prev_coord_t = state.m_coordinate_time_s;
         const double prev_proper_t = state.m_proper_time_s;
         updateState(&state, btVector3(0.0f, 0.0f, 0.0f), 0.0, -1.0, c_light);
-        assert(std::fabs(state.m_coordinate_time_s - prev_coord_t) < 0.000001);
-        assert(std::fabs(state.m_proper_time_s - prev_proper_t) < 0.000001);
+        MK_CHECK(std::fabs(state.m_coordinate_time_s - prev_coord_t) < 0.000001);
+        MK_CHECK(std::fabs(state.m_proper_time_s - prev_proper_t) < 0.000001);
     }
 
-    // clampVelocityToC additional tests
     {
         bool clamp_flag = false;
-        // Under-limit velocity must not be clamped
         const btVector3 slow = clampVelocityToC(
             btVector3(10.0f, 0.0f, 0.0f), 78.4f, &clamp_flag);
-        assert(!clamp_flag);
-        assert(std::fabs((double)slow.length() - 10.0) < 0.001);
+        MK_CHECK(!clamp_flag);
+        MK_CHECK(std::fabs((double)slow.length() - 10.0) < 0.001);
 
-        // Zero velocity must not be clamped
         const btVector3 zero_vel = clampVelocityToC(
             btVector3(0.0f, 0.0f, 0.0f), 78.4f, &clamp_flag);
-        assert(!clamp_flag);
-        assert((double)zero_vel.length2() < 0.000001);
+        MK_CHECK(!clamp_flag);
+        MK_CHECK((double)zero_vel.length2() < 0.000001);
 
-        // Non-positive max speed returns velocity unclamped
         const btVector3 neg_max = clampVelocityToC(
             btVector3(100.0f, 0.0f, 0.0f), -1.0f, &clamp_flag);
-        assert(!clamp_flag);
-        assert(std::fabs((double)neg_max.length() - 100.0) < 0.001);
+        MK_CHECK(!clamp_flag);
+        MK_CHECK(std::fabs((double)neg_max.length() - 100.0) < 0.001);
     }
 
-    // scaleLongitudinalForce additional tests
-    // Zero force returns zero regardless of speed
-    assert(scaleLongitudinalForce(0.0f, 0.6f * (float)c_light,
-                                  (float)c_light) == 0.0f);
-    // Decelerating force (positive speed, negative force) must not be scaled
-    assert(scaleLongitudinalForce(-100.0f, 0.6f * (float)c_light,
-                                  (float)c_light) == -100.0f);
-    // Reverse decelerating force (negative speed, positive force) must not be scaled
-    assert(scaleLongitudinalForce(100.0f, -0.6f * (float)c_light,
-                                  (float)c_light) == 100.0f);
+    MK_CHECK(scaleLongitudinalForce(0.0f, 0.6f * (float)c_light,
+                                    (float)c_light) == 0.0f);
+    MK_CHECK(scaleLongitudinalForce(-100.0f, 0.6f * (float)c_light,
+                                    (float)c_light) == -100.0f);
+    MK_CHECK(scaleLongitudinalForce(100.0f, -0.6f * (float)c_light,
+                                    (float)c_light) == 100.0f);
 
-    // getRecommendedPhysicsSubsteps boundary values
-    assert(getRecommendedPhysicsSubsteps(-0.1f) == 1);  // negative -> 1
-    assert(getRecommendedPhysicsSubsteps(0.25f) == 1);  // at boundary -> 1
-    assert(getRecommendedPhysicsSubsteps(0.26f) == 2);  // just above -> 2
-    assert(getRecommendedPhysicsSubsteps(0.50f) == 2);  // at boundary -> 2
-    assert(getRecommendedPhysicsSubsteps(0.51f) == 3);  // just above -> 3
-    assert(getRecommendedPhysicsSubsteps(0.70f) == 3);  // at boundary -> 3
-    assert(getRecommendedPhysicsSubsteps(0.71f) == 4);  // just above -> 4
-    assert(getRecommendedPhysicsSubsteps(0.82f) == 4);  // at boundary -> 4
-    assert(getRecommendedPhysicsSubsteps(0.83f) == 5);  // just above -> 5
-    assert(getRecommendedPhysicsSubsteps(0.90f) == 5);  // at boundary -> 5
-    assert(getRecommendedPhysicsSubsteps(0.91f) == 6);  // just above -> 6
+    MK_CHECK(getRecommendedPhysicsSubsteps(-0.1f) == 1);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.25f) == 1);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.26f) == 2);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.50f) == 2);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.51f) == 3);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.70f) == 3);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.71f) == 4);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.82f) == 4);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.83f) == 5);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.90f) == 5);
+    MK_CHECK(getRecommendedPhysicsSubsteps(0.91f) == 6);
 
-    // getDirectionalEffectiveMass numerical verification
-    // At rest the effective mass equals the rest mass
-    assert(std::fabs((double)getDirectionalEffectiveMass(
+    MK_CHECK(std::fabs((double)getDirectionalEffectiveMass(
         200.0f, btVector3(0.0f, 0.0f, 0.0f),
         btVector3(1.0f, 0.0f, 0.0f), (float)c_light) - 200.0) < 0.001);
-    // v = 0.6c -> gamma = 1.25; longitudinal mass: m*gamma^3 = 200*1.953125 ~= 390.625
-    assert(std::fabs((double)effective_mass_parallel - 390.625) < 0.5);
-    // transverse mass: m*gamma = 200*1.25 = 250.0
-    assert(std::fabs((double)effective_mass_perpendicular - 250.0) < 0.5);
+    MK_CHECK(std::fabs((double)effective_mass_parallel - 390.625) < 0.5);
+    MK_CHECK(std::fabs((double)effective_mass_perpendicular - 250.0) < 0.5);
 
-    // computeCollisionImpulseMagnitude additional tests
     {
-        // Objects separating along the normal produce zero impulse
         const float separating_impulse = computeCollisionImpulseMagnitude(
             btVector3(1.0f, 0.0f, 0.0f),
             btVector3(0.0f, 0.0f, 0.0f), 200.0f,
             btVector3(20.0f, 0.0f, 0.0f), 200.0f,
             0.0f, (float)c_light);
-        assert(std::fabs((double)separating_impulse) < 0.000001);
+        MK_CHECK(std::fabs((double)separating_impulse) < 0.000001);
 
-        // Elastic restitution must give larger impulse than perfectly inelastic
         const float elastic_impulse = computeCollisionImpulseMagnitude(
             btVector3(1.0f, 0.0f, 0.0f),
             btVector3(20.0f, 0.0f, 0.0f), 200.0f,
@@ -1204,31 +1216,29 @@ void unitTesting()
             btVector3(20.0f, 0.0f, 0.0f), 200.0f,
             btVector3(0.0f, 0.0f, 0.0f), 200.0f,
             0.0f, (float)c_light);
-        assert(elastic_impulse > inelastic_impulse);
-        assert(inelastic_impulse > 0.0f);
+        MK_CHECK(elastic_impulse > inelastic_impulse);
+        MK_CHECK(inelastic_impulse > 0.0f);
     }
 
-    // Debug counter tests
     {
         resetDebugCounters();
-        assert(getVelocityClampCount() == 0u);
-        assert(getResponseScaleCount() == 0u);
+        MK_CHECK(getVelocityClampCount() == 0u);
+        MK_CHECK(getResponseScaleCount() == 0u);
 
         bool dummy = false;
         clampVelocityToC(btVector3(200.0f, 0.0f, 0.0f), 78.4f, &dummy);
-        assert(getVelocityClampCount() == 1u);
+        MK_CHECK(getVelocityClampCount() == 1u);
 
         scalePreferredFrameResponse(btVector3(80.0f, 40.0f, 0.0f),
                                     btVector3(48.0f, 0.0f, 0.0f),
                                     (float)c_light);
-        assert(getResponseScaleCount() == 1u);
+        MK_CHECK(getResponseScaleCount() == 1u);
 
         resetDebugCounters();
-        assert(getVelocityClampCount() == 0u);
-        assert(getResponseScaleCount() == 0u);
+        MK_CHECK(getVelocityClampCount() == 0u);
+        MK_CHECK(getResponseScaleCount() == 0u);
     }
 
-    // applyVisualNormal: returned vector must have unit length
     {
         ObserverVisualState normal_test_observer;
         normal_test_observer.m_valid = true;
@@ -1242,8 +1252,10 @@ void unitTesting()
         const btVector3 apparent_normal = applyVisualNormal(
             btVector3(5.0f, 1.0f, 0.0f), btVector3(0.0f, 1.0f, 0.0f),
             normal_test_observer, 1.0f);
-        assert(std::fabs((double)apparent_normal.length() - 1.0) < 0.001);
+        MK_CHECK(std::fabs((double)apparent_normal.length() - 1.0) < 0.001);
     }
+
+#undef MK_CHECK
 }   // unitTesting
 
 }   // namespace Relativity

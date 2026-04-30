@@ -484,23 +484,23 @@ void Attachment::set(AttachmentType type, int ticks,
     resetMaxwellBoltzmannState(type == ATTACH_MAXWELL_BOLTZMANN ? m_ticks_left : 0);
 
     // Activate relativistic VFX for new attachment
-    if (relativistic_vfx_manager)
+    if (RelativisticVFXManager::get())
     {
         unsigned int kid = m_kart->getWorldKartId();
         switch (type)
         {
         case ATTACH_WARP_BUBBLE:
         case ATTACH_NOLOK_WARP_BUBBLE:
-            relativistic_vfx_manager->activateWarpBubble(kid);
+            RelativisticVFXManager::get()->activateWarpBubble(kid);
             break;
         case ATTACH_TIME_DILATION:
-            relativistic_vfx_manager->activateTimeDilation(kid);
+            RelativisticVFXManager::get()->activateTimeDilation(kid);
             break;
         case ATTACH_ANTI_KARTICLE:
-            relativistic_vfx_manager->activateTidalArm(kid);
+            RelativisticVFXManager::get()->activateTidalArm(kid);
             break;
         case ATTACH_COMPACTIFICATION:
-            relativistic_vfx_manager->activateCompactification(kid);
+            RelativisticVFXManager::get()->activateCompactification(kid);
             // 5 m/s top-speed penalty for the duration of the effect.
             // Fades in over 0.4 s to match the VFX strength ramp.
             {
@@ -551,23 +551,23 @@ void Attachment::set(AttachmentType type, int ticks,
 void Attachment::clear()
 {
     // Deactivate relativistic VFX
-    if (relativistic_vfx_manager && m_kart)
+    if (RelativisticVFXManager::get() && m_kart)
     {
         unsigned int kid = m_kart->getWorldKartId();
         switch (m_type)
         {
         case ATTACH_WARP_BUBBLE:
         case ATTACH_NOLOK_WARP_BUBBLE:
-            relativistic_vfx_manager->deactivateWarpBubble(kid);
+            RelativisticVFXManager::get()->deactivateWarpBubble(kid);
             break;
         case ATTACH_TIME_DILATION:
-            relativistic_vfx_manager->deactivateTimeDilation(kid);
+            RelativisticVFXManager::get()->deactivateTimeDilation(kid);
             break;
         case ATTACH_ANTI_KARTICLE:
-            relativistic_vfx_manager->deactivateTidalArm(kid);
+            RelativisticVFXManager::get()->deactivateTidalArm(kid);
             break;
         case ATTACH_COMPACTIFICATION:
-            relativistic_vfx_manager->deactivateCompactification(kid);
+            RelativisticVFXManager::get()->deactivateCompactification(kid);
             // Release the top-speed penalty (fraction=1.0 restores instantly).
             m_kart->setSlowdown(MaxSpeed::MS_DECREASE_COMPACTIFICATION,
                                 1.0f, 0);

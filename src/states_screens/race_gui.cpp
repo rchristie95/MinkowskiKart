@@ -498,8 +498,8 @@ void RaceGUI::renderPlayerView(const Camera *camera, float dt)
     bool isSpectatorCam = Camera::getActiveCamera()->isSpectatorMode();
 
     if (!isSpectatorCam) drawPhotonInFace(camera, dt);
-    if (!isSpectatorCam && relativistic_vfx_manager)
-        relativistic_vfx_manager->renderBlackboards();
+    if (!isSpectatorCam && RelativisticVFXManager::get())
+        RelativisticVFXManager::get()->renderBlackboards();
 
     // Scale race GUI along screen size
     scaling *= sqrtf(float(viewport.getWidth()) / 800.0f);

@@ -491,10 +491,10 @@ void CameraNormal::updateRelativityCamera(float dt)
     // desired_tgt toward a far point directly along support_forward at
     // camera eye height, making the view direction parallel to the track
     // surface so the horizon sits at screen centre.
-    if (relativistic_vfx_manager)
+    if (RelativisticVFXManager::get())
     {
         const CompactificationVFX *cvfx =
-            relativistic_vfx_manager->getCompactification(kart->getWorldKartId());
+            RelativisticVFXManager::get()->getCompactification(kart->getWorldKartId());
         if (cvfx && cvfx->active && cvfx->strength > 0.0f)
         {
             // Horizon target: 100 m straight ahead along the track plane,
@@ -879,10 +879,10 @@ void CameraNormal::update(float dt)
     // the middle strip is selected and stretched.  cvfx->strength is already
     // smoothly ramped 0→1 over ~0.4 s by the VFX manager, so no extra
     // smoothing state is needed here.
-    if (relativistic_vfx_manager)
+    if (RelativisticVFXManager::get())
     {
         const CompactificationVFX *cvfx =
-            relativistic_vfx_manager->getCompactification(
+            RelativisticVFXManager::get()->getCompactification(
                 m_kart->getWorldKartId());
         if (cvfx && cvfx->active && cvfx->strength > 0.0f)
         {

@@ -24,9 +24,9 @@
 #include "items/attachment.hpp"
 #include "modes/world.hpp"
 #include "relativity/relativity_math.hpp"
+#include "utils/log.hpp"
 
 #include <algorithm>
-#include <assert.h>
 #include <cmath>
 #include <limits>
 #include <unordered_map>
@@ -55,11 +55,11 @@ struct VisualMotionFilterState
     }
 };   // struct VisualMotionFilterState
 
-// Keyed by kart pointer; entries are pruned when the kart is destroyed
-// (see clearVisualMotionFilterForKart) and the whole map is dropped on
-// race teardown (clearAllVisualMotionFilters) so a new kart can never
-// inherit stale filter state from an allocator-reused address.
-std::unordered_map<const AbstractKart*, VisualMotionFilterState>
+// Keyed by world kart ID (stable unsigned int) rather than by pointer, so
+// a newly-allocated kart at a reused address cannot inherit stale filter
+// state from a previous race. clearAllVisualMotionFilters() is still called
+// on race teardown to avoid accumulating dead entries across multi-race sessions.
+std::unordered_map<unsigned int, VisualMotionFilterState>
     g_visual_motion_filters;
 
 float clamp01(float value)
@@ -97,7 +97,8 @@ btVector3 getSmoothedVisualDirection(const AbstractKart* observer_kart,
                                      const btVector3& coordinate_velocity,
                                      float beta)
 {
-    VisualMotionFilterState& filter = g_visual_motion_filters[observer_kart];
+    VisualMotionFilterState& filter =
+        g_visual_motion_filters[observer_kart->getWorldKartId()];
 
     // The beta direction comes directly from the kart's physical velocity.
     // dampVerticalMotion was previously applied here, but scaling one axis
@@ -329,9 +330,9 @@ ObserverVisualState buildObserverVisualState(
 }   // buildObserverVisualState
 
 // ----------------------------------------------------------------------------
-void clearVisualMotionFilterForKart(const AbstractKart* observer_kart)
+void clearVisualMotionFilterForKart(unsigned int kart_id)
 {
-    g_visual_motion_filters.erase(observer_kart);
+    g_visual_motion_filters.erase(kart_id);
 }   // clearVisualMotionFilterForKart
 
 // ----------------------------------------------------------------------------
@@ -343,14 +344,19 @@ void clearAllVisualMotionFilters()
 // ----------------------------------------------------------------------------
 void observerSnapshotUnitTesting()
 {
-    ObserverSnapshot empty = buildObserverSnapshot(NULL, btVector3(0, 0, 1));
+#define MK_CHECK(cond) \
+    do { if (!(cond)) Log::fatal("Relativity::observerSnapshotUnitTesting", \
+                                 "Test failed: %s (line %d)", #cond, __LINE__); \
+    } while(0)
+
+    ObserverSnapshot empty = buildObserverSnapshot(nullptr, btVector3(0, 0, 1));
     (void)empty;
-    assert(!empty.m_valid);
+    MK_CHECK(!empty.m_valid);
 
     ObserverVisualState visual_empty =
-        buildObserverVisualState(NULL, btVector3(1.0f, 2.0f, 3.0f));
+        buildObserverVisualState(nullptr, btVector3(1.0f, 2.0f, 3.0f));
     (void)visual_empty;
-    assert(!visual_empty.m_valid);
+    MK_CHECK(!visual_empty.m_valid);
 
     ObserverSnapshot snapshot;
     snapshot.m_valid = true;
@@ -365,10 +371,10 @@ void observerSnapshotUnitTesting()
         1.0f - 0.20f * snapshot.m_forward_intensity;
     snapshot.m_trigger_motion_blur = snapshot.m_forward_intensity > 0.35f;
 
-    assert(snapshot.m_forward_intensity > 0.9f);
-    assert(snapshot.m_fov_scale > 1.3f);
-    assert(snapshot.m_camera_distance_scale < 0.85f);
-    assert(snapshot.m_trigger_motion_blur);
+    MK_CHECK(snapshot.m_forward_intensity > 0.9f);
+    MK_CHECK(snapshot.m_fov_scale > 1.3f);
+    MK_CHECK(snapshot.m_camera_distance_scale < 0.85f);
+    MK_CHECK(snapshot.m_trigger_motion_blur);
 
     ObserverVisualState visual_state;
     visual_state.m_valid = true;
@@ -377,42 +383,38 @@ void observerSnapshotUnitTesting()
     visual_state.m_inverse_gamma = 0.6f;
     visual_state.m_beta_vector = btVector3(0.8f, 0.0f, 0.0f);
     visual_state.m_observer_position = btVector3(4.0f, 5.0f, 6.0f);
-    assert(visual_state.m_beta_vector.length() > btScalar(0.79f));
-    assert(std::fabs((double)visual_state.m_inverse_gamma - 0.6) < 0.0001);
-    // beta_vector length must equal beta
-    assert(std::fabs((double)visual_state.m_beta_vector.length()
-                     - visual_state.m_beta) < 0.001);
+    MK_CHECK(visual_state.m_beta_vector.length() > btScalar(0.79f));
+    MK_CHECK(std::fabs((double)visual_state.m_inverse_gamma - 0.6) < 0.0001);
+    MK_CHECK(std::fabs((double)visual_state.m_beta_vector.length()
+                       - visual_state.m_beta) < 0.001);
 
-    // Default-constructed ObserverSnapshot must report safe neutral values
     ObserverSnapshot default_snapshot;
-    assert(!default_snapshot.m_valid);
-    assert(std::fabs((double)default_snapshot.m_beta) < 0.000001);
-    assert(std::fabs((double)default_snapshot.m_gamma - 1.0) < 0.000001);
-    assert(std::fabs((double)default_snapshot.m_view_alignment) < 0.000001);
-    assert(std::fabs((double)default_snapshot.m_forward_intensity) < 0.000001);
-    assert(std::fabs((double)default_snapshot.m_fov_scale - 1.0) < 0.000001);
-    assert(std::fabs((double)default_snapshot.m_camera_distance_scale - 1.0)
-           < 0.000001);
-    assert(!default_snapshot.m_trigger_motion_blur);
+    MK_CHECK(!default_snapshot.m_valid);
+    MK_CHECK(std::fabs((double)default_snapshot.m_beta) < 0.000001);
+    MK_CHECK(std::fabs((double)default_snapshot.m_gamma - 1.0) < 0.000001);
+    MK_CHECK(std::fabs((double)default_snapshot.m_view_alignment) < 0.000001);
+    MK_CHECK(std::fabs((double)default_snapshot.m_forward_intensity) < 0.000001);
+    MK_CHECK(std::fabs((double)default_snapshot.m_fov_scale - 1.0) < 0.000001);
+    MK_CHECK(std::fabs((double)default_snapshot.m_camera_distance_scale - 1.0)
+             < 0.000001);
+    MK_CHECK(!default_snapshot.m_trigger_motion_blur);
 
-    // Default-constructed ObserverVisualState must report safe neutral values
     ObserverVisualState default_visual;
-    assert(!default_visual.m_valid);
-    assert(!default_visual.m_item_active);
-    assert(!default_visual.m_doppler_active);
-    assert(std::fabs((double)default_visual.m_beta) < 0.000001);
-    assert(std::fabs((double)default_visual.m_gamma - 1.0) < 0.000001);
-    assert(std::fabs((double)default_visual.m_inverse_gamma - 1.0) < 0.000001);
-    assert((double)default_visual.m_beta_vector.length2() < 0.000001);
+    MK_CHECK(!default_visual.m_valid);
+    MK_CHECK(!default_visual.m_item_active);
+    MK_CHECK(!default_visual.m_doppler_active);
+    MK_CHECK(std::fabs((double)default_visual.m_beta) < 0.000001);
+    MK_CHECK(std::fabs((double)default_visual.m_gamma - 1.0) < 0.000001);
+    MK_CHECK(std::fabs((double)default_visual.m_inverse_gamma - 1.0) < 0.000001);
+    MK_CHECK((double)default_visual.m_beta_vector.length2() < 0.000001);
 
-    // For the high-beta forward-facing snapshot constructed above, fov must
-    // widen and camera distance must decrease relative to their neutral values
-    assert(snapshot.m_fov_scale > 1.0f);
-    assert(snapshot.m_camera_distance_scale < 1.0f);
-    assert(snapshot.m_trigger_motion_blur);
-    // forward_intensity drives both effects, so they must be consistent
-    assert(snapshot.m_fov_scale - 1.0f > 0.0f);
-    assert(1.0f - snapshot.m_camera_distance_scale > 0.0f);
+    MK_CHECK(snapshot.m_fov_scale > 1.0f);
+    MK_CHECK(snapshot.m_camera_distance_scale < 1.0f);
+    MK_CHECK(snapshot.m_trigger_motion_blur);
+    MK_CHECK(snapshot.m_fov_scale - 1.0f > 0.0f);
+    MK_CHECK(1.0f - snapshot.m_camera_distance_scale > 0.0f);
+
+#undef MK_CHECK
 }   // observerSnapshotUnitTesting
 
 }   // namespace Relativity

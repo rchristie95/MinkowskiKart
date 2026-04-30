@@ -1314,14 +1314,14 @@ FrameBuffer *PostProcessing::render(scene::ICameraSceneNode * const camnode,
     }
 
     // Compactification: Calabi-Yau manifold screen warp for the banana debuff
-    if (isRace && World::getWorld() && relativistic_vfx_manager)
+    if (isRace && World::getWorld() && RelativisticVFXManager::get())
     {
         Camera *cam = Camera::getActiveCamera();
         if (cam && cam->getKart())
         {
             unsigned int kid = cam->getKart()->getWorldKartId();
             const CompactificationVFX *cvfx =
-                relativistic_vfx_manager->getCompactification(kid);
+                RelativisticVFXManager::get()->getCompactification(kid);
             if (cvfx && cvfx->strength > 0.0f)
             {
                 // out_fbo holds the current frame; in_fbo is the spare buffer

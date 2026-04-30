@@ -41,8 +41,6 @@ namespace
     constexpr float kPhotonYawRange = (float)M_PI * 0.25f;
 }
 
-RelativisticVFXManager *relativistic_vfx_manager = nullptr;
-
 static RelativisticVFXManager *g_instance = nullptr;
 
 RelativisticVFXManager *RelativisticVFXManager::get()
@@ -53,14 +51,12 @@ RelativisticVFXManager *RelativisticVFXManager::get()
 void RelativisticVFXManager::create()
 {
     g_instance = new RelativisticVFXManager();
-    relativistic_vfx_manager = g_instance;
 }
 
 void RelativisticVFXManager::destroy()
 {
     delete g_instance;
     g_instance = nullptr;
-    relativistic_vfx_manager = nullptr;
 }
 
 RelativisticVFXManager::RelativisticVFXManager()
@@ -78,7 +74,6 @@ void RelativisticVFXManager::init(unsigned int num_karts)
     reset();
     m_warp_bubbles.resize(num_karts);
     m_time_dilations.resize(num_karts);
-    m_mass_spikes.resize(num_karts);
     m_tidal_arms.resize(num_karts);
     m_compactifications.resize(num_karts);
 }
@@ -131,7 +126,6 @@ void RelativisticVFXManager::reset()
 
     m_warp_bubbles.clear();
     m_time_dilations.clear();
-    m_mass_spikes.clear();
     m_tidal_arms.clear();
     m_compactifications.clear();
     m_geodesic_missiles.clear();
@@ -156,8 +150,9 @@ void RelativisticVFXManager::activateWarpBubble(unsigned int kart_id)
     wb.collapse_timer = -1;
 
 #ifndef SERVER_ONLY
-    AbstractKart *kart = World::getWorld()->getKart(kart_id);
-    if (!wb.shimmer_emitter)
+    World *world = World::getWorld();
+    AbstractKart *kart = world ? world->getKart(kart_id) : nullptr;
+    if (kart && !wb.shimmer_emitter)
     {
         ParticleKindManager *pkm = ParticleKindManager::get();
         ParticleKind *particles = pkm->getParticles("warp_bubble_shimmer.xml");
@@ -202,9 +197,8 @@ void RelativisticVFXManager::updateWarpBubble(WarpBubbleVFX &vfx, float dt,
     vfx.rim_intensity = std::max(1.0f, vfx.rim_intensity - dt * 4.0f);
 
     // Concentric ripple animation
-    vfx.ripple_phase += dt * 3.0f;
-    if (vfx.ripple_phase > 2.0f * M_PI)
-        vfx.ripple_phase -= 2.0f * (float)M_PI;
+    vfx.ripple_phase = std::fmod(vfx.ripple_phase + dt * 3.0f,
+                                 2.0f * (float)M_PI);
 
     // Collapse animation
     if (vfx.collapse_timer >= 0)
@@ -236,8 +230,9 @@ void RelativisticVFXManager::activateTimeDilation(unsigned int kart_id)
     td.drag_sound_pitch = 0.6f;
 
 #ifndef SERVER_ONLY
-    AbstractKart *kart = World::getWorld()->getKart(kart_id);
-    if (!td.halo_emitter)
+    World *world = World::getWorld();
+    AbstractKart *kart = world ? world->getKart(kart_id) : nullptr;
+    if (kart && !td.halo_emitter)
     {
         ParticleKindManager *pkm = ParticleKindManager::get();
         ParticleKind *particles = pkm->getParticles("time_dilation_halo.xml");
@@ -268,9 +263,6 @@ void RelativisticVFXManager::updateTimeDilation(TimeDilationVFX &vfx, float dt,
 {
     if (!vfx.active) return;
 
-    // Pulsing redshift - DISABLED (optical Doppler trigger removed)
-    // float pulse = 0.8f + 0.2f * sinf(m_global_time * 2.0f);
-    // vfx.redshift_intensity = pulse;
     vfx.redshift_intensity = 0.0f;
 
     // Motion smear based on speed
@@ -281,27 +273,6 @@ void RelativisticVFXManager::updateTimeDilation(TimeDilationVFX &vfx, float dt,
     if (vfx.halo_emitter)
         vfx.halo_emitter->setPosition(kart->getXYZ());
 #endif
-}
-
-// ---------------------------------------------------------------------------
-// Legacy mass-spike VFX slot
-// ---------------------------------------------------------------------------
-void RelativisticVFXManager::activateMassSpike(unsigned int kart_id)
-{
-    if (kart_id >= m_mass_spikes.size()) return;
-    m_mass_spikes[kart_id].active = false;
-}
-
-void RelativisticVFXManager::deactivateMassSpike(unsigned int kart_id)
-{
-    if (kart_id >= m_mass_spikes.size()) return;
-    m_mass_spikes[kart_id].active = false;
-}
-
-void RelativisticVFXManager::updateMassSpike(MassSpikeVFX &vfx, float dt,
-                                              AbstractKart *kart)
-{
-    vfx.active = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -359,13 +330,10 @@ void RelativisticVFXManager::updateSuperPosition(float dt)
 void RelativisticVFXManager::destroyPairProduction(PairProductionVFX &vfx)
 {
 #ifndef SERVER_ONLY
-    for (auto &dc : vfx.wave_draw_call)
+    if (vfx.wave_draw_call)
     {
-        if (dc)
-        {
-            dc->removeFromSP();
-            dc = nullptr;
-        }
+        vfx.wave_draw_call->removeFromSP();
+        vfx.wave_draw_call = nullptr;
     }
 #endif
 }
@@ -409,19 +377,16 @@ void RelativisticVFXManager::triggerPairProduction(const Vec3 &origin,
     if (!GUIEngine::isNoGraphics() && CVS->isGLSL())
     {
         const video::SColor color(255, 90, 175, 255);
-        for (int i = 0; i < 1; i++)
-        {
-            vfx.wave_draw_call[i] =
-                std::make_shared<SP::SPDynamicDrawCall>(
-                    scene::EPT_TRIANGLE_STRIP,
-                    SP::SPShaderManager::get()->getSPShader("additive"),
-                    material_manager->getDefaultSPMaterial("additive"));
-            vfx.wave_draw_call[i]->getVerticesVector().resize(
-                (kPairWaveSegments + 1) * 2);
-            for (auto &vertex : vfx.wave_draw_call[i]->getVerticesVector())
-                vertex.m_color = color;
-            SP::addDynamicDrawCall(vfx.wave_draw_call[i]);
-        }
+        vfx.wave_draw_call =
+            std::make_shared<SP::SPDynamicDrawCall>(
+                scene::EPT_TRIANGLE_STRIP,
+                SP::SPShaderManager::get()->getSPShader("additive"),
+                material_manager->getDefaultSPMaterial("additive"));
+        vfx.wave_draw_call->getVerticesVector().resize(
+            (kPairWaveSegments + 1) * 2);
+        for (auto &vertex : vfx.wave_draw_call->getVerticesVector())
+            vertex.m_color = color;
+        SP::addDynamicDrawCall(vfx.wave_draw_call);
     }
 #endif
 
@@ -455,13 +420,14 @@ void RelativisticVFXManager::updatePairProduction(PairProductionVFX &vfx,
         std::max(0.5f, length / kPairWaveCycles);
     const float phase_shift = vfx.wave_time * 24.0f * phase_per_unit;
 
-    for (int side = 0; side < 1; side++)
+    if (vfx.wave_draw_call)
     {
-        if (!vfx.wave_draw_call[side])
-            continue;
+        // SP packed normal: Y-up (0,1,0) encoded as 0x1FF in the Y channel
+        // of a 10-10-10-2 SNORM format used by STK's SP vertex layout.
+        constexpr uint32_t kNormalYUp = 0x1FF << 10;
 
         const Vec3 end = vfx.origin + axis * length;
-        auto &vertices = vfx.wave_draw_call[side]->getVerticesVector();
+        auto &vertices = vfx.wave_draw_call->getVerticesVector();
         for (int i = 0; i <= kPairWaveSegments; i++)
         {
             const float t = (float)i / (float)kPairWaveSegments;
@@ -473,13 +439,13 @@ void RelativisticVFXManager::updatePairProduction(PairProductionVFX &vfx,
                 Vec3(center - photon_offset).toIrrVector();
             vertices[i * 2 + 1].m_position =
                 Vec3(center + photon_offset).toIrrVector();
-            vertices[i * 2].m_normal = 0x1FF << 10;
-            vertices[i * 2 + 1].m_normal = 0x1FF << 10;
+            vertices[i * 2].m_normal     = kNormalYUp;
+            vertices[i * 2 + 1].m_normal = kNormalYUp;
             vertices[i * 2].m_color.setAlpha((uint32_t)(255.0f * fade));
             vertices[i * 2 + 1].m_color.setAlpha((uint32_t)(255.0f * fade));
         }
-        vfx.wave_draw_call[side]->setUpdateOffset(0);
-        vfx.wave_draw_call[side]->recalculateBoundingBox();
+        vfx.wave_draw_call->setUpdateOffset(0);
+        vfx.wave_draw_call->recalculateBoundingBox();
     }
 #endif
 }
@@ -515,12 +481,6 @@ const TimeDilationVFX *RelativisticVFXManager::getTimeDilation(unsigned int kart
         ? &m_time_dilations[kart_id] : nullptr;
 }
 
-const MassSpikeVFX *RelativisticVFXManager::getMassSpike(unsigned int kart_id) const
-{
-    if (kart_id >= m_mass_spikes.size()) return nullptr;
-    return m_mass_spikes[kart_id].active ? &m_mass_spikes[kart_id] : nullptr;
-}
-
 const CompactificationVFX *RelativisticVFXManager::getCompactification(unsigned int kart_id) const
 {
     if (kart_id >= m_compactifications.size()) return nullptr;
@@ -543,9 +503,6 @@ void RelativisticVFXManager::update(float dt)
 
     for (unsigned int i = 0; i < m_time_dilations.size() && i < world->getNumKarts(); i++)
         updateTimeDilation(m_time_dilations[i], dt, world->getKart(i));
-
-    for (unsigned int i = 0; i < m_mass_spikes.size() && i < world->getNumKarts(); i++)
-        updateMassSpike(m_mass_spikes[i], dt, world->getKart(i));
 
     // Ramp compactification strength up/down smoothly (0.4 s full transition)
     const float ramp = dt / 0.4f;

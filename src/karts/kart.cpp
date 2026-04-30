@@ -308,10 +308,7 @@ Kart::~Kart()
     if(m_saved_controller)
         delete m_saved_controller;
 
-    // Drop this kart's entry from the relativity visual-motion filter map so
-    // that a future kart allocated at the same address cannot inherit stale
-    // smoothing state.
-    Relativity::clearVisualMotionFilterForKart(this);
+    Relativity::clearVisualMotionFilterForKart(getWorldKartId());
 }   // ~Kart
 
 //-----------------------------------------------------------------------------

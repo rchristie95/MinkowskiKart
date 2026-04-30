@@ -309,8 +309,8 @@ void World::init()
     for (unsigned int i = 0; i < kart_amount; i++)
         initTeamArrows(m_karts[i].get());
 
-    if (relativistic_vfx_manager)
-        relativistic_vfx_manager->init(kart_amount);
+    if (RelativisticVFXManager::get())
+        RelativisticVFXManager::get()->init(kart_amount);
 
     main_loop->renderGUI(7300);
 }   // init
@@ -637,8 +637,8 @@ World::~World()
 
     ProjectileManager::get()->cleanup();
 
-    if (relativistic_vfx_manager)
-        relativistic_vfx_manager->reset();
+    if (RelativisticVFXManager::get())
+        RelativisticVFXManager::get()->reset();
 
     Relativity::clearAllVisualMotionFilters();
     Relativity::resetCurrentCLight();
@@ -1160,8 +1160,8 @@ void World::updateGraphics(float dt)
         script_engine->update(dt);
 
     ProjectileManager::get()->updateGraphics(dt);
-    if (relativistic_vfx_manager)
-        relativistic_vfx_manager->updateGraphics(dt);
+    if (RelativisticVFXManager::get())
+        RelativisticVFXManager::get()->updateGraphics(dt);
     Track::getCurrentTrack()->updateGraphics(dt);
 }   // updateGraphics
 
@@ -1238,8 +1238,8 @@ void World::update(int ticks)
     ProjectileManager::get()->update(ticks);
     PROFILER_POP_CPU_MARKER();
 
-    if (relativistic_vfx_manager)
-        relativistic_vfx_manager->update(stk_config->ticks2Time(ticks));
+    if (RelativisticVFXManager::get())
+        RelativisticVFXManager::get()->update(stk_config->ticks2Time(ticks));
 
     PROFILER_PUSH_CPU_MARKER("World::update (physics)", 0xa0, 0x7F, 0x00);
     Physics::get()->update(ticks);

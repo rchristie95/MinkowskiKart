@@ -317,8 +317,8 @@ void Powerup::use()
         {
             im->switchItems();
             // Trigger the sweeping Lorentz grid wave visual
-            if (relativistic_vfx_manager)
-                relativistic_vfx_manager->triggerSuperPosition(m_kart->getXYZ());
+            if (RelativisticVFXManager::get())
+                RelativisticVFXManager::get()->triggerSuperPosition(m_kart->getXYZ());
             if (!has_played_sound)
             {
                 m_sound_use->setPosition(m_kart->getXYZ());
