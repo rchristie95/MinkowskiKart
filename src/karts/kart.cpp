@@ -1603,16 +1603,16 @@ void Kart::update(int ticks)
 
     // To be used later
     float dist_to_sector = 0.0f;
-    LinearWorld* lw = dynamic_cast<LinearWorld*>(World::getWorld());
-    if (lw && DriveGraph::get())
+    const World* world = World::getWorld();
+    const int current_graph_node = world
+        ? world->getCurrentGraphNodeForKart(getWorldKartId()) : -1;
+    if (current_graph_node >= 0 && DriveGraph::get())
     {
-        const int sector =
-            lw->getTrackSector(getWorldKartId())->getCurrentGraphNode();
         dist_to_sector = getXYZ().distance
-            (DriveGraph::get()->getNode(sector)->getCenter());
+            (DriveGraph::get()->getNode(current_graph_node)->getCenter());
 
-        const Vec3& quad_normal = DriveGraph::get()->getNode(sector)
-            ->getNormal();
+        const Vec3& quad_normal = DriveGraph::get()->getNode(
+            current_graph_node)->getNormal();
         const btQuaternion& q = getTrans().getRotation();
         const float roll = quad_normal.angle
                ((Vec3(0, 1, 0).rotate(q.getAxis(), q.getAngle())));
@@ -1848,8 +1848,7 @@ void Kart::updateSpeed()
     // At low velocity, forces on kart push it back and forth so we ignore this
     // - quick'n'dirty workaround for bug 1776883
     if (fabsf(m_speed) < 0.2f                                   ||
-        dynamic_cast<RescueAnimation*>   ( getKartAnimation() ) ||
-        dynamic_cast<ExplosionAnimation*>( getKartAnimation() )    )
+        isInRescueAnimation() || isInExplosionAnimation())
     {
         m_speed          = 0;
     }
@@ -2102,8 +2101,8 @@ void Kart::handleMaterialSFX()
     }
 
     bool m_schedule_pause = m_flying ||
-                        dynamic_cast<RescueAnimation*>(getKartAnimation()) ||
-                        dynamic_cast<ExplosionAnimation*>(getKartAnimation()) ||
+                        isInRescueAnimation() ||
+                        isInExplosionAnimation() ||
                         World::getWorld()->getPhase() == World::IN_GAME_MENU_PHASE;
 
     // terrain sound is not necessarily a looping sound so check its status before
@@ -2226,7 +2225,7 @@ void Kart::handleMaterialGFX(float dt)
     const ParticleKind *pk =
         surface_material->getParticlesWhen(Material::EMIT_ON_DRIVE);
 
-    if(!pk || m_flying || dynamic_cast<RescueAnimation*>(getKartAnimation()))
+    if(!pk || m_flying || isInRescueAnimation())
         return;
 
     // Now the kart is under a surface, and there is a surface effect
@@ -2244,7 +2243,7 @@ void Kart::handleMaterialGFX(float dt)
     // Play special sound effects for this terrain
     // -------------------------------------------
     const std::string &s = surface_material->getSFXName();
-    if (s != "" && !dynamic_cast<RescueAnimation*>(getKartAnimation())&&
+    if (s != "" && !isInRescueAnimation() &&
         (m_terrain_sound == NULL ||
          m_terrain_sound->getStatus() == SFXBase::SFX_STOPPED))
     {
@@ -2443,7 +2442,9 @@ void Kart::crashed(const Material *m, const Vec3 &normal)
     }
 #endif
 
-    const LinearWorld *lw = dynamic_cast<LinearWorld*>(World::getWorld());
+    const World* world = World::getWorld();
+    const int current_graph_node = world
+        ? world->getCurrentGraphNodeForKart(getWorldKartId()) : -1;
     if(m_kart_properties->getTerrainImpulseType()
                              ==KartProperties::IMPULSE_NORMAL &&
         m_vehicle->getCentralImpulseTicks()<=0                     )
@@ -2475,10 +2476,10 @@ void Kart::crashed(const Material *m, const Vec3 &normal)
     // would be pushed forward).
     else if(m_kart_properties->getTerrainImpulseType()
                                  ==KartProperties::IMPULSE_TO_DRIVELINE &&
-            lw && m_vehicle->getCentralImpulseTicks()<=0 &&
+            current_graph_node >= 0 && m_vehicle->getCentralImpulseTicks()<=0 &&
             Track::getCurrentTrack()->isPushBackEnabled())
     {
-        int sector = lw->getSectorForKart(this);
+        const int sector = current_graph_node;
         if(sector!=Graph::UNKNOWN_SECTOR)
         {
             // Use the first predecessor node, which is the most

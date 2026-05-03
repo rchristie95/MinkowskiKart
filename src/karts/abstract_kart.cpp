@@ -239,6 +239,27 @@ void AbstractKart::setKartAnimation(AbstractKartAnimation *ka)
 }   // setKartAnimation
 
 // ----------------------------------------------------------------------------
+bool AbstractKart::isInRescueAnimation() const
+{
+    return m_kart_animation &&
+        m_kart_animation->getAnimationType() == KAT_RESCUE;
+}   // isInRescueAnimation
+
+// ----------------------------------------------------------------------------
+bool AbstractKart::isInExplosionAnimation() const
+{
+    return m_kart_animation &&
+        m_kart_animation->getAnimationType() == KAT_EXPLOSION;
+}   // isInExplosionAnimation
+
+// ----------------------------------------------------------------------------
+bool AbstractKart::isInCannonAnimation() const
+{
+    return m_kart_animation &&
+        m_kart_animation->getAnimationType() == KAT_CANNON;
+}   // isInCannonAnimation
+
+// ----------------------------------------------------------------------------
 /** Returns the time at which the kart was at a given distance.
  * Returns -1.0f if none */
 float AbstractKart::getTimeForDistance(float distance)

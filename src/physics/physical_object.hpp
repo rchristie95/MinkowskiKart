@@ -221,7 +221,7 @@ public:
     bool isDynamic() const { return m_is_dynamic; }
     // ------------------------------------------------------------------------
     /** Returns the ID of this physical object. */
-    std::string getID()          { return m_id; }
+    const std::string& getID() const { return m_id; }
     // ------------------------------------------------------------------------
     btDefaultMotionState* getMotionState() const { return m_motion_state; }
     // ------------------------------------------------------------------------

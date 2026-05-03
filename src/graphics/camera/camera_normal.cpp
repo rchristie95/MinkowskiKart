@@ -833,8 +833,8 @@ void CameraNormal::update(float dt)
     if(!m_kart) return;
 
     m_camera->setNearValue(1.0f);
-    RescueAnimation* rescue_animation =
-        dynamic_cast<RescueAnimation*>(m_kart->getKartAnimation());
+    RescueAnimation* rescue_animation = m_kart->isInRescueAnimation()
+        ? static_cast<RescueAnimation*>(m_kart->getKartAnimation()) : NULL;
     const float rescue_target = rescue_animation
         ? std::max(RESCUE_BASE_CAMERA_BLEND,
                    rescue_animation->getDropOffProgress())
@@ -855,8 +855,9 @@ void CameraNormal::update(float dt)
     // the legacy offset/smoothing machinery (which causes jitter and clipping).
     if (useRelativityCloseChase(getMode()) && !use_rescue_camera)
     {
-        ExplosionAnimation* ea =
-            dynamic_cast<ExplosionAnimation*>(m_kart->getKartAnimation());
+        ExplosionAnimation* ea = m_kart->isInExplosionAnimation()
+            ? static_cast<ExplosionAnimation*>(m_kart->getKartAnimation())
+            : NULL;
         if (!ea || ea->hasResetAlready())
             updateRelativityCamera(dt);
         m_camera->setNearValue(getCameraSurfaceAwareNearPlane(
@@ -902,8 +903,8 @@ void CameraNormal::update(float dt)
 
     // If an explosion is happening, stop moving the camera,
     // but keep it target on the kart.
-    ExplosionAnimation* ea =
-        dynamic_cast<ExplosionAnimation*>(m_kart->getKartAnimation());
+    ExplosionAnimation* ea = m_kart->isInExplosionAnimation()
+        ? static_cast<ExplosionAnimation*>(m_kart->getKartAnimation()) : NULL;
     if (ea && !ea->hasResetAlready())
     {
         // The camera target needs to be 'smooth moved', otherwise

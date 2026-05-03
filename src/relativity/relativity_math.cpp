@@ -53,8 +53,22 @@ const float VISUAL_STABILITY_RADIUS = 0.45f;
 const float VISUAL_STABILITY_FADE_WIDTH = 0.65f;
 const float APPARENT_NORMAL_SAMPLE_DISTANCE = 0.20f;
 
+enum RuntimeRelativityMode
+{
+    RUNTIME_RELATIVITY_MODE_OTHER = 0,
+    RUNTIME_RELATIVITY_MODE_PROPULSION_LIMITED,
+    RUNTIME_RELATIVITY_MODE_PREFERRED_FRAME_DYNAMICS
+};
+
 unsigned int g_velocity_clamp_count = 0;
 unsigned int g_response_scale_count = 0;
+
+bool g_runtime_relativity_enabled = false;
+RuntimeRelativityMode g_runtime_relativity_mode =
+    RUNTIME_RELATIVITY_MODE_OTHER;
+int g_runtime_relativity_tick = std::numeric_limits<int>::min();
+bool g_runtime_relativity_has_world = false;
+bool g_last_networking_state = false;
 
 // C-light ramp state. Kept at file scope so that resetCurrentCLight() can
 // clear it between races without the stale mid-ramp artefact described in
@@ -68,6 +82,49 @@ double g_clight_ramp_start_time = 0.0;
 // same render frame. Keyed by World tick; -1 forces recompute on first use.
 static int   g_clight_cache_tick  = -1;
 static float g_clight_cache_value = DEFAULT_NORMAL_C_LIGHT;
+
+RuntimeRelativityMode parseRelativityMode()
+{
+    if (!stk_config)
+        return RUNTIME_RELATIVITY_MODE_OTHER;
+
+    if (stk_config->m_relativity_mode == "propulsion-limited")
+        return RUNTIME_RELATIVITY_MODE_PROPULSION_LIMITED;
+    if (stk_config->m_relativity_mode == "preferred-frame-dynamics")
+        return RUNTIME_RELATIVITY_MODE_PREFERRED_FRAME_DYNAMICS;
+
+    return RUNTIME_RELATIVITY_MODE_OTHER;
+}   // parseRelativityMode
+
+void updateRuntimeRelativityState()
+{
+    const World* world = World::getWorld();
+    const bool has_world = world != NULL;
+    const int tick = has_world ? world->getTicksSinceStart()
+                               : std::numeric_limits<int>::min();
+    if (has_world && g_runtime_relativity_has_world &&
+        tick == g_runtime_relativity_tick)
+    {
+        return;
+    }
+
+    const bool networking = NetworkConfig::get()->isNetworking();
+    // Track the previously-observed networking state so the warning re-fires
+    // on every off->on transition rather than only once per process.
+    if (networking && !g_last_networking_state)
+    {
+        Log::warn("Relativity",
+                  "Relativistic mechanics are disabled for network games.");
+    }
+    g_last_networking_state = networking;
+
+    g_runtime_relativity_enabled =
+        stk_config && stk_config->m_relativity_enabled && !networking;
+    g_runtime_relativity_mode = g_runtime_relativity_enabled
+        ? parseRelativityMode() : RUNTIME_RELATIVITY_MODE_OTHER;
+    g_runtime_relativity_tick = tick;
+    g_runtime_relativity_has_world = has_world;
+}   // updateRuntimeRelativityState
 
 bool isFiniteVector(const btVector3& v)
 {
@@ -297,38 +354,26 @@ ApparentSurfaceHit::ApparentSurfaceHit()
 
 bool isEnabled()
 {
-    if (!stk_config || !stk_config->m_relativity_enabled)
-        return false;
-
-    const bool networking = NetworkConfig::get()->isNetworking();
-    // Track the previously-observed networking state so the warning re-fires
-    // on every off->on transition rather than only once per process.
-    static bool s_last_networking_state = false;
-    if (networking && !s_last_networking_state)
-    {
-        Log::warn("Relativity",
-                  "Relativistic mechanics are disabled for network games.");
-    }
-    s_last_networking_state = networking;
-
-    if (networking)
-        return false;
-
-    return true;
+    updateRuntimeRelativityState();
+    return g_runtime_relativity_enabled;
 }   // isEnabled
 
 // ----------------------------------------------------------------------------
 bool isPropulsionLimited()
 {
-    return isEnabled() &&
-           stk_config->m_relativity_mode == "propulsion-limited";
+    updateRuntimeRelativityState();
+    return g_runtime_relativity_enabled &&
+        g_runtime_relativity_mode ==
+            RUNTIME_RELATIVITY_MODE_PROPULSION_LIMITED;
 }   // isPropulsionLimited
 
 // ----------------------------------------------------------------------------
 bool isPreferredFrameDynamics()
 {
-    return isEnabled() &&
-           stk_config->m_relativity_mode == "preferred-frame-dynamics";
+    updateRuntimeRelativityState();
+    return g_runtime_relativity_enabled &&
+        g_runtime_relativity_mode ==
+            RUNTIME_RELATIVITY_MODE_PREFERRED_FRAME_DYNAMICS;
 }   // isPreferredFrameDynamics
 
 // ----------------------------------------------------------------------------

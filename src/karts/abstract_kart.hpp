@@ -235,6 +235,12 @@ public:
     const AbstractKartAnimation *getKartAnimation() const
                                                    { return m_kart_animation; }
     // ------------------------------------------------------------------------
+    bool isInRescueAnimation() const;
+    // ------------------------------------------------------------------------
+    bool isInExplosionAnimation() const;
+    // ------------------------------------------------------------------------
+    bool isInCannonAnimation() const;
+    // ------------------------------------------------------------------------
     /** Sets a new kart animation. */
     virtual void setKartAnimation(AbstractKartAnimation *ka);
     // ------------------------------------------------------------------------
@@ -438,6 +444,11 @@ public:
     // ------------------------------------------------------------------------
     /** Returns true if any powerup is currently active for this kart. */
     virtual bool isAnyPowerupActive() const = 0;
+    // ------------------------------------------------------------------------
+    /** Syncs state that depends on the completed physics step. Only concrete
+     *  race karts need this; ghost/special kart implementations can keep the
+     *  default no-op. */
+    virtual void syncPostPhysicsState(int ticks) {}
     // ------------------------------------------------------------------------
     /** Returns the current material the kart is on. */
     virtual const Material *getMaterial() const = 0;

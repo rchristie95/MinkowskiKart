@@ -150,6 +150,8 @@ public:
     void          updateTrackSectors();
     void          updateRacePosition();
     float         getDistanceToCenterForKart(const int kart_id) const;
+    virtual int   getCurrentGraphNodeForKart(unsigned int kart_id) const
+                  OVERRIDE;
     float         getEstimatedFinishTime(const int kart_id) const;
     int           getLapForKart(const int kart_id) const;
     int           getTicksAtLapForKart(const int kart_id) const;

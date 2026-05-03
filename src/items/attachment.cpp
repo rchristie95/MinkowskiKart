@@ -963,8 +963,6 @@ void Attachment::update(int ticks)
                 m_bubble_explode_sound->setPosition(m_kart->getXYZ());
                 m_bubble_explode_sound->play();
             }
-            if (!m_kart->isGhostKart())
-                Track::getCurrentTrack()->getItemManager()->dropNewItem(Item::ITEM_WARP_BUBBLE, m_kart);
         }
         break;
     }   // switch

@@ -44,9 +44,6 @@ bool DrawCalls::isCulledPrecise(const scene::ICameraSceneNode *cam,
                                 const scene::ISceneNode* node,
                                 bool visualization)
 {
-    if (Relativity::isEnabled() && !visualization)
-        return false;
-
     if (!node->getAutomaticCulling() && !visualization)
         return false;
 

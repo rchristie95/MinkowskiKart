@@ -142,7 +142,7 @@ void CameraDebug::update(float dt)
     }
     // If an explosion is happening, stop moving the camera,
     // but keep it target on the kart.
-    else if (dynamic_cast<ExplosionAnimation*>(m_kart->getKartAnimation()))
+    else if (m_kart->isInExplosionAnimation())
     {
         getCameraSettings(&above_kart, &cam_angle, &side_way, &distance);
         // The camera target needs to be 'smooth moved', otherwise

@@ -276,8 +276,7 @@ void LinearWorld::updateTrackSectors()
 
         // Nothing to do for karts that are currently being
         // rescued or eliminated
-        if(kart->getKartAnimation() &&
-           !dynamic_cast<CannonAnimation*>(kart->getKartAnimation()))
+        if(kart->getKartAnimation() && !kart->isInCannonAnimation())
             continue;
         // If the kart is off road, and 'flying' over a reset plane
         // don't adjust the distance of the kart, to avoid a jump
@@ -591,6 +590,16 @@ float LinearWorld::getDistanceToCenterForKart(const int kart_id) const
 {
     return getTrackSector(kart_id)->getDistanceToCenter();
 }   // getDistanceToCenterForKart
+
+//-----------------------------------------------------------------------------
+int LinearWorld::getCurrentGraphNodeForKart(unsigned int kart_id) const
+{
+    if (kart_id >= m_kart_track_sector.size())
+        return -1;
+
+    TrackSector* sector = getTrackSector(kart_id);
+    return sector ? sector->getCurrentGraphNode() : -1;
+}   // getCurrentGraphNodeForKart
 
 //-----------------------------------------------------------------------------
 int LinearWorld::getLapForKart(const int kart_id) const

@@ -233,7 +233,7 @@ void OverWorld::onFirePressed(Controller* who)
 
     AbstractKart* k = getKart(0);
     Vec3 kart_xyz = k->getXYZ();
-    if (dynamic_cast<RescueAnimation*>(k->getKartAnimation()) != NULL)
+    if (k->isInRescueAnimation())
     {
         // you can't start a race while being rescued
         return;

@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <unordered_map>
+#include <vector>
 
 namespace
 {
@@ -55,12 +55,37 @@ struct VisualMotionFilterState
     }
 };   // struct VisualMotionFilterState
 
-// Keyed by world kart ID (stable unsigned int) rather than by pointer, so
+// Indexed by world kart ID (stable unsigned int) rather than by pointer, so
 // a newly-allocated kart at a reused address cannot inherit stale filter
 // state from a previous race. clearAllVisualMotionFilters() is still called
 // on race teardown to avoid accumulating dead entries across multi-race sessions.
-std::unordered_map<unsigned int, VisualMotionFilterState>
-    g_visual_motion_filters;
+std::vector<VisualMotionFilterState> g_visual_motion_filters;
+
+struct ObserverVisualStateCacheEntry
+{
+    bool                            m_valid;
+    int                             m_tick;
+    btVector3                       m_observer_position;
+    Relativity::ObserverVisualState m_state;
+
+    ObserverVisualStateCacheEntry()
+        : m_valid(false),
+          m_tick(std::numeric_limits<int>::min()),
+          m_observer_position(0.0f, 0.0f, 0.0f),
+          m_state()
+    {
+    }
+};
+
+std::vector<ObserverVisualStateCacheEntry> g_observer_visual_state_cache;
+
+template<typename T>
+T& getKartIndexedEntry(std::vector<T>& entries, unsigned int kart_id)
+{
+    if (kart_id >= entries.size())
+        entries.resize(kart_id + 1);
+    return entries[kart_id];
+}   // getKartIndexedEntry
 
 float clamp01(float value)
 {
@@ -98,7 +123,8 @@ btVector3 getSmoothedVisualDirection(const AbstractKart* observer_kart,
                                      float beta)
 {
     VisualMotionFilterState& filter =
-        g_visual_motion_filters[observer_kart->getWorldKartId()];
+        getKartIndexedEntry(g_visual_motion_filters,
+                            observer_kart->getWorldKartId());
 
     // The beta direction comes directly from the kart's physical velocity.
     // dampVerticalMotion was previously applied here, but scaling one axis
@@ -264,6 +290,34 @@ ObserverVisualState buildObserverVisualState(
     if (!kart)
         return visual_state;
 
+    const unsigned int kart_id = observer_kart->getWorldKartId();
+    const World* world = World::getWorld();
+    const int current_tick = world ? world->getTicksSinceStart()
+                                   : std::numeric_limits<int>::min();
+    if (kart_id < g_observer_visual_state_cache.size())
+    {
+        const ObserverVisualStateCacheEntry& cached =
+            g_observer_visual_state_cache[kart_id];
+        if (cached.m_valid && cached.m_tick == current_tick &&
+            (cached.m_observer_position - observer_position).length2()
+                <= btScalar(1.0e-8f))
+        {
+            return cached.m_state;
+        }
+    }
+
+    auto cacheResult = [&](const ObserverVisualState& state)
+        -> ObserverVisualState
+    {
+        ObserverVisualStateCacheEntry& cache =
+            getKartIndexedEntry(g_observer_visual_state_cache, kart_id);
+        cache.m_valid = true;
+        cache.m_tick = current_tick;
+        cache.m_observer_position = observer_position;
+        cache.m_state = state;
+        return state;
+    };
+
     const RelativisticState& state = kart->getRelativisticState();
 
     // Relativity visuals are always active whenever relativity is enabled: the
@@ -286,7 +340,7 @@ ObserverVisualState buildObserverVisualState(
     }
     const float c_light = Relativity::getCurrentCLight();
     if (!std::isfinite((double)c_light) || c_light <= 0.0f)
-        return visual_state;
+        return cacheResult(visual_state);
 
     const float beta = std::min(std::max((float)state.m_coordinate_velocity.length() / c_light, 0.0f), 0.999f);
     const float gamma = 1.0f / sqrt(1.0f - beta * beta);
@@ -301,7 +355,7 @@ ObserverVisualState buildObserverVisualState(
 
     const btScalar beta_vector_length2 = beta_vector.length2();
     if (beta < 0.0001f || beta_vector_length2 <= btScalar(1.0e-8f))
-        return visual_state;
+        return cacheResult(visual_state);
 
     const btVector3 smoothed_direction = getSmoothedVisualDirection(
         observer_kart, observer_position, state.m_coordinate_velocity, beta);
@@ -326,19 +380,24 @@ ObserverVisualState buildObserverVisualState(
     visual_state.m_inverse_gamma = 1.0f / gamma;
     visual_state.m_beta_vector = beta_vector;
     visual_state.m_observer_position = observer_position;
-    return visual_state;
+    return cacheResult(visual_state);
 }   // buildObserverVisualState
 
 // ----------------------------------------------------------------------------
 void clearVisualMotionFilterForKart(unsigned int kart_id)
 {
-    g_visual_motion_filters.erase(kart_id);
+    if (kart_id < g_visual_motion_filters.size())
+        g_visual_motion_filters[kart_id] = VisualMotionFilterState();
+    if (kart_id < g_observer_visual_state_cache.size())
+        g_observer_visual_state_cache[kart_id] =
+            ObserverVisualStateCacheEntry();
 }   // clearVisualMotionFilterForKart
 
 // ----------------------------------------------------------------------------
 void clearAllVisualMotionFilters()
 {
     g_visual_motion_filters.clear();
+    g_observer_visual_state_cache.clear();
 }   // clearAllVisualMotionFilters
 
 // ----------------------------------------------------------------------------

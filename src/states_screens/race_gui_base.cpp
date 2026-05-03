@@ -1234,7 +1234,7 @@ void RaceGUIBase::drawPlayerIcon(AbstractKart *kart, int x, int y, int w,
 
     //draw status info - icon fade out in case of rescue/explode
 
-    if (icon  && dynamic_cast<RescueAnimation*>(kart->getKartAnimation()))
+    if (icon  && kart->isInRescueAnimation())
     {
         //icon fades to the left
         float t = kart->getKartAnimation()->getAnimationTimer();
@@ -1259,8 +1259,7 @@ void RaceGUIBase::drawPlayerIcon(AbstractKart *kart, int x, int y, int w,
                                                   true);
     }
 
-    if (icon  &&
-        dynamic_cast<ExplosionAnimation*>(kart->getKartAnimation()) )
+    if (icon  && kart->isInExplosionAnimation())
     {
         //exploses into 4 parts
         float t = kart->getKartAnimation()->getAnimationTimer();

@@ -58,6 +58,7 @@ public:
     /** Return true if this AI needed to be called \ref update by \ref World,
      *  ie it is spawned. */
     bool         isMoving() const                       { return m_idx != -1; }
+    virtual bool isSpareTireMoving() const OVERRIDE     { return isMoving(); }
 
 };
 

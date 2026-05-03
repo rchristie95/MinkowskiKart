@@ -342,22 +342,7 @@ void Powerup::use()
         break ;
 
     case PowerupManager::POWERUP_WARP_BUBBLE:
-        // use the bubble gum the traditional way, if the kart is looking back
-        if (m_kart->getControls().getLookBack())
         {
-            Item *new_item = im->dropNewItem(Item::ITEM_WARP_BUBBLE, m_kart);
-
-            // E.g. ground not found in raycast.
-            if(!new_item) return;
-            if (!has_played_sound)
-            {
-                Powerup::adjustSound();
-                m_sound_use->play();
-            }
-        }
-        else // if the kart is looking forward, use the bubblegum as a shield
-        {
-
             if(!m_kart->isShielded()) //if the previous shield had been used up.
             {
                 if (m_kart->getIdent() == "nolok")

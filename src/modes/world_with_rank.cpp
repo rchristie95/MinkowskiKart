@@ -18,6 +18,7 @@
 #include "modes/world_with_rank.hpp"
 
 #include "karts/abstract_kart.hpp"
+#include "karts/controller/controller.hpp"
 #include "karts/controller/spare_tire_ai.hpp"
 #include "karts/kart_properties.hpp"
 #include "race/history.hpp"
@@ -263,9 +264,10 @@ void WorldWithRank::updateSectorForKarts()
     assert(n == m_kart_track_sector.size());
     for (unsigned int i = 0; i < n; i++)
     {
-        SpareTireAI* sta =
-            dynamic_cast<SpareTireAI*>(m_karts[i]->getController());
-        if (!m_karts[i]->isEliminated() || (sta && sta->isMoving()))
+        Controller* controller = m_karts[i]->getController();
+        const bool spare_tire_moving =
+            controller && controller->isSpareTireMoving();
+        if (!m_karts[i]->isEliminated() || spare_tire_moving)
             getTrackSector(i)->update(m_karts[i]->getXYZ());
     }
 }   // updateSectorForKarts

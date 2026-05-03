@@ -1223,10 +1223,11 @@ void World::update(int ticks)
     const int kart_amount = (int)m_karts.size();
     for (int i = 0 ; i < kart_amount; ++i)
     {
-        SpareTireAI* sta =
-            dynamic_cast<SpareTireAI*>(m_karts[i]->getController());
+        Controller* controller = m_karts[i]->getController();
+        const bool spare_tire_moving =
+            controller && controller->isSpareTireMoving();
         // Update all karts that are not eliminated
-        if(!m_karts[i]->isEliminated() || (sta && sta->isMoving()))
+        if(!m_karts[i]->isEliminated() || spare_tire_moving)
             m_karts[i]->update(ticks);
         if (isStartPhase())
             m_karts[i]->makeKartRest();
@@ -1248,6 +1249,7 @@ void World::update(int ticks)
     if (Relativity::isEnabled())
     {
         PROFILER_PUSH_CPU_MARKER("World::update (relativity clamp)", 0x60, 0x60, 0x7F);
+        const float max_coordinate_speed = Relativity::getMaxCoordinateSpeed();
         for (int i = 0; i < kart_amount; ++i)
         {
             btRigidBody *body = m_karts[i]->getBody();
@@ -1255,17 +1257,16 @@ void World::update(int ticks)
                 continue;
 
             bool was_clamped = false;
-            const btVector3 velocity =
-                Relativity::KartAdapter::clampVelocity(
-                    body->getLinearVelocity(), &was_clamped);
+            const btVector3 velocity = Relativity::clampVelocityToC(
+                body->getLinearVelocity(), max_coordinate_speed,
+                &was_clamped);
             if (was_clamped)
             {
                 body->setLinearVelocity(velocity);
                 body->setInterpolationLinearVelocity(velocity);
             }
 
-            if (Kart* kart = dynamic_cast<Kart*>(m_karts[i].get()))
-                kart->syncPostPhysicsState(ticks);
+            m_karts[i]->syncPostPhysicsState(ticks);
         }
         PROFILER_POP_CPU_MARKER();
     }

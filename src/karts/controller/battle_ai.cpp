@@ -83,9 +83,10 @@ void BattleAI::findClosestKart(bool consider_difficulty, bool find_sta)
         start_id < end; start_id++)
     {
         const AbstractKart* kart = m_world->getKart(start_id);
-        const SpareTireAI* sta =
-            dynamic_cast<const SpareTireAI*>(kart->getController());
-        if (kart->isEliminated() && !(find_sta && sta && sta->isMoving()))
+        const Controller* controller = kart->getController();
+        const bool spare_tire_moving =
+            controller && controller->isSpareTireMoving();
+        if (kart->isEliminated() && !(find_sta && spare_tire_moving))
             continue;
 
         if (kart->getWorldKartId() == m_kart->getWorldKartId())

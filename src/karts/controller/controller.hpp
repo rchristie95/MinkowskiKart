@@ -76,6 +76,8 @@ public:
      *  a local or a remote/networked player. This is tested e.g. by the AI for
      *  rubber-banding. */
     virtual bool  isPlayerController () const = 0;
+    /** Only spare-tire controllers need updates after elimination. */
+    virtual bool  isSpareTireMoving() const { return false; }
     virtual bool  disableSlipstreamBonus() const = 0;
     virtual bool  saveState(BareNetworkString *buffer) const = 0;
     virtual void  rewindTo(BareNetworkString *buffer) = 0;

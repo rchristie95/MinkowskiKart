@@ -107,25 +107,6 @@ void configureRelativisticCCD(const AbstractKart* kart)
     body->setCcdMotionThreshold(extent);
 }   // configureRelativisticCCD
 
-void clampKartBodyVelocity(AbstractKart* kart)
-{
-    if (!kart || !Relativity::isEnabled())
-        return;
-
-    btRigidBody* body = kart->getBody();
-    if (!body)
-        return;
-
-    bool was_clamped = false;
-    const btVector3 clamped = Relativity::KartAdapter::clampVelocity(
-        body->getLinearVelocity(), &was_clamped);
-    if (!was_clamped)
-        return;
-
-    body->setLinearVelocity(clamped);
-    body->setInterpolationLinearVelocity(clamped);
-}   // clampKartBodyVelocity
-
 void applyRelativisticStaticContactCorrection(AbstractKart* kart,
                                               const btPersistentManifold* manifold,
                                               bool kart_is_body_a,
@@ -391,16 +372,20 @@ void Physics::update(int ticks)
             AbstractKart *kart = p->getUserPointer(1)->getPointerKart();
             int kartId = kart->getWorldKartId();
             PhysicalObject* obj = p->getUserPointer(0)->getPointerPhysicalObject();
-            std::string obj_id = obj->getID();
-            std::string scripting_function = obj->getOnKartCollisionFunction();
+            const std::string& obj_id = obj->getID();
+            const std::string& scripting_function =
+                obj->getOnKartCollisionFunction();
 
             TrackObject* to = obj->getTrackObject();
             TrackObject* library = to->getParentLibrary();
+            const std::string empty_lib_id;
             std::string lib_id;
-            std::string* lib_id_ptr = NULL;
+            const std::string* lib_id_ptr = &empty_lib_id;
             if (library != NULL)
+            {
                 lib_id = library->getID();
-            lib_id_ptr = &lib_id;
+                lib_id_ptr = &lib_id;
+            }
 
             if (!is_child && scripting_function.size() > 0)
             {
@@ -408,8 +393,8 @@ void Physics::update(int ticks)
                 script_engine->runFunction(true, "void " + scripting_function + "(int, const string, const string)",
                     [&](asIScriptContext* ctx) {
                         ctx->SetArgDWord(0, kartId);
-                        ctx->SetArgObject(1, lib_id_ptr);
-                        ctx->SetArgObject(2, &obj_id);
+                        ctx->SetArgObject(1, const_cast<std::string*>(lib_id_ptr));
+                        ctx->SetArgObject(2, const_cast<std::string*>(&obj_id));
                     });
             }
             if (obj->isCrashReset())
@@ -493,8 +478,9 @@ void Physics::update(int ticks)
             // -------------------------------
             Flyable* flyable = p->getUserPointer(0)->getPointerFlyable();
             PhysicalObject* obj = p->getUserPointer(1)->getPointerPhysicalObject();
-            std::string obj_id = obj->getID();
-            std::string scripting_function = obj->getOnItemCollisionFunction();
+            const std::string& obj_id = obj->getID();
+            const std::string& scripting_function =
+                obj->getOnItemCollisionFunction();
             if (!is_child && scripting_function.size() > 0)
             {
                 Scripting::ScriptEngine* script_engine = Scripting::ScriptEngine::getInstance();
@@ -502,7 +488,7 @@ void Physics::update(int ticks)
                         [&](asIScriptContext* ctx) {
                         ctx->SetArgDWord(0, (int)flyable->getType());
                         ctx->SetArgDWord(1, flyable->getOwnerId());
-                        ctx->SetArgObject(2, &obj_id);
+                        ctx->SetArgObject(2, const_cast<std::string*>(&obj_id));
                     });
             }
             flyable->hit(NULL, obj);
@@ -558,16 +544,6 @@ void Physics::update(int ticks)
             p->getUserPointer(1)->getPointerFlyable()->hit(NULL);
         }
     }  // for all p in m_all_collisions
-
-    if (Relativity::isEnabled())
-    {
-        World* world = World::getWorld();
-        if (world)
-        {
-            for (unsigned int i = 0; i < world->getNumKarts(); i++)
-                clampKartBodyVelocity(world->getKart(i));
-        }
-    }
 
     m_physics_loop_active = false;
     // Now remove the karts that were removed while the above loop

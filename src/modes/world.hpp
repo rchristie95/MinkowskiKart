@@ -348,6 +348,11 @@ public:
     /** Returns all karts. */
     const KartList & getKarts() const { return m_karts; }
     // ------------------------------------------------------------------------
+    /** Returns the current drive graph node for a kart, or -1 when this world
+     *  does not maintain linear track sectors. */
+    virtual int getCurrentGraphNodeForKart(unsigned int) const
+                                                    { return -1; }
+    // ------------------------------------------------------------------------
     /** Returns the number of currently active (i.e.non-elikminated) karts. */
     unsigned int    getCurrentNumKarts() const { return (int)m_karts.size() -
                                                          m_eliminated_karts; }
