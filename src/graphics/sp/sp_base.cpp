@@ -266,11 +266,12 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[15] = bubble_center.getY();
     tail[16] = bubble_center.getZ();
     tail[17] = Relativity::getWarpBubbleRadius();
-    // u_black_hole: world-space position (xyz) + active flag (w)
+    // u_black_hole: world-space position (xyz) + scale (w).
+    // w = 0 means inactive; w = 0..1 is the effect scale (shrinks to 0 on death).
     tail[18] = sp_black_hole_world_pos.X;
     tail[19] = sp_black_hole_world_pos.Y;
     tail[20] = sp_black_hole_world_pos.Z;
-    tail[21] = sp_black_hole_active ? 1.0f : 0.0f;
+    tail[21] = sp_black_hole_active ? sp_black_hole_radius : 0.0f;
     // u_wormhole: world-space position (xyz) + world-space radius (w).
     // A non-zero radius implicitly marks the wormhole as active; the
     // tonemap post-process uses this radius to project the mouth
@@ -293,6 +294,7 @@ std::array<float, 16>* g_joint_ptr = NULL;
 // Set by BlackHole projectile each frame; cleared when no black hole is live.
 irr::core::vector3df sp_black_hole_world_pos(0.0f, 0.0f, 0.0f);
 bool sp_black_hole_active = false;
+float sp_black_hole_radius = 0.0f;
 // Wormhole world position for gravitational lensing in tonemap.frag. Set by
 // the Wormhole flyable while alive; cleared on destruction.
 irr::core::vector3df sp_wormhole_world_pos(0.0f, 0.0f, 0.0f);

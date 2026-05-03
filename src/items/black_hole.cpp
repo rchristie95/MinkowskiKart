@@ -20,6 +20,7 @@
 
 #include "audio/sfx_base.hpp"
 #include "audio/sfx_manager.hpp"
+#include "config/stk_config.hpp"
 #include "graphics/hit_sfx.hpp"
 #include "io/file_manager.hpp"
 #include "ge_render_info.hpp"
@@ -30,6 +31,7 @@
 #include "io/xml_node.hpp"
 #include "karts/abstract_kart.hpp"
 #include "modes/linear_world.hpp"
+#include "modes/world.hpp"
 
 #include <ISceneManager.h>
 #include <ISceneNode.h>
@@ -45,44 +47,16 @@ BlackHole::BlackHole(AbstractKart *kart)
         : Flyable(kart, PowerupManager::POWERUP_BLACK_HOLE, 50.0f /* mass */)
 {
     m_has_hit_kart = false;
+    m_expiry_ticks = 0;
     m_roll_sfx = SFXManager::get()->createSoundSource("bowling_roll");
     fixSFXSplitscreen(m_roll_sfx);
     m_roll_sfx->play();
     m_roll_sfx->setLoop(true);
 
 #ifndef SERVER_ONLY
-    m_core_billboard = nullptr;
+    // Hide the sphere mesh — the shader event horizon renders the black core.
     if (!GUIEngine::isNoGraphics() && getNode())
-    {
-        // Hide the sphere mesh entirely — the btSphereShape still handles
-        // all collision/hitscan; we render the black-hole visual separately
-        // via a billboard so its alpha channel works correctly.
         getNode()->setVisible(false);
-
-        // Create a camera-facing billboard for the black-hole core visual.
-        // It is parented to the scene root (not the mesh node) so we can
-        // drive its position manually each frame, avoiding any transform-lag
-        // between the physics body and the rendered sprite.
-        scene::ISceneManager* smgr = irr_driver->getSceneManager();
-        m_core_billboard = smgr->addBillboardSceneNode(
-            /*parent*/nullptr,
-            core::dimension2df(2.0f, 2.0f),
-            core::vector3df(0.f, 0.f, 0.f));
-
-        if (m_core_billboard)
-        {
-            video::ITexture* tex = irr_driver->getTexture(
-                FileManager::TEXTURE, "bowling.png");
-            if (tex)
-                m_core_billboard->setMaterialTexture(0, tex);
-            // Alpha-blend so the .png transparent pixels are honoured.
-            m_core_billboard->setMaterialType(
-                video::EMT_TRANSPARENT_ALPHA_CHANNEL);
-            m_core_billboard->setMaterialFlag(video::EMF_LIGHTING,   false);
-            m_core_billboard->setMaterialFlag(video::EMF_ZBUFFER,    true);
-            m_core_billboard->setMaterialFlag(video::EMF_ZWRITE_ENABLE, false);
-        }
-    }
 #endif
 }   // BlackHole
 
@@ -92,14 +66,8 @@ BlackHole::BlackHole(AbstractKart *kart)
 BlackHole::~BlackHole()
 {
     SP::sp_black_hole_active = false;
+    SP::sp_black_hole_radius = 0.0f;
     removeRollSfx();
-#ifndef SERVER_ONLY
-    if (m_core_billboard)
-    {
-        m_core_billboard->remove();
-        m_core_billboard = nullptr;
-    }
-#endif
 }   // ~BlackHole
 
 // -----------------------------------------------------------------------------
@@ -131,20 +99,22 @@ bool BlackHole::updateAndDelete(int ticks)
     // Keep the lensing uniform pointing at this ball each frame.
     // This drives the screen-space gravitational-lens distortion in tonemap.frag.
     const Vec3& bhpos = getXYZ();
-    irr::core::vector3df world_pos(bhpos.getX(), bhpos.getY(), bhpos.getZ());
-    SP::sp_black_hole_world_pos = world_pos;
+    SP::sp_black_hole_world_pos = irr::core::vector3df(
+        bhpos.getX(), bhpos.getY() + 0.1f, bhpos.getZ());
 
-#ifndef SERVER_ONLY
-    // Move the core billboard to the same world position so the sprite and
-    // the shader distortion are always perfectly co-located — no "ghosting".
-    if (m_core_billboard)
-        m_core_billboard->setPosition(world_pos);
-#endif
+    // Compute collapse scale: linearly shrink from 1→0 over the final second.
+    const float remaining = stk_config->ticks2Time(
+        std::max(0, m_expiry_ticks - World::getWorld()->getTicksSinceStart()));
+    const float collapse = remaining < 1.0f ? std::max(0.0f, remaining) : 1.0f;
+
+    // Pass world-space sphere radius; shader projects this to screen pixels for R_E.
+    SP::sp_black_hole_radius = 0.5f * m_extend.getY() * collapse;
 
     bool can_be_deleted = Flyable::updateAndDelete(ticks);
     if (can_be_deleted)
     {
         SP::sp_black_hole_active = false;
+        SP::sp_black_hole_radius = 0.0f;
         removeRollSfx();
         return true;
     }
@@ -247,6 +217,7 @@ bool BlackHole::hit(AbstractKart* kart, PhysicalObject* obj)
     if(was_real_hit)
     {
         SP::sp_black_hole_active = false;
+        SP::sp_black_hole_radius = 0.0f;
         m_has_hit_kart = false;
         explode(kart, obj, /*hit_secondary*/false);
     }
@@ -287,6 +258,9 @@ void BlackHole::onFireFlyable()
     m_has_hit_kart = false;
     // Register this black hole for screen-space lensing in tonemap.frag
     SP::sp_black_hole_active = true;
+    SP::sp_black_hole_radius = 0.5f * m_extend.getY();
+    m_expiry_ticks = World::getWorld()->getTicksSinceStart()
+                   + stk_config->time2Ticks(20);
     float y_offset = 0.5f*m_owner->getKartLength() + m_extend.getZ()*0.5f;
 
     // if the kart is looking backwards, release from the back

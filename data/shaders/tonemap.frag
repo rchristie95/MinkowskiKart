@@ -1,4 +1,5 @@
 uniform sampler2D tex;
+uniform sampler2D dtex;
 uniform float vignette_weight;
 
 out vec4 FragColor;
@@ -14,49 +15,53 @@ void main()
     float distortion_strength = 0.0; // Track how strong the lensing is at this pixel
 
     // ---- Gravitational lensing from active black hole ----
-    if (u_black_hole.w > 0.5)
+    // u_black_hole.w = world-space sphere radius (0 = inactive, shrinks to 0 on death).
+    if (u_black_hole.w > 0.001)
     {
-        // Project world-space black hole position into clip space
         vec4 bh_clip = u_projection_view_matrix * vec4(u_black_hole.xyz, 1.0);
         if (bh_clip.w > 0.001 && bh_clip.z > 0.0)
         {
-            // NDC → pixel coordinates
             vec2 bh_ndc    = bh_clip.xy / bh_clip.w;
             vec2 bh_screen = (bh_ndc * 0.5 + 0.5) * u_screen;
+
+            // Project the world-space sphere radius to screen pixels for R_E.
+            vec3 cam_right = vec3(u_view_matrix[0][0],
+                                  u_view_matrix[1][0],
+                                  u_view_matrix[2][0]);
+            vec4 rim_clip  = u_projection_view_matrix
+                           * vec4(u_black_hole.xyz + cam_right * u_black_hole.w, 1.0);
+            vec2 rim_ndc    = rim_clip.xy / max(rim_clip.w, 0.001);
+            vec2 rim_screen = (rim_ndc * 0.5 + 0.5) * u_screen;
+            float R_E = max(length(rim_screen - bh_screen), 2.0);
+
+            float bh_depth01 = bh_clip.z / bh_clip.w * 0.5 + 0.5;
 
             vec2  delta = gl_FragCoord.xy - bh_screen;
             float r     = length(delta);
 
-            // Einstein ring radius (pixels). Increased for more dramatic effect.
-            const float R_E = 75.0;
-
             if (r > 0.5 && r < R_E * 6.0)
             {
-                // Schwarzschild lens equation (point mass, small angle):
-                //   r_source = r - R_E^2 / r
-                // r_source < 0  → inside shadow / event-horizon → black
-                float r_src = r - (R_E * R_E) / r;
-
-                if (r_src <= 0.0)
+                // Per-pixel occlusion: skip lensing where scene is in front of the black hole.
+                float this_depth = texture(dtex, gl_FragCoord.xy / u_screen).x;
+                if (this_depth >= bh_depth01 - 0.02)
                 {
-                    // Event horizon: all light absorbed → pure black
-                    // Mark this pixel as inside the event horizon so tone-mapping
-                    // doesn't add unwanted color/brightness back in.
-                    in_event_horizon = true;
-                    uv = vec2(-1.0); // will clamp to black below
-                }
-                else
-                {
-                    // Remap: sample scene from the direction the photon actually came from.
-                    vec2 sample_pos = bh_screen + normalize(delta) * r_src;
-                    uv = sample_pos / u_screen;
+                    float r_src = r - (R_E * R_E) / r;
 
-                    // Track distortion strength for darkening effect
-                    // Closer to event horizon = stronger darkening
-                    distortion_strength = 1.0 - (r_src / (R_E * 3.0));
-                    distortion_strength = clamp(distortion_strength, 0.0, 1.0);
+                    if (r_src <= 0.0)
+                    {
+                        in_event_horizon = true;
+                        uv = vec2(-1.0);
+                    }
+                    else
+                    {
+                        vec2 sample_pos = bh_screen + normalize(delta) * r_src;
+                        uv = sample_pos / u_screen;
+
+                        distortion_strength = 1.0 - (r_src / (R_E * 3.0));
+                        distortion_strength = clamp(distortion_strength, 0.0, 1.0);
+                    }
+                    uv = clamp(uv, vec2(0.0), vec2(1.0));
                 }
-                uv = clamp(uv, vec2(0.0), vec2(1.0));
             }
         }
     }
@@ -75,45 +80,6 @@ void main()
     {
         FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         return;
-    }
-
-    // Add accretion disk glow around black hole for dramatic effect
-    if (u_black_hole.w > 0.5)
-    {
-        vec4 bh_clip = u_projection_view_matrix * vec4(u_black_hole.xyz, 1.0);
-        if (bh_clip.w > 0.001 && bh_clip.z > 0.0)
-        {
-            vec2 bh_ndc    = bh_clip.xy / bh_clip.w;
-            vec2 bh_screen = (bh_ndc * 0.5 + 0.5) * u_screen;
-            vec2 delta = gl_FragCoord.xy - bh_screen;
-            float r = length(delta);
-
-            const float R_E = 55.0;
-            const float EVENT_HORIZON = R_E * 0.4;  // Inner black region
-            const float ACCRETION_INNER = R_E * 0.5;
-            const float ACCRETION_OUTER = R_E * 1.5;
-
-            // Accretion disk: bright orange/red glow just outside event horizon
-            if (r > EVENT_HORIZON && r < ACCRETION_OUTER)
-            {
-                // Radial falloff from inner to outer edge
-                float accretion_t = (r - ACCRETION_INNER) / (ACCRETION_OUTER - ACCRETION_INNER);
-                accretion_t = clamp(accretion_t, 0.0, 1.0);
-
-                // Strongest glow just outside event horizon, fades outward
-                float glow_strength = (1.0 - accretion_t) * (1.0 - accretion_t);
-
-                // Hot accretion disk color: orange to red (simulating superheated matter)
-                vec3 accretion_color = mix(
-                    vec3(1.0, 0.5, 0.1),  // Orange at inner edge
-                    vec3(0.8, 0.1, 0.05), // Red at outer edge
-                    accretion_t
-                );
-
-                // Blend accretion disk glow with scene color
-                col.rgb = mix(col.rgb, accretion_color * 2.0, glow_strength * 0.6);
-            }
-        }
     }
 
     // ---- Wormhole: Interstellar-style gravitational lensing mouth ----
@@ -135,6 +101,8 @@ void main()
             vec2 wh_ndc    = wh_clip.xy / wh_clip.w;
             vec2 wh_screen = (wh_ndc * 0.5 + 0.5) * u_screen;
 
+            float wh_depth01 = wh_clip.z / wh_clip.w * 0.5 + 0.5;
+
             // Project a point offset along camera-right by the world radius
             // so we get the actual on-screen silhouette radius in pixels
             // (robust to FOV, distance, and aspect).
@@ -153,6 +121,12 @@ void main()
 
             if (r > 0.1 && r < R_LENS_OUTER)
             {
+                // Per-pixel occlusion: skip lensing where scene is in front of the wormhole.
+                float this_depth = texture(dtex, gl_FragCoord.xy / u_screen).x;
+                if (this_depth < wh_depth01 - 0.02) { /* occluded */ }
+                else
+                {
+
                 vec2  dir  = delta / max(r, 0.001);
                 // Gentle static swirl — rotate the sample direction slightly
                 // so light appears to flow around the mouth (frame-dragging
@@ -243,6 +217,7 @@ void main()
                 float mod_az = 0.85 + 0.15 * cos(theta * 2.0);
                 float rim_boost = ring * mod_az * 0.45;
                 col.rgb = mix(col.rgb, col.rgb * 1.35, rim_boost);
+                } // end per-pixel occlusion else
             }
         }
     }

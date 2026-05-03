@@ -383,7 +383,7 @@ public:
 };   // LensBlendShader
 
 // ============================================================================
-class ToneMapShader : public TextureShader<ToneMapShader, 1, float>
+class ToneMapShader : public TextureShader<ToneMapShader, 2, float>
 {
 public:
 
@@ -392,14 +392,16 @@ public:
         loadProgram(OBJECT, GL_VERTEX_SHADER, "screenquad.vert",
                             GL_FRAGMENT_SHADER, "tonemap.frag");
         assignUniforms("vignette_weight");
-        assignSamplerNames(0, "text", ST_NEAREST_FILTERED);
+        assignSamplerNames(0, "text", ST_NEAREST_FILTERED,
+                           1, "dtex",  ST_NEAREST_FILTERED);
     }   // ToneMapShader
     // ----------------------------------------------------------------------------
-    void render(const FrameBuffer &fbo, GLuint rtt, float vignette_weight)
+    void render(const FrameBuffer &fbo, GLuint rtt, GLuint depth_stencil,
+                float vignette_weight)
     {
         fbo.bind();
         glClear(GL_COLOR_BUFFER_BIT);
-        setTextureUnits(rtt);
+        setTextureUnits(rtt, depth_stencil);
         drawFullScreenEffect(vignette_weight);
     }   // render
 };   // ToneMapShader
@@ -1294,6 +1296,7 @@ FrameBuffer *PostProcessing::render(scene::ICameraSceneNode * const camnode,
 
         out_fbo = &rtts->getFBO(FBO_RGBA_1);
         ToneMapShader::getInstance()->render(*out_fbo, in_fbo->getRTT()[0],
+                                             irr_driver->getDepthStencilTexture(),
                                              isRace ? 1.0f : 0.0f);
         in_fbo = &rtts->getFBO(FBO_RGBA_2);
         PROFILER_POP_CPU_MARKER();
