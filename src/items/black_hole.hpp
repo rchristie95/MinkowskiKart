@@ -21,11 +21,7 @@
 
 namespace irr
 {
-    namespace scene
-    {
-        class IMesh;
-        class IBillboardSceneNode;
-    }
+    namespace scene { class IMesh; }
 }
 #include <irrString.h>
 using namespace irr;
@@ -50,17 +46,12 @@ private:
      *  kart was hit. */
     bool m_has_hit_kart;
 
+    /** World tick at which this black hole expires (used to drive shrink). */
+    int m_expiry_ticks;
+
     /** A sound effect for rolling ball. */
     SFXBase     *m_roll_sfx;
     void removeRollSfx();
-
-#ifndef SERVER_ONLY
-    /** Camera-facing billboard that renders the black-hole core sprite.
-     *  Parented to the scene root and repositioned manually every frame so
-     *  it stays pixel-perfect with the physics body position — decoupled from
-     *  the hidden sphere mesh to prevent transform lag. */
-    scene::IBillboardSceneNode* m_core_billboard;
-#endif
 
 public:
              BlackHole(AbstractKart* kart);

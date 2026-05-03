@@ -101,6 +101,8 @@ extern unsigned sp_cur_buf_id[MAX_PLAYER_COUNT];
 extern irr::core::vector3df sp_wind_dir;
 extern irr::core::vector3df sp_black_hole_world_pos;
 extern bool sp_black_hole_active;
+// Scale of the black hole effect (0=inactive, 1=full size, shrinks to 0 on death).
+extern float sp_black_hole_radius;
 extern irr::core::vector3df sp_wormhole_world_pos;
 extern bool sp_wormhole_active;
 // World-space visual radius of the wormhole mouth currently used for
