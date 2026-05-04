@@ -63,7 +63,6 @@ const float RC_FORWARD_OFFSET = -0.50f;  // 50cm behind kart centre
 const float RC_HEIGHT         = 0.85f;   // 85cm above kart centre
 const float RC_CLEARANCE      = 0.34f;   // minimum distance from apparent road
 const float RC_TARGET_FORWARD = 3.10f;   // 3.1m ahead of kart for look-at point
-const float RC_TARGET_HEIGHT  = 0.56f;   // 56cm above kart for look-at point
 const float RC_FORWARD_TC     = 0.10f;   // support-frame forward smooth tc (s)
 const float RC_UP_TC          = 0.08f;   // support-frame up smooth tc (s)
 const float RC_STEEP_EXTRA    = 0.36f;   // extra clearance on steep normals (m)
@@ -448,7 +447,7 @@ void CameraNormal::updateRelativityCamera(float dt)
         + support_up * RC_HEIGHT;
     btVector3 desired_tgt = kart_pos
         + support_forward * RC_TARGET_FORWARD
-        + support_up * RC_TARGET_HEIGHT;
+        + support_up * RC_HEIGHT;
     const btVector3 kart_anchor =
         kart_pos + support_up * 0.28f + support_forward * 0.08f;
 
@@ -489,11 +488,10 @@ void CameraNormal::updateRelativityCamera(float dt)
     m_rc_pos = next_pos;
     m_rc_target = desired_tgt;
 
-    // Compactification tilt: smoothly level the camera to the horizon when
+    // Compactification tilt: smoothly lock the camera to the horizon when
     // the Calabi-Yau strip-stretch VFX is active.  The shader stretches a
-    // thin horizontal band centred on the screen; with the normal look-at
-    // point 3.1m ahead and 0.56m up the camera looks ~4.6° downward, so
-    // that band lands on the road.  We blend the look-at target from
+    // thin horizontal band centred on the screen. The target already sits at
+    // camera eye height, so we blend the look-at target from
     // desired_tgt toward a far point directly along support_forward at
     // camera eye height, making the view direction parallel to the track
     // surface so the horizon sits at screen centre.

@@ -100,11 +100,10 @@ std::unordered_map<const scene::ISceneNode*, RelativityMotionState>
 // so we always return zero velocity for them to avoid relativistic stutter.
 std::unordered_set<const scene::ISceneNode*> g_animated_track_nodes;
 
-// Per-frame cache: kart root scene node -> kart's physics coordinate velocity.
-// Built once per frame by prepareDrawCalls(); consumed by addObject() to assign
-// the same authoritative velocity to every scene node in a kart's subtree, so
-// wheels/headlights/hats/speed-weighted objects never drift apart from the
-// body under the light-cone emission offset in applyRelativisticVisualPosition.
+// Per-camera cache: kart root scene node -> visual velocity. Other karts are
+// treated as v=0 geometry for retarded-position visuals, like the track, so
+// their body/wheels stay visually grounded instead of floating relative to the
+// road. The observer kart keeps its previous coordinate-velocity path.
 std::unordered_map<const scene::ISceneNode*, core::vector3df>
     g_kart_root_velocities;
 
@@ -170,12 +169,10 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
     return state.m_velocity;
 }   // estimateNodeVelocity
 
-// If 'node' is a descendant of any kart's scene root, return the kart's
-// coordinate velocity from physics (not a graphics-delta estimate). This
-// avoids per-node smoothing divergence between a kart's body and its children
-// (wheels, headlights, hats, speed-weighted props), which would otherwise
-// produce visible detachment during acceleration through
-// applyRelativisticVisualPosition's light-cone offset.
+// If 'node' is a descendant of any kart's scene root, return the cached kart
+// visual velocity. This prevents per-node graphics-delta estimates from making
+// body/wheels/headlights drift apart. Non-observer karts use the same v=0
+// retarded-position path as static track geometry.
 bool findKartVelocityForNode(const scene::ISceneNode* node,
                              core::vector3df& out_velocity)
 {
@@ -1004,24 +1001,33 @@ void prepareDrawCalls()
         World* world = World::getWorld();
         if (world)
         {
+            Camera* camera = sp_cur_player < Camera::getNumCameras()
+                ? Camera::getCamera(sp_cur_player) : nullptr;
+            AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
             const unsigned num_karts = world->getNumKarts();
             for (unsigned i = 0; i < num_karts; i++)
             {
                 AbstractKart* abstract_kart = world->getKart(i);
                 if (!abstract_kart)
                     continue;
-                Kart* kart = dynamic_cast<Kart*>(abstract_kart);
-                if (!kart)
-                    continue;
-                scene::ISceneNode* root = kart->getNode();
+                scene::ISceneNode* root = abstract_kart->getNode();
                 if (!root)
                     continue;
-                const btVector3& v =
-                    kart->getRelativisticState().m_coordinate_velocity;
-                core::vector3df cv((float)v.x(), (float)v.y(), (float)v.z());
-                if (!isFiniteVector(cv))
-                    cv = core::vector3df(0.0f, 0.0f, 0.0f);
-                g_kart_root_velocities[root] = cv;
+                core::vector3df visual_velocity(0.0f, 0.0f, 0.0f);
+                if (abstract_kart == observer_kart)
+                {
+                    Kart* kart = dynamic_cast<Kart*>(abstract_kart);
+                    if (kart)
+                    {
+                        const btVector3& v =
+                            kart->getRelativisticState().m_coordinate_velocity;
+                        visual_velocity = core::vector3df(
+                            (float)v.x(), (float)v.y(), (float)v.z());
+                        if (!isFiniteVector(visual_velocity))
+                            visual_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
+                    }
+                }
+                g_kart_root_velocities[root] = visual_velocity;
             }
         }
     }

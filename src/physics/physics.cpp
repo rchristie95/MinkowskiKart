@@ -112,63 +112,10 @@ void applyRelativisticStaticContactCorrection(AbstractKart* kart,
                                               bool kart_is_body_a,
                                               float dt)
 {
-    if (!Relativity::isPreferredFrameDynamics() || !kart || !manifold ||
-        dt <= 0.0f)
-    {
-        return;
-    }
-
-    btRigidBody* body = kart->getBody();
-    if (!body)
-        return;
-
-    btVector3 accumulated_normal(0.0f, 0.0f, 0.0f);
-    btScalar min_distance = btScalar(0.0f);
-    int contacts = 0;
-    for (int i = 0; i < manifold->getNumContacts(); i++)
-    {
-        const btManifoldPoint& point = manifold->getContactPoint(i);
-        if (point.getDistance() > btScalar(0.08f))
-            continue;
-
-        btVector3 normal = kart_is_body_a ? point.m_normalWorldOnB
-                                          : -point.m_normalWorldOnB;
-        if (normal.length2() <= btScalar(1.0e-8f))
-            continue;
-
-        accumulated_normal += normal;
-        if (contacts == 0)
-            min_distance = point.getDistance();
-        else
-            min_distance = std::min(min_distance, point.getDistance());
-        contacts++;
-    }
-
-    if (contacts <= 0)
-        return;
-
-    const btVector3 contact_normal = normalizedOrDefault(
-        accumulated_normal, btVector3(0.0f, 1.0f, 0.0f));
-    const btVector3 velocity = body->getLinearVelocity();
-    const btScalar inward_speed = -velocity.dot(contact_normal);
-    const btScalar penetration = std::max(btScalar(0.0f), -min_distance);
-    if (inward_speed <= btScalar(0.02f) && penetration <= btScalar(0.01f))
-        return;
-
-    const btScalar separation_speed = std::min(
-        btScalar(8.0f), penetration / std::max(btScalar(dt), btScalar(1.0e-4f)));
-    btVector3 corrected_velocity = velocity;
-    if (inward_speed > btScalar(0.0f))
-        corrected_velocity += contact_normal * inward_speed;
-    if (separation_speed > btScalar(0.0f))
-        corrected_velocity += contact_normal * separation_speed;
-
-    bool was_clamped = false;
-    corrected_velocity = Relativity::KartAdapter::clampVelocity(
-        corrected_velocity, &was_clamped);
-    (void)was_clamped;
-    body->setLinearVelocity(corrected_velocity);
-    body->setInterpolationLinearVelocity(corrected_velocity);
+    (void)kart;
+    (void)manifold;
+    (void)kart_is_body_a;
+    (void)dt;
 }   // applyRelativisticStaticContactCorrection
 
 }   // anonymous namespace
