@@ -182,6 +182,20 @@ void MaxSpeed::instantSpeedIncrease(unsigned int category,
     if(speed < m_min_speed) speed = m_min_speed;
 
     m_kart->getVehicle()->setMinSpeed(speed);
+
+    // btKart::setMaxSpeed() only lowers the cap, so the boost from
+    // increaseMaxSpeed() above would not propagate to btKart when the cap was
+    // already set to the (lower) base max speed earlier in the same frame by
+    // updatePhysics().  Reset it first so the raised cap takes effect
+    // immediately and adjustSpeed() sees the correct maximum this physics step.
+    // Without this, the relativity block in adjustSpeed() clamps min_speed down
+    // to the stale base max, causing the ground zipper to slow karts that are
+    // already travelling above base max speed (acting like a collision).
+    m_kart->getVehicle()->resetMaxSpeed();
+    if (m_kart->isOnGround())
+        m_kart->getVehicle()->setMaxSpeed(m_current_max_speed);
+    else
+        m_kart->getVehicle()->setMaxSpeed(9999.9f);  // uncapped in air, matches update()
 }   // instantSpeedIncrease
 
 // ----------------------------------------------------------------------------
