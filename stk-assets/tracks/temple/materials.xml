@@ -4,7 +4,7 @@
   <material name="gfx_lavaGlow_a.png" shader="additive"/>
   <material name="gfx_lightning_a.png" shader="additive"/>
   <material name="gfx_lightningGlow_a.png" shader="additive"/>
-  <material name="stktemple_waterWhite.png" surface="Y" shader="displace">
+  <material name="stktemple_waterWhite.png" surface="Y" shader="displace" no-relativity-warp="Y">
     <particles base="splash.xml" condition="skid drive"/>
   </material>
   <material name="jungleVines_a.png" shader="grass" clampv="Y" ignore="Y" grass-speed="1.50" grass-amplitude="0.50"/>

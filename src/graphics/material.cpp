@@ -152,6 +152,7 @@ Material::Material(const XMLNode *node, bool deprecated)
     }
 
     node->get("below-surface",    &m_below_surface     );
+    node->get("no-relativity-warp", &m_no_relativity_warp);
     node->get("falling-effect",   &m_falling_effect    );
     // A terrain with falling effect has to force a reset
     // when the kart is on it. So to make it easier for artists,
@@ -512,6 +513,7 @@ void Material::init()
     m_mirror_axis_when_reverse  = ' ';
     m_collision_reaction        = NORMAL;
     m_colorizable               = false;
+    m_no_relativity_warp        = false;
     m_tex_compression           = true;
     m_colorization_factor       = 0.0f;
     m_colorization_mask         = "";

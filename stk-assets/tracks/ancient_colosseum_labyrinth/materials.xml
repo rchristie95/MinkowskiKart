@@ -14,7 +14,7 @@
   <material name="gfxGlow_White_a.png" gloss-map="gfxGlow_generic_a_gloss.png"/>
   <material name="Ice03_col.jpg" gloss-map="Ice03_glossy.jpg" normal-map="Ice03_nm.jpg"/>
   <material name="magma.jpg" gloss-map="magma_gloss.png" normal-map="magma-nm.png" collision-detect="Y" collision-reaction="reset"/>
-  <material name="oceanicWater.png" ignore="Y" shader="displace">
+  <material name="oceanicWater.png" ignore="Y" shader="displace" no-relativity-warp="Y">
     <particles base="splash.xml" condition="drive skid"/>
   </material>
   <material name="sand.png" has-gravity="Y"/>

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- Generated with script from SVN rev Unknown -->
 <materials>
-  <material name="alpha_sea.png" shader="alphablend" collision-detect="Y" falling-effect="Y" reset="Y" collision-reaction="reset"/>
+  <material name="alpha_sea.png" shader="alphablend" collision-detect="Y" falling-effect="Y" reset="Y" collision-reaction="reset" no-relativity-warp="Y"/>
   <material name="bubble.png" ignore="Y" shader="alphablend"/>
   <material name="bubble_solid_texture.png" collision-detect="Y" collision-reaction="push" collision-particles="sparks.xml" shader="alphatest"/>
   <material name="BurdockLeaf.png" ignore="Y" shader="alphatest"/>
@@ -39,7 +39,7 @@
   <material name="rock_brown.jpg" shader="splatting" uv-two-tex="splat.png" tex-layer-2="dirt.jpg" tex-layer-3="grass2.jpg" tex-layer-4="rock_brown.jpg" tex-layer-5="sand2.jpg"/>
   <material name="rock_grey.jpg" shader="splatting" uv-two-tex="splat2.png" tex-layer-2="dirt.jpg" tex-layer-3="grass2.jpg" tex-layer-4="snow.png" tex-layer-5="rock_grey.jpg"/>
   <material name="sand2.jpg" shader="splatting" uv-two-tex="splat.png" tex-layer-2="dirt.jpg" tex-layer-3="grass2.jpg" tex-layer-4="rock_brown.jpg" tex-layer-5="sand2.jpg"/>
-  <material name="sea.jpg" reset="Y"/>
+  <material name="sea.jpg" reset="Y" no-relativity-warp="Y"/>
   <material name="snow.png" shader="splatting" uv-two-tex="splat2.png" tex-layer-2="dirt.jpg" tex-layer-3="grass2.jpg" tex-layer-4="snow.png" tex-layer-5="rock_grey.jpg"/>
   <material name="track_screenshot_dummy.png" shader="alphablend"/>
   <material name="StreamPlant.png" ignore="Y" shader="alphatest"/>

@@ -7,5 +7,5 @@
   <material name="stkflag_pirateVertical_a.png" shader="grass"/>
   <material name="stktex_hayFiber_a.png" shader="alphatest"/>
   <material name="stktex_jungleLiana_b.png" shader="alphatest"/>
-  <material name="seagloss.png" shader="alphablend" ignore="Y"/>
+  <material name="seagloss.png" shader="alphablend" ignore="Y" no-relativity-warp="Y"/>
 </materials>

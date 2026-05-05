@@ -3,7 +3,7 @@
 <materials>
   <material name="stk_generic_grassC.png" shader="solid" slowdown-time="2.00" max-speed="0.50"/>
   <material name="stk_mudpot_a.png" shader="solid" tex-layer-2="stk_mudpot_a_gloss.png" reset="Y"/>
-  <material name="swamp_water.png" water-splash="Y" surface="Y" shader="displace">
+  <material name="swamp_water.png" water-splash="Y" surface="Y" shader="displace" no-relativity-warp="Y">
     <sfx filename="splash.ogg" min_speed="0.00" max_speed="0.00" min_pitch="0.80" max_pitch="1.20" positional="true" rolloff="0.10"/>
     <particles base="splash.xml" condition="skid drive"/>
   </material>

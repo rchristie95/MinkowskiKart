@@ -24,6 +24,7 @@
 #include "graphics/camera/camera.hpp"
 #include "graphics/frame_buffer.hpp"
 #include "graphics/irr_driver.hpp"
+#include "graphics/material.hpp"
 #include "graphics/material_manager.hpp"
 #include "graphics/shader_based_renderer.hpp"
 #include "graphics/shared_gpu_objects.hpp"
@@ -1051,12 +1052,16 @@ void addObject(SPMeshNode* node)
     {
         node_velocity = estimateNodeVelocity(node, node_position);
     }
-    const bool disable_relativity_visual =
+    const bool disable_relativity_visual_base =
         shouldDisableRelativityVisualsForNode(node);
     bool added_for_skinning = false;
     for (unsigned m = 0; m < node->getSPM()->getMeshBufferCount(); m++)
     {
         SPMeshBuffer* mb = node->getSPM()->getSPMeshBuffer(m);
+        const Material* mat = mb ? mb->getSTKMaterial() : nullptr;
+        const bool disable_relativity_visual =
+            disable_relativity_visual_base ||
+            (mat && mat->isNoRelativityWarp());
         SPShader* shader = node->getShader(m);
         if (shader == NULL)
         {

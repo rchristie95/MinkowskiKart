@@ -34,8 +34,8 @@
   <material name="sand.jpg" high-adhesion="Y" has-gravity="Y" slowdown-time="3.00" max-speed="0.50">
     <particles base="smoke_yellow.xml" condition="skid drive"/>
   </material>
-  <material name="sea.png" shader="alphablend" ignore="Y"/>
-  <material name="seabed.jpg" reset="Y" water-splash="Y"/>
+  <material name="sea.png" shader="alphablend" ignore="Y" no-relativity-warp="Y"/>
+  <material name="seabed.jpg" reset="Y" water-splash="Y" no-relativity-warp="Y"/>
   <material name="stkflag_redBooster_a.png" shader="alphatest">
     <zipper duration="3.5" max-speed-increase="25.0" fade-out-time="3.0" speed-gain="1.0" min-speed="99.0"/>
   </material>

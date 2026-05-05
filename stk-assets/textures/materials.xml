@@ -32,7 +32,7 @@
     <!-- End of global sticking textures -->
 
 
-  <material name="oasis-water.png" shader="displace" ignore="Y"/>
+  <material name="oasis-water.png" shader="displace" ignore="Y" no-relativity-warp="Y"/>
   <material name="Sara_Accesories_base.png" colorizable="Y"/>
   <material name="Sara_Cloth_Dif.png" colorizable="Y" colorization-mask="Sara_Cloth_Colormask.png"/>
   <material name="Sara_Lower_dif.png" colorizable="Y"/>
@@ -54,8 +54,8 @@
     -->
 
   <material name="racetrack_tire.png"  gloss-map="racetrack_tire_gloss.png" graphical-effect="normal_map" normal-map="racetrack_tire_Normal.png"/>
-  <material name="jungleWater.png" shader="displace" ignore="Y"/>
-  <material name="oceanicWater.png" shader="displace" ignore="Y"/>
+  <material name="jungleWater.png" shader="displace" ignore="Y" no-relativity-warp="Y"/>
+  <material name="oceanicWater.png" shader="displace" ignore="Y" no-relativity-warp="Y"/>
   <material name="gfx_distord_AlphaTested.png" shader="displace" ignore="Y"/>
   <material name="gfx_leaf_b.png" shader="alphatest" ignore="Y" />
 
@@ -489,7 +489,7 @@
     <particles base="smoke_yellow.xml" condition="skid drive" />
   </material>
   
-  <material name="sea.jpg"          shader="unlit" reset="Y"/>
+  <material name="sea.jpg"          shader="unlit" reset="Y" no-relativity-warp="Y"/>
   <material name="signs.png"        shader="alphatest"/>
   
   <material name="slipstream.png" shader="additive" ignore="Y"/>
@@ -520,7 +520,7 @@
   
   <material name="transparence.png" shader="alphatest" />
   <material name="unlit.png" shader="unlit"/>
-  <material name="water_light.png" shader="unlit" reset="Y"/>
+  <material name="water_light.png" shader="unlit" reset="Y" no-relativity-warp="Y"/>
   <material name="water-splash.png" shader="alphablend" ignore="Y"/>
 
   <material name="wood_planks1_alpha.png" shader="alphablend"/>

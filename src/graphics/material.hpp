@@ -131,6 +131,13 @@ private:
     /** True if this material can be colorized (like red/blue in team game). */
     bool             m_colorizable;
 
+    /** True if relativistic visual warping (Lorentz contraction/aberration)
+     *  should be suppressed for geometry using this material.  Set via
+     *  no-relativity-warp="Y" in materials.xml.  Intended for large flat
+     *  water/sea/seabed surfaces whose vertices would otherwise be
+     *  displaced above the track plane at relativistic speeds. */
+    bool             m_no_relativity_warp;
+
     /** True if this material should use texture compression. */
     bool             m_tex_compression;
 
@@ -235,6 +242,8 @@ public:
     video::ITexture *getTexture(bool srgb = true, bool premul_alpha = false);
     // ------------------------------------------------------------------------
     bool  isIgnore           () const { return m_ignore;             }
+    // ------------------------------------------------------------------------
+    bool  isNoRelativityWarp () const { return m_no_relativity_warp; }
     // ------------------------------------------------------------------------
     /** Returns true if this material is a zipper. */
     bool  isZipper           () const { return m_zipper;             }
