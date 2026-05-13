@@ -65,6 +65,7 @@ const float RC_CLEARANCE      = 0.34f;   // minimum distance from apparent road
 const float RC_TARGET_FORWARD = 3.10f;   // 3.1m ahead of kart for look-at point
 const float RC_FORWARD_TC     = 0.10f;   // support-frame forward smooth tc (s)
 const float RC_UP_TC          = 0.08f;   // support-frame up smooth tc (s)
+const float RC_BANKED_UP_TC   = 0.16f;   // extra smoothing on banked surfaces
 const float RC_STEEP_EXTRA    = 0.36f;   // extra clearance on steep normals (m)
 const float RC_SWEEP_SUBSTEP  = 0.08f;   // sweep step length (m)
 const int   RC_SWEEP_MAX_STEPS = 16;
@@ -234,28 +235,33 @@ btVector3 getKartSupportUp(const Kart* kart)
     btVector3 chassis_up =
         normalizedOrDefault(kart->getSmoothedTrans().getBasis().getColumn(1),
                             btVector3(0.0f, 1.0f, 0.0f));
-    btVector3 support_up(0.0f, 0.0f, 0.0f);
 
     btKart* vehicle = kart->getVehicle();
     if (vehicle)
     {
-        for (int i = 0; i < vehicle->getNumWheels(); i++)
-        {
-            const btWheelInfo& wheel = vehicle->getWheelInfo(i);
-            if (!wheel.m_raycastInfo.m_isInContact)
-                continue;
-
-            btVector3 normal =
-                normalizedOrDefault(wheel.m_raycastInfo.m_contactNormalWS,
-                                    chassis_up);
-            if (normal.dot(chassis_up) < 0.0f)
-                normal = -normal;
-            support_up += normal;
-        }
+        btVector3 support_up = normalizedOrDefault(
+            vehicle->getStableSupportNormal(), chassis_up);
+        if (support_up.dot(chassis_up) < btScalar(0.0f))
+            support_up = -support_up;
+        return support_up;
     }
 
-    return normalizedOrDefault(support_up, chassis_up);
+    return chassis_up;
 }   // getKartSupportUp
+
+float getSupportUpTimeConstant(const Kart* kart, const btVector3& support_up)
+{
+    const float bank_amount = 1.0f - fabsf((float)support_up.getY());
+    const float speed = kart ? fabsf(kart->getSpeed()) : 0.0f;
+    const float speed_reference = Relativity::isEnabled()
+        ? std::max(1.0f, Relativity::getMaxCoordinateSpeed())
+        : std::max(1.0f, kart ? kart->getCurrentMaxSpeed() : 1.0f);
+    const float speed_fraction = clamp01(speed / speed_reference);
+
+    return RC_UP_TC +
+        (RC_BANKED_UP_TC - RC_UP_TC) * clamp01(bank_amount) *
+        (0.35f + 0.65f * speed_fraction);
+}   // getSupportUpTimeConstant
 
 void buildKartSupportBasis(const Kart* kart,
                            const btVector3& previous_forward,
@@ -270,7 +276,8 @@ void buildKartSupportBasis(const Kart* kart,
     btVector3 smoothed_up = desired_up;
     if (previous_up.length2() > btScalar(1.0e-6f))
     {
-        smoothed_up = previous_up.lerp(desired_up, getSmoothAlpha(dt, RC_UP_TC));
+        const float up_tc = getSupportUpTimeConstant(kart, desired_up);
+        smoothed_up = previous_up.lerp(desired_up, getSmoothAlpha(dt, up_tc));
         smoothed_up = normalizedOrDefault(smoothed_up, desired_up);
     }
 

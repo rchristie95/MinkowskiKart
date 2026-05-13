@@ -98,6 +98,12 @@ private:
     /** Number of wheels that touch the ground. */
     int                 m_num_wheels_on_ground;
 
+    /** Smoothed support-surface normal shared by relativity physics/camera. */
+    btVector3           m_stable_support_normal;
+
+    /** True once m_stable_support_normal has been seeded. */
+    bool                m_has_stable_support_normal;
+
     /** Index of the right axis. */
     int                 m_indexRightAxis;
     /** Index of the up axis. */
@@ -126,6 +132,8 @@ private:
 
     void     defaultInit();
     btScalar rayCast(btWheelInfo& wheel, const btVector3& ray);
+    btVector3 computeRawSupportNormal() const;
+    void     updateStableSupportNormal(btScalar step);
     void     updateWheelTransformsWS(btWheelInfo& wheel,
                                      btTransform chassis_trans,
                                      bool interpolatedTransform=true,
@@ -221,6 +229,10 @@ public:
     // ------------------------------------------------------------------------
     /** Returns the number of wheels on the ground. */
     unsigned int getNumWheelsOnGround() const {return m_num_wheels_on_ground;}
+    // ------------------------------------------------------------------------
+    /** Returns the smoothed support-surface normal. */
+    const btVector3& getStableSupportNormal() const
+                                      { return m_stable_support_normal; }
     // ------------------------------------------------------------------------
     /** Sets an impulse that is applied for a certain amount of time.
      *  \param t Ticks for the impulse to be active.
