@@ -290,6 +290,24 @@ jobs:
           # libwinpthread-1.dll is useless because we statically link
           rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/armv7/libwinpthread-1.dll
           rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/aarch64/libwinpthread-1.dll
+      - name: Verify packaged relativity defaults
+        if: ${{ env.release_tag != '' }}
+        shell: pwsh
+        run: |
+          $pkg = "MinkowskiKart-${{ env.release_tag }}-win"
+          [xml]$stkConfig = Get-Content "$pkg\data\stk_config.xml"
+          $cLight = $stkConfig.config.relativity.GetAttribute("c-light")
+          Write-Host "Packaged relativity c-light: $cLight"
+          if ($cLight -ne "35.0") {
+            throw "FAILED: packaged data/stk_config.xml must contain c-light=35.0"
+          }
+          $userConfigHeader = Get-Content "src\config\user_config.hpp" -Raw
+          if ($userConfigHeader -match 'IntUserConfigParam\(\s*1000,\s*"c_light_normal"') {
+            throw "FAILED: user_config.hpp still defaults c_light_normal to 1000"
+          }
+          if ($userConfigHeader -notmatch 'IntUserConfigParam\(\s*35,\s*"c_light_normal"') {
+            throw "FAILED: user_config.hpp does not default c_light_normal to 35"
+          }
       - name: Start packaging MinkowskiKart
         if: ${{ env.release_tag != '' }}
         run: |
@@ -300,8 +318,10 @@ jobs:
         run: |
           $pkg = "MinkowskiKart-${{ env.release_tag }}-win"
           $env:SUPERTUXKART_DATADIR = (Resolve-Path $pkg).Path + "\"
+          $env:SUPERTUXKART_SAVEDIR = Join-Path (Resolve-Path $pkg).Path "smoke-profile"
+          New-Item -ItemType Directory -Force -Path $env:SUPERTUXKART_SAVEDIR | Out-Null
           $proc = Start-Process -FilePath "$pkg\bin\x86_64\MinkowskiKart.exe" `
-            -ArgumentList "--no-start-screen","--track=sandtrack","--kart=tux","--laps=1","--ai-num=1" `
+            -ArgumentList "--no-start-screen","--track=sandtrack","--kart=tux","--laps=1","--numkarts=2" `
             -RedirectStandardOutput "$pkg\out.txt" `
             -RedirectStandardError "$pkg\err.txt" `
             -PassThru -WorkingDirectory "$pkg\bin\x86_64"
@@ -315,6 +335,18 @@ jobs:
           $out = ((Get-Content "$pkg\out.txt","$pkg\err.txt" -ErrorAction SilentlyContinue) -join "`n")
           Write-Host $out
           if ($out -match "Not all assets found") { throw "FAILED: asset layout is broken" }
+          if ($out -match "Invalid parameter") { throw "FAILED: smoke test used an invalid command-line parameter" }
+          $freshConfigPath = Join-Path $env:SUPERTUXKART_SAVEDIR "config-0.10\config.xml"
+          if (!(Test-Path $freshConfigPath)) {
+            throw "FAILED: smoke test did not generate a fresh config.xml"
+          }
+          $freshConfig = Get-Content $freshConfigPath -Raw
+          if ($freshConfig -match 'c_light_normal="1000"') {
+            throw "FAILED: fresh generated config.xml still contains c_light_normal=1000"
+          }
+          if ($freshConfig -notmatch 'c_light_normal="35"') {
+            throw "FAILED: fresh generated config.xml does not contain c_light_normal=35"
+          }
           if (-not $alive) { throw "FAILED: process exited within 10s (crashed during init)" }
           Write-Host "Smoke test passed: game ran for 20s in race"
       - name: Upload zip artifact
@@ -323,3 +355,15 @@ jobs:
         with:
           name: MinkowskiKart-${{ env.release_tag }}-win
           path: MinkowskiKart-${{ env.release_tag }}-win.zip
+      - name: Create release
+        if: ${{ env.release_tag != '' }}
+        uses: ncipollo/release-action@v1.8.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "MinkowskiKart-${{ env.release_tag }}-win.zip"
+          tag: ${{ env.release_name }}
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          allowUpdates: true
+          replacesArtifacts: true
+          prerelease: ${{ env.release_pre }}

@@ -51,6 +51,12 @@ static std::vector<UserConfigParam*> all_params;
 #include <vector>
 
 const int UserConfig::m_current_config_version = 8;
+namespace
+{
+const int RELATIVITY_DEFAULTS_VERSION = 1;
+const int LEGACY_RELATIVITY_NORMAL_C_LIGHT = 1000;
+const int CURRENT_RELATIVITY_NORMAL_C_LIGHT = 35;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -166,6 +172,19 @@ void GroupUserConfigParam::findYourDataInAnAttributeOf(const XMLNode* node)
 }   // findYourDataInAnAttributeOf
 
 // ----------------------------------------------------------------------------
+void GroupUserConfigParam::revertToDefaults()
+{
+    for (UserConfigParam* attribute : m_attributes)
+    {
+        attribute->revertToDefaults();
+    }
+    for (GroupUserConfigParam* child : m_children)
+    {
+        child->revertToDefaults();
+    }
+}   // revertToDefaults
+
+// ----------------------------------------------------------------------------
 irr::core::stringc GroupUserConfigParam::toString() const
 {
     return "";
@@ -201,6 +220,7 @@ MapUserConfigParam<T, U>::MapUserConfigParam(const char* param_name,
 
     m_key_names = key_names;
     m_elements = default_value;
+    m_default_elements = default_value;
 }   // MapUserConfigParam
 
 // ----------------------------------------------------------------------------
@@ -226,6 +246,7 @@ MapUserConfigParam<T, U>::MapUserConfigParam(const char* param_name,
 
     m_key_names = key_names;
     m_elements = default_value;
+    m_default_elements = default_value;
 }   // MapUserConfigParam
 
 // ----------------------------------------------------------------------------
@@ -297,6 +318,13 @@ template<typename T, typename U>
 void MapUserConfigParam<T, U>::findYourDataInAnAttributeOf(const XMLNode* node)
 {
 }   // findYourDataInAnAttributeOf
+
+// ----------------------------------------------------------------------------
+template<typename T, typename U>
+void MapUserConfigParam<T, U>::revertToDefaults()
+{
+    m_elements = m_default_elements;
+}   // revertToDefaults
 
 // ----------------------------------------------------------------------------
 template<typename T, typename U>
@@ -709,6 +737,30 @@ bool UserConfig::loadConfig()
         all_params[i]->findYourDataInAChildOf(root.get());
     }
 
+    bool save_migrated_config = false;
+    const XMLNode* relativity_node = root->getNode("Relativity");
+    int relativity_defaults_version = 0;
+    const bool has_relativity_defaults_version =
+        relativity_node != NULL &&
+        relativity_node->get("defaults_version",
+                             &relativity_defaults_version) > 0;
+    if (!has_relativity_defaults_version &&
+        UserConfigParams::m_relativity_normal_c_light ==
+            LEGACY_RELATIVITY_NORMAL_C_LIGHT)
+    {
+        UserConfigParams::m_relativity_normal_c_light =
+            CURRENT_RELATIVITY_NORMAL_C_LIGHT;
+        save_migrated_config = true;
+    }
+    if (!has_relativity_defaults_version ||
+        UserConfigParams::m_relativity_defaults_version <
+            RELATIVITY_DEFAULTS_VERSION)
+    {
+        UserConfigParams::m_relativity_defaults_version =
+            RELATIVITY_DEFAULTS_VERSION;
+        save_migrated_config = true;
+    }
+
 
     // ---- Read Saved GP's
     UserConfigParams::m_saved_grand_prix_list.clearAndDeleteAll();
@@ -719,6 +771,11 @@ bool UserConfig::loadConfig()
     {
         UserConfigParams::m_saved_grand_prix_list.push_back(
                                            new SavedGrandPrix( saved_gps[i]) );
+    }
+
+    if (save_migrated_config)
+    {
+        saveConfig();
     }
 
     return true;
@@ -757,6 +814,18 @@ void UserConfig::saveConfig()
     }
 
 }   // saveConfig
+
+// ----------------------------------------------------------------------------
+/** Reset settings to their compiled default values. */
+void UserConfig::resetToDefaults()
+{
+    for (UserConfigParam* param : all_params)
+    {
+        param->revertToDefaults();
+    }
+    UserConfigParams::m_saved_grand_prix_list.clearAndDeleteAll();
+    saveConfig();
+}   // resetToDefaults
 
 // ----------------------------------------------------------------------------
 bool UserConfigParams::logMemory()

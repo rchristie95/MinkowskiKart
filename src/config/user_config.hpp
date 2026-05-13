@@ -78,6 +78,7 @@ public:
     virtual void findYourDataInAChildOf(const XMLNode* node) = 0;
     virtual void findYourDataInAnAttributeOf(const XMLNode* node) = 0;
     virtual irr::core::stringc toString() const = 0;
+    virtual void revertToDefaults() = 0;
 };   // UserConfigParam
 
 // ============================================================================
@@ -94,6 +95,7 @@ public:
     void writeInner(std::stringstream& stream, int level = 0) const;
     void findYourDataInAChildOf(const XMLNode* node);
     void findYourDataInAnAttributeOf(const XMLNode* node);
+    void revertToDefaults();
 
     void addChild(UserConfigParam* child);
     void addChild(GroupUserConfigParam* child);
@@ -111,6 +113,7 @@ class MapUserConfigParam : public UserConfigParam
 protected:
     std::array<std::string, 3> m_key_names;
     std::map<T, U> m_elements;
+    std::map<T, U> m_default_elements;
     MapUserConfigParam(const char* param_name,
                        const char* comment)
     {
@@ -135,6 +138,7 @@ public:
     void write(std::stringstream& stream) const;
     void findYourDataInAChildOf(const XMLNode* node);
     void findYourDataInAnAttributeOf(const XMLNode* node);
+    void revertToDefaults();
 
     void addElement(T element, U value);
 
@@ -1357,10 +1361,15 @@ namespace UserConfigParams
             PARAM_DEFAULT( GroupUserConfigParam("Relativity",
                                           "Relativistic effects settings") );
 
-    PARAM_PREFIX IntUserConfigParam        m_relativity_normal_c_light
-            PARAM_DEFAULT( IntUserConfigParam(1000, "c_light_normal",
+    PARAM_PREFIX IntUserConfigParam        m_relativity_defaults_version
+            PARAM_DEFAULT( IntUserConfigParam(1, "defaults_version",
                                              &m_relativity_group,
-                                             "Configured c_light during normal driving (30-1000)") );
+                                             "Internal relativity defaults migration version") );
+
+    PARAM_PREFIX IntUserConfigParam        m_relativity_normal_c_light
+            PARAM_DEFAULT( IntUserConfigParam(35, "c_light_normal",
+                                             &m_relativity_group,
+                                             "Configured c_light during normal driving (15-1000)") );
 
     PARAM_PREFIX FloatUserConfigParam      m_relativity_max_beta
             PARAM_DEFAULT( FloatUserConfigParam(0.95f, "max_beta",
@@ -1491,6 +1500,7 @@ public:
 
     bool  loadConfig();
     void  saveConfig();
+    void  resetToDefaults();
 
     const irr::core::stringw& getWarning()        { return m_warning;  }
     void  resetWarning()                          { m_warning="";      }

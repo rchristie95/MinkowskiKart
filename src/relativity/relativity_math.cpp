@@ -42,7 +42,7 @@ namespace
 const double MIN_C_LIGHT = 0.001;
 const double MAX_BETA_EPSILON = 1.0e-9;
 const double MIN_GAMMA_RESPONSE_DELTA = 1.0e-6;
-const float DEFAULT_NORMAL_C_LIGHT = 1000.0f;
+const float DEFAULT_NORMAL_C_LIGHT = 35.0f;
 const float MIN_ADJUSTABLE_C_LIGHT = 15.0f;
 const float MAX_ADJUSTABLE_C_LIGHT = 1000.0f;
 // Must match C_LIGHT_STEP in options_screen_relativity.cpp so that
@@ -548,6 +548,7 @@ bool setCurrentCLight(float c_light,
         UserConfigParams::m_relativity_normal_c_light = snapToStep(clamped_c_light);
     }
 
+    resetCurrentCLight();
     const float current_c_light = getCurrentCLight();
     if (applied_c_light)
         *applied_c_light = current_c_light;

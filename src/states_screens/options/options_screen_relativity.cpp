@@ -155,8 +155,7 @@ void OptionsScreenRelativity::eventCallback(Widget* widget,
         SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
         assert(w != NULL);
         const int c_light = indexToCLight(w->getValue());
-        UserConfigParams::m_relativity_normal_c_light = c_light;
-        Relativity::getCurrentCLight();
+        Relativity::setCurrentCLight((float)c_light);
     }
     else if (name == "max_beta")
     {

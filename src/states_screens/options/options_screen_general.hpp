@@ -53,6 +53,9 @@ public:
     /** \brief implement callback from parent class GUIEngine::Screen */
     virtual void init() OVERRIDE;
 
+    /** Refresh visible widgets after settings changed without reloading screen. */
+    void refreshWidgetsFromConfig();
+
     /** \brief implement callback from parent class GUIEngine::Screen */
     virtual void tearDown() OVERRIDE;
 

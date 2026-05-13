@@ -252,8 +252,8 @@ void STKConfig::init_defaults()
     m_solver_set_flags           = 0;
     m_solver_reset_flags         = 0;
     m_relativity_enabled         = false;
-    m_relativity_c_light  = 1000.0f;
-    m_relativity_max_beta        = 0.98f;
+    m_relativity_c_light         = 35.0f;
+    m_relativity_max_beta        = 0.95f;
     m_relativity_mode            = "propulsion-limited";
     m_network_steering_reduction = -100;
     m_title_music                = NULL;

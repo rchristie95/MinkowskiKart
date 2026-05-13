@@ -221,7 +221,7 @@ ObserverVisualState::ObserverVisualState()
       m_item_active(false),
       m_doppler_active(false),
       m_scanner_center_active(false),
-      m_c_light(1000.0f),
+      m_c_light(35.0f),
       m_beta(0.0f),
       m_gamma(1.0f),
       m_inverse_gamma(1.0f),

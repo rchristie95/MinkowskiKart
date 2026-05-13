@@ -22,7 +22,9 @@
 
 #include "addons/news_manager.hpp"
 #include "config/player_manager.hpp"
+#include "config/user_config.hpp"
 #include "online/request_manager.hpp"
+#include "relativity/relativity_math.hpp"
 #include "states_screens/dialogs/download_assets.hpp"
 #include "states_screens/dialogs/message_dialog.hpp"
 #include "states_screens/main_menu_screen.hpp"
@@ -57,6 +59,13 @@ void OptionsScreenGeneral::init()
     ribbon->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
     ribbon->select( "tab_general", PLAYER_ID_GAME_MASTER );
 
+    refreshWidgetsFromConfig();
+}   // init
+
+// -----------------------------------------------------------------------------
+
+void OptionsScreenGeneral::refreshWidgetsFromConfig()
+{
     CheckBoxWidget* internet_enabled = getWidget<CheckBoxWidget>("enable-internet");
     assert( internet_enabled != NULL );
     internet_enabled->setState( UserConfigParams::m_internet_status
@@ -96,7 +105,7 @@ void OptionsScreenGeneral::init()
 #else
     getWidget("assets_settings")->setVisible(false);
 #endif
-}   // init
+}   // refreshWidgetsFromConfig
 
 // -----------------------------------------------------------------------------
 
@@ -173,6 +182,33 @@ void OptionsScreenGeneral::eventCallback(Widget* widget, const std::string& name
         CheckBoxWidget* handicap = getWidget<CheckBoxWidget>("enable-handicap");
         assert( handicap != NULL );
         UserConfigParams::m_per_player_difficulty = handicap->getState();
+    }
+    else if (name=="reset_configs")
+    {
+        class ResetConfigDialogListener : public MessageDialog::IConfirmDialogListener
+        {
+        private:
+            OptionsScreenGeneral* m_parent;
+        public:
+            ResetConfigDialogListener(OptionsScreenGeneral* parent)
+                : m_parent(parent)
+            {
+            }
+
+            virtual void onConfirm() OVERRIDE
+            {
+                ModalDialog::dismiss();
+                user_config->resetToDefaults();
+                Relativity::resetCurrentCLight();
+                if (m_parent)
+                    m_parent->refreshWidgetsFromConfig();
+            }
+        };   // class ResetConfigDialogListener
+
+        new MessageDialog(
+            _("Reset all settings to their default values?"),
+            MessageDialog::MESSAGE_DIALOG_CONFIRM,
+            new ResetConfigDialogListener(this), true);
     }
 #ifdef MOBILE_STK
     else if (name=="assets_settings")
