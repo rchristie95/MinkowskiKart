@@ -92,8 +92,10 @@ Wormhole::~Wormhole()
 
     // This is only a supplemental post effect. The live wormhole instance
     // that updates last will republish its location on the next frame.
+#ifndef SERVER_ONLY
     SP::sp_wormhole_active = false;
     SP::sp_wormhole_radius = 0.0f;
+#endif
 }   // ~Wormhole
 
 // ----------------------------------------------------------------------------
@@ -286,6 +288,7 @@ void Wormhole::alignBodyToEndpoints()
 // ----------------------------------------------------------------------------
 void Wormhole::updateLensingAnchor() const
 {
+#ifndef SERVER_ONLY
     if (!m_have_endpoints)
     {
         SP::sp_wormhole_active = false;
@@ -321,6 +324,7 @@ void Wormhole::updateLensingAnchor() const
         Vec3(m_endpoint_transforms[anchor_index].getOrigin()).toIrrVector();
     SP::sp_wormhole_radius  = m_st_visual_radius * collapse;
     SP::sp_wormhole_active  = true;
+#endif
 }   // updateLensingAnchor
 
 // ----------------------------------------------------------------------------

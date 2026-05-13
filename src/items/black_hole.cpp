@@ -65,8 +65,10 @@ BlackHole::BlackHole(AbstractKart *kart)
  */
 BlackHole::~BlackHole()
 {
+#ifndef SERVER_ONLY
     SP::sp_black_hole_active = false;
     SP::sp_black_hole_radius = 0.0f;
+#endif
     removeRollSfx();
 }   // ~BlackHole
 
@@ -96,6 +98,7 @@ void BlackHole::init(const XMLNode &node, scene::IMesh *black_hole)
  */
 bool BlackHole::updateAndDelete(int ticks)
 {
+#ifndef SERVER_ONLY
     // Keep the lensing uniform pointing at this ball each frame.
     // This drives the screen-space gravitational-lens distortion in tonemap.frag.
     const Vec3& bhpos = getXYZ();
@@ -109,12 +112,15 @@ bool BlackHole::updateAndDelete(int ticks)
 
     // Pass world-space sphere radius; shader projects this to screen pixels for R_E.
     SP::sp_black_hole_radius = 0.5f * m_extend.getY() * collapse;
+#endif
 
     bool can_be_deleted = Flyable::updateAndDelete(ticks);
     if (can_be_deleted)
     {
+#ifndef SERVER_ONLY
         SP::sp_black_hole_active = false;
         SP::sp_black_hole_radius = 0.0f;
+#endif
         removeRollSfx();
         return true;
     }
@@ -216,8 +222,10 @@ bool BlackHole::hit(AbstractKart* kart, PhysicalObject* obj)
     bool was_real_hit = Flyable::hit(kart, obj);
     if(was_real_hit)
     {
+#ifndef SERVER_ONLY
         SP::sp_black_hole_active = false;
         SP::sp_black_hole_radius = 0.0f;
+#endif
         m_has_hit_kart = false;
         explode(kart, obj, /*hit_secondary*/false);
     }
@@ -257,8 +265,10 @@ void BlackHole::onFireFlyable()
 
     m_has_hit_kart = false;
     // Register this black hole for screen-space lensing in tonemap.frag
+#ifndef SERVER_ONLY
     SP::sp_black_hole_active = true;
     SP::sp_black_hole_radius = 0.5f * m_extend.getY();
+#endif
     m_expiry_ticks = World::getWorld()->getTicksSinceStart()
                    + stk_config->time2Ticks(20);
     float y_offset = 0.5f*m_owner->getKartLength() + m_extend.getZ()*0.5f;
