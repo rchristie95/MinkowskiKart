@@ -1255,7 +1255,7 @@ namespace UserConfigParams
                             "Name of the .items file to use.") );
 
     PARAM_PREFIX StringUserConfigParam      m_last_track
-            PARAM_DEFAULT(  StringUserConfigParam("olivermath", "last_track",
+            PARAM_DEFAULT(  StringUserConfigParam("scotland", "last_track",
                             "Name of the last track used.") );
     PARAM_PREFIX StringUserConfigParam m_last_used_track_group
             PARAM_DEFAULT( StringUserConfigParam("all", "last_track_group",

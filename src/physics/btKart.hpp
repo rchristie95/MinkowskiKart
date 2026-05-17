@@ -133,6 +133,7 @@ private:
     void     defaultInit();
     btScalar rayCast(btWheelInfo& wheel, const btVector3& ray);
     btVector3 computeRawSupportNormal() const;
+    btVector3 computeGroundProjectionNormal() const;
     void     updateStableSupportNormal(btScalar step);
     void     updateWheelTransformsWS(btWheelInfo& wheel,
                                      btTransform chassis_trans,

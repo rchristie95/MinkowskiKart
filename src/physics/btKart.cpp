@@ -59,21 +59,21 @@ btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
 }   // normalizedOrDefault
 
 void projectVelocityOntoGround(btRigidBody* body,
-                               const btVector3& support_normal,
+                               const btVector3& ground_normal,
                                int wheels_on_ground)
 {
     if (!body || wheels_on_ground < 2)
         return;
 
-    const btVector3 ground_normal = normalizedOrDefault(
-        support_normal, btVector3(0.0f, 1.0f, 0.0f));
+    const btVector3 normal = normalizedOrDefault(
+        ground_normal, btVector3(0.0f, 1.0f, 0.0f));
     const btVector3 velocity = body->getLinearVelocity();
-    const btScalar into_ground_speed = velocity.dot(ground_normal);
+    const btScalar into_ground_speed = velocity.dot(normal);
     if (into_ground_speed >= -INTO_GROUND_SPEED_TOLERANCE)
         return;
 
     btVector3 tangent_velocity = velocity -
-        ground_normal * (into_ground_speed + INTO_GROUND_SPEED_TOLERANCE);
+        normal * (into_ground_speed + INTO_GROUND_SPEED_TOLERANCE);
     if (tangent_velocity.length2() <= btScalar(1.0e-8f))
         tangent_velocity = btVector3(0.0f, 0.0f, 0.0f);
 
@@ -582,6 +582,54 @@ btVector3 btKart::computeRawSupportNormal() const
 }   // computeRawSupportNormal
 
 // ----------------------------------------------------------------------------
+btVector3 btKart::computeGroundProjectionNormal() const
+{
+    const btVector3 chassis_up = normalizedOrDefault(
+        getChassisWorldTransform().getBasis().getColumn(m_indexUpAxis),
+        btVector3(0.0f, 1.0f, 0.0f));
+    btVector3 fallback = normalizedOrDefault(m_stable_support_normal,
+                                             chassis_up);
+    if (fallback.dot(chassis_up) < btScalar(0.0f))
+        fallback = -fallback;
+
+    if (m_num_wheels_on_ground < 2)
+        return fallback;
+
+    btVector3 normal_sum(0.0f, 0.0f, 0.0f);
+    btScalar total_weight = btScalar(0.0f);
+    for (int i = 0; i < m_wheelInfo.size(); i++)
+    {
+        const btWheelInfo& wheel = m_wheelInfo[i];
+        if (!wheel.m_raycastInfo.m_isInContact)
+            continue;
+
+        btVector3 normal = normalizedOrDefault(
+            wheel.m_raycastInfo.m_contactNormalWS, fallback);
+        if (normal.dot(chassis_up) < btScalar(0.0f))
+            normal = -normal;
+
+        btScalar weight = wheel.m_wheelsSuspensionForce;
+        if (weight <= btScalar(0.0f))
+            weight = btScalar(1.0f);
+
+        normal_sum += normal * weight;
+        total_weight += weight;
+    }
+
+    if (total_weight <= btScalar(0.0f) ||
+        normal_sum.length2() <= btScalar(1.0e-8f))
+    {
+        return fallback;
+    }
+
+    normal_sum /= total_weight;
+    normal_sum = normalizedOrDefault(normal_sum, fallback);
+    if (normal_sum.dot(chassis_up) < btScalar(0.0f))
+        normal_sum = -normal_sum;
+    return normal_sum;
+}   // computeGroundProjectionNormal
+
+// ----------------------------------------------------------------------------
 void btKart::updateStableSupportNormal(btScalar step)
 {
     const btVector3 desired = computeRawSupportNormal();
@@ -727,14 +775,15 @@ void btKart::updateVehicle( btScalar step )
         iwt.setRotation(iwt.getRotation()*add_rot);
         m_ticks_additional_rotation--;
     }
-    adjustSpeed(m_min_speed, m_max_speed);
     if (Relativity::isEnabled())
     {
-        // Keep grounded relativistic motion tangent to the support surface so
-        // the observer velocity does not point into inclined road geometry.
-        projectVelocityOntoGround(m_chassisBody, m_stable_support_normal,
+        // Keep grounded relativistic motion tangent to current wheel contacts.
+        // The smoothed support normal feeds camera/stickiness, but projecting
+        // speed against it here can erase freshly applied zipper boosts.
+        projectVelocityOntoGround(m_chassisBody, computeGroundProjectionNormal(),
                                   m_num_wheels_on_ground);
     }
+    adjustSpeed(m_min_speed, m_max_speed);
 }   // updateVehicle
 
 // ----------------------------------------------------------------------------
