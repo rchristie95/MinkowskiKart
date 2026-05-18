@@ -1404,23 +1404,26 @@ def import_local_planets(track_dir):
     for spec in PLANET_SPECS:
         if temp_extract.exists():
             shutil.rmtree(temp_extract)
-        temp_extract.mkdir(parents=True, exist_ok=True)
         
-        # Find the zip file
-        zips = list(PLANET_ZIP_DIR.glob(spec["zip_pattern"]))
-        if not zips:
-             print(f"Warning: No zip found for {spec['id']} with pattern {spec['zip_pattern']}")
+        # Find the path (could be a zip file or a directory)
+        matches = list(PLANET_ZIP_DIR.glob(spec["zip_pattern"]))
+        if not matches:
+             print(f"Warning: No match found for {spec['id']} with pattern {spec['zip_pattern']}")
              continue
         
-        zip_path = sorted(zips, key=lambda p: p.stat().st_mtime, reverse=True)[0]
-        print(f"Importing {spec['id']} from {zip_path.name}...")
+        asset_path = sorted(matches, key=lambda p: p.stat().st_mtime, reverse=True)[0]
+        print(f"Importing {spec['id']} from {asset_path.name}...")
         
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(temp_extract)
+        search_dir = asset_path
+        if asset_path.is_file() and asset_path.suffix.lower() == ".zip":
+            temp_extract.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(asset_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_extract)
+            search_dir = temp_extract
             
-        objs = list(temp_extract.rglob("*.obj"))
+        objs = list(search_dir.rglob("*.obj"))
         if not objs:
-            print(f"Warning: No OBJ found in {zip_path.name}")
+            print(f"Warning: No OBJ found in {asset_path.name}")
             continue
             
         before = set(bpy.data.objects.keys())
@@ -1435,9 +1438,34 @@ def import_local_planets(track_dir):
         texture_path = track_dir / texture_name
         triangle_budget = spec.get("max_triangles", PLANET_MAX_TRIANGLES)
         
-        planet_object = blender_decimated_planet_object(spec["id"], mesh_objects, triangle_budget)
-        bake_success = bake_planet_texture(planet_object, texture_path)
-        texture_source = "baked-meshy" if bake_success else "fallback"
+        bpy.ops.object.mode_set(mode="OBJECT") if bpy.context.object else None
+        bpy.ops.object.select_all(action="DESELECT")
+        for obj in mesh_objects:
+            obj.hide_set(False)
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = mesh_objects[0]
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        if len(mesh_objects) > 1:
+            bpy.ops.object.join()
+        planet_object = bpy.context.view_layer.objects.active
+        planet_object.name = f"Mobius_Planet_{spec['id'].title()}_Source"
+        planet_object.data.name = planet_object.name + "_Mesh"
+        
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.mesh.remove_doubles(threshold=0.0001)
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
+        normalize_mesh_in_place(planet_object, spec["id"])
+
+        pngs = list(search_dir.rglob("*.png")) + list(search_dir.rglob("*.jpg"))
+        if pngs:
+            shutil.copy2(pngs[0], texture_path)
+            texture_source = "original"
+        else:
+            print(f"Warning: No texture found for {spec['id']}, using fallback")
+            write_solid_texture(texture_path, (0.5, 0.5, 0.5, 1.0))
+            texture_source = "fallback"
         
         mesh = blender_object_to_mesh_dict(spec["id"], planet_object, texture_name)
         write_spm(track_dir / f"mobius_planet_{spec['id']}.spm", mesh)
@@ -1446,7 +1474,7 @@ def import_local_planets(track_dir):
         manifest["assets"].append({
             "id": spec["id"],
             "displayName": spec["display"],
-            "sourceFile": zip_path.name,
+            "sourceFile": asset_path.name,
             "texture": texture_name,
             "textureSource": texture_source,
             "mesh": f"mobius_planet_{spec['id']}.spm",
