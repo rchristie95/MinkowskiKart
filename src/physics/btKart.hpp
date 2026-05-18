@@ -104,6 +104,15 @@ private:
     /** True once m_stable_support_normal has been seeded. */
     bool                m_has_stable_support_normal;
 
+    /** Cached closest Mobius surface query for this kart. */
+    mutable bool        m_mobius_surface_cache_valid;
+    mutable btVector3   m_mobius_surface_cache_position;
+    mutable btVector3   m_mobius_surface_cache_point;
+    mutable btVector3   m_mobius_surface_cache_normal;
+    mutable btVector3   m_mobius_gravity_cache_normal;
+    mutable btScalar    m_mobius_surface_cache_u;
+    mutable btScalar    m_mobius_surface_cache_v;
+
     /** Index of the right axis. */
     int                 m_indexRightAxis;
     /** Index of the up axis. */
@@ -134,6 +143,7 @@ private:
     btScalar rayCast(btWheelInfo& wheel, const btVector3& ray);
     btVector3 computeRawSupportNormal() const;
     btVector3 computeGroundProjectionNormal() const;
+    bool     updateMobiusSurfaceCache() const;
     void     updateStableSupportNormal(btScalar step);
     void     updateWheelTransformsWS(btWheelInfo& wheel,
                                      btTransform chassis_trans,
@@ -234,6 +244,12 @@ public:
     /** Returns the smoothed support-surface normal. */
     const btVector3& getStableSupportNormal() const
                                       { return m_stable_support_normal; }
+    // ------------------------------------------------------------------------
+    /** Returns the outward Mobius support normal for this kart, if active. */
+    bool getMobiusSupportNormal(btVector3* normal) const;
+    // ------------------------------------------------------------------------
+    /** Returns the Mobius gravity direction for this kart, if active. */
+    bool getMobiusGravityNormal(btVector3* normal) const;
     // ------------------------------------------------------------------------
     /** Sets an impulse that is applied for a certain amount of time.
      *  \param t Ticks for the impulse to be active.

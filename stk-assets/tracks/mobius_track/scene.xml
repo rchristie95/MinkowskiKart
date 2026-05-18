@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<scene>
+  <sky-color rgb="3 5 10"/>
+  <camera far="900"/>
+  <sun xyz="0 0 0" sun-diffuse="255 230 170" sun-specular="255 236 190" ambient="36 38 52" fog="false"/>
+  <track model="mobius_visual.spm" x="0" y="0" z="0">
+    <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+    <static-object model="mobius_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>
+    <static-object model="mobius_safety_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>
+    <static-object model="mobius_rail_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>
+    <static-object model="reset_fall_surface.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>
+    <static-object model="mobius_rails_visual.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+    <static-object model="mobius_guardrails_visual.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+    <static-object model="direction_markers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+  </track>
+  <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="450.000 360.000"/>
+    </curve>
+  </object>
+  <object id="mobius_sun_corona_inner" type="animation" model="mobius_sun_corona_inner.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+    <curve channel="RotZ" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="300.000 360.000"/>
+    </curve>
+  </object>
+  <object id="mobius_sun_corona_outer" type="animation" model="mobius_sun_corona_outer.spm" xyz="0 0 0" hpr="18 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="525.000 -360.000"/>
+    </curve>
+  </object>
+  <light xyz="0 0 0" id="mobius_sun_light" distance="320.00" energy="4.00" color="255 210 135" type="point"/>
+  <checks>
+    <check-lap kind="lap" same-group="0" other-ids="1"/>
+    <check-line kind="activate" same-group="1" other-ids="2" p1="0.000 -3.960 78.040" p2="0.000 3.960 85.960"/>
+    <check-line kind="activate" same-group="2" other-ids="3" p1="-82.000 -5.600 0.000" p2="-82.000 5.600 0.000"/>
+    <check-line kind="activate" same-group="3" other-ids="0" p1="-0.000 -3.960 -85.960" p2="-0.000 3.960 -78.040"/>
+  </checks>
+  <start position="0" x="79.361" y="0.739" z="7.974" h="-5.73"/>
+  <start position="1" x="83.735" y="0.959" z="8.390" h="-5.73"/>
+  <start position="2" x="79.498" y="0.759" z="6.545" h="-4.70"/>
+  <start position="3" x="83.881" y="0.939" z="6.883" h="-4.70"/>
+  <start position="4" x="79.610" y="0.779" z="5.114" h="-3.67"/>
+  <start position="5" x="84.000" y="0.920" z="5.372" h="-3.67"/>
+  <start position="6" x="79.696" y="0.799" z="3.680" h="-2.64"/>
+  <start position="7" x="84.091" y="0.900" z="3.860" h="-2.64"/>
+  <start position="8" x="79.757" y="0.819" z="2.245" h="-1.60"/>
+  <start position="9" x="84.155" y="0.881" z="2.346" h="-1.60"/>
+  <start position="10" x="79.792" y="0.839" z="0.810" h="-0.57"/>
+  <start position="11" x="84.192" y="0.861" z="0.831" h="-0.57"/>
+  <item x="72.116" y="0.688" z="32.230" drop="true"/>
+  <item x="74.882" y="1.928" z="38.960" drop="true"/>
+  <item x="30.118" y="-0.366" z="73.160" drop="true"/>
+  <item x="27.094" y="2.569" z="78.835" drop="true"/>
+  <item x="-36.669" y="-1.633" z="70.524" drop="true"/>
+  <item x="-42.188" y="2.990" z="70.549" drop="true"/>
+  <item x="-79.941" y="-2.716" z="9.746" drop="true"/>
+  <item x="-80.632" y="2.839" z="4.995" drop="true"/>
+  <item x="-40.277" y="-2.901" z="-71.645" drop="true"/>
+  <item x="-34.778" y="1.514" z="-71.511" drop="true"/>
+  <item x="35.438" y="-2.546" z="-75.696" drop="true"/>
+  <item x="37.697" y="0.263" z="-69.443" drop="true"/>
+  <small-nitro x="52.672" y="0.442" z="59.980" drop="true"/>
+  <small-nitro x="1.727" y="2.188" z="82.358" drop="true"/>
+  <small-nitro x="-72.637" y="-1.472" z="34.322" drop="true"/>
+  <small-nitro x="-73.758" y="1.499" z="-31.902" drop="true"/>
+  <small-nitro x="3.112" y="-2.185" z="-82.336" drop="true"/>
+  <small-nitro x="68.820" y="-0.780" z="-40.635" drop="true"/>
+  <big-nitro x="-29.957" y="0.730" z="75.175" drop="true"/>
+  <big-nitro x="19.112" y="-1.022" z="-78.915" drop="true"/>
+  <banana x="50.215" y="3.492" z="70.158" drop="true"/>
+  <banana x="16.839" y="-2.477" z="75.204" drop="true"/>
+  <banana x="-68.390" y="5.309" z="45.992" drop="true"/>
+  <banana x="-80.654" y="-5.255" z="-8.814" drop="true"/>
+  <banana x="-48.369" y="4.348" z="-61.953" drop="true"/>
+  <banana x="-5.255" y="-4.723" z="-84.697" drop="true"/>
+  <banana x="56.991" y="0.791" z="-51.382" drop="true"/>
+  <banana x="83.531" y="-1.872" z="-24.272" drop="true"/>
+</scene>

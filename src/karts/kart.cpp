@@ -101,7 +101,6 @@
 #include <limits>
 #include <cmath>
 
-
 #if defined(WIN32) && !defined(__CYGWIN__)  && !defined(__MINGW32__)
    // Disable warning for using 'this' in base member initializer list
 #  pragma warning(disable:4355)
@@ -1646,6 +1645,10 @@ void Kart::update(int ticks)
             Vec3 normal = m_terrain_info->getNormal();
             gravity = normal * -g;
         }
+
+        btVector3 mobius_normal;
+        if (getVehicle()->getMobiusGravityNormal(&mobius_normal))
+            gravity = Vec3(mobius_normal) * -g;
 
         body->setGravity(gravity);
     }

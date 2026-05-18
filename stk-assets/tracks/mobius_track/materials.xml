@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<materials>
+  <material name="mobius_road_visual.png" ignore="Y"/>
+  <material name="mobius_collision.png" high-adhesion="Y" has-gravity="Y"/>
+  <material name="mobius_safety_collision.png" high-adhesion="Y" has-gravity="Y"/>
+  <material name="mobius_wall_collision.png" high-adhesion="Y"/>
+  <material name="mobius_rail.png" shader="additive" ignore="Y"/>
+  <material name="mobius_guardrail.png" ignore="Y"/>
+  <material name="mobius_sun_core.png" shader="additive" ignore="Y"/>
+  <material name="mobius_sun_corona.png" shader="additive" ignore="Y"/>
+  <material name="mobius_starfield.png" shader="additive" ignore="Y"/>
+  <material name="direction_marker.png" shader="additive" ignore="Y"/>
+  <material name="reset_surface.png" reset="Y" falling-effect="Y"/>
+</materials>

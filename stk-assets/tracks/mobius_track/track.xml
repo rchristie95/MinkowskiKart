@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<track  name           = "Mobius Track"
+        version        = "7"
+        groups         = "standard"
+        designer       = "Codex procedural Blender MCP generator"
+        screenshot     = "screenshot.jpg"
+        smooth-normals = "true"
+        default-number-of-laps = "1"
+        reverse        = "N"
+        clouds         = "N"
+        is-during-day  = "N"
+        shadows        = "Y">
+</track>
