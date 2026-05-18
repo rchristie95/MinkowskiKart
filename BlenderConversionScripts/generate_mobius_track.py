@@ -75,7 +75,7 @@ PLANET_SPECS = (
     {
         "id": "earth",
         "display": "Earth",
-        "asset_base_id": "635bef05-f6b1-4232-89ba-b0f286bc1c78",
+        "asset_base_id": "1b1db743-03b6-46e5-b2a4-0ba0e0404bf6",
         "progress": 0.31,
         "scale": 3.0,
         "lift": 15.0,
@@ -100,7 +100,7 @@ PLANET_SPECS = (
     {
         "id": "saturn",
         "display": "Saturn",
-        "asset_base_id": "c0b7cd6b-00dd-4bbd-939b-bbe2eb692dfd",
+        "asset_base_id": "03336e85-79b8-487d-9282-09e36fdde22d",
         "progress": 0.69,
         "scale": 5.8,
         "lift": 22.0,
@@ -109,7 +109,7 @@ PLANET_SPECS = (
     {
         "id": "uranus",
         "display": "Uranus",
-        "asset_base_id": "4e1b862b-013c-410d-a156-6a67c8d97d8f",
+        "asset_base_id": "6da69699-ce0f-4ae5-94a3-7dd796b046f8",
         "progress": 0.81,
         "scale": 4.0,
         "lift": 18.0,
@@ -117,7 +117,7 @@ PLANET_SPECS = (
     {
         "id": "neptune",
         "display": "Neptune",
-        "asset_base_id": "4c7ac1e4-4ee0-4bf7-8000-07481820dc79",
+        "asset_base_id": "920fc52a-7251-4dc3-b56c-5ce7a9e65c16",
         "progress": 0.93,
         "scale": 4.0,
         "lift": 19.0,
@@ -940,17 +940,19 @@ def bake_planet_texture(obj, destination_path):
     old_device = getattr(scene.cycles, "device", None) if hasattr(scene, "cycles") else None
 
     try:
+        import addon_utils
+        addon_utils.enable("cycles")
         try:
             bpy.ops.preferences.addon_enable(module="cycles")
         except Exception:
             pass
-        engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
-        if "CYCLES" in engines:
-            scene.render.engine = "CYCLES"
-            scene.cycles.samples = 32
-            scene.cycles.device = "CPU"
-        else:
-            raise RuntimeError("Cycles render engine is unavailable, so Blender cannot bake planet textures.")
+        scene.render.engine = "CYCLES"
+        scene.cycles.samples = 32
+        scene.cycles.device = "CPU"
+    except Exception as e:
+        raise RuntimeError(f"Cycles render engine is unavailable, so Blender cannot bake planet textures. ({e})")
+    
+    try:
         bpy.ops.object.mode_set(mode="OBJECT") if bpy.context.object else None
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(True)
@@ -1421,7 +1423,8 @@ def import_blenderkit_planets(track_dir):
         texture_path = track_dir / texture_name
         triangle_budget = spec.get("max_triangles", PLANET_MAX_TRIANGLES)
         planet_object = blender_decimated_planet_object(spec["id"], mesh_objects, triangle_budget)
-        texture_source = create_planet_atlas_texture(planet_object, texture_path, spec["id"])
+        bake_success = bake_planet_texture(planet_object, texture_path)
+        texture_source = "baked" if bake_success else "fallback"
         mesh = blender_object_to_mesh_dict(spec["id"], planet_object, texture_name)
         write_spm(track_dir / f"mobius_planet_{spec['id']}.spm", mesh)
         planet_meshes.append(mesh)
@@ -2136,7 +2139,22 @@ def generate_mobius_track(project_root):
 
 
 if __name__ == "__main__":
-    default_root = Path(__file__).resolve().parents[1]
-    root = Path(globals().get("PROJECT_ROOT", os.environ.get("PROJECT_ROOT", default_root)))
-    result = generate_mobius_track(root)
-    print("Generated Mobius Track:", result)
+    def run_generator():
+        default_root = Path(__file__).resolve().parents[1]
+        root = Path(globals().get("PROJECT_ROOT", os.environ.get("PROJECT_ROOT", default_root)))
+        try:
+            result = generate_mobius_track(root)
+            print("Generated Mobius Track:", result)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print("Error generating track:", e)
+        finally:
+            if not bpy.app.background:
+                bpy.ops.wm.quit_blender()
+        return None
+
+    if not bpy.app.background:
+        bpy.app.timers.register(run_generator, first_interval=3.0)
+    else:
+        run_generator()
