@@ -900,8 +900,29 @@ void Track::mapPoint2MiniMap(const Vec3 &xyz, Vec3 *draw_at) const
 {
     if (m_ident == "mobius_track")
     {
-        const core::dimension2du mini_map_size =
-            World::getWorld()->getRaceGUI()->getMiniMapSize();
+        core::dimension2du mini_map_size(0, 0);
+        if (World::getWorld() && World::getWorld()->getRaceGUI())
+        {
+            mini_map_size = World::getWorld()->getRaceGUI()->getMiniMapSize();
+        }
+        else if (m_render_target)
+        {
+            mini_map_size = m_render_target->getTextureSize();
+        }
+        else
+        {
+            if (Graph::get())
+            {
+                Graph::get()->mapPoint2MiniMap(xyz, draw_at);
+            }
+            else
+            {
+                draw_at->setX(0.0f);
+                draw_at->setY(0.0f);
+                draw_at->setZ(0.0f);
+            }
+            return;
+        }
         const core::vector2df mapped = mobiusInfinityMap01(xyz);
         draw_at->setX(mapped.X * mini_map_size.Width);
         draw_at->setY(mapped.Y * mini_map_size.Height);

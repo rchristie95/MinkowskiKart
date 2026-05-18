@@ -56,7 +56,15 @@ PLANET_MAX_TRIANGLES = 65000
 THUMBNAIL_SOURCE = Path(
     os.environ.get("MOBIUS_THUMBNAIL_SOURCE", r"C:\Users\robso\Downloads\mobius.png")
 )
-PLANET_ZIP_DIR = Path(r"C:\Users\robso\Downloads\Planets")
+PLANET_ZIP_DIR = Path(
+    os.environ.get("MOBIUS_PLANET_ZIP_DIR", Path.home() / "Downloads" / "Planets")
+)
+PLANET_ZIP_OVERRIDES = {
+    "saturn": Path(os.environ.get(
+        "MOBIUS_SATURN_ZIP",
+        r"C:\Users\robso\Downloads\Meshy_AI_Saturn_with_Rings_0518221200_texture_obj.zip",
+    )),
+}
 
 PLANET_SPECS = (
     {
@@ -741,8 +749,9 @@ def write_spm(path, mesh):
 
     with open(path, "wb") as f:
         f.write(b"SP")
-        f.write(struct.pack("<B", 0x09))  # version 9, SPMN static mesh.
-        f.write(struct.pack("<B", 0x01))  # normals present, no vertex colors/tangents.        f.write(struct.pack("<6f", mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]))
+        f.write(struct.pack("<B", 0x0A))  # SPMN static mesh version.
+        f.write(struct.pack("<B", 0x01))  # normals present, no vertex colors/tangents.
+        f.write(struct.pack("<6f", mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]))
         f.write(struct.pack("<H", 1))
         f.write(struct.pack("<B", len(texture)))
         f.write(texture)
@@ -1332,6 +1341,14 @@ def blender_decimated_planet_object(planet_id, mesh_objects, triangle_budget):
     return obj
 
 
+def blender_to_stk_position(co):
+    return (float(co.x), float(co.z), float(co.y))
+
+
+def blender_to_stk_normal(normal):
+    return vnorm((float(normal.x), float(normal.z), float(normal.y)))
+
+
 def blender_object_to_mesh_dict(planet_id, obj, texture_name):
     depsgraph = bpy.context.evaluated_depsgraph_get()
     evaluated = obj.evaluated_get(depsgraph)
@@ -1345,30 +1362,35 @@ def blender_object_to_mesh_dict(planet_id, obj, texture_name):
         mesh.calc_loop_triangles()
         uv_layer = mesh.uv_layers.active.data if mesh.uv_layers.active else None
         for triangle in mesh.loop_triangles:
-            for loop_index in triangle.loops:
+            # Match the official STK Blender SPM exporter: converting Blender
+            # Z-up coordinates to STK Y-up swaps handedness, so triangle
+            # winding must be reversed at export.
+            for loop_index in reversed(triangle.loops):
                 vertex_index = mesh.loops[loop_index].vertex_index
                 position = mesh.vertices[vertex_index].co
                 normal = mesh.loops[loop_index].normal
+                position_tuple = blender_to_stk_position(position)
+                normal_tuple = blender_to_stk_normal(normal)
                 if uv_layer:
                     uv = uv_layer[loop_index].uv
-                    uv_tuple = (float(uv.x), float(uv.y))
+                    uv_tuple = (float(uv.x), 1.0 - float(uv.y))
                 else:
-                    n = vnorm((position.x, position.y, position.z))
+                    n = vnorm(position_tuple)
                     uv_tuple = (
                         0.5 + math.atan2(n[2], n[0]) / (2.0 * math.pi),
                         0.5 - math.asin(max(-1.0, min(1.0, n[1]))) / math.pi,
                     )
                 key = (
-                    round(position.x, 6), round(position.y, 6), round(position.z, 6),
-                    round(normal.x, 6), round(normal.y, 6), round(normal.z, 6),
+                    round(position_tuple[0], 6), round(position_tuple[1], 6), round(position_tuple[2], 6),
+                    round(normal_tuple[0], 6), round(normal_tuple[1], 6), round(normal_tuple[2], 6),
                     round(uv_tuple[0], 6), round(uv_tuple[1], 6),
                 )
                 mapped = vertex_map.get(key)
                 if mapped is None:
                     mapped = len(verts)
                     vertex_map[key] = mapped
-                    verts.append((position.x, position.y, position.z))
-                    normals.append(vnorm((normal.x, normal.y, normal.z)))
+                    verts.append(position_tuple)
+                    normals.append(normal_tuple)
                     uvs.append(uv_tuple)
                 indices.append(mapped)
     finally:
@@ -1405,12 +1427,18 @@ def import_local_planets(track_dir):
             shutil.rmtree(temp_extract)
         
         # Find the path (could be a zip file or a directory)
-        matches = list(PLANET_ZIP_DIR.glob(spec["zip_pattern"]))
-        if not matches:
-             print(f"Warning: No match found for {spec['id']} with pattern {spec['zip_pattern']}")
-             continue
-        
-        asset_path = sorted(matches, key=lambda p: p.stat().st_mtime, reverse=True)[0]
+        override_path = PLANET_ZIP_OVERRIDES.get(spec["id"])
+        if override_path is not None:
+            if not override_path.exists():
+                print(f"Warning: No override found for {spec['id']} at {override_path}")
+                continue
+            asset_path = override_path
+        else:
+            matches = list(PLANET_ZIP_DIR.glob(spec["zip_pattern"]))
+            if not matches:
+                 print(f"Warning: No match found for {spec['id']} with pattern {spec['zip_pattern']}")
+                 continue
+            asset_path = sorted(matches, key=lambda p: p.stat().st_mtime, reverse=True)[0]
         print(f"Importing {spec['id']} from {asset_path.name}...")
         
         search_dir = asset_path
@@ -1655,7 +1683,7 @@ def write_track_xml(track_dir):
 <track  name           = "Mobius Track"
         version        = "7"
         groups         = "minkowski"
-        designer       = "Codex procedural Blender MCP generator"
+        designer       = "A Mobius trip through the solar system"
         screenshot     = "screenshot.jpg"
         music          = "highway_gravel.music"
         smooth-normals = "true"
@@ -1887,7 +1915,7 @@ def write_license(track_dir):
         "Mobius Track procedural prototype generated by BlenderConversionScripts/generate_mobius_track.py.\n"
         "Geometry, textures, and metadata are deterministic project-local generated assets.\n"
         "Sun core, coronas, and textures are procedural project-local generated assets.\n"
-        "Planet landmark meshes/textures are imported from BlenderKit; see mobius_blenderkit_planets_manifest.json.\n",
+        "Planet landmark meshes/textures are imported from local source archives; see mobius_local_planets_manifest.json.\n",
         encoding="utf-8",
     )
 
@@ -2036,6 +2064,7 @@ def remove_stale_generated_assets(track_dir):
         "mobius_planet_*.spm",
         "mobius_planet_*.png",
         "mobius_blenderkit_planets_manifest.json",
+        "mobius_local_planets_manifest.json",
         "mobius_star_sphere.spm",
         "mobius_track.blend1",
     )

@@ -20,6 +20,10 @@ stk-assets/wip-library/
 Thumbs.db
 .DS_Store
 
+# Python cache files
+__pycache__/
+*.pyc
+
 # Distribution tools (not needed for dev)
 tools/windows_installer/
 
