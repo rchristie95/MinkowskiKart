@@ -15,6 +15,8 @@ import json
 import struct
 import time
 import urllib.parse
+import zipfile
+import shutil
 from pathlib import Path
 
 try:
@@ -50,16 +52,17 @@ START_GRID_U_SPACING = 0.082
 START_GRID_MIN_DISTANCE = 4.2
 START_GRID_LIFT = 0.72
 PLANET_TEXTURE_SIZE = 1024
-PLANET_MAX_TRIANGLES = 12000
+PLANET_MAX_TRIANGLES = 65000
 THUMBNAIL_SOURCE = Path(
     os.environ.get("MOBIUS_THUMBNAIL_SOURCE", r"C:\Users\robso\Downloads\mobius.png")
 )
+PLANET_ZIP_DIR = Path(r"C:\Users\robso\Downloads\Planets")
 
 PLANET_SPECS = (
     {
         "id": "mercury",
         "display": "Mercury",
-        "asset_base_id": "c890243c-81f6-4584-9a96-40c3ad97b16a",
+        "zip_pattern": "Meshy_AI_The_planet_Mercury_P*",
         "progress": 0.08,
         "scale": 2.0,
         "lift": 13.0,
@@ -67,7 +70,7 @@ PLANET_SPECS = (
     {
         "id": "venus",
         "display": "Venus",
-        "asset_base_id": "defeca5d-5049-4568-ab7b-a8e6a371f622",
+        "zip_pattern": "Meshy_AI_planet_venus_stylised*",
         "progress": 0.19,
         "scale": 2.8,
         "lift": 14.0,
@@ -75,16 +78,15 @@ PLANET_SPECS = (
     {
         "id": "earth",
         "display": "Earth",
-        "asset_base_id": "1b1db743-03b6-46e5-b2a4-0ba0e0404bf6",
+        "zip_pattern": "Meshy_AI_Earth*",
         "progress": 0.31,
         "scale": 3.0,
         "lift": 15.0,
-        "max_triangles": 20000,
     },
     {
         "id": "mars",
         "display": "Mars",
-        "asset_base_id": "896e253d-df64-4d76-9ca0-9990a6e2e2e7",
+        "zip_pattern": "Meshy_AI_mars__*",
         "progress": 0.43,
         "scale": 2.5,
         "lift": 14.0,
@@ -92,34 +94,33 @@ PLANET_SPECS = (
     {
         "id": "jupiter",
         "display": "Jupiter",
-        "asset_base_id": "00c8275b-bc60-4db8-82cf-d63c923e2275",
+        "zip_pattern": "Meshy_AI_Jupiter_s_Swirl*",
         "progress": 0.57,
-        "scale": 6.2,
+        "scale": 9.0,
         "lift": 21.0,
     },
     {
         "id": "saturn",
         "display": "Saturn",
-        "asset_base_id": "03336e85-79b8-487d-9282-09e36fdde22d",
+        "zip_pattern": "Meshy_AI_Saturn_with_Rings*",
         "progress": 0.69,
-        "scale": 5.8,
+        "scale": 6.0,
         "lift": 22.0,
-        "max_triangles": 32000,
     },
     {
         "id": "uranus",
         "display": "Uranus",
-        "asset_base_id": "6da69699-ce0f-4ae5-94a3-7dd796b046f8",
+        "zip_pattern": "Meshy_AI_Uranus_in_Blue_Silenc*",
         "progress": 0.81,
-        "scale": 4.0,
+        "scale": 6.0,
         "lift": 18.0,
     },
     {
         "id": "neptune",
         "display": "Neptune",
-        "asset_base_id": "920fc52a-7251-4dc3-b56c-5ce7a9e65c16",
+        "zip_pattern": "Meshy_AI_planet_neptune_stylised*",
         "progress": 0.93,
-        "scale": 4.0,
+        "scale": 6.0,
         "lift": 19.0,
     },
 )
@@ -1395,50 +1396,57 @@ def planet_scene_position(spec):
     return vadd(vadd(point, vmul(normal, spec["lift"])), vmul(side, lateral * 0.7))
 
 
-def import_blenderkit_planets(track_dir):
-    api_key = configure_blenderkit_api_key()
-    modules = blenderkit_modules()
+def import_local_planets(track_dir):
     planet_meshes = []
-    manifest = {"source": "BlenderKit", "assets": []}
-
+    manifest = {"source": "MeshyAI", "assets": []}
+    temp_extract = track_dir / "temp_extract"
+    
     for spec in PLANET_SPECS:
+        if temp_extract.exists():
+            shutil.rmtree(temp_extract)
+        temp_extract.mkdir(parents=True, exist_ok=True)
+        
+        # Find the zip file
+        zips = list(PLANET_ZIP_DIR.glob(spec["zip_pattern"]))
+        if not zips:
+             print(f"Warning: No zip found for {spec['id']} with pattern {spec['zip_pattern']}")
+             continue
+        
+        zip_path = sorted(zips, key=lambda p: p.stat().st_mtime, reverse=True)[0]
+        print(f"Importing {spec['id']} from {zip_path.name}...")
+        
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_extract)
+            
+        objs = list(temp_extract.rglob("*.obj"))
+        if not objs:
+            print(f"Warning: No OBJ found in {zip_path.name}")
+            continue
+            
         before = set(bpy.data.objects.keys())
-        asset_data = fetch_blenderkit_asset_data(spec["asset_base_id"], api_key, modules)
-        modules["download"].start_download(
-            asset_data,
-            model_location=(0.0, 0.0, 0.0),
-            model_rotation=(0.0, 0.0, 0.0),
-            target_collection="",
-            target_object="",
-            material_target_slot=0,
-            replace=False,
-            replace_resolution=False,
-            parent="",
-            resolution="blend",
-            cast_parent="",
-            node_x=0.0,
-            node_y=0.0,
-            nodegroup_mode="",
-        )
-        wait_for_blenderkit_download(modules)
+        bpy.ops.wm.obj_import(filepath=str(objs[0]))
         mesh_objects = imported_mesh_objects(before)
+        
         if not mesh_objects:
-            raise RuntimeError(f"BlenderKit asset for {spec['display']} imported no mesh objects.")
+             print(f"Warning: Failed to import meshes for {spec['id']}")
+             continue
 
         texture_name = f"mobius_planet_{spec['id']}.png"
         texture_path = track_dir / texture_name
         triangle_budget = spec.get("max_triangles", PLANET_MAX_TRIANGLES)
+        
         planet_object = blender_decimated_planet_object(spec["id"], mesh_objects, triangle_budget)
         bake_success = bake_planet_texture(planet_object, texture_path)
-        texture_source = "baked" if bake_success else "fallback"
+        texture_source = "baked-meshy" if bake_success else "fallback"
+        
         mesh = blender_object_to_mesh_dict(spec["id"], planet_object, texture_name)
         write_spm(track_dir / f"mobius_planet_{spec['id']}.spm", mesh)
         planet_meshes.append(mesh)
+        
         manifest["assets"].append({
             "id": spec["id"],
-            "displayName": asset_data.get("displayName", spec["display"]),
-            "assetBaseId": asset_data.get("assetBaseId", spec["asset_base_id"]),
-            "authorId": str(asset_data.get("author", {}).get("id", "")),
+            "displayName": spec["display"],
+            "sourceFile": zip_path.name,
             "texture": texture_name,
             "textureSource": texture_source,
             "mesh": f"mobius_planet_{spec['id']}.spm",
@@ -1446,8 +1454,11 @@ def import_blenderkit_planets(track_dir):
             "triangles": len(mesh["indices"]) // 3,
             "triangleBudget": triangle_budget,
         })
-
-    (track_dir / "mobius_blenderkit_planets_manifest.json").write_text(
+        
+    if temp_extract.exists():
+        shutil.rmtree(temp_extract)
+        
+    (track_dir / "mobius_local_planets_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
@@ -2092,7 +2103,7 @@ def generate_mobius_track(project_root):
     start_gate = make_start_gate_mesh()
     markers = make_direction_markers()
     reset_surface = make_reset_surface()
-    planet_meshes = import_blenderkit_planets(track_dir)
+    planet_meshes = import_local_planets(track_dir)
     meshes = [
         road_visual,
         collision,
@@ -2139,7 +2150,7 @@ def generate_mobius_track(project_root):
     create_blender_scene(meshes, track_dir)
     result = mobius_self_check(meshes)
     result["start_grid"] = start_grid_self_check()
-    result["blenderkit_planets"] = [spec["id"] for spec in PLANET_SPECS]
+    result["local_planets"] = [spec["id"] for spec in PLANET_SPECS]
     result["track_dir"] = str(track_dir)
     return result
 

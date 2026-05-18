@@ -1,0 +1,93 @@
+{
+  "assets": [
+    {
+      "displayName": "Mercury",
+      "id": "mercury",
+      "mesh": "mobius_planet_mercury.spm",
+      "sourceFile": "Meshy_AI_The_planet_Mercury_P_0518183923_texture_obj.zip",
+      "texture": "mobius_planet_mercury.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 9728,
+      "vertices": 6064
+    },
+    {
+      "displayName": "Venus",
+      "id": "venus",
+      "mesh": "mobius_planet_venus.spm",
+      "sourceFile": "Meshy_AI_planet_venus_stylised_0518184028_texture_obj.zip",
+      "texture": "mobius_planet_venus.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 9587,
+      "vertices": 5302
+    },
+    {
+      "displayName": "Earth",
+      "id": "earth",
+      "mesh": "mobius_planet_earth.spm",
+      "sourceFile": "Meshy_AI_Earth_0518183943_texture_obj.zip",
+      "texture": "mobius_planet_earth.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 9583,
+      "vertices": 9044
+    },
+    {
+      "displayName": "Mars",
+      "id": "mars",
+      "mesh": "mobius_planet_mars.spm",
+      "sourceFile": "Meshy_AI_mars__0518183909_texture_obj.zip",
+      "texture": "mobius_planet_mars.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 9998,
+      "vertices": 6733
+    },
+    {
+      "displayName": "Jupiter",
+      "id": "jupiter",
+      "mesh": "mobius_planet_jupiter.spm",
+      "sourceFile": "Meshy_AI_Jupiter_s_Swirl_0518190226_texture_obj.zip",
+      "texture": "mobius_planet_jupiter.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 9565,
+      "vertices": 5274
+    },
+    {
+      "displayName": "Saturn",
+      "id": "saturn",
+      "mesh": "mobius_planet_saturn.spm",
+      "sourceFile": "Meshy_AI_Saturn_with_Rings_0518185033_texture_obj.zip",
+      "texture": "mobius_planet_saturn.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 10796,
+      "vertices": 7441
+    },
+    {
+      "displayName": "Uranus",
+      "id": "uranus",
+      "mesh": "mobius_planet_uranus.spm",
+      "sourceFile": "Meshy_AI_Uranus_in_Blue_Silenc_0518183830_texture_obj.zip",
+      "texture": "mobius_planet_uranus.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 7666,
+      "vertices": 9523
+    },
+    {
+      "displayName": "Neptune",
+      "id": "neptune",
+      "mesh": "mobius_planet_neptune.spm",
+      "sourceFile": "Meshy_AI_planet_neptune_stylised_0518184206_texture_obj.zip",
+      "texture": "mobius_planet_neptune.png",
+      "textureSource": "baked-meshy",
+      "triangleBudget": 65000,
+      "triangles": 9575,
+      "vertices": 5278
+    }
+  ],
+  "source": "MeshyAI"
+}
