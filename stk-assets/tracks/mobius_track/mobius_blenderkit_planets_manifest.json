@@ -1,0 +1,101 @@
+{
+  "assets": [
+    {
+      "assetBaseId": "c890243c-81f6-4584-9a96-40c3ad97b16a",
+      "authorId": "53100",
+      "displayName": "Mercury",
+      "id": "mercury",
+      "mesh": "mobius_planet_mercury.spm",
+      "texture": "mobius_planet_mercury.png",
+      "textureSource": "atlas-image",
+      "triangleBudget": 6000,
+      "triangles": 3968,
+      "vertices": 2112
+    },
+    {
+      "assetBaseId": "defeca5d-5049-4568-ab7b-a8e6a371f622",
+      "authorId": "29884",
+      "displayName": "Venus",
+      "id": "venus",
+      "mesh": "mobius_planet_venus.spm",
+      "texture": "mobius_planet_venus.png",
+      "textureSource": "atlas-image",
+      "triangleBudget": 6000,
+      "triangles": 6000,
+      "vertices": 3213
+    },
+    {
+      "assetBaseId": "635bef05-f6b1-4232-89ba-b0f286bc1c78",
+      "authorId": "53100",
+      "displayName": "Earth",
+      "id": "earth",
+      "mesh": "mobius_planet_earth.spm",
+      "texture": "mobius_planet_earth.png",
+      "textureSource": "atlas-image+material-color",
+      "triangleBudget": 20000,
+      "triangles": 11904,
+      "vertices": 6336
+    },
+    {
+      "assetBaseId": "896e253d-df64-4d76-9ca0-9990a6e2e2e7",
+      "authorId": "29884",
+      "displayName": "Mars",
+      "id": "mars",
+      "mesh": "mobius_planet_mars.spm",
+      "texture": "mobius_planet_mars.png",
+      "textureSource": "atlas-image+material-color",
+      "triangleBudget": 6000,
+      "triangles": 6000,
+      "vertices": 3209
+    },
+    {
+      "assetBaseId": "00c8275b-bc60-4db8-82cf-d63c923e2275",
+      "authorId": "53100",
+      "displayName": "Jupiter",
+      "id": "jupiter",
+      "mesh": "mobius_planet_jupiter.spm",
+      "texture": "mobius_planet_jupiter.png",
+      "textureSource": "atlas-image",
+      "triangleBudget": 6000,
+      "triangles": 3968,
+      "vertices": 2112
+    },
+    {
+      "assetBaseId": "c0b7cd6b-00dd-4bbd-939b-bbe2eb692dfd",
+      "authorId": "293025",
+      "displayName": "Planet Saturn",
+      "id": "saturn",
+      "mesh": "mobius_planet_saturn.spm",
+      "texture": "mobius_planet_saturn.png",
+      "textureSource": "atlas-generated-material",
+      "triangleBudget": 32000,
+      "triangles": 5184,
+      "vertices": 2851
+    },
+    {
+      "assetBaseId": "4e1b862b-013c-410d-a156-6a67c8d97d8f",
+      "authorId": "29884",
+      "displayName": "Uranus",
+      "id": "uranus",
+      "mesh": "mobius_planet_uranus.spm",
+      "texture": "mobius_planet_uranus.png",
+      "textureSource": "atlas-image+material-color",
+      "triangleBudget": 6000,
+      "triangles": 6000,
+      "vertices": 3214
+    },
+    {
+      "assetBaseId": "4c7ac1e4-4ee0-4bf7-8000-07481820dc79",
+      "authorId": "29884",
+      "displayName": "Neptune",
+      "id": "neptune",
+      "mesh": "mobius_planet_neptune.spm",
+      "texture": "mobius_planet_neptune.png",
+      "textureSource": "atlas-image+material-color",
+      "triangleBudget": 6000,
+      "triangles": 6000,
+      "vertices": 3212
+    }
+  ],
+  "source": "BlenderKit"
+}

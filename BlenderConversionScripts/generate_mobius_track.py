@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import math
 import os
+import json
 import struct
+import time
+import urllib.parse
 from pathlib import Path
 
 try:
@@ -28,6 +31,7 @@ COLLISION_V_SEGMENTS = 12
 VISUAL_U_SEGMENTS = 192
 VISUAL_V_SEGMENTS = 10
 SAFETY_SURFACE_OFFSET = -0.42
+SEAM_BRIDGE_SURFACE_OFFSET = 0.045
 SUN_RADIUS = 12.0
 SUN_CORONA_INNER_RADIUS = 14.2
 SUN_CORONA_OUTER_RADIUS = 18.5
@@ -37,8 +41,87 @@ SPHERE_V_SEGMENTS = 16
 SUN_U_SEGMENTS = 32
 SUN_V_SEGMENTS = 16
 SUN_CORONA_SEGMENTS = 96
+START_U = 0.55
+START_GRID_ROWS = 4
+START_GRID_COLS = 3
+START_GRID_LATERALS = (-4.4, 0.0, 4.4)
+START_GRID_U_OFFSET = 0.11
+START_GRID_U_SPACING = 0.082
+START_GRID_MIN_DISTANCE = 4.2
+START_GRID_LIFT = 0.72
+PLANET_TEXTURE_SIZE = 512
+PLANET_MAX_TRIANGLES = 6000
 THUMBNAIL_SOURCE = Path(
     os.environ.get("MOBIUS_THUMBNAIL_SOURCE", r"C:\Users\robso\Downloads\mobius.png")
+)
+
+PLANET_SPECS = (
+    {
+        "id": "mercury",
+        "display": "Mercury",
+        "asset_base_id": "c890243c-81f6-4584-9a96-40c3ad97b16a",
+        "progress": 0.08,
+        "scale": 2.0,
+        "lift": 13.0,
+    },
+    {
+        "id": "venus",
+        "display": "Venus",
+        "asset_base_id": "defeca5d-5049-4568-ab7b-a8e6a371f622",
+        "progress": 0.19,
+        "scale": 2.8,
+        "lift": 14.0,
+    },
+    {
+        "id": "earth",
+        "display": "Earth",
+        "asset_base_id": "635bef05-f6b1-4232-89ba-b0f286bc1c78",
+        "progress": 0.31,
+        "scale": 3.0,
+        "lift": 15.0,
+        "max_triangles": 20000,
+    },
+    {
+        "id": "mars",
+        "display": "Mars",
+        "asset_base_id": "896e253d-df64-4d76-9ca0-9990a6e2e2e7",
+        "progress": 0.43,
+        "scale": 2.5,
+        "lift": 14.0,
+    },
+    {
+        "id": "jupiter",
+        "display": "Jupiter",
+        "asset_base_id": "00c8275b-bc60-4db8-82cf-d63c923e2275",
+        "progress": 0.57,
+        "scale": 6.2,
+        "lift": 21.0,
+    },
+    {
+        "id": "saturn",
+        "display": "Saturn",
+        "asset_base_id": "c0b7cd6b-00dd-4bbd-939b-bbe2eb692dfd",
+        "progress": 0.69,
+        "scale": 5.8,
+        "lift": 22.0,
+        "max_triangles": 32000,
+    },
+    {
+        "id": "uranus",
+        "display": "Uranus",
+        "asset_base_id": "4e1b862b-013c-410d-a156-6a67c8d97d8f",
+        "progress": 0.81,
+        "scale": 4.0,
+        "lift": 18.0,
+    },
+    {
+        "id": "neptune",
+        "display": "Neptune",
+        "asset_base_id": "4c7ac1e4-4ee0-4bf7-8000-07481820dc79",
+        "progress": 0.93,
+        "scale": 4.0,
+        "lift": 19.0,
+    },
 )
 
 
@@ -432,6 +515,163 @@ def make_sun_corona_mesh(name, radius, texture, tilt=0.0, phase=0.0):
     return mesh_dict(name, texture, verts, normals, uvs, indices)
 
 
+def make_mobius_patch_mesh(name, texture, half_width, u_center, u_span,
+                           u_segments, v_segments, normal_offset=0.0,
+                           double_sided=False):
+    verts = []
+    normals = []
+    uvs = []
+    indices = []
+    for i in range(u_segments + 1):
+        s = i / u_segments
+        u = u_center - u_span * 0.5 + u_span * s
+        for j in range(v_segments + 1):
+            t = j / v_segments
+            v = -half_width + 2.0 * half_width * t
+            n = mobius_normal(u, v)
+            verts.append(vadd(mobius_point(u, v), vmul(n, normal_offset)))
+            normals.append(n)
+            uvs.append((s, t))
+    row = v_segments + 1
+    for i in range(u_segments):
+        for j in range(v_segments):
+            a = i * row + j
+            b = (i + 1) * row + j
+            c = (i + 1) * row + j + 1
+            d = i * row + j + 1
+            indices.extend((a, b, c, a, c, d))
+            if double_sided:
+                indices.extend((c, b, a, d, c, a))
+    return mesh_dict(name, texture, verts, normals, uvs, indices)
+
+
+def make_seam_jump_ramp_mesh(name, texture, collision=False):
+    verts = []
+    normals = []
+    uvs = []
+    indices = []
+    u_segments = 18
+    v_segments = 10
+    u_start = 2.0 * math.pi - 0.58
+    u_span = 0.46
+    ramp_height = 1.65 if collision else 1.58
+    base_offset = 0.085 if collision else 0.12
+    half_width = ROAD_HALF_WIDTH * (0.98 if collision else 0.94)
+
+    for normal_sign in (-1.0, 1.0):
+        base = len(verts)
+        for i in range(u_segments + 1):
+            s = i / u_segments
+            u = u_start + u_span * s
+            lift = base_offset + ramp_height * (s * s * (3.0 - 2.0 * s))
+            for j in range(v_segments + 1):
+                t = j / v_segments
+                v = -half_width + 2.0 * half_width * t
+                edge_fade = 1.0 - 0.18 * abs(t * 2.0 - 1.0)
+                n = vmul(mobius_normal(u, v), normal_sign)
+                p = vadd(mobius_point(u, v), vmul(n, lift * edge_fade))
+                verts.append(p)
+                normals.append(n)
+                uvs.append((s, t))
+        row = v_segments + 1
+        for i in range(u_segments):
+            for j in range(v_segments):
+                a = base + i * row + j
+                b = base + (i + 1) * row + j
+                c = base + (i + 1) * row + j + 1
+                d = base + i * row + j + 1
+                if normal_sign > 0:
+                    indices.extend((a, b, c, a, c, d))
+                    indices.extend((c, b, a, d, c, a))
+                else:
+                    indices.extend((a, c, b, a, d, c))
+                    indices.extend((b, c, a, c, d, a))
+    return mesh_dict(name, texture, verts, normals, uvs, indices)
+
+
+def make_start_gate_mesh():
+    verts = []
+    normals = []
+    uvs = []
+    indices = []
+    t = tangent_at(START_U)
+    n = mobius_normal(START_U, 0.0)
+    side = vnorm(mobius_dv(START_U), (1.0, 0.0, 0.0))
+    center = mobius_point(START_U, 0.0)
+
+    def add_box(box_center, axis_a, axis_b, axis_c, half_a, half_b, half_c):
+        axes = (
+            (axis_a, half_a),
+            (axis_b, half_b),
+            (axis_c, half_c),
+        )
+        corners = []
+        for sa in (-1.0, 1.0):
+            for sb in (-1.0, 1.0):
+                for sc in (-1.0, 1.0):
+                    p = box_center
+                    for sign, (axis, half) in zip((sa, sb, sc), axes):
+                        p = vadd(p, vmul(axis, sign * half))
+                    corners.append(p)
+        corner_index = {
+            (-1, -1, -1): 0, (-1, -1, 1): 1,
+            (-1, 1, -1): 2, (-1, 1, 1): 3,
+            (1, -1, -1): 4, (1, -1, 1): 5,
+            (1, 1, -1): 6, (1, 1, 1): 7,
+        }
+        faces = (
+            ((1, 0, 0), axis_a, ((1, -1, -1), (1, 1, -1), (1, 1, 1), (1, -1, 1))),
+            ((-1, 0, 0), vmul(axis_a, -1.0), ((-1, -1, 1), (-1, 1, 1), (-1, 1, -1), (-1, -1, -1))),
+            ((0, 1, 0), axis_b, ((-1, 1, -1), (-1, 1, 1), (1, 1, 1), (1, 1, -1))),
+            ((0, -1, 0), vmul(axis_b, -1.0), ((-1, -1, 1), (-1, -1, -1), (1, -1, -1), (1, -1, 1))),
+            ((0, 0, 1), axis_c, ((-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1))),
+            ((0, 0, -1), vmul(axis_c, -1.0), ((-1, 1, -1), (1, 1, -1), (1, -1, -1), (-1, -1, -1))),
+        )
+        for _, normal, keys in faces:
+            face_base = len(verts)
+            for uv, key in zip(((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)), keys):
+                verts.append(corners[corner_index[key]])
+                normals.append(vnorm(normal))
+                uvs.append(uv)
+            indices.extend((face_base, face_base + 1, face_base + 2,
+                            face_base, face_base + 2, face_base + 3))
+
+    ring_center = center
+    ring_radius = ROAD_HALF_WIDTH
+    tube_radius = 0.62
+    major_segments = 64
+    tube_segments = 8
+    for i in range(major_segments):
+        a = 2.0 * math.pi * i / major_segments
+        radial = vnorm(vadd(vmul(side, math.cos(a)), vmul(n, math.sin(a))))
+        tube_center = vadd(ring_center, vmul(radial, ring_radius))
+        for j in range(tube_segments):
+            b = 2.0 * math.pi * j / tube_segments
+            tube_dir = vnorm(vadd(vmul(radial, math.cos(b)), vmul(t, math.sin(b))))
+            verts.append(vadd(tube_center, vmul(tube_dir, tube_radius)))
+            normals.append(tube_dir)
+            uvs.append((i / major_segments, j / tube_segments))
+    for i in range(major_segments):
+        ni = (i + 1) % major_segments
+        for j in range(tube_segments):
+            nj = (j + 1) % tube_segments
+            a = i * tube_segments + j
+            b = ni * tube_segments + j
+            c = ni * tube_segments + nj
+            d = i * tube_segments + nj
+            indices.extend((a, b, c, a, c, d))
+
+    chevron_radius = ring_radius + 0.85
+    for k in range(9):
+        a = 2.0 * math.pi * (k / 9.0 + 0.25)
+        radial = vnorm(vadd(vmul(side, math.cos(a)), vmul(n, math.sin(a))))
+        tangent_ring = vnorm(vadd(vmul(side, -math.sin(a)), vmul(n, math.cos(a))))
+        chevron_center = vadd(ring_center, vmul(radial, chevron_radius))
+        add_box(chevron_center, tangent_ring, t, radial, 0.85, 0.26, 0.42)
+
+    return mesh_dict("Mobius_Start_Gate", "mobius_start_gate.png", verts, normals, uvs, indices)
+
+
 def make_star_sphere_mesh():
     return make_uv_sphere_mesh(
         "Mobius_Relativistic_Star_Sphere", "mobius_starfield.png",
@@ -587,6 +827,624 @@ def install_scaled_image(source_path, destination_path, width, height, file_form
     return True
 
 
+def write_solid_texture(path, color, width=PLANET_TEXTURE_SIZE, height=PLANET_TEXTURE_SIZE):
+    img = bpy.data.images.new(path.stem, width=width, height=height, alpha=True)
+    img.pixels.foreach_set(list(color) * width * height)
+    img.filepath_raw = str(path)
+    img.file_format = "PNG"
+    img.save()
+    bpy.data.images.remove(img)
+
+
+def save_image_texture(image, destination_path):
+    if not image:
+        return False
+    copy = image.copy()
+    try:
+        copy.scale(PLANET_TEXTURE_SIZE, PLANET_TEXTURE_SIZE)
+        copy.filepath_raw = str(destination_path)
+        copy.file_format = "PNG"
+        copy.save()
+    finally:
+        bpy.data.images.remove(copy)
+    return destination_path.exists()
+
+
+def find_object_texture_image(mesh_objects):
+    best = None
+    best_area = -1
+    for obj in mesh_objects:
+        for material in obj.data.materials:
+            if material is None or material.node_tree is None:
+                continue
+            for node in material.node_tree.nodes:
+                if node.bl_idname != "ShaderNodeTexImage" or not node.image:
+                    continue
+                width, height = node.image.size
+                area = int(width) * int(height)
+                if area > best_area:
+                    best = node.image
+                    best_area = area
+    return best
+
+
+def average_material_color(mesh_objects):
+    colors = []
+    for obj in mesh_objects:
+        for material in obj.data.materials:
+            if material is None:
+                continue
+            color = tuple(material.diffuse_color)
+            if material.use_nodes and material.node_tree:
+                node = material.node_tree.nodes.get("Principled BSDF")
+                if node and "Base Color" in node.inputs:
+                    color = tuple(node.inputs["Base Color"].default_value)
+            colors.append(color)
+    if not colors:
+        return (0.55, 0.58, 0.62, 1.0)
+    count = float(len(colors))
+    return tuple(sum(c[i] for c in colors) / count for i in range(4))
+
+
+def ensure_bake_uv(obj):
+    if obj.data.uv_layers.active is not None:
+        return
+    bpy.ops.object.mode_set(mode="OBJECT") if bpy.context.object else None
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(66.0), island_margin=0.02)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def bake_planet_texture(obj, destination_path):
+    ensure_bake_uv(obj)
+    image = bpy.data.images.new(
+        destination_path.stem + "_bake",
+        width=PLANET_TEXTURE_SIZE,
+        height=PLANET_TEXTURE_SIZE,
+        alpha=True,
+    )
+    image.generated_color = (0.0, 0.0, 0.0, 1.0)
+
+    added_nodes = []
+    for index, material in enumerate(obj.data.materials):
+        if material is None:
+            material = bpy.data.materials.new(f"{obj.name}_Material_{index}")
+            obj.data.materials[index] = material
+        material.use_nodes = True
+        node_tree = material.node_tree
+        texture_node = node_tree.nodes.new("ShaderNodeTexImage")
+        texture_node.image = image
+        texture_node.select = True
+        node_tree.nodes.active = texture_node
+        added_nodes.append((node_tree, texture_node))
+
+    if not obj.data.materials:
+        material = bpy.data.materials.new(f"{obj.name}_Material")
+        obj.data.materials.append(material)
+        material.use_nodes = True
+        texture_node = material.node_tree.nodes.new("ShaderNodeTexImage")
+        texture_node.image = image
+        texture_node.select = True
+        material.node_tree.nodes.active = texture_node
+        added_nodes.append((material.node_tree, texture_node))
+
+    scene = bpy.context.scene
+    old_engine = scene.render.engine
+    old_selected = list(bpy.context.selected_objects)
+    old_active = bpy.context.view_layer.objects.active
+    old_samples = getattr(scene.cycles, "samples", None) if hasattr(scene, "cycles") else None
+    old_device = getattr(scene.cycles, "device", None) if hasattr(scene, "cycles") else None
+
+    try:
+        try:
+            bpy.ops.preferences.addon_enable(module="cycles")
+        except Exception:
+            pass
+        engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
+        if "CYCLES" in engines:
+            scene.render.engine = "CYCLES"
+            scene.cycles.samples = 32
+            scene.cycles.device = "CPU"
+        else:
+            raise RuntimeError("Cycles render engine is unavailable, so Blender cannot bake planet textures.")
+        bpy.ops.object.mode_set(mode="OBJECT") if bpy.context.object else None
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.bake(
+            type="DIFFUSE",
+            pass_filter={"COLOR"},
+            margin=12,
+            use_clear=True,
+        )
+        image.filepath_raw = str(destination_path)
+        image.file_format = "PNG"
+        image.save()
+    finally:
+        for node_tree, texture_node in added_nodes:
+            if texture_node.name in node_tree.nodes:
+                node_tree.nodes.remove(texture_node)
+        if old_samples is not None:
+            scene.cycles.samples = old_samples
+        if old_device is not None:
+            scene.cycles.device = old_device
+        scene.render.engine = old_engine
+        bpy.ops.object.select_all(action="DESELECT")
+        for selected in old_selected:
+            if selected.name in bpy.data.objects:
+                selected.select_set(True)
+        if old_active and old_active.name in bpy.data.objects:
+            bpy.context.view_layer.objects.active = old_active
+        bpy.data.images.remove(image)
+
+    return destination_path.exists()
+
+
+def collect_images_from_socket(socket, seen=None):
+    if seen is None:
+        seen = set()
+    images = []
+    for link in socket.links:
+        node = link.from_node
+        if node in seen:
+            continue
+        seen.add(node)
+        if node.bl_idname == "ShaderNodeTexImage" and node.image:
+            images.append(node.image)
+        for input_socket in getattr(node, "inputs", []):
+            if input_socket.is_linked:
+                images.extend(collect_images_from_socket(input_socket, seen))
+    return images
+
+
+def image_score(image, base_linked=False):
+    name = (image.name + " " + Path(image.filepath or "").name).lower()
+    score = 50 if base_linked else 0
+    for token in ("albedo", "diffuse", "base", "color", "surface", "mercury", "venus", "earth", "mars", "jupiter", "uranus", "neptune"):
+        if token in name:
+            score += 20
+    for token in ("normal", "bump", "rough", "metal", "mask", "alpha", "cloud", "night", "emission", "spec"):
+        if token in name:
+            score -= 40
+    width, height = image.size
+    score += min(int(width) * int(height), 4096 * 4096) / (4096 * 4096)
+    return score
+
+
+def material_base_color_image(material):
+    if material is None or not material.use_nodes or material.node_tree is None:
+        return None
+    linked_images = []
+    all_images = []
+    for node in material.node_tree.nodes:
+        if node.bl_idname == "ShaderNodeBsdfPrincipled" and "Base Color" in node.inputs:
+            linked_images.extend(collect_images_from_socket(node.inputs["Base Color"]))
+        if node.bl_idname == "ShaderNodeTexImage" and node.image:
+            all_images.append(node.image)
+    candidates = []
+    candidates.extend((image_score(image, True), image) for image in linked_images)
+    candidates.extend((image_score(image, False), image) for image in all_images)
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return candidates[0][1]
+
+
+def material_base_color(material):
+    if material is None:
+        return (0.55, 0.58, 0.62, 1.0)
+    color = tuple(material.diffuse_color)
+    if material.use_nodes and material.node_tree:
+        for node in material.node_tree.nodes:
+            if node.bl_idname == "ShaderNodeBsdfPrincipled" and "Base Color" in node.inputs:
+                color = tuple(node.inputs["Base Color"].default_value)
+                break
+    return color
+
+
+def resized_image_pixels(image, width, height):
+    copy = image.copy()
+    try:
+        copy.scale(width, height)
+        pixels = [0.0] * (width * height * 4)
+        copy.pixels.foreach_get(pixels)
+        return pixels
+    finally:
+        bpy.data.images.remove(copy)
+
+
+def generated_material_pixel(planet_id, material_name, base_color, u, v):
+    name = material_name.lower()
+    if planet_id == "saturn" and "ring" in name:
+        stripe = 0.82 + 0.12 * math.sin(u * math.pi * 22.0)
+        gap = 0.86 + 0.14 * math.sin(u * math.pi * 7.0 + 0.8)
+        return (0.74 * stripe, 0.63 * stripe * gap, 0.45 * stripe, 0.88)
+    if planet_id == "saturn":
+        band = 0.72 + 0.16 * math.sin(v * math.pi * 18.0)
+        warm = 0.08 * math.sin(v * math.pi * 5.0 + 0.4)
+        return (0.74 * band + warm, 0.60 * band + warm * 0.5, 0.42 * band, 1.0)
+    return (
+        max(0.0, min(1.0, base_color[0])),
+        max(0.0, min(1.0, base_color[1])),
+        max(0.0, min(1.0, base_color[2])),
+        max(0.0, min(1.0, base_color[3] if len(base_color) > 3 else 1.0)),
+    )
+
+
+def create_planet_atlas_texture(obj, destination_path, planet_id):
+    ensure_bake_uv(obj)
+    materials = list(obj.data.materials)
+    if not materials:
+        materials = [None]
+    count = len(materials)
+    cols = int(math.ceil(math.sqrt(count)))
+    rows = int(math.ceil(count / cols))
+    width = PLANET_TEXTURE_SIZE
+    height = PLANET_TEXTURE_SIZE
+    tile_w = width // cols
+    tile_h = height // rows
+    atlas_pixels = [0.0, 0.0, 0.0, 1.0] * (width * height)
+    source_kinds = []
+
+    for index, material in enumerate(materials):
+        col = index % cols
+        row = index // cols
+        image = material_base_color_image(material)
+        if image:
+            tile_pixels = resized_image_pixels(image, tile_w, tile_h)
+            source_kinds.append("image")
+        else:
+            material_name = material.name if material else ""
+            base_color = material_base_color(material)
+            tile_pixels = []
+            for y in range(tile_h):
+                v = y / max(tile_h - 1, 1)
+                for x in range(tile_w):
+                    u = x / max(tile_w - 1, 1)
+                    tile_pixels.extend(generated_material_pixel(planet_id, material_name, base_color, u, v))
+            source_kinds.append("generated-material" if planet_id == "saturn" else "material-color")
+
+        for y in range(tile_h):
+            dest_y = row * tile_h + y
+            if dest_y >= height:
+                continue
+            for x in range(tile_w):
+                dest_x = col * tile_w + x
+                if dest_x >= width:
+                    continue
+                dest = (dest_y * width + dest_x) * 4
+                src = (y * tile_w + x) * 4
+                atlas_pixels[dest:dest + 4] = tile_pixels[src:src + 4]
+
+    uv_layer = obj.data.uv_layers.active.data
+    for polygon in obj.data.polygons:
+        material_index = min(max(polygon.material_index, 0), count - 1)
+        col = material_index % cols
+        row = material_index // cols
+        for loop_index in polygon.loop_indices:
+            uv = uv_layer[loop_index].uv
+            uv.x = (col + (uv.x % 1.0)) / cols
+            uv.y = (row + (uv.y % 1.0)) / rows
+
+    image = bpy.data.images.new(destination_path.stem, width=width, height=height, alpha=True)
+    try:
+        image.pixels.foreach_set(atlas_pixels)
+        image.filepath_raw = str(destination_path)
+        image.file_format = "PNG"
+        image.save()
+    finally:
+        bpy.data.images.remove(image)
+    if "image" in source_kinds and len(set(source_kinds)) == 1:
+        return "atlas-image"
+    return "atlas-" + "+".join(sorted(set(source_kinds)))
+
+
+def sanitize_blenderkit_author(raw_result):
+    allowed = {
+        "aboutMe", "aboutMeUrl", "avatar128", "firstName", "fullName",
+        "gravatarHash", "id", "lastName", "socialNetworks", "avatar256",
+        "gravatarImg", "tooltip",
+    }
+    result = json.loads(json.dumps(raw_result))
+    author = result.get("author")
+    if isinstance(author, dict):
+        result["author"] = {key: value for key, value in author.items() if key in allowed}
+    return result
+
+
+def blenderkit_modules():
+    import importlib
+
+    base = "bl_ext.user_default.blenderkit"
+    return {
+        "client": importlib.import_module(base + ".client_lib"),
+        "download": importlib.import_module(base + ".download"),
+        "paths": importlib.import_module(base + ".paths"),
+        "search": importlib.import_module(base + ".search"),
+        "timer": importlib.import_module(base + ".timer"),
+        "utils": importlib.import_module(base + ".utils"),
+    }
+
+
+def configure_blenderkit_api_key():
+    addon_name = "bl_ext.user_default.blenderkit"
+    if addon_name not in bpy.context.preferences.addons:
+        raise RuntimeError(
+            "BlenderKit add-on is not enabled in Blender 5.1; cannot import required planet assets."
+        )
+    preferences = bpy.context.preferences.addons[addon_name].preferences
+    api_key = os.environ.get("BLENDERKIT_API_KEY") or getattr(preferences, "api_key", "")
+    if not api_key:
+        raise RuntimeError(
+            "BlenderKit API key is not configured. Set BLENDERKIT_API_KEY for this Blender session "
+            "or authenticate BlenderKit locally; no procedural planet fallback will be generated."
+        )
+    preferences.api_key = api_key
+    return api_key
+
+
+def fetch_blenderkit_asset_data(asset_base_id, api_key, modules):
+    query = urllib.parse.quote_plus(f"asset_base_id:{asset_base_id}")
+    url = (
+        f"{modules['paths'].BLENDERKIT_API}/search/?query={query}"
+        "&page_size=1&dict_parameters=1"
+    )
+    response = modules["client"].blocking_request(
+        url, "GET", modules["utils"].get_headers(api_key)
+    )
+    data = response.json()
+    results = data.get("results") or []
+    if not results:
+        raise RuntimeError(f"BlenderKit asset {asset_base_id} was not found.")
+    if results[0].get("canDownload") is False:
+        name = results[0].get("displayName") or results[0].get("name") or asset_base_id
+        raise RuntimeError(
+            f"BlenderKit asset '{name}' is not downloadable with the current local account/plan."
+        )
+    return modules["search"].parse_result(sanitize_blenderkit_author(results[0]))
+
+
+def wait_for_blenderkit_download(modules, timeout_seconds=180):
+    deadline = time.monotonic() + timeout_seconds
+    last_progress = -1
+    while modules["download"].download_tasks:
+        modules["timer"].client_communication_timer()
+        progress = max(
+            (task.get("progress", 0) for task in modules["download"].download_tasks.values()),
+            default=100,
+        )
+        if progress != last_progress:
+            print(f"BlenderKit planet import progress: {progress}%")
+            last_progress = progress
+        if time.monotonic() > deadline:
+            modules["download"].cancel_running_downloads("Mobius planet import timeout")
+            raise RuntimeError("Timed out while downloading/importing BlenderKit planet asset.")
+        time.sleep(0.5)
+
+
+def imported_mesh_objects(before_names):
+    added_names = set(bpy.data.objects.keys()) - before_names
+    added = [bpy.data.objects[name] for name in added_names]
+    roots = []
+
+    def collect_children(obj):
+        children = []
+        for child in obj.children:
+            children.append(child)
+            children.extend(collect_children(child))
+        return children
+
+    for obj in added:
+        if obj.type == "MESH":
+            roots.append(obj)
+        for child in collect_children(obj):
+            if child.type == "MESH" and child not in roots:
+                roots.append(child)
+    return [obj for obj in roots if obj.type == "MESH"]
+
+
+def triangle_count_for_object(obj):
+    obj.data.calc_loop_triangles()
+    return len(obj.data.loop_triangles)
+
+
+def normalize_mesh_in_place(obj, planet_id):
+    mesh = obj.data
+    world_positions = [obj.matrix_world @ vertex.co for vertex in mesh.vertices]
+    if not world_positions:
+        raise RuntimeError(f"BlenderKit planet {planet_id} imported no mesh vertices.")
+
+    mins = [min(position[i] for position in world_positions) for i in range(3)]
+    maxs = [max(position[i] for position in world_positions) for i in range(3)]
+    center = tuple((mins[i] + maxs[i]) * 0.5 for i in range(3))
+    extent = max(maxs[i] - mins[i] for i in range(3))
+    if extent <= 1.0e-6:
+        raise RuntimeError(f"BlenderKit planet {planet_id} has a degenerate bounding box.")
+
+    scale = 2.0 / extent
+    for vertex, world_position in zip(mesh.vertices, world_positions):
+        normalized = vmul(vsub((world_position.x, world_position.y, world_position.z), center), scale)
+        vertex.co = normalized
+    obj.location = (0.0, 0.0, 0.0)
+    obj.rotation_euler = (0.0, 0.0, 0.0)
+    obj.scale = (1.0, 1.0, 1.0)
+    mesh.update()
+
+
+def blender_decimated_planet_object(planet_id, mesh_objects, triangle_budget):
+    bpy.ops.object.mode_set(mode="OBJECT") if bpy.context.object else None
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in mesh_objects:
+        obj.hide_set(False)
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = mesh_objects[0]
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bpy.ops.object.convert(target="MESH")
+    mesh_objects = [obj for obj in bpy.context.selected_objects if obj.type == "MESH"]
+    if not mesh_objects:
+        raise RuntimeError(f"BlenderKit planet {planet_id} produced no mesh objects after conversion.")
+    bpy.context.view_layer.objects.active = mesh_objects[0]
+    if len(mesh_objects) > 1:
+        bpy.ops.object.join()
+    obj = bpy.context.view_layer.objects.active
+    obj.name = f"Mobius_Planet_{planet_id.title()}_Source"
+    obj.data.name = obj.name + "_Mesh"
+
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.remove_doubles(threshold=0.0005)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    for attempt in range(4):
+        current_triangles = triangle_count_for_object(obj)
+        if current_triangles <= triangle_budget:
+            break
+        modifier = obj.modifiers.new("Mobius planet Blender decimate", "DECIMATE")
+        modifier.decimate_type = "COLLAPSE"
+        modifier.ratio = max(0.01, triangle_budget / current_triangles)
+        if hasattr(modifier, "use_collapse_triangulate"):
+            modifier.use_collapse_triangulate = True
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+    current_triangles = triangle_count_for_object(obj)
+    if current_triangles > triangle_budget:
+        raise RuntimeError(
+            f"BlenderKit planet {planet_id} could not be decimated below "
+            f"{triangle_budget} triangles; final count is {current_triangles}."
+        )
+
+    triangulate = obj.modifiers.new("Mobius planet triangulate", "TRIANGULATE")
+    bpy.ops.object.modifier_apply(modifier=triangulate.name)
+    for polygon in obj.data.polygons:
+        polygon.use_smooth = True
+    normalize_mesh_in_place(obj, planet_id)
+    return obj
+
+
+def blender_object_to_mesh_dict(planet_id, obj, texture_name):
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = obj.evaluated_get(depsgraph)
+    mesh = bpy.data.meshes.new_from_object(evaluated, depsgraph=depsgraph)
+    verts = []
+    normals = []
+    uvs = []
+    indices = []
+    vertex_map = {}
+    try:
+        mesh.calc_loop_triangles()
+        uv_layer = mesh.uv_layers.active.data if mesh.uv_layers.active else None
+        for triangle in mesh.loop_triangles:
+            for loop_index in triangle.loops:
+                vertex_index = mesh.loops[loop_index].vertex_index
+                position = mesh.vertices[vertex_index].co
+                normal = mesh.loops[loop_index].normal
+                if uv_layer:
+                    uv = uv_layer[loop_index].uv
+                    uv_tuple = (float(uv.x), float(uv.y))
+                else:
+                    n = vnorm((position.x, position.y, position.z))
+                    uv_tuple = (
+                        0.5 + math.atan2(n[2], n[0]) / (2.0 * math.pi),
+                        0.5 - math.asin(max(-1.0, min(1.0, n[1]))) / math.pi,
+                    )
+                key = (
+                    round(position.x, 6), round(position.y, 6), round(position.z, 6),
+                    round(normal.x, 6), round(normal.y, 6), round(normal.z, 6),
+                    round(uv_tuple[0], 6), round(uv_tuple[1], 6),
+                )
+                mapped = vertex_map.get(key)
+                if mapped is None:
+                    mapped = len(verts)
+                    vertex_map[key] = mapped
+                    verts.append((position.x, position.y, position.z))
+                    normals.append(vnorm((normal.x, normal.y, normal.z)))
+                    uvs.append(uv_tuple)
+                indices.append(mapped)
+    finally:
+        bpy.data.meshes.remove(mesh)
+
+    if not indices:
+        raise RuntimeError(f"BlenderKit planet {planet_id} produced no exportable triangles.")
+    if len(verts) > 65535:
+        raise RuntimeError(
+            f"BlenderKit planet {planet_id} remains too dense for this SPM writer: {len(verts)} vertices."
+        )
+    return mesh_dict(f"Mobius_Planet_{planet_id.title()}", texture_name, verts, normals, uvs, indices)
+
+
+def planet_scene_position(spec):
+    u = (START_U + spec["progress"] * 4.0 * math.pi) % (2.0 * math.pi)
+    second_side = spec["progress"] >= 0.5
+    lateral = 3.8 if int(spec["progress"] * 16.0) % 2 == 0 else -3.8
+    point = mobius_point(u, lateral)
+    normal = mobius_normal(u, lateral)
+    if second_side:
+        normal = vmul(normal, -1.0)
+    side = vnorm(mobius_dv(u), (1.0, 0.0, 0.0))
+    return vadd(vadd(point, vmul(normal, spec["lift"])), vmul(side, lateral * 0.7))
+
+
+def import_blenderkit_planets(track_dir):
+    api_key = configure_blenderkit_api_key()
+    modules = blenderkit_modules()
+    planet_meshes = []
+    manifest = {"source": "BlenderKit", "assets": []}
+
+    for spec in PLANET_SPECS:
+        before = set(bpy.data.objects.keys())
+        asset_data = fetch_blenderkit_asset_data(spec["asset_base_id"], api_key, modules)
+        modules["download"].start_download(
+            asset_data,
+            model_location=(0.0, 0.0, 0.0),
+            model_rotation=(0.0, 0.0, 0.0),
+            target_collection="",
+            target_object="",
+            material_target_slot=0,
+            replace=False,
+            replace_resolution=False,
+            parent="",
+            resolution="blend",
+            cast_parent="",
+            node_x=0.0,
+            node_y=0.0,
+            nodegroup_mode="",
+        )
+        wait_for_blenderkit_download(modules)
+        mesh_objects = imported_mesh_objects(before)
+        if not mesh_objects:
+            raise RuntimeError(f"BlenderKit asset for {spec['display']} imported no mesh objects.")
+
+        texture_name = f"mobius_planet_{spec['id']}.png"
+        texture_path = track_dir / texture_name
+        triangle_budget = spec.get("max_triangles", PLANET_MAX_TRIANGLES)
+        planet_object = blender_decimated_planet_object(spec["id"], mesh_objects, triangle_budget)
+        texture_source = create_planet_atlas_texture(planet_object, texture_path, spec["id"])
+        mesh = blender_object_to_mesh_dict(spec["id"], planet_object, texture_name)
+        write_spm(track_dir / f"mobius_planet_{spec['id']}.spm", mesh)
+        planet_meshes.append(mesh)
+        manifest["assets"].append({
+            "id": spec["id"],
+            "displayName": asset_data.get("displayName", spec["display"]),
+            "assetBaseId": asset_data.get("assetBaseId", spec["asset_base_id"]),
+            "authorId": str(asset_data.get("author", {}).get("id", "")),
+            "texture": texture_name,
+            "textureSource": texture_source,
+            "mesh": f"mobius_planet_{spec['id']}.spm",
+            "vertices": len(mesh["verts"]),
+            "triangles": len(mesh["indices"]) // 3,
+            "triangleBudget": triangle_budget,
+        })
+
+    (track_dir / "mobius_blenderkit_planets_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return planet_meshes
+
+
 def create_textures(track_dir):
     def hash01(a, b, seed=0):
         value = math.sin(a * 127.1 + b * 311.7 + seed * 74.7) * 43758.5453
@@ -614,6 +1472,16 @@ def create_textures(track_dir):
         band = 0.34 if 0.72 < v < 0.88 else 0.0
         base = 0.18 + seam
         return (base + band * 0.7, 0.24 + band, 0.30 + band * 0.55, 1.0)
+
+    def gate(u, v):
+        stripe = 0.32 if int(u * 12.0) % 2 == 0 else 0.0
+        glow = 0.18 + 0.15 * math.sin(v * math.pi)
+        return (0.12 + stripe, 0.66 + glow, 0.96, 1.0)
+
+    def ramp(u, v):
+        stripe = 0.22 if int(u * 8.0) % 2 == 0 else 0.0
+        edge = 0.30 if v < 0.18 or v > 0.82 else 0.0
+        return (0.10 + stripe + edge, 0.64 + edge * 0.5, 0.72 + edge * 0.2, 1.0)
 
     def arrow(u, v):
         return (0.88, 1.0, 0.28, 0.86)
@@ -677,17 +1545,59 @@ def create_textures(track_dir):
                 0.08 + ring * 0.90 + marker * 0.20,
                 1.0)
 
+    minimap_points = []
+    for i in range(720):
+        a = 2.0 * math.pi * i / 720.0
+        minimap_points.append((0.86 * math.sin(a), 0.48 * math.sin(2.0 * a)))
+    gate_x = 0.86 * math.sin(START_U)
+    gate_y = 0.48 * math.sin(2.0 * START_U)
+    gate_dx = 0.86 * math.cos(START_U)
+    gate_dy = 0.96 * math.cos(2.0 * START_U)
+    gate_len = max(math.sqrt(gate_dx * gate_dx + gate_dy * gate_dy), 1.0e-6)
+    gate_nx = -gate_dy / gate_len
+    gate_ny = gate_dx / gate_len
+
+    def minimap(u, v):
+        x = u * 2.0 - 1.0
+        y = v * 2.0 - 1.0
+        d2 = min((x - px) * (x - px) + (y - py) * (y - py)
+                 for px, py in minimap_points)
+        d = math.sqrt(d2)
+        outer = max(0.0, min(1.0, (0.105 - d) / 0.025))
+        inner = max(0.0, min(1.0, (0.060 - d) / 0.018))
+        alpha = max(0.0, min(0.62, outer * 0.48 + inner * 0.22))
+        blue = 0.08 * inner
+        color = [0.58 + blue, 0.62 + blue, 0.68 + blue * 1.5, alpha]
+        rx = x - gate_x
+        ry = y - gate_y
+        along = rx * gate_nx + ry * gate_ny
+        across = rx * gate_dx / gate_len + ry * gate_dy / gate_len
+        gate_line = max(0.0, min(1.0, (0.030 - abs(across)) / 0.012))
+        gate_span = max(0.0, min(1.0, (0.155 - abs(along)) / 0.020))
+        gate_dot = max(0.0, min(1.0, (0.075 - math.sqrt(rx * rx + ry * ry)) / 0.022))
+        gate_mark = max(gate_line * gate_span, gate_dot * 0.7)
+        if gate_mark > 0.0:
+            color[0] = max(color[0], 1.0 * gate_mark)
+            color[1] = max(color[1], 0.74 * gate_mark)
+            color[2] = max(color[2], 0.18 * gate_mark)
+            color[3] = max(color[3], min(0.95, 0.36 + gate_mark * 0.45))
+        return tuple(color)
+
     write_texture(track_dir / "mobius_road_visual.png", 128, 128, road)
     write_texture(track_dir / "mobius_collision.png", 8, 8, collision)
     write_texture(track_dir / "mobius_safety_collision.png", 8, 8, collision)
     write_texture(track_dir / "mobius_wall_collision.png", 8, 8, wall)
     write_texture(track_dir / "mobius_rail.png", 128, 32, rail)
     write_texture(track_dir / "mobius_guardrail.png", 64, 32, guardrail)
+    write_texture(track_dir / "mobius_start_gate.png", 64, 32, gate)
+    write_texture(track_dir / "mobius_seam_ramp.png", 64, 32, ramp)
+    write_texture(track_dir / "mobius_seam_ramp_visual.png", 64, 32, ramp)
     write_texture(track_dir / "mobius_sun_core.png", 256, 128, sun_core)
     write_texture(track_dir / "mobius_sun_corona.png", 128, 32, sun_corona)
     write_texture(track_dir / "mobius_starfield.png", 512, 256, starfield)
     write_texture(track_dir / "direction_marker.png", 64, 64, arrow)
     write_texture(track_dir / "reset_surface.png", 8, 8, reset)
+    write_texture(track_dir / "mobius_minimap.png", 512, 512, minimap)
     write_texture(track_dir / "screenshot.jpg", 512, 256, screenshot, file_format="JPEG")
     install_scaled_image(THUMBNAIL_SOURCE, track_dir / "screenshot.jpg", 512, 256, "JPEG")
 
@@ -700,6 +1610,7 @@ def write_track_xml(track_dir):
         groups         = "standard"
         designer       = "Codex procedural Blender MCP generator"
         screenshot     = "screenshot.jpg"
+        music          = "highway_gravel.music"
         smooth-normals = "true"
         default-number-of-laps = "1"
         reverse        = "N"
@@ -713,8 +1624,12 @@ def write_track_xml(track_dir):
 
 
 def write_materials_xml(track_dir):
+    planet_materials = "\n".join(
+        f'  <material name="mobius_planet_{spec["id"]}.png" ignore="Y"/>'
+        for spec in PLANET_SPECS
+    )
     (track_dir / "materials.xml").write_text(
-        """<?xml version="1.0"?>
+        f"""<?xml version="1.0"?>
 <materials>
   <material name="mobius_road_visual.png" ignore="Y"/>
   <material name="mobius_collision.png" high-adhesion="Y" has-gravity="Y"/>
@@ -722,11 +1637,15 @@ def write_materials_xml(track_dir):
   <material name="mobius_wall_collision.png" high-adhesion="Y"/>
   <material name="mobius_rail.png" shader="additive" ignore="Y"/>
   <material name="mobius_guardrail.png" ignore="Y"/>
+  <material name="mobius_start_gate.png" shader="additive" ignore="Y"/>
+  <material name="mobius_seam_ramp.png" high-adhesion="Y" has-gravity="Y"/>
+  <material name="mobius_seam_ramp_visual.png" ignore="Y"/>
   <material name="mobius_sun_core.png" shader="additive" ignore="Y"/>
   <material name="mobius_sun_corona.png" shader="additive" ignore="Y"/>
   <material name="mobius_starfield.png" shader="additive" ignore="Y"/>
   <material name="direction_marker.png" shader="additive" ignore="Y"/>
   <material name="reset_surface.png" reset="Y" falling-effect="Y"/>
+{planet_materials}
 </materials>
 """,
         encoding="utf-8",
@@ -784,18 +1703,47 @@ def item_position(u, lateral, lift=1.2):
 
 
 def start_position(row, col):
-    u = 0.10 - row * 0.018
-    lateral = -2.2 if col == 0 else 2.2
-    p = item_position(u, lateral, 0.85)
+    u = START_U - START_GRID_U_OFFSET - row * START_GRID_U_SPACING
+    lateral = START_GRID_LATERALS[col]
+    p = item_position(u, lateral, START_GRID_LIFT)
     t = tangent_at(u)
     heading = math.degrees(math.atan2(t[0], t[2]))
     return p, heading
 
 
+def generated_start_positions():
+    starts = []
+    for row in range(START_GRID_ROWS):
+        for col in range(START_GRID_COLS):
+            idx = row * START_GRID_COLS + col
+            p, heading = start_position(row, col)
+            starts.append((idx, p, heading))
+    return starts
+
+
+def start_grid_self_check():
+    starts = generated_start_positions()
+    min_distance = float("inf")
+    closest_pair = None
+    for i in range(len(starts)):
+        for j in range(i + 1, len(starts)):
+            distance = vlength(vsub(starts[i][1], starts[j][1]))
+            if distance < min_distance:
+                min_distance = distance
+                closest_pair = (starts[i][0], starts[j][0])
+    if min_distance < START_GRID_MIN_DISTANCE:
+        raise RuntimeError(
+            f"Mobius start grid overlap risk: starts {closest_pair} are only "
+            f"{min_distance:.2f}m apart."
+        )
+    return {"count": len(starts), "min_pairwise_distance": min_distance, "closest_pair": closest_pair}
+
+
 def write_scene_xml(track_dir):
-    q1a, q1b = check_line_at(math.pi * 0.50)
-    q2a, q2b = check_line_at(math.pi)
-    q3a, q3b = check_line_at(math.pi * 1.50)
+    finish_a, finish_b = check_line_at(START_U)
+    q1a, q1b = check_line_at((START_U + math.pi * 0.50) % (math.pi * 2.0))
+    q2a, q2b = check_line_at((START_U + math.pi) % (math.pi * 2.0))
+    q3a, q3b = check_line_at((START_U + math.pi * 1.50) % (math.pi * 2.0))
     lines = [
         '<?xml version="1.0"?>',
         '<scene>',
@@ -805,11 +1753,15 @@ def write_scene_xml(track_dir):
         '  <track model="mobius_visual.spm" x="0" y="0" z="0">',
         '    <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
         '    <static-object model="mobius_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
+        '    <static-object model="mobius_seam_jump_ramp_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
+        '    <static-object model="mobius_seam_bridge_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
         '    <static-object model="mobius_safety_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
         '    <static-object model="mobius_rail_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
         '    <static-object model="reset_fall_surface.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
         '    <static-object model="mobius_rails_visual.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
         '    <static-object model="mobius_guardrails_visual.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
+        '    <static-object model="mobius_seam_jump_ramp_visual.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
+        '    <static-object model="mobius_start_gate.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false"/>',
     ]
     lines.extend([
         '    <static-object model="direction_markers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
@@ -833,18 +1785,30 @@ def write_scene_xml(track_dir):
         '    </curve>',
         '  </object>',
         '  <light xyz="0 0 0" id="mobius_sun_light" distance="320.00" energy="4.00" color="255 210 135" type="point"/>',
+    ])
+    for spec in PLANET_SPECS:
+        p = planet_scene_position(spec)
+        scale = spec["scale"]
+        lines.append(
+            f'  <object id="mobius_planet_{spec["id"]}" type="animation" model="mobius_planet_{spec["id"]}.spm" {fmt_xyz_attrs(p)} '
+            f'hpr="0 0 0" scale="{scale:.3f} {scale:.3f} {scale:.3f}" '
+            f'interaction="ghost" shadow-pass="false" skeletal-animation="false"/>'
+        )
+    lines.extend([
         '  <checks>',
-        '    <check-lap kind="lap" same-group="0" other-ids="1"/>',
+        '    <check-lap kind="lap" active="true" same-group="0" other-ids="1"/>',
         f'    <check-line kind="activate" same-group="1" other-ids="2" p1="{fmt_vec(q1a)}" p2="{fmt_vec(q1b)}"/>',
         f'    <check-line kind="activate" same-group="2" other-ids="3" p1="{fmt_vec(q2a)}" p2="{fmt_vec(q2b)}"/>',
-        f'    <check-line kind="activate" same-group="3" other-ids="0" p1="{fmt_vec(q3a)}" p2="{fmt_vec(q3b)}"/>',
+        f'    <check-line kind="activate" same-group="3" other-ids="4" p1="{fmt_vec(q3a)}" p2="{fmt_vec(q3b)}"/>',
+        f'    <check-line kind="activate" same-group="4" other-ids="5" p1="{fmt_vec(finish_a)}" p2="{fmt_vec(finish_b)}"/>',
+        f'    <check-line kind="activate" same-group="5" other-ids="6" p1="{fmt_vec(q1a)}" p2="{fmt_vec(q1b)}"/>',
+        f'    <check-line kind="activate" same-group="6" other-ids="7" p1="{fmt_vec(q2a)}" p2="{fmt_vec(q2b)}"/>',
+        f'    <check-line kind="activate" same-group="7" other-ids="8" p1="{fmt_vec(q3a)}" p2="{fmt_vec(q3b)}"/>',
+        f'    <check-line kind="lap" active="false" same-group="8" other-ids="1" p1="{fmt_vec(finish_a)}" p2="{fmt_vec(finish_b)}"/>',
         '  </checks>',
     ])
-    for row in range(6):
-        for col in range(2):
-            idx = row * 2 + col
-            p, heading = start_position(row, col)
-            lines.append(f'  <start position="{idx}" {fmt_xyz_attrs(p)} h="{heading:.2f}"/>')
+    for idx, p, heading in generated_start_positions():
+        lines.append(f'  <start position="{idx}" {fmt_xyz_attrs(p)} h="{heading:.2f}"/>')
     item_boxes = [
         (0.42, -2.8), (0.48, 2.8), (1.18, -2.6), (1.24, 2.6),
         (2.05, -2.7), (2.11, 2.7), (3.02, -2.8), (3.08, 2.8),
@@ -875,7 +1839,8 @@ def write_license(track_dir):
     (track_dir / "LICENSE.txt").write_text(
         "Mobius Track procedural prototype generated by BlenderConversionScripts/generate_mobius_track.py.\n"
         "Geometry, textures, and metadata are deterministic project-local generated assets.\n"
-        "Sun core, coronas, and textures are procedural project-local generated assets.\n",
+        "Sun core, coronas, and textures are procedural project-local generated assets.\n"
+        "Planet landmark meshes/textures are imported from BlenderKit; see mobius_blenderkit_planets_manifest.json.\n",
         encoding="utf-8",
     )
 
@@ -901,6 +1866,7 @@ def create_blender_scene(meshes, track_dir):
         "sun": make_blender_material("Procedural 3D Sun material", (1.0, 0.58, 0.14, 1.0), True),
         "corona": make_blender_material("Animated Sun Corona material", (1.0, 0.48, 0.12, 0.48), True),
         "stars": make_blender_material("Relativistic star sphere material", (0.55, 0.70, 1.0, 1.0)),
+        "planet": make_blender_material("BlenderKit planet landmark material", (0.58, 0.62, 0.68, 1.0)),
         "marker": make_blender_material("Direction marker material", (0.9, 1.0, 0.22, 0.9), True),
         "reset": make_blender_material("Reset fall surface material", (0.3, 0.02, 0.18, 0.25), True),
     }
@@ -917,6 +1883,8 @@ def create_blender_scene(meshes, track_dir):
             material = materials["corona"]
         elif mesh["name"] == "Mobius_Relativistic_Star_Sphere":
             material = materials["stars"]
+        elif mesh["name"].startswith("Mobius_Planet_"):
+            material = materials["planet"]
         elif mesh["name"] == "Direction_Markers":
             material = materials["marker"]
         elif mesh["name"] == "Reset_Fall_Surface":
@@ -1003,15 +1971,24 @@ def remove_stale_generated_assets(track_dir):
     patterns = (
         "mobius_visual*.spm",
         "mobius_collision*.spm",
+        "mobius_seam_bridge_collision*.spm",
+        "mobius_seam_jump_ramp*.spm",
+        "mobius_seam_ramp*.png",
         "mobius_safety_collision*.spm",
         "mobius_rails_visual*.spm",
         "mobius_guardrails_visual*.spm",
         "mobius_rail_collision*.spm",
+        "mobius_start_gate*.spm",
+        "mobius_start_gate.png",
+        "mobius_minimap.png",
         "mobius_sun*.spm",
         "mobius_sun_corona.png",
         "mobius_sun_core.png",
         "mobius_blenderkit_realistic_sun*.spm",
         "mobius_blenderkit_realistic_sun.png",
+        "mobius_planet_*.spm",
+        "mobius_planet_*.png",
+        "mobius_blenderkit_planets_manifest.json",
         "mobius_star_sphere.spm",
         "mobius_track.blend1",
     )
@@ -1065,6 +2042,27 @@ def generate_mobius_track(project_root):
         SAFETY_SURFACE_OFFSET,
         True,
     )
+    seam_bridge_collision = make_mobius_patch_mesh(
+        "Mobius_Seam_Bridge_Collision",
+        "mobius_collision.png",
+        ROAD_HALF_WIDTH * 1.01,
+        2.0 * math.pi,
+        0.62,
+        32,
+        COLLISION_V_SEGMENTS,
+        SEAM_BRIDGE_SURFACE_OFFSET,
+        True,
+    )
+    seam_jump_ramp_collision = make_seam_jump_ramp_mesh(
+        "Mobius_Seam_Jump_Ramp_Collision",
+        "mobius_seam_ramp.png",
+        True,
+    )
+    seam_jump_ramp_visual = make_seam_jump_ramp_mesh(
+        "Mobius_Seam_Jump_Ramp_Visual",
+        "mobius_seam_ramp_visual.png",
+        False,
+    )
     rail_collision = make_rail_collision_mesh()
     sun_core = make_sun_core_mesh()
     sun_corona_inner = make_sun_corona_mesh(
@@ -1082,34 +2080,45 @@ def generate_mobius_track(project_root):
         1.1,
     )
     star_sphere = make_star_sphere_mesh()
+    start_gate = make_start_gate_mesh()
     markers = make_direction_markers()
     reset_surface = make_reset_surface()
+    planet_meshes = import_blenderkit_planets(track_dir)
     meshes = [
         road_visual,
         collision,
+        seam_jump_ramp_collision,
+        seam_bridge_collision,
         safety_collision,
         rail_collision,
+        seam_jump_ramp_visual,
         rails_visual,
         guardrail_visual,
         sun_core,
         sun_corona_inner,
         sun_corona_outer,
         star_sphere,
+        start_gate,
         markers,
         reset_surface,
+        *planet_meshes,
     ]
 
     create_textures(track_dir)
     write_spm(track_dir / "mobius_visual.spm", road_visual)
     write_spm(track_dir / "mobius_collision.spm", collision)
+    write_spm(track_dir / "mobius_seam_jump_ramp_collision.spm", seam_jump_ramp_collision)
+    write_spm(track_dir / "mobius_seam_bridge_collision.spm", seam_bridge_collision)
     write_spm(track_dir / "mobius_safety_collision.spm", safety_collision)
     write_spm(track_dir / "mobius_rails_visual.spm", rails_visual)
+    write_spm(track_dir / "mobius_seam_jump_ramp_visual.spm", seam_jump_ramp_visual)
     write_spm(track_dir / "mobius_guardrails_visual.spm", guardrail_visual)
     write_spm(track_dir / "mobius_rail_collision.spm", rail_collision)
     write_spm(track_dir / "mobius_sun_core.spm", sun_core)
     write_spm(track_dir / "mobius_sun_corona_inner.spm", sun_corona_inner)
     write_spm(track_dir / "mobius_sun_corona_outer.spm", sun_corona_outer)
     write_spm(track_dir / "mobius_star_sphere.spm", star_sphere)
+    write_spm(track_dir / "mobius_start_gate.spm", start_gate)
     write_spm(track_dir / "direction_markers.spm", markers)
     write_spm(track_dir / "reset_fall_surface.spm", reset_surface)
     write_track_xml(track_dir)
@@ -1120,6 +2129,8 @@ def generate_mobius_track(project_root):
     write_license(track_dir)
     create_blender_scene(meshes, track_dir)
     result = mobius_self_check(meshes)
+    result["start_grid"] = start_grid_self_check()
+    result["blenderkit_planets"] = [spec["id"] for spec in PLANET_SPECS]
     result["track_dir"] = str(track_dir)
     return result
 

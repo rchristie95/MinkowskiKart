@@ -72,6 +72,12 @@ private:
     /* Used in network to restore previous gravity in compressed form. */
     uint32_t          m_compressed_gravity_vector;
 
+    /** Cached closest Mobius surface query for this flyable. */
+    bool              m_mobius_surface_cache_valid;
+    btVector3         m_mobius_surface_cache_position;
+    btScalar          m_mobius_surface_cache_u;
+    btScalar          m_mobius_surface_cache_v;
+
     /** If the flyable is in a cannon, this is the pointer to the cannon
      *  animation. NULL otherwise. */
     AbstractKartAnimation *m_animation;

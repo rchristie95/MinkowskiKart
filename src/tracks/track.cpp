@@ -30,6 +30,7 @@
 #include "graphics/camera/camera_end.hpp"
 #include "graphics/camera/camera_normal.hpp"
 #include "graphics/CBatchingMesh.hpp"
+#include "graphics/2dutils.hpp"
 #include "graphics/central_settings.hpp"
 #include "graphics/cpu_particle_manager.hpp"
 #include "graphics/irr_driver.hpp"
@@ -97,6 +98,7 @@
 #include <SMeshBuffer.h>
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -114,6 +116,62 @@ using namespace irr;
 const float Track::NOHIT               = -99999.9f;
 bool        Track::m_dont_load_navmesh = false;
 std::atomic<Track*> Track::m_current_track[PT_COUNT];
+
+namespace
+{
+    const float MOBIUS_TRACK_RADIUS = 82.0f;
+    const float MOBIUS_ROAD_HALF_WIDTH = 8.0f;
+    const float MOBIUS_MINIMAP_X_SCALE = 0.86f;
+    const float MOBIUS_MINIMAP_Y_SCALE = 0.48f;
+    const float MOBIUS_MINIMAP_HALF_WIDTH = 0.055f;
+    const float TWO_PI = 6.2831853071795864769f;
+
+    float positiveMobiusAngle(float a)
+    {
+        while (a < 0.0f)
+            a += TWO_PI;
+        while (a >= TWO_PI)
+            a -= TWO_PI;
+        return a;
+    }
+
+    core::vector2df mobiusInfinityMap01(const Vec3 &xyz)
+    {
+        const float x = xyz.getX();
+        const float y = xyz.getY();
+        const float z = xyz.getZ();
+        const float u = positiveMobiusAngle(std::atan2(z, x));
+        const float half_u = 0.5f * u;
+        const float radial = std::sqrt(x * x + z * z);
+        const float ch = std::cos(half_u);
+        const float sh = std::sin(half_u);
+        float lateral = 0.0f;
+        if (std::fabs(ch) > 0.25f)
+            lateral = (radial - MOBIUS_TRACK_RADIUS) / ch;
+        else if (std::fabs(sh) > 0.25f)
+            lateral = y / sh;
+        lateral = std::max(-MOBIUS_ROAD_HALF_WIDTH,
+            std::min(MOBIUS_ROAD_HALF_WIDTH, lateral));
+
+        const float curve_x = MOBIUS_MINIMAP_X_SCALE * std::sin(u);
+        const float curve_y = MOBIUS_MINIMAP_Y_SCALE * std::sin(2.0f * u);
+        const float dx = MOBIUS_MINIMAP_X_SCALE * std::cos(u);
+        const float dy = 2.0f * MOBIUS_MINIMAP_Y_SCALE * std::cos(2.0f * u);
+        const float length = std::sqrt(dx * dx + dy * dy);
+        float side_x = 0.0f;
+        float side_y = 1.0f;
+        if (length > 0.001f)
+        {
+            side_x = -dy / length;
+            side_y = dx / length;
+        }
+        const float offset = lateral / MOBIUS_ROAD_HALF_WIDTH
+            * MOBIUS_MINIMAP_HALF_WIDTH;
+        return core::vector2df(
+            0.5f + 0.5f * (curve_x + side_x * offset),
+            0.5f + 0.5f * (curve_y + side_y * offset));
+    }
+}
 
 // ----------------------------------------------------------------------------
 Track::Track(const std::string &filename)
@@ -779,7 +837,10 @@ btQuaternion Track::getArenaStartRotation(const Vec3& xyz, float heading)
 {
     btQuaternion def_pos(Vec3(0, 1, 0), heading * DEGREE_TO_RAD);
     if (!ArenaGraph::get())
-        return def_pos;
+    {
+        if (m_ident != "mobius_track" || !Graph::get())
+            return def_pos;
+    }
 
     // Set the correct axis based on normal of the starting position
     int node = Graph::UNKNOWN_SECTOR;
@@ -837,6 +898,16 @@ void Track::loadDriveGraph(unsigned int mode_id, const bool reverse)
 
 void Track::mapPoint2MiniMap(const Vec3 &xyz, Vec3 *draw_at) const
 {
+    if (m_ident == "mobius_track")
+    {
+        const core::dimension2du mini_map_size =
+            World::getWorld()->getRaceGUI()->getMiniMapSize();
+        const core::vector2df mapped = mobiusInfinityMap01(xyz);
+        draw_at->setX(mapped.X * mini_map_size.Width);
+        draw_at->setY(mapped.Y * mini_map_size.Height);
+        return;
+    }
+
     if (m_minimap_invert_x_z)
     {
         Vec3 invert = xyz;
@@ -2886,6 +2957,17 @@ std::vector< std::vector<float> > Track::buildHeightMap()
 // ----------------------------------------------------------------------------
 void Track::drawMiniMap(const core::rect<s32>& dest_rect) const
 {
+    if (m_ident == "mobius_track")
+    {
+        video::ITexture *texture = irr_driver->getTexture(m_root + "mobius_minimap.png");
+        if (texture)
+        {
+            const core::rect<s32> source(core::position2di(0, 0), texture->getSize());
+            draw2DImage(texture, dest_rect, source, NULL,
+                        video::SColor(190, 255, 255, 255), true);
+            return;
+        }
+    }
     if(m_render_target)
         m_render_target->draw2DImage(dest_rect, NULL,
                                      video::SColor(127, 255, 255, 255),

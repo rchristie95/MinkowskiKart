@@ -36,6 +36,9 @@
 #include <ICameraSceneNode.h>
 #include <ISceneManager.h>
 
+#include <algorithm>
+#include <cmath>
+
 #ifndef SERVER_ONLY
 #include <ge_main.hpp>
 #endif
@@ -44,6 +47,25 @@ const int Graph::UNKNOWN_SECTOR = -1;
 const float Graph::MIN_HEIGHT_TESTING = -1.0f;
 const float Graph::MAX_HEIGHT_TESTING = 5.0f;
 Graph *Graph::m_graph = NULL;
+
+namespace
+{
+    const float MOBIUS_TRACK_RADIUS = 82.0f;
+    const float MOBIUS_ROAD_HALF_WIDTH = 8.0f;
+    const float MOBIUS_MINIMAP_X_SCALE = 66.0f;
+    const float MOBIUS_MINIMAP_Z_SCALE = 36.0f;
+    const float MOBIUS_MINIMAP_HALF_WIDTH = 4.5f;
+    const float TWO_PI = 6.2831853071795864769f;
+
+    float positiveAngle(float a)
+    {
+        while (a < 0.0f)
+            a += TWO_PI;
+        while (a >= TWO_PI)
+            a -= TWO_PI;
+        return a;
+    }
+}
 // -----------------------------------------------------------------------------
 Graph::Graph()
 {
@@ -420,6 +442,84 @@ void Graph::createMeshSP(bool show_invisible, bool enable_transparency,
 }   // createMeshSP
 
 // -----------------------------------------------------------------------------
+bool Graph::isMobiusMiniMap() const
+{
+    const Track *track = Track::getCurrentTrack();
+    return track && track->getIdent() == "mobius_track";
+}
+
+// -----------------------------------------------------------------------------
+Vec3 Graph::mapMobiusPointToInfinityMiniMap(const Vec3 &xyz) const
+{
+    const float x = xyz.getX();
+    const float y = xyz.getY();
+    const float z = xyz.getZ();
+    const float u = positiveAngle(std::atan2(z, x));
+    const float half_u = 0.5f * u;
+    const float radial = std::sqrt(x * x + z * z);
+    const float ch = std::cos(half_u);
+    const float sh = std::sin(half_u);
+    float lateral = 0.0f;
+    if (std::fabs(ch) > 0.25f)
+        lateral = (radial - MOBIUS_TRACK_RADIUS) / ch;
+    else if (std::fabs(sh) > 0.25f)
+        lateral = y / sh;
+    lateral = std::max(-MOBIUS_ROAD_HALF_WIDTH,
+        std::min(MOBIUS_ROAD_HALF_WIDTH, lateral));
+
+    const float curve_x = MOBIUS_MINIMAP_X_SCALE * std::sin(u);
+    const float curve_z = MOBIUS_MINIMAP_Z_SCALE * std::sin(2.0f * u);
+    const float dx = MOBIUS_MINIMAP_X_SCALE * std::cos(u);
+    const float dz = 2.0f * MOBIUS_MINIMAP_Z_SCALE * std::cos(2.0f * u);
+    const float length = std::sqrt(dx * dx + dz * dz);
+    float side_x = 0.0f;
+    float side_z = 1.0f;
+    if (length > 0.001f)
+    {
+        side_x = -dz / length;
+        side_z = dx / length;
+    }
+    const float offset = lateral / MOBIUS_ROAD_HALF_WIDTH
+        * MOBIUS_MINIMAP_HALF_WIDTH;
+    return Vec3(curve_x + side_x * offset, 0.0f, curve_z + side_z * offset);
+}
+
+// -----------------------------------------------------------------------------
+void Graph::remapMobiusMiniMapMesh()
+{
+#ifndef SERVER_ONLY
+    if (!m_mesh_buffer)
+        return;
+
+    SP::SPMeshBuffer *sp_buffer = dynamic_cast<SP::SPMeshBuffer*>(m_mesh_buffer);
+    if (sp_buffer)
+    {
+        std::vector<video::S3DVertexSkinnedMesh> &vertices =
+            sp_buffer->getVerticesRef();
+        for (unsigned int i = 0; i < vertices.size(); i++)
+            vertices[i].m_position =
+                mapMobiusPointToInfinityMiniMap(Vec3(vertices[i].m_position)).toIrrVector();
+    }
+    else if (m_mesh_buffer->getVertexType() == video::EVT_STANDARD)
+    {
+        video::S3DVertex *vertices =
+            static_cast<video::S3DVertex*>(m_mesh_buffer->getVertices());
+        for (unsigned int i = 0; i < m_mesh_buffer->getVertexCount(); i++)
+            vertices[i].Pos =
+                mapMobiusPointToInfinityMiniMap(Vec3(vertices[i].Pos)).toIrrVector();
+    }
+    else
+        return;
+
+    m_mesh_buffer->recalculateBoundingBox();
+    m_mesh->setBoundingBox(m_mesh_buffer->getBoundingBox());
+    const core::aabbox3df &bb = m_mesh_buffer->getBoundingBox();
+    m_bb_min = Vec3(bb.MinEdge);
+    m_bb_max = Vec3(bb.MaxEdge);
+#endif
+}
+
+// -----------------------------------------------------------------------------
 /** Takes a snapshot of the graph so they can be used as minimap.
  */
 RenderTarget* Graph::makeMiniMap(const core::dimension2du &dimension,
@@ -456,6 +556,8 @@ RenderTarget* Graph::makeMiniMap(const core::dimension2du &dimension,
             /*enable_transparency*/ false, /*track_color*/&fill_color,
             invert_x_z, true/*flatten*/);
     }
+    if (isMobiusMiniMap())
+        remapMobiusMiniMapMesh();
 #endif
 
     // Adjust bounding boxes for flags in CTF
@@ -589,8 +691,11 @@ RenderTarget* Graph::makeMiniMap(const core::dimension2du &dimension,
  */
 void Graph::mapPoint2MiniMap(const Vec3 &xyz,Vec3 *draw_at) const
 {
-    draw_at->setX((xyz.getX()-m_bb_min.getX())*m_scaling);
-    draw_at->setY((xyz.getZ()-m_bb_min.getZ())*m_scaling);
+    Vec3 map_xyz = isMobiusMiniMap()
+        ? mapMobiusPointToInfinityMiniMap(xyz)
+        : xyz;
+    draw_at->setX((map_xyz.getX()-m_bb_min.getX())*m_scaling);
+    draw_at->setY((map_xyz.getZ()-m_bb_min.getZ())*m_scaling);
 
 }   // mapPoint
 

@@ -2,14 +2,15 @@
 setlocal
 
 set "PROJECT_ROOT=%~dp0"
-set "BIN_DIR=%PROJECT_ROOT%build\bin"
+set "BIN_DIR=%PROJECT_ROOT%build-dev\bin"
+if not exist "%BIN_DIR%\MinkowskiKart.exe" set "BIN_DIR=%PROJECT_ROOT%build\bin"
 
 :: Add bin directory to PATH so DLLs are found
 set "PATH=%BIN_DIR%;%PATH%"
 
 echo Starting SuperTuxKart...
 cd /d "%BIN_DIR%"
-.\MinkowskiKart.exe --root-data=../../data %*
+.\MinkowskiKart.exe %*
 
 if %ERRORLEVEL% neq 0 (
     echo.

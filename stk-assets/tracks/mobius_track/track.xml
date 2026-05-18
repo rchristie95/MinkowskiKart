@@ -4,6 +4,7 @@
         groups         = "standard"
         designer       = "Codex procedural Blender MCP generator"
         screenshot     = "screenshot.jpg"
+        music          = "highway_gravel.music"
         smooth-normals = "true"
         default-number-of-laps = "1"
         reverse        = "N"
