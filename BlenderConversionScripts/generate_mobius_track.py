@@ -49,8 +49,8 @@ START_GRID_U_OFFSET = 0.11
 START_GRID_U_SPACING = 0.082
 START_GRID_MIN_DISTANCE = 4.2
 START_GRID_LIFT = 0.72
-PLANET_TEXTURE_SIZE = 512
-PLANET_MAX_TRIANGLES = 6000
+PLANET_TEXTURE_SIZE = 1024
+PLANET_MAX_TRIANGLES = 12000
 THUMBNAIL_SOURCE = Path(
     os.environ.get("MOBIUS_THUMBNAIL_SOURCE", r"C:\Users\robso\Downloads\mobius.png")
 )
@@ -887,15 +887,21 @@ def average_material_color(mesh_objects):
 
 
 def ensure_bake_uv(obj):
-    if obj.data.uv_layers.active is not None:
+    uv_name = "BakeUV"
+    if uv_name in obj.data.uv_layers:
+        obj.data.uv_layers.active = obj.data.uv_layers[uv_name]
         return
+    
+    new_uv = obj.data.uv_layers.new(name=uv_name)
+    obj.data.uv_layers.active = new_uv
+    
     bpy.ops.object.mode_set(mode="OBJECT") if bpy.context.object else None
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.uv.smart_project(angle_limit=math.radians(66.0), island_margin=0.02)
+    bpy.ops.uv.smart_project(angle_limit=math.radians(66.0), island_margin=0.01)
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
@@ -1298,7 +1304,7 @@ def blender_decimated_planet_object(planet_id, mesh_objects, triangle_budget):
 
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.mesh.remove_doubles(threshold=0.0005)
+    bpy.ops.mesh.remove_doubles(threshold=0.0001)
     bpy.ops.object.mode_set(mode="OBJECT")
 
     for attempt in range(4):
