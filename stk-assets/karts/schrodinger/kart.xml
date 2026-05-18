@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<kart name="Schrodinger"
+      version="3"
+      model-file="schrodinger.spm"
+      icon-file="schrodinger_icon.png"
+      minimap-icon-file="schrodinger_icon.png"
+      type="medium"
+      groups="minkowski">
+</kart>

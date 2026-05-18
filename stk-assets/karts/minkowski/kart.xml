@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<kart name="Minkowski"
+      version="3"
+      model-file="minkowski.spm"
+      icon-file="minkowski_icon.png"
+      minimap-icon-file="minkowski_icon.png"
+      type="medium"
+      groups="minkowski">
+</kart>

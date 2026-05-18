@@ -372,7 +372,9 @@ void TracksScreen::beforeAddingWidget()
     for (int n=0; n<group_amount; n++)
     {
         if (groups[n] == "standard") // Fix capitalization (#4622)
-            tabs->addTextChild( _("Standard") , groups[n]);
+            tabs->addTextChild( _("STK") , groups[n]);
+        else if (groups[n] == "minkowski")
+            tabs->addTextChild( _("Minkowski Kart") , groups[n]);
         else // Try to translate group names
             tabs->addTextChild( _(groups[n].c_str()) , groups[n]);
     } // for n<group_amount

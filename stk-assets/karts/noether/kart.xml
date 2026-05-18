@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<kart name="Noether"
+      version="3"
+      model-file="noether.spm"
+      icon-file="noether_icon.png"
+      minimap-icon-file="noether_icon.png"
+      type="medium"
+      groups="minkowski">
+</kart>

@@ -1655,7 +1655,7 @@ def write_track_xml(track_dir):
         """<?xml version="1.0"?>
 <track  name           = "Mobius Track"
         version        = "7"
-        groups         = "standard"
+        groups         = "minkowski"
         designer       = "Codex procedural Blender MCP generator"
         screenshot     = "screenshot.jpg"
         music          = "highway_gravel.music"
