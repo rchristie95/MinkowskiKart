@@ -741,9 +741,8 @@ def write_spm(path, mesh):
 
     with open(path, "wb") as f:
         f.write(b"SP")
-        f.write(struct.pack("<B", 0x0A))  # version 1, SPMN static mesh.
-        f.write(struct.pack("<B", 0x01))  # normals present, no vertex colors/tangents.
-        f.write(struct.pack("<6f", mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]))
+        f.write(struct.pack("<B", 0x09))  # version 9, SPMN static mesh.
+        f.write(struct.pack("<B", 0x01))  # normals present, no vertex colors/tangents.        f.write(struct.pack("<6f", mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]))
         f.write(struct.pack("<H", 1))
         f.write(struct.pack("<B", len(texture)))
         f.write(texture)

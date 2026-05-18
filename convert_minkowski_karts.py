@@ -43,6 +43,9 @@ def convert_kart(kart_name, karts_dir):
     bpy.ops.object.select_all(action='DESELECT')
     for o in mesh_objects:
         o.select_set(True)
+        if o.data.uv_layers:
+            o.data.uv_layers[0].name = "UVMap"
+            
     bpy.context.view_layer.objects.active = mesh_objects[0]
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     
@@ -55,6 +58,13 @@ def convert_kart(kart_name, karts_dir):
     obj = bpy.context.view_layer.objects.active
     
     mesh = obj.data
+    for vertex in mesh.vertices:
+        # Convert Blender (Z-up, Y-forward) to STK (Y-up, Z-forward)
+        bx, by, bz = vertex.co.x, vertex.co.y, vertex.co.z
+        vertex.co.x = bx
+        vertex.co.y = bz
+        vertex.co.z = by
+        
     world_positions = [obj.matrix_world @ vertex.co for vertex in mesh.vertices]
     mins = [min(position[i] for position in world_positions) for i in range(3)]
     maxs = [max(position[i] for position in world_positions) for i in range(3)]
@@ -127,11 +137,9 @@ def convert_kart(kart_name, karts_dir):
 </kart>"""
     (kart_dir / "kart.xml").write_text(kart_xml, encoding="utf-8")
     
-    materials_xml = f"""<?xml version="1.0"?>
-<materials>
-  <material name="{tex_name}" ignore="Y" />
-</materials>"""
-    (kart_dir / "materials.xml").write_text(materials_xml, encoding="utf-8")
+    # Remove any existing materials.xml
+    if (kart_dir / "materials.xml").exists():
+        (kart_dir / "materials.xml").unlink()
     
     print(f"Successfully processed kart: {kart_name}")
 
