@@ -6,7 +6,7 @@
         screenshot     = "screenshot.jpg"
         music          = "highway_gravel.music"
         smooth-normals = "true"
-        default-number-of-laps = "1"
+        default-number-of-laps = "3"
         reverse        = "N"
         clouds         = "N"
         is-during-day  = "N"

@@ -103,32 +103,39 @@
   <start position="9" x="76.092" y="0.290" z="14.971" h="-11.12"/>
   <start position="10" x="80.393" y="0.717" z="15.795" h="-11.12"/>
   <start position="11" x="84.694" y="1.143" z="16.621" h="-11.12"/>
-  <item x="72.116" y="0.688" z="32.230" drop="true"/>
-  <item x="74.882" y="1.928" z="38.960" drop="true"/>
   <item x="30.118" y="-0.366" z="73.160" drop="true"/>
-  <item x="27.094" y="2.569" z="78.835" drop="true"/>
-  <item x="-36.669" y="-1.633" z="70.524" drop="true"/>
-  <item x="-42.188" y="2.990" z="70.549" drop="true"/>
-  <item x="-79.941" y="-2.716" z="9.746" drop="true"/>
-  <item x="-80.632" y="2.839" z="4.995" drop="true"/>
-  <item x="-40.277" y="-2.901" z="-71.645" drop="true"/>
-  <item x="-34.778" y="1.514" z="-71.511" drop="true"/>
+  <item x="-80.273" y="2.874" z="9.831" drop="true"/>
   <item x="35.438" y="-2.546" z="-75.696" drop="true"/>
-  <item x="37.697" y="0.263" z="-69.443" drop="true"/>
-  <small-nitro x="52.672" y="0.442" z="59.980" drop="true"/>
+  <item x="77.722" y="-0.692" z="34.435" drop="true"/>
+  <item x="70.720" y="-1.924" z="36.506" drop="true"/>
+  <item x="32.566" y="0.362" z="78.389" drop="true"/>
+  <item x="26.453" y="-2.566" z="76.173" drop="true"/>
+  <item x="-38.747" y="1.629" z="75.110" drop="true"/>
+  <item x="-41.755" y="-2.990" z="70.334" drop="true"/>
+  <item x="-82.826" y="2.714" z="10.366" drop="true"/>
+  <item x="-83.032" y="-2.841" z="5.408" drop="true"/>
+  <item x="-40.319" y="2.901" z="-71.189" drop="true"/>
+  <item x="-37.187" y="-1.518" z="-75.854" drop="true"/>
+  <item x="33.869" y="2.548" z="-72.944" drop="true"/>
+  <item x="40.309" y="-0.268" z="-74.817" drop="true"/>
   <small-nitro x="1.727" y="2.188" z="82.358" drop="true"/>
-  <small-nitro x="-72.637" y="-1.472" z="34.322" drop="true"/>
-  <small-nitro x="-73.758" y="1.499" z="-31.902" drop="true"/>
-  <small-nitro x="3.112" y="-2.185" z="-82.336" drop="true"/>
-  <small-nitro x="68.820" y="-0.780" z="-40.635" drop="true"/>
-  <big-nitro x="-29.957" y="0.730" z="75.175" drop="true"/>
-  <big-nitro x="19.112" y="-1.022" z="-78.915" drop="true"/>
-  <banana x="50.215" y="3.492" z="70.158" drop="true"/>
+  <small-nitro x="-74.417" y="-2.026" z="-32.219" drop="true"/>
+  <small-nitro x="55.745" y="-0.446" z="63.071" drop="true"/>
+  <small-nitro x="1.972" y="-2.188" z="81.596" drop="true"/>
+  <small-nitro x="-75.531" y="1.469" z="35.985" drop="true"/>
+  <small-nitro x="-76.868" y="-1.502" z="-32.958" drop="true"/>
+  <small-nitro x="2.823" y="2.186" z="-81.560" drop="true"/>
+  <small-nitro x="72.266" y="0.776" z="-42.979" drop="true"/>
+  <big-nitro x="-30.507" y="-0.731" z="77.271" drop="true"/>
+  <big-nitro x="19.234" y="1.020" z="-80.541" drop="true"/>
   <banana x="16.839" y="-2.477" z="75.204" drop="true"/>
-  <banana x="-68.390" y="5.309" z="45.992" drop="true"/>
-  <banana x="-80.654" y="-5.255" z="-8.814" drop="true"/>
-  <banana x="-48.369" y="4.348" z="-61.953" drop="true"/>
-  <banana x="-5.255" y="-4.723" z="-84.697" drop="true"/>
-  <banana x="56.991" y="0.791" z="-51.382" drop="true"/>
-  <banana x="83.531" y="-1.872" z="-24.272" drop="true"/>
+  <banana x="-80.102" y="5.130" z="-8.681" drop="true"/>
+  <banana x="45.441" y="-3.485" z="63.049" drop="true"/>
+  <banana x="19.275" y="2.469" z="84.774" drop="true"/>
+  <banana x="-67.546" y="-5.309" z="45.739" drop="true"/>
+  <banana x="-82.412" y="5.253" z="-8.740" drop="true"/>
+  <banana x="-52.761" y="-4.354" z="-67.146" drop="true"/>
+  <banana x="-5.147" y="4.727" z="-78.980" drop="true"/>
+  <banana x="64.633" y="-0.799" z="-58.633" drop="true"/>
+  <banana x="73.892" y="1.880" z="-21.718" drop="true"/>
 </scene>

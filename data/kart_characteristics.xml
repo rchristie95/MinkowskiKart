@@ -208,7 +208,7 @@
             weight: The additional effective weight Maxwell-Boltzmann adds to a kart.
             speed-factor: The additional slowdown caused by Maxwell-Boltzmann.
             duration: The time Maxwell-Boltzmann is active. -->
-        <maxwell-boltzmann duration="2.0" weight="150"  speed-factor="0.2" />
+        <maxwell-boltzmann duration="1.5" weight="150"  speed-factor="0.2" />
 
         <!-- Time-Dilation
             friction: The friction factor when time-dilation is attached.

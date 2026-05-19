@@ -494,7 +494,7 @@ void Item::handleNewMesh(ItemType type)
                                           getItemId()).c_str());
             m_superposition_node->setPosition(core::vector3df(0.0f, 0.95f, 0.0f));
             m_superposition_node->setVisible(true);
-            m_superposition_node->setScale(core::vector3df(1.0f, 1.0f, 1.0f));
+            m_superposition_node->setScale(core::vector3df(2.0f, 2.0f, 2.0f));
         }
         else
         {

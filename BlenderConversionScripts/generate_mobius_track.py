@@ -57,10 +57,10 @@ BLACK_HOLE_DISK_SEGMENTS = 160
 BLACK_HOLE_DISK_RINGS = 8
 BLACK_HOLE_HALO_RINGS = 6
 BLACK_HOLE_BLENDERKIT_REFERENCE_ASSET_ID = "5dc596e9-158f-4191-8f33-8ca68768d330"
-ZIPPER_U_POSITIONS = (0.78, 1.45, 2.20, 2.92, 3.68, 4.42, 5.18, 5.86)
+ZIPPER_U_POSITIONS = (0.78, 2.20, 3.68, 5.18)
 ZIPPER_LENGTH = 7.2
 ZIPPER_WIDTH = 4.2
-ZIPPER_SURFACE_LIFT = 0.08
+ZIPPER_SURFACE_LIFT = 0.02
 START_U = 0.55
 START_GRID_ROWS = 4
 START_GRID_COLS = 3
@@ -666,39 +666,35 @@ def make_zipper_mesh():
     v_subdivisions = 4
 
     def append_zipper_patch(u_center):
-        # Add pads to BOTH sides of the surface so they work on both Mobius passes.
-        # This is critical for a Mobius strip where you drive on both 'sides'.
-        for lift_sign in (-1.0, 1.0):
-            base = len(verts)
-            for i in range(u_subdivisions + 1):
-                s = i / u_subdivisions
-                u = u_center - half_length_u + 2.0 * half_length_u * s
-                for j in range(v_subdivisions + 1):
-                    t = j / v_subdivisions
-                    lateral = -half_width + 2.0 * half_width * t
-                    n = mobius_normal(u, lateral)
-                    # The zipper's effective surface normal points away from the track
-                    surface_normal = vmul(n, lift_sign)
-                    verts.append(vadd(mobius_point(u, lateral), vmul(n, ZIPPER_SURFACE_LIFT * lift_sign)))     
-                    normals.append(surface_normal)
-                    uv_t = t if lift_sign > 0 else 1.0 - t
-                    uvs.append((s, uv_t))
-            row = v_subdivisions + 1
-            for i in range(u_subdivisions):
-                for j in range(v_subdivisions):
-                    a = base + i * row + j
-                    b = base + (i + 1) * row + j
-                    c = base + (i + 1) * row + j + 1
-                    d = base + i * row + j + 1
-                    # Correct winding depends on which side we are on
-                    if lift_sign > 0:
-                        indices.extend((a, b, c, a, c, d))
-                    else:
-                        indices.extend((a, c, b, a, d, c))
+        base = len(verts)
+        for i in range(u_subdivisions + 1):
+            s = i / u_subdivisions
+            u = u_center - half_length_u + 2.0 * half_length_u * s
+            for j in range(v_subdivisions + 1):
+                t = j / v_subdivisions
+                lateral = -half_width + 2.0 * half_width * t
+                n = mobius_normal(u, lateral)
+                
+                # Single-sided patch floating just above the local surface
+                verts.append(vadd(mobius_point(u, lateral), vmul(n, ZIPPER_SURFACE_LIFT)))     
+                normals.append(n)
+                # s is forward (u), t is lateral (v)
+                uvs.append((s, t))
+                
+        row = v_subdivisions + 1
+        for i in range(u_subdivisions):
+            for j in range(v_subdivisions):
+                a = base + i * row + j
+                b = base + (i + 1) * row + j
+                c = base + (i + 1) * row + j + 1
+                d = base + i * row + j + 1
+                # Standard CCW winding, automatically produces outward normals
+                # when mapped through mobius_point on both laps.
+                indices.extend((a, b, c, a, c, d))
+
     for u_center in ZIPPER_U_POSITIONS:
         append_zipper_patch(u_center)
-    for u_center in ZIPPER_U_POSITIONS:
-        append_zipper_patch((u_center + math.pi) % (2.0 * math.pi))
+
     return mesh_dict("Mobius_Zippers", "mobius_zipper.png", verts, normals, uvs, indices)
 
 
@@ -1989,7 +1985,7 @@ def write_track_xml(track_dir):
         screenshot     = "screenshot.jpg"
         music          = "highway_gravel.music"
         smooth-normals = "true"
-        default-number-of-laps = "1"
+        default-number-of-laps = "3"
         reverse        = "N"
         clouds         = "N"
         is-during-day  = "N"
@@ -2025,7 +2021,7 @@ def write_materials_xml(track_dir):
   <material name="mobius_black_hole_photon_ring.png" shader="additive" ignore="Y"/>
   <material name="mobius_black_hole_halo.png" shader="additive" ignore="Y"/>
   <material name="mobius_starfield.png" shader="additive" ignore="Y"/>
-  <material name="mobius_zipper.png" shader="alphablend" ignore="N">
+  <material name="mobius_zipper.png" shader="alphablend" ignore="N" backface-culling="N">
     <zipper duration="2.5" max-speed-increase="12.0" fade-out-time="2.0" speed-gain="5.0" min-speed="0.0"/>
   </material>
   <material name="reset_surface.png" reset="Y" falling-effect="Y"/>
@@ -2226,18 +2222,30 @@ def write_scene_xml(track_dir):
     for idx, p, heading in generated_start_positions():
         lines.append(f'  <start position="{idx}" {fmt_xyz_attrs(p)} h="{heading:.2f}"/>')
     item_boxes = [
-        (0.42, -2.8), (0.48, 2.8), (1.18, -2.6), (1.24, 2.6),
-        (2.05, -2.7), (2.11, 2.7), (3.02, -2.8), (3.08, 2.8),
-        (4.20, -2.6), (4.26, 2.6), (5.15, -2.7), (5.21, 2.7),
+        # Lap 1 (fewer)
+        (1.18, -2.6), (3.02, 2.8), (5.15, -2.7),
+        # Lap 2 (more)
+        (6.70, -2.8), (6.76, 2.8), (7.46, -2.6), (7.52, 2.6),
+        (8.33, -2.7), (8.39, 2.7), (9.30, -2.8), (9.36, 2.8),
+        (10.48, -2.6), (10.54, 2.6), (11.43, -2.7), (11.49, 2.7)
     ]
     small_nitro = [
-        (0.85, -1.8), (1.55, 1.8), (2.70, -1.8), (3.55, 1.8),
-        (4.75, -1.8), (5.75, 1.8),
+        # Lap 1
+        (1.55, 1.8), (3.55, -1.8),
+        # Lap 2
+        (7.13, -1.8), (7.83, 1.8), (8.98, -1.8), (9.83, 1.8),
+        (11.03, -1.8), (12.03, 1.8)
     ]
-    big_nitro = [(1.95, 0.0), (4.95, 0.0)]
+    big_nitro = [
+        # Lap 2 only
+        (8.23, 0.0), (11.23, 0.0)
+    ]
     compactifications = [
-        (0.95, 5.4), (1.35, -5.4), (2.55, 5.2), (3.25, -5.2),
-        (4.05, 5.4), (4.65, -5.4), (5.55, 5.2), (6.00, -5.2),
+        # Lap 1
+        (1.35, -5.4), (3.25, 5.2),
+        # Lap 2
+        (7.23, 5.4), (7.63, -5.4), (8.83, 5.2), (9.53, -5.2),
+        (10.33, 5.4), (10.93, -5.4), (11.83, 5.2), (12.28, -5.2)
     ]
     for u, lateral in item_boxes:
         lines.append(f'  <item {fmt_xyz_attrs(item_position(u, lateral, 1.3))} drop="true"/>')

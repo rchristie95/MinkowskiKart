@@ -17,6 +17,7 @@ import generate_mobius_track as gen  # noqa: E402
 track_dir = project_root / "stk-assets" / "tracks" / "mobius_track"
 track_dir.mkdir(parents=True, exist_ok=True)
 gen.write_materials_xml(track_dir)
+gen.write_track_xml(track_dir)
 gen.write_scene_xml(track_dir)
 gen.write_quads_xml(track_dir)
 gen.write_graph_xml(track_dir)

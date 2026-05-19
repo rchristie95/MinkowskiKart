@@ -433,11 +433,11 @@ namespace UserConfigParams
                                             "Race Setup Settings") );
 
     PARAM_PREFIX IntUserConfigParam          m_default_num_karts
-            PARAM_DEFAULT(  IntUserConfigParam(4, "numkarts",
+            PARAM_DEFAULT(  IntUserConfigParam(6, "numkarts",
                             &m_race_setup_group,
                             "Default number of karts. -1 means use all") );
     PARAM_PREFIX IntUserConfigParam          m_num_laps
-            PARAM_DEFAULT(  IntUserConfigParam(4, "numlaps",
+            PARAM_DEFAULT(  IntUserConfigParam(3, "numlaps",
             &m_race_setup_group, "Default number of laps.") );
     PARAM_PREFIX IntUserConfigParam          m_gp_reverse
             PARAM_DEFAULT(  IntUserConfigParam(0, "gp-reverse",
@@ -483,7 +483,7 @@ namespace UserConfigParams
             PARAM_DEFAULT( StringUserConfigParam("tux", "kart",
                            "Kart to select by default (the last used kart)") );
     PARAM_PREFIX StringUserConfigParam m_last_used_kart_group
-            PARAM_DEFAULT( StringUserConfigParam("all", "last_kart_group",
+            PARAM_DEFAULT( StringUserConfigParam("minkowski", "last_kart_group",
                                                  "Last selected kart group") );
     PARAM_PREFIX IntUserConfigParam          m_soccer_red_ai_num
             PARAM_DEFAULT(  IntUserConfigParam(0, "soccer-red-ai-num",
@@ -1258,7 +1258,7 @@ namespace UserConfigParams
             PARAM_DEFAULT(  StringUserConfigParam("scotland", "last_track",
                             "Name of the last track used.") );
     PARAM_PREFIX StringUserConfigParam m_last_used_track_group
-            PARAM_DEFAULT( StringUserConfigParam("all", "last_track_group",
+            PARAM_DEFAULT( StringUserConfigParam("minkowski", "last_track_group",
                            "Last selected track group") );
 
     PARAM_PREFIX StringUserConfigParam m_discord_client_id
