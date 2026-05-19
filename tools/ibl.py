@@ -80,13 +80,3 @@ def computeCoefficients():
     return (SH00, SH1minus1, SH10, SH2minus2, SH2minus1, SH20, SH21, SH22)
 
 print(computeCoefficients())
-
-#res = []
-#for (Xd, Yd, Zd) in FaceGrid:
-#    res.append(computeYmlOnGrid(Xd, Yd, Zd))
-
-
-#I = img.open("C:/Users/vljn_000/Documents/GitHub/stk-assets/textures/ants.png")
-#m = np.array(I)
-#print(type(m))
-#pl.imshow(m)

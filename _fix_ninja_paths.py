@@ -18,23 +18,12 @@ def normalize_text(text: str) -> str:
     root_win = str(ROOT)
     build_win = str(BUILD)
 
-    legacy_root_posix = root_posix.replace("MinkowskiKartGithub", "MinkowskiKartMain")
-    legacy_build_posix = build_posix.replace("MinkowskiKartGithub", "MinkowskiKartMain")
-    legacy_root_win = root_win.replace("MinkowskiKartGithub", "MinkowskiKartMain")
-    legacy_build_win = build_win.replace("MinkowskiKartGithub", "MinkowskiKartMain")
-
     replacements = [
-        (ninja_escape(legacy_build_posix), "."),
         (ninja_escape(build_posix), "."),
-        (legacy_build_win, "."),
         (build_win, "."),
-        (legacy_build_posix, "."),
         (build_posix, "."),
-        (ninja_escape(legacy_root_posix), ".."),
         (ninja_escape(root_posix), ".."),
-        (legacy_root_win, ".."),
         (root_win, ".."),
-        (legacy_root_posix, ".."),
         (root_posix, ".."),
     ]
 
