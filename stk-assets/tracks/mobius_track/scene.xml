@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <scene>
-  <sky-color rgb="3 5 10"/>
+  <sky-color rgb="0 0 0"/>
   <camera far="900"/>
-  <sun xyz="0 0 0" sun-diffuse="255 230 170" sun-specular="255 236 190" ambient="36 38 52" fog="false"/>
+  <sun xyz="0 0 0" sun-diffuse="255 246 210" sun-specular="255 250 225" ambient="44 40 36" fog="false"/>
   <track model="mobius_visual.spm" x="0" y="0" z="0">
     <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
     <static-object model="mobius_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>
@@ -15,7 +15,7 @@
     <static-object model="mobius_guardrails_visual.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
     <static-object model="mobius_seam_jump_ramp_visual.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
     <static-object model="mobius_start_gate.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false"/>
-    <static-object model="direction_markers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+    <static-object model="mobius_zippers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="static" shape="exact" driveable="true" shadow-pass="false"/>
   </track>
   <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
     <curve channel="RotY" interpolation="linear" extend="cyclic">
@@ -35,24 +35,60 @@
       <p c="525.000 -360.000"/>
     </curve>
   </object>
-  <light xyz="0 0 0" id="mobius_sun_light" distance="320.00" energy="4.00" color="255 210 135" type="point"/>
-  <object id="mobius_planet_mercury" type="animation" model="mobius_planet_mercury.spm" x="0.746" y="4.728" z="68.275" hpr="0 0 0" scale="2.000 2.000 2.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
-  <object id="mobius_planet_venus" type="animation" model="mobius_planet_venus.spm" x="-66.087" y="-5.001" z="13.338" hpr="0 0 0" scale="2.800 2.800 2.800" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
-  <object id="mobius_planet_earth" type="animation" model="mobius_planet_earth.spm" x="-17.789" y="-3.964" z="-63.725" hpr="0 0 0" scale="3.000 3.000 3.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
-  <object id="mobius_planet_mars" type="animation" model="mobius_planet_mars.spm" x="69.273" y="-12.746" z="-24.059" hpr="0 0 0" scale="2.500 2.500 2.500" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
-  <object id="mobius_planet_jupiter" type="animation" model="mobius_planet_jupiter.spm" x="13.285" y="-20.089" z="89.908" hpr="0 0 0" scale="9.000 9.000 9.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
-  <object id="mobius_planet_saturn" type="animation" model="mobius_planet_saturn.spm" x="-100.978" y="-8.666" z="21.411" hpr="0 0 0" scale="6.000 6.000 6.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
-  <object id="mobius_planet_uranus" type="animation" model="mobius_planet_uranus.spm" x="-23.944" y="16.054" z="-89.228" hpr="0 0 0" scale="6.000 6.000 6.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
-  <object id="mobius_planet_neptune" type="animation" model="mobius_planet_neptune.spm" x="74.654" y="19.797" z="-25.054" hpr="0 0 0" scale="6.000 6.000 6.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_sun_prominence" type="animation" model="mobius_sun_prominence.spm" xyz="0 0 0" hpr="-12 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+    <curve channel="RotZ" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="420.000 360.000"/>
+    </curve>
+  </object>
+  <light xyz="0 0 0" id="mobius_sun_light" distance="420.00" energy="8.00" color="255 226 150" type="point"/>
+  <object id="mobius_planet_mercury" type="animation" model="mobius_planet_mercury.spm" x="72.349" y="14.263" z="44.020" hpr="0 0 0" scale="2.000 2.000 2.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_venus" type="animation" model="mobius_planet_venus.spm" x="-24.804" y="2.536" z="62.020" hpr="0 0 0" scale="2.800 2.800 2.800" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_earth" type="animation" model="mobius_planet_earth.spm" x="-66.296" y="-7.931" z="-13.856" hpr="0 0 0" scale="3.000 3.000 3.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_mars" type="animation" model="mobius_planet_mars.spm" x="2.343" y="-14.534" z="-76.827" hpr="0 0 0" scale="2.500 2.500 2.500" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_jupiter" type="animation" model="mobius_planet_jupiter.spm" x="86.006" y="-21.415" z="-12.364" hpr="0 0 0" scale="9.000 9.000 9.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_saturn" type="animation" model="mobius_planet_saturn.spm" x="31.274" y="-14.074" z="95.085" hpr="0 0 0" scale="6.000 6.000 6.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_uranus" type="animation" model="mobius_planet_uranus.spm" x="-88.996" y="1.834" z="47.826" hpr="0 0 0" scale="6.000 6.000 6.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_neptune" type="animation" model="mobius_planet_neptune.spm" x="-59.580" y="14.072" z="-75.658" hpr="0 0 0" scale="6.000 6.000 6.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
+  <object id="mobius_planet_black_hole_halo" type="animation" model="mobius_black_hole_halo.spm" x="55.958" y="19.972" z="-62.527" hpr="0 0 0" scale="0.500 0.500 0.500" interaction="ghost" shadow-pass="false">
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="480.000 360.000"/>
+    </curve>
+  </object>
+  <object id="mobius_planet_black_hole_accretion" type="animation" model="mobius_black_hole_accretion.spm" x="55.958" y="19.972" z="-62.527" hpr="0 0 0" scale="0.500 0.500 0.500" interaction="ghost" shadow-pass="false">
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="120.000 360.000"/>
+    </curve>
+  </object>
+  <object id="mobius_planet_black_hole_inner_glow" type="animation" model="mobius_black_hole_inner_glow.spm" x="55.958" y="19.972" z="-62.527" hpr="0 0 0" scale="0.500 0.500 0.500" interaction="ghost" shadow-pass="false">
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="90.000 360.000"/>
+    </curve>
+  </object>
+  <object id="mobius_planet_black_hole_photon_ring" type="animation" model="mobius_black_hole_photon_ring.spm" x="55.958" y="19.972" z="-62.527" hpr="0 0 0" scale="0.500 0.500 0.500" interaction="ghost" shadow-pass="false">
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="60.000 360.000"/>
+    </curve>
+  </object>
+  <object id="mobius_planet_black_hole_core" type="animation" model="mobius_black_hole_core.spm" x="55.958" y="19.972" z="-62.527" hpr="0 0 0" scale="0.500 0.500 0.500" interaction="ghost" shadow-pass="false">
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="720.000 360.000"/>
+    </curve>
+  </object>
   <checks>
     <check-lap kind="lap" active="true" same-group="0" other-ids="1"/>
     <check-line kind="activate" same-group="1" other-ids="2" p1="-41.430 -4.886 67.575" p2="-44.290 4.886 72.239"/>
     <check-line kind="activate" same-group="2" other-ids="3" p1="-71.203 -5.390 -43.655" p2="-68.611 5.390 -42.066"/>
     <check-line kind="activate" same-group="3" other-ids="4" p1="45.414 -2.736 -74.073" p2="40.306 2.736 -65.741"/>
-    <check-line kind="activate" same-group="4" other-ids="5" p1="65.312 -1.521 40.043" p2="74.502 1.521 45.677"/>
-    <check-line kind="activate" same-group="5" other-ids="6" p1="-41.430 -4.886 67.575" p2="-44.290 4.886 72.239"/>
-    <check-line kind="activate" same-group="6" other-ids="7" p1="-71.203 -5.390 -43.655" p2="-68.611 5.390 -42.066"/>
-    <check-line kind="activate" same-group="7" other-ids="8" p1="45.414 -2.736 -74.073" p2="40.306 2.736 -65.741"/>
+    <check-line kind="activate" same-group="4" other-ids="5" p1="74.502 1.521 45.677" p2="65.312 -1.521 40.043"/>
+    <check-line kind="activate" same-group="5" other-ids="6" p1="-44.290 4.886 72.239" p2="-41.430 -4.886 67.575"/>
+    <check-line kind="activate" same-group="6" other-ids="7" p1="-68.611 5.390 -42.066" p2="-71.203 -5.390 -43.655"/>
+    <check-line kind="activate" same-group="7" other-ids="8" p1="40.306 2.736 -65.741" p2="45.414 -2.736 -74.073"/>
     <check-line kind="lap" active="false" same-group="8" other-ids="1" p1="65.312 -1.521 40.043" p2="74.502 1.521 45.677"/>
   </checks>
   <start position="0" x="70.154" y="-0.258" z="33.050" h="-25.21"/>

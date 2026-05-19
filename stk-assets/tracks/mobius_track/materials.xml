@@ -11,8 +11,15 @@
   <material name="mobius_seam_ramp_visual.png" ignore="Y"/>
   <material name="mobius_sun_core.png" shader="additive" ignore="Y"/>
   <material name="mobius_sun_corona.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_core.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_inner_glow.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_accretion.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_photon_ring.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_halo.png" shader="additive" ignore="Y"/>
   <material name="mobius_starfield.png" shader="additive" ignore="Y"/>
-  <material name="direction_marker.png" shader="additive" ignore="Y"/>
+  <material name="mobius_zipper.png" shader="alphablend" ignore="N">
+    <zipper duration="2.5" max-speed-increase="12.0" fade-out-time="2.0" speed-gain="5.0" min-speed="0.0"/>
+  </material>
   <material name="reset_surface.png" reset="Y" falling-effect="Y"/>
   <material name="mobius_planet_mercury.png" ignore="Y"/>
   <material name="mobius_planet_venus.png" ignore="Y"/>

@@ -13,6 +13,7 @@ import math
 import os
 import json
 import struct
+import zlib
 import time
 import urllib.parse
 import zipfile
@@ -37,12 +38,29 @@ SEAM_BRIDGE_SURFACE_OFFSET = 0.045
 SUN_RADIUS = 12.0
 SUN_CORONA_INNER_RADIUS = 14.2
 SUN_CORONA_OUTER_RADIUS = 18.5
+SUN_PROMINENCE_RADIUS = 23.5
+BLACK_HOLE_CORE_RADIUS = 8.0
+BLACK_HOLE_INNER_GLOW_RADIUS = 9.4
+BLACK_HOLE_PHOTON_RING_RADIUS = 10.5
+BLACK_HOLE_PHOTON_RING_WIDTH = 2.2
+BLACK_HOLE_ACCRETION_INNER_RADIUS = 11.5
+BLACK_HOLE_ACCRETION_OUTER_RADIUS = 22.0
+BLACK_HOLE_HALO_INNER_RADIUS = 23.0
+BLACK_HOLE_HALO_OUTER_RADIUS = 34.0
 STAR_SPHERE_RADIUS = 360.0
 SPHERE_U_SEGMENTS = 32
 SPHERE_V_SEGMENTS = 16
-SUN_U_SEGMENTS = 32
-SUN_V_SEGMENTS = 16
-SUN_CORONA_SEGMENTS = 96
+SUN_U_SEGMENTS = 48
+SUN_V_SEGMENTS = 24
+SUN_CORONA_SEGMENTS = 128
+BLACK_HOLE_DISK_SEGMENTS = 160
+BLACK_HOLE_DISK_RINGS = 8
+BLACK_HOLE_HALO_RINGS = 6
+BLACK_HOLE_BLENDERKIT_REFERENCE_ASSET_ID = "5dc596e9-158f-4191-8f33-8ca68768d330"
+ZIPPER_U_POSITIONS = (0.78, 1.45, 2.20, 2.92, 3.68, 4.42, 5.18, 5.86)
+ZIPPER_LENGTH = 7.2
+ZIPPER_WIDTH = 4.2
+ZIPPER_SURFACE_LIFT = 0.08
 START_U = 0.55
 START_GRID_ROWS = 4
 START_GRID_COLS = 3
@@ -66,12 +84,19 @@ PLANET_ZIP_OVERRIDES = {
     )),
 }
 
-PLANET_SPECS = (
+ORBIT_BODY_COUNT = 9
+
+
+def orbit_progress(index: int) -> float:
+    """Evenly space orbital bodies on progress in [0, 1)."""
+    return index / ORBIT_BODY_COUNT
+
+
+_PLANET_SPECS_BASE = (
     {
         "id": "mercury",
         "display": "Mercury",
         "zip_pattern": "Meshy_AI_The_planet_Mercury_P*",
-        "progress": 0.08,
         "scale": 2.0,
         "lift": 13.0,
     },
@@ -79,7 +104,6 @@ PLANET_SPECS = (
         "id": "venus",
         "display": "Venus",
         "zip_pattern": "Meshy_AI_planet_venus_stylised*",
-        "progress": 0.19,
         "scale": 2.8,
         "lift": 14.0,
     },
@@ -87,7 +111,6 @@ PLANET_SPECS = (
         "id": "earth",
         "display": "Earth",
         "zip_pattern": "Meshy_AI_Earth*",
-        "progress": 0.31,
         "scale": 3.0,
         "lift": 15.0,
     },
@@ -95,7 +118,6 @@ PLANET_SPECS = (
         "id": "mars",
         "display": "Mars",
         "zip_pattern": "Meshy_AI_mars__*",
-        "progress": 0.43,
         "scale": 2.5,
         "lift": 14.0,
     },
@@ -103,7 +125,6 @@ PLANET_SPECS = (
         "id": "jupiter",
         "display": "Jupiter",
         "zip_pattern": "Meshy_AI_Jupiter_s_Swirl*",
-        "progress": 0.57,
         "scale": 9.0,
         "lift": 21.0,
     },
@@ -111,7 +132,6 @@ PLANET_SPECS = (
         "id": "saturn",
         "display": "Saturn",
         "zip_pattern": "Meshy_AI_Saturn_with_Rings*",
-        "progress": 0.69,
         "scale": 6.0,
         "lift": 22.0,
     },
@@ -119,7 +139,6 @@ PLANET_SPECS = (
         "id": "uranus",
         "display": "Uranus",
         "zip_pattern": "Meshy_AI_Uranus_in_Blue_Silenc*",
-        "progress": 0.81,
         "scale": 6.0,
         "lift": 18.0,
     },
@@ -127,11 +146,21 @@ PLANET_SPECS = (
         "id": "neptune",
         "display": "Neptune",
         "zip_pattern": "Meshy_AI_planet_neptune_stylised*",
-        "progress": 0.93,
         "scale": 6.0,
         "lift": 19.0,
     },
 )
+PLANET_SPECS = tuple(
+    {**spec, "progress": orbit_progress(index)}
+    for index, spec in enumerate(_PLANET_SPECS_BASE)
+)
+BLACK_HOLE_SPEC = {
+    "id": "black_hole",
+    "display": "Black Hole",
+    "progress": orbit_progress(8),
+    "scale": 0.5,
+    "lift": 19.0,
+}
 
 
 def vadd(a, b):
@@ -462,9 +491,11 @@ def make_sun_core_mesh():
                 math.cos(theta),
                 math.sin(theta) * math.sin(phi),
             )
-            granule = 0.34 * math.sin(phi * 9.0 + theta * 5.0)
-            granule += 0.22 * math.sin(phi * 17.0 - theta * 11.0)
-            flare = 0.18 * math.sin(phi * 4.0 + theta * 19.0)
+            granule = 0.48 * math.sin(phi * 9.0 + theta * 5.0)
+            granule += 0.34 * math.sin(phi * 17.0 - theta * 11.0)
+            granule += 0.16 * math.sin(phi * 31.0 + theta * 23.0)
+            flare = 0.32 * math.sin(phi * 4.0 + theta * 19.0)
+            flare += 0.18 * math.sin(phi * 7.0 - theta * 29.0)
             radius = SUN_RADIUS + granule + flare
             verts.append(vmul(base, radius))
             normals.append(vnorm(base))
@@ -522,6 +553,153 @@ def make_sun_corona_mesh(name, radius, texture, tilt=0.0, phase=0.0):
             indices.extend((a0, a1, a1 + 1, a0, a1 + 1, a0 + 1))
             indices.extend((a1 + 1, a1, a0, a0 + 1, a1 + 1, a0))
     return mesh_dict(name, texture, verts, normals, uvs, indices)
+
+
+def make_black_hole_core_mesh():
+    return make_uv_sphere_mesh(
+        "Mobius_Black_Hole_Core", "mobius_black_hole_core.png",
+        BLACK_HOLE_CORE_RADIUS, 48, 24, False, False)
+
+
+def make_black_hole_ring_mesh(name, inner_radius, outer_radius, texture,
+                              tilt=0.0, phase=0.0, double_sided=True,
+                              ring_count=BLACK_HOLE_DISK_RINGS, wobble=0.22):
+    verts = []
+    normals = []
+    uvs = []
+    indices = []
+    tilt_sin = math.sin(tilt)
+    tilt_cos = math.cos(tilt)
+    for ring in range(ring_count + 1):
+        blend = ring / ring_count
+        radius = inner_radius + (outer_radius - inner_radius) * blend
+        for i in range(BLACK_HOLE_DISK_SEGMENTS + 1):
+            t = i / BLACK_HOLE_DISK_SEGMENTS
+            a = 2.0 * math.pi * t
+            ripple = 1.0 + wobble * 0.12 * math.sin(a * 7.0 + phase + blend * 4.1)
+            ripple += wobble * 0.06 * math.sin(a * 13.0 - blend * 2.3 + phase * 1.7)
+            local_radius = radius * ripple
+            y = wobble * math.sin(a * 4.0 + phase) * (1.0 - blend * 0.42)
+            p = (
+                local_radius * math.cos(a),
+                y,
+                local_radius * math.sin(a),
+            )
+            tilted = (
+                p[0],
+                p[1] * tilt_cos - p[2] * tilt_sin,
+                p[1] * tilt_sin + p[2] * tilt_cos,
+            )
+            verts.append(tilted)
+            normals.append((0.0, tilt_cos, tilt_sin))
+            uvs.append((t * 3.0, blend))
+    row = BLACK_HOLE_DISK_SEGMENTS + 1
+    for ring in range(ring_count):
+        for i in range(BLACK_HOLE_DISK_SEGMENTS):
+            a = ring * row + i
+            b = a + 1
+            c = (ring + 1) * row + i + 1
+            d = (ring + 1) * row + i
+            indices.extend((a, b, c, a, c, d))
+            if double_sided:
+                indices.extend((c, b, a, d, c, a))
+    return mesh_dict(name, texture, verts, normals, uvs, indices)
+
+
+def make_black_hole_inner_glow_mesh():
+    return make_black_hole_ring_mesh(
+        "Mobius_Black_Hole_Inner_Glow",
+        BLACK_HOLE_INNER_GLOW_RADIUS,
+        BLACK_HOLE_INNER_GLOW_RADIUS + 1.6,
+        "mobius_black_hole_inner_glow.png",
+        0.0,
+        1.2,
+        wobble=0.08,
+    )
+
+
+def make_black_hole_accretion_mesh():
+    return make_black_hole_ring_mesh(
+        "Mobius_Black_Hole_Accretion",
+        BLACK_HOLE_ACCRETION_INNER_RADIUS,
+        BLACK_HOLE_ACCRETION_OUTER_RADIUS,
+        "mobius_black_hole_accretion.png",
+        0.0,
+        0.4,
+        wobble=0.28,
+    )
+
+
+def make_black_hole_photon_ring_mesh():
+    return make_black_hole_ring_mesh(
+        "Mobius_Black_Hole_Photon_Ring",
+        BLACK_HOLE_PHOTON_RING_RADIUS,
+        BLACK_HOLE_PHOTON_RING_RADIUS + BLACK_HOLE_PHOTON_RING_WIDTH,
+        "mobius_black_hole_photon_ring.png",
+        0.0,
+        2.1,
+        wobble=0.04,
+    )
+
+
+def make_black_hole_halo_mesh():
+    return make_black_hole_ring_mesh(
+        "Mobius_Black_Hole_Halo",
+        BLACK_HOLE_HALO_INNER_RADIUS,
+        BLACK_HOLE_HALO_OUTER_RADIUS,
+        "mobius_black_hole_halo.png",
+        0.0,
+        0.9,
+        wobble=0.14,
+        ring_count=BLACK_HOLE_HALO_RINGS,
+    )
+
+
+def make_zipper_mesh():
+    verts = []
+    normals = []
+    uvs = []
+    indices = []
+    half_length_u = (ZIPPER_LENGTH * 0.5) / RADIUS
+    half_width = ZIPPER_WIDTH * 0.5
+    u_subdivisions = 6
+    v_subdivisions = 4
+
+    def append_zipper_patch(u_center):
+        # Add pads to BOTH sides of the surface so they work on both Mobius passes.
+        # This is critical for a Mobius strip where you drive on both 'sides'.
+        for lift_sign in (-1.0, 1.0):
+            base = len(verts)
+            for i in range(u_subdivisions + 1):
+                s = i / u_subdivisions
+                u = u_center - half_length_u + 2.0 * half_length_u * s
+                for j in range(v_subdivisions + 1):
+                    t = j / v_subdivisions
+                    lateral = -half_width + 2.0 * half_width * t
+                    n = mobius_normal(u, lateral)
+                    # The zipper's effective surface normal points away from the track
+                    surface_normal = vmul(n, lift_sign)
+                    verts.append(vadd(mobius_point(u, lateral), vmul(n, ZIPPER_SURFACE_LIFT * lift_sign)))     
+                    normals.append(surface_normal)
+                    uv_t = t if lift_sign > 0 else 1.0 - t
+                    uvs.append((s, uv_t))
+            row = v_subdivisions + 1
+            for i in range(u_subdivisions):
+                for j in range(v_subdivisions):
+                    a = base + i * row + j
+                    b = base + (i + 1) * row + j
+                    c = base + (i + 1) * row + j + 1
+                    d = base + i * row + j + 1
+                    # Correct winding depends on which side we are on
+                    if lift_sign > 0:
+                        indices.extend((a, b, c, a, c, d))
+                    else:
+                        indices.extend((a, c, b, a, d, c))
+    for u_center in ZIPPER_U_POSITIONS:
+        append_zipper_patch(u_center)
+    for u_center in ZIPPER_U_POSITIONS:
+        append_zipper_patch((u_center + math.pi) % (2.0 * math.pi))
+    return mesh_dict("Mobius_Zippers", "mobius_zipper.png", verts, normals, uvs, indices)
 
 
 def make_mobius_patch_mesh(name, texture, half_width, u_center, u_span,
@@ -687,32 +865,6 @@ def make_star_sphere_mesh():
         STAR_SPHERE_RADIUS, SPHERE_U_SEGMENTS, SPHERE_V_SEGMENTS, True, False)
 
 
-def make_direction_markers():
-    verts = []
-    normals = []
-    uvs = []
-    indices = []
-    marker_count = 18
-    for m in range(marker_count):
-        u = 0.33 + (2.0 * math.pi - 0.70) * m / marker_count
-        p = mobius_point(u, 0.0)
-        n = mobius_normal(u, 0.0)
-        t = tangent_at(u)
-        side = vnorm(mobius_dv(u), (1.0, 0.0, 0.0))
-        center = vadd(p, vmul(n, 0.10))
-        tip = vadd(center, vmul(t, 2.55))
-        left = vadd(vadd(center, vmul(t, -1.25)), vmul(side, -1.45))
-        right = vadd(vadd(center, vmul(t, -1.25)), vmul(side, 1.45))
-        stem_left = vadd(vadd(center, vmul(t, -2.35)), vmul(side, -0.48))
-        stem_right = vadd(vadd(center, vmul(t, -2.35)), vmul(side, 0.48))
-        base = len(verts)
-        verts.extend((tip, left, right, stem_left, stem_right))
-        normals.extend((n, n, n, n, n))
-        uvs.extend(((0.5, 1.0), (0.0, 0.35), (1.0, 0.35), (0.32, 0.0), (0.68, 0.0)))
-        indices.extend((base, base + 1, base + 2, base + 1, base + 3, base + 4, base + 1, base + 4, base + 2))
-    return mesh_dict("Direction_Markers", "direction_marker.png", verts, normals, uvs, indices)
-
-
 def make_reset_surface():
     half = 150.0
     y = -62.0
@@ -807,7 +959,43 @@ def add_blender_object(mesh, material, color):
     return obj
 
 
+def write_texture_png_file(path, width, height, pixel_fn):
+    def png_chunk(tag, data):
+        chunk = tag + data
+        return (
+            struct.pack(">I", len(data))
+            + chunk
+            + struct.pack(">I", zlib.crc32(chunk) & 0xFFFFFFFF)
+        )
+
+    rows = []
+    for y in range(height):
+        v = y / max(height - 1, 1)
+        row = bytearray([0])
+        for x in range(width):
+            u = x / max(width - 1, 1)
+            r, g, b, a = pixel_fn(u, v)
+            row.extend((
+                int(max(0, min(255, r * 255))),
+                int(max(0, min(255, g * 255))),
+                int(max(0, min(255, b * 255))),
+                int(max(0, min(255, a * 255))),
+            ))
+        rows.append(bytes(row))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    png = bytearray(b"\x89PNG\r\n\x1a\n")
+    png.extend(png_chunk(b"IHDR", ihdr))
+    png.extend(png_chunk(b"IDAT", zlib.compress(b"".join(rows), 9)))
+    png.extend(png_chunk(b"IEND", b""))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(png)
+
+
 def write_texture(path, width, height, pixel_fn, file_format="PNG"):
+    if file_format == "PNG":
+        write_texture_png_file(path, width, height, pixel_fn)
+        return
     img = bpy.data.images.new(path.stem, width=width, height=height, alpha=True)
     pixels = []
     for y in range(height):
@@ -1520,6 +1708,28 @@ def import_local_planets(track_dir):
     return planet_meshes
 
 
+def record_blenderkit_black_hole_reference(track_dir):
+    try:
+        addon_name = "bl_ext.user_default.blenderkit"
+        if addon_name not in bpy.context.preferences.addons:
+            raise RuntimeError(
+                "BlenderKit add-on is not enabled; procedural black hole reference metadata only."
+            )
+        preferences = bpy.context.preferences.addons[addon_name].preferences
+        api_key = os.environ.get("BLENDERKIT_API_KEY") or getattr(preferences, "api_key", "")
+        if not api_key:
+            raise RuntimeError(
+                "BlenderKit API key is not configured; procedural black hole reference metadata only."
+            )
+        modules = blenderkit_modules()
+        asset_data = fetch_blenderkit_asset_data(
+            BLACK_HOLE_BLENDERKIT_REFERENCE_ASSET_ID, api_key, modules)
+        name = asset_data.get("displayName") or asset_data.get("name") or BLACK_HOLE_BLENDERKIT_REFERENCE_ASSET_ID
+        print(f"BlenderKit black hole reference available: {name}")
+    except Exception as exc:
+        print(f"Warning: BlenderKit black hole reference unavailable: {exc}")
+
+
 def create_textures(track_dir):
     def hash01(a, b, seed=0):
         value = math.sin(a * 127.1 + b * 311.7 + seed * 74.7) * 43758.5453
@@ -1565,18 +1775,105 @@ def create_textures(track_dir):
         return (0.20, 0.02, 0.18, 0.35)
 
     def sun_core(u, v):
-        granules = 0.18 * math.sin(u * 95.0 + math.sin(v * 31.0) * 4.0)
-        granules += 0.12 * math.sin((u + v) * 177.0)
+        granules = 0.28 * math.sin(u * 95.0 + math.sin(v * 31.0) * 4.0)
+        granules += 0.18 * math.sin((u + v) * 177.0)
+        granules += 0.10 * math.sin(u * 211.0 - v * 89.0)
         limb = 1.0 - abs(v - 0.5) * 0.8
-        heat = max(0.0, min(1.0, 0.78 + granules))
-        return (1.0, 0.45 + 0.30 * heat, 0.08 + 0.12 * limb, 1.0)
+        flare = 0.10 * math.sin(u * 13.0) * math.sin(v * math.pi)
+        heat = max(0.0, min(1.0, 0.88 + granules + flare))
+        return (1.0, 0.54 + 0.34 * heat, 0.10 + 0.18 * limb, 1.0)
 
     def sun_corona(u, v):
         strand = 0.45 + 0.35 * math.sin(u * 47.0 + v * 9.0)
         strand += 0.20 * math.sin(u * 113.0)
+        strand += 0.12 * math.sin((u - v) * 181.0)
         edge = math.sin(math.pi * max(0.0, min(1.0, v)))
-        alpha = max(0.0, min(0.72, edge * (0.22 + 0.24 * strand)))
-        return (1.0, 0.58 + 0.20 * strand, 0.16, alpha)
+        alpha = max(0.0, min(0.92, edge * (0.34 + 0.34 * strand)))
+        return (1.0, 0.64 + 0.24 * strand, 0.18, alpha)
+
+    def black_hole_core(u, v):
+        band = abs(v - 0.5) * 2.0
+        equator = max(0.0, 1.0 - band * 1.05)
+        swirl = 0.5 + 0.5 * math.sin(u * 31.0 + math.sin(v * 14.0) * 4.5)
+        hotspot = math.exp(-((band - 0.44) ** 2) / 0.010) * swirl
+        horizon = math.exp(-((band - 0.06) ** 2) / 0.0025)
+        chroma = 0.5 + 0.5 * math.sin(u * math.pi * 4.0)
+        warm_r = hotspot * 1.0
+        warm_g = hotspot * (0.48 + 0.18 * chroma)
+        warm_b = hotspot * (0.08 + 0.12 * (1.0 - chroma))
+        cool_r = horizon * (0.22 + 0.25 * chroma)
+        cool_g = horizon * 0.58
+        cool_b = horizon * 1.0
+        alpha = max(0.0, min(1.0, hotspot * 0.94 + horizon * 0.88))
+        return (
+            min(1.0, warm_r + cool_r + 0.015),
+            min(1.0, warm_g + cool_g + 0.01),
+            min(1.0, warm_b + cool_b + 0.02),
+            alpha,
+        )
+
+    def black_hole_inner_glow(u, v):
+        ring = math.sin(math.pi * max(0.0, min(1.0, v))) ** 1.4
+        pulse = 0.62 + 0.38 * math.sin(u * 113.0 + v * 21.0)
+        flicker = 0.85 + 0.15 * math.sin(u * 241.0)
+        alpha = max(0.0, min(0.98, ring * pulse * flicker))
+        return (1.0, 0.82 + 0.12 * pulse, 0.42 + 0.35 * flicker, alpha)
+
+    def black_hole_accretion(u, v):
+        spiral = math.sin(u * 34.0 - v * 16.0 + math.sin(u * 73.0) * 2.4)
+        arm = 0.5 + 0.5 * spiral
+        turbulence = 0.5 + 0.5 * math.sin(u * 127.0 + v * 33.0)
+        inner = (1.0 - max(0.0, min(1.0, v))) ** 1.35
+        edge = math.sin(math.pi * max(0.0, min(1.0, v))) ** 0.75
+        doppler = 0.5 + 0.5 * math.sin(u * math.pi * 4.0)
+        heat = max(0.0, min(1.0, inner * 1.15 + arm * 0.62 + turbulence * 0.18))
+        return (
+            1.0,
+            0.18 + 0.62 * heat * (0.65 + 0.35 * doppler),
+            0.04 + 0.48 * heat * (1.05 - doppler * 0.55),
+            max(0.0, min(0.94, edge * (0.52 + 0.48 * heat) * (0.75 + 0.25 * arm))),
+        )
+
+    def black_hole_photon_ring(u, v):
+        band = math.sin(math.pi * max(0.0, min(1.0, v))) ** 2.2
+        pulse = 0.68 + 0.32 * math.sin(u * 97.0)
+        shimmer = 0.9 + 0.1 * math.sin(u * 211.0 - v * 40.0)
+        alpha = max(0.0, min(0.99, band * pulse * shimmer))
+        return (
+            0.75 + 0.25 * pulse,
+            0.88 + 0.12 * shimmer,
+            1.0,
+            alpha,
+        )
+
+    def black_hole_halo(u, v):
+        radial = max(0.0, min(1.0, v))
+        falloff = (1.0 - radial) ** 1.8
+        veil = 0.45 + 0.55 * math.sin(u * 19.0 + radial * 8.0)
+        lens = 0.5 + 0.5 * math.sin(u * 47.0 - radial * 12.0)
+        alpha = max(0.0, min(0.55, falloff * veil * (0.35 + 0.25 * lens)))
+        return (
+            0.35 + 0.45 * lens,
+            0.22 + 0.38 * veil,
+            0.72 + 0.28 * lens,
+            alpha,
+        )
+
+    def zipper(u, v):
+        edge = 0.42 if v < 0.14 or v > 0.86 else 0.0
+        stripe = 0.22 if int(u * 10.0) % 2 == 0 else 0.0
+        arrow_center = abs(v - 0.5)
+        arrow_tip = max(0.0, 1.0 - abs(u - 0.76) / 0.20)
+        arrow_tail = 1.0 if 0.18 < u < 0.58 and arrow_center < 0.18 else 0.0
+        arrow_wing = max(0.0, 1.0 - abs(arrow_center - (0.78 - u) * 0.58) / 0.08) if 0.58 <= u <= 0.92 else 0.0
+        arrow = max(arrow_tail, min(1.0, arrow_tip * arrow_wing))
+        glow = max(edge, arrow)
+        return (
+            0.02 + 0.12 * stripe + 0.92 * glow,
+            0.20 + 0.52 * stripe + 0.82 * glow,
+            0.36 + 0.28 * stripe + 0.12 * arrow,
+            1.0,
+        )
 
     def starfield(u, v):
         milky_way = math.exp(-((v - 0.53 - 0.07 * math.sin(u * math.pi * 2.0)) ** 2) / 0.0025)
@@ -1667,10 +1964,15 @@ def create_textures(track_dir):
     write_texture(track_dir / "mobius_start_gate.png", 64, 32, gate)
     write_texture(track_dir / "mobius_seam_ramp.png", 64, 32, ramp)
     write_texture(track_dir / "mobius_seam_ramp_visual.png", 64, 32, ramp)
-    write_texture(track_dir / "mobius_sun_core.png", 256, 128, sun_core)
-    write_texture(track_dir / "mobius_sun_corona.png", 128, 32, sun_corona)
+    write_texture(track_dir / "mobius_sun_core.png", 512, 256, sun_core)
+    write_texture(track_dir / "mobius_sun_corona.png", 256, 64, sun_corona)
+    write_texture(track_dir / "mobius_black_hole_core.png", 256, 256, black_hole_core)
+    write_texture(track_dir / "mobius_black_hole_inner_glow.png", 256, 64, black_hole_inner_glow)
+    write_texture(track_dir / "mobius_black_hole_accretion.png", 512, 128, black_hole_accretion)
+    write_texture(track_dir / "mobius_black_hole_photon_ring.png", 256, 64, black_hole_photon_ring)
+    write_texture(track_dir / "mobius_black_hole_halo.png", 256, 128, black_hole_halo)
     write_texture(track_dir / "mobius_starfield.png", 512, 256, starfield)
-    write_texture(track_dir / "direction_marker.png", 64, 64, arrow)
+    write_texture(track_dir / "mobius_zipper.png", 128, 64, zipper)
     write_texture(track_dir / "reset_surface.png", 8, 8, reset)
     write_texture(track_dir / "mobius_minimap.png", 512, 512, minimap)
     write_texture(track_dir / "screenshot.jpg", 512, 256, screenshot, file_format="JPEG")
@@ -1683,7 +1985,7 @@ def write_track_xml(track_dir):
 <track  name           = "Mobius Track"
         version        = "7"
         groups         = "minkowski"
-        designer       = "A Mobius trip through the solar system"
+        designer       = "Robson Christie"
         screenshot     = "screenshot.jpg"
         music          = "highway_gravel.music"
         smooth-normals = "true"
@@ -1717,8 +2019,15 @@ def write_materials_xml(track_dir):
   <material name="mobius_seam_ramp_visual.png" ignore="Y"/>
   <material name="mobius_sun_core.png" shader="additive" ignore="Y"/>
   <material name="mobius_sun_corona.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_core.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_inner_glow.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_accretion.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_photon_ring.png" shader="additive" ignore="Y"/>
+  <material name="mobius_black_hole_halo.png" shader="additive" ignore="Y"/>
   <material name="mobius_starfield.png" shader="additive" ignore="Y"/>
-  <material name="direction_marker.png" shader="additive" ignore="Y"/>
+  <material name="mobius_zipper.png" shader="alphablend" ignore="N">
+    <zipper duration="2.5" max-speed-increase="12.0" fade-out-time="2.0" speed-gain="5.0" min-speed="0.0"/>
+  </material>
   <material name="reset_surface.png" reset="Y" falling-effect="Y"/>
 {planet_materials}
 </materials>
@@ -1743,9 +2052,9 @@ def write_quads_xml(track_dir):
         '<?xml version="1.0"?>',
         '<quads>',
         '  <height-testing min="-24.000000" max="24.000000"/>',
-        '  <!-- Driveline: one-tour Mobius sprint loop -->',
+        '  <!-- Driveline: two-tour Mobius sprint loop -->',
     ]
-    for i in range(COLLISION_U_SEGMENTS):
+    for i in range(COLLISION_U_SEGMENTS * 2):
         p0, p1, p2, p3 = quad_points(i)
         lines.append(
             f'  <quad p0="{fmt_vec(p0)}" p1="{fmt_vec(p1)}" '
@@ -1759,8 +2068,8 @@ def write_graph_xml(track_dir):
     (track_dir / "graph.xml").write_text(
         f"""<?xml version="1.0"?>
 <graph>
-  <node-list from-quad="0" to-quad="{COLLISION_U_SEGMENTS - 1}"/>
-  <edge-loop from="0" to="{COLLISION_U_SEGMENTS - 1}"/>
+  <node-list from-quad="0" to-quad="{COLLISION_U_SEGMENTS * 2 - 1}"/>
+  <edge-loop from="0" to="{COLLISION_U_SEGMENTS * 2 - 1}"/>
 </graph>
 """,
         encoding="utf-8",
@@ -1815,16 +2124,21 @@ def start_grid_self_check():
 
 
 def write_scene_xml(track_dir):
-    finish_a, finish_b = check_line_at(START_U)
-    q1a, q1b = check_line_at((START_U + math.pi * 0.50) % (math.pi * 2.0))
-    q2a, q2b = check_line_at((START_U + math.pi) % (math.pi * 2.0))
-    q3a, q3b = check_line_at((START_U + math.pi * 1.50) % (math.pi * 2.0))
+    finish_1a, finish_1b = check_line_at(START_U)
+    q1_1a, q1_1b = check_line_at((START_U + math.pi * 0.50))
+    q2_1a, q2_1b = check_line_at((START_U + math.pi * 1.0))
+    q3_1a, q3_1b = check_line_at((START_U + math.pi * 1.50))
+
+    finish_2a, finish_2b = check_line_at((START_U + math.pi * 2.0))
+    q1_2a, q1_2b = check_line_at((START_U + math.pi * 2.50))
+    q2_2a, q2_2b = check_line_at((START_U + math.pi * 3.0))
+    q3_2a, q3_2b = check_line_at((START_U + math.pi * 3.50))
     lines = [
         '<?xml version="1.0"?>',
         '<scene>',
-        '  <sky-color rgb="3 5 10"/>',
+        '  <sky-color rgb="0 0 0"/>',
         '  <camera far="900"/>',
-        '  <sun xyz="0 0 0" sun-diffuse="255 230 170" sun-specular="255 236 190" ambient="36 38 52" fog="false"/>',
+        '  <sun xyz="0 0 0" sun-diffuse="255 246 210" sun-specular="255 250 225" ambient="44 40 36" fog="false"/>',
         '  <track model="mobius_visual.spm" x="0" y="0" z="0">',
         '    <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
         '    <static-object model="mobius_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
@@ -1839,7 +2153,7 @@ def write_scene_xml(track_dir):
         '    <static-object model="mobius_start_gate.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false"/>',
     ]
     lines.extend([
-        '    <static-object model="direction_markers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
+        '    <static-object model="mobius_zippers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="static" shape="exact" driveable="true" shadow-pass="false"/>',
         '  </track>',
         '  <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">',
         '    <curve channel="RotY" interpolation="linear" extend="cyclic">',
@@ -1859,7 +2173,13 @@ def write_scene_xml(track_dir):
         '      <p c="525.000 -360.000"/>',
         '    </curve>',
         '  </object>',
-        '  <light xyz="0 0 0" id="mobius_sun_light" distance="320.00" energy="4.00" color="255 210 135" type="point"/>',
+        '  <object id="mobius_sun_prominence" type="animation" model="mobius_sun_prominence.spm" xyz="0 0 0" hpr="-12 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">',
+        '    <curve channel="RotZ" interpolation="linear" extend="cyclic">',
+        '      <p c="1.000 0.000"/>',
+        '      <p c="420.000 360.000"/>',
+        '    </curve>',
+        '  </object>',
+        '  <light xyz="0 0 0" id="mobius_sun_light" distance="420.00" energy="8.00" color="255 226 150" type="point"/>',
     ])
     for spec in PLANET_SPECS:
         p = planet_scene_position(spec)
@@ -1869,17 +2189,38 @@ def write_scene_xml(track_dir):
             f'hpr="0 0 0" scale="{scale:.3f} {scale:.3f} {scale:.3f}" '
             f'interaction="ghost" shadow-pass="false" skeletal-animation="false"/>'
         )
+    black_hole_position = planet_scene_position(BLACK_HOLE_SPEC)
+    black_hole_scale = BLACK_HOLE_SPEC["scale"]
+    black_hole_xyz = fmt_xyz_attrs(black_hole_position)
+    black_hole_scale_attr = f'{black_hole_scale:.3f} {black_hole_scale:.3f} {black_hole_scale:.3f}'
+    black_hole_layers = (
+        ("mobius_planet_black_hole_halo", "mobius_black_hole_halo.spm", "0 0 0", "RotY", 480.0, 360.0),
+        ("mobius_planet_black_hole_accretion", "mobius_black_hole_accretion.spm", "0 0 0", "RotY", 120.0, 360.0),
+        ("mobius_planet_black_hole_inner_glow", "mobius_black_hole_inner_glow.spm", "0 0 0", "RotY", 90.0, 360.0),
+        ("mobius_planet_black_hole_photon_ring", "mobius_black_hole_photon_ring.spm", "0 0 0", "RotY", 60.0, 360.0),
+        ("mobius_planet_black_hole_core", "mobius_black_hole_core.spm", "0 0 0", "RotY", 720.0, 360.0),
+    )
+    for obj_id, model, hpr, channel, period, angle in black_hole_layers:
+        lines.extend([
+            f'  <object id="{obj_id}" type="animation" model="{model}" {black_hole_xyz} '
+            f'hpr="{hpr}" scale="{black_hole_scale_attr}" interaction="ghost" shadow-pass="false">',
+            f'    <curve channel="{channel}" interpolation="linear" extend="cyclic">',
+            '      <p c="1.000 0.000"/>',
+            f'      <p c="{period:.3f} {angle:.3f}"/>',
+            '    </curve>',
+            '  </object>',
+        ])
     lines.extend([
         '  <checks>',
         '    <check-lap kind="lap" active="true" same-group="0" other-ids="1"/>',
-        f'    <check-line kind="activate" same-group="1" other-ids="2" p1="{fmt_vec(q1a)}" p2="{fmt_vec(q1b)}"/>',
-        f'    <check-line kind="activate" same-group="2" other-ids="3" p1="{fmt_vec(q2a)}" p2="{fmt_vec(q2b)}"/>',
-        f'    <check-line kind="activate" same-group="3" other-ids="4" p1="{fmt_vec(q3a)}" p2="{fmt_vec(q3b)}"/>',
-        f'    <check-line kind="activate" same-group="4" other-ids="5" p1="{fmt_vec(finish_a)}" p2="{fmt_vec(finish_b)}"/>',
-        f'    <check-line kind="activate" same-group="5" other-ids="6" p1="{fmt_vec(q1a)}" p2="{fmt_vec(q1b)}"/>',
-        f'    <check-line kind="activate" same-group="6" other-ids="7" p1="{fmt_vec(q2a)}" p2="{fmt_vec(q2b)}"/>',
-        f'    <check-line kind="activate" same-group="7" other-ids="8" p1="{fmt_vec(q3a)}" p2="{fmt_vec(q3b)}"/>',
-        f'    <check-line kind="lap" active="false" same-group="8" other-ids="1" p1="{fmt_vec(finish_a)}" p2="{fmt_vec(finish_b)}"/>',
+        f'    <check-line kind="activate" same-group="1" other-ids="2" p1="{fmt_vec(q1_1a)}" p2="{fmt_vec(q1_1b)}"/>',
+        f'    <check-line kind="activate" same-group="2" other-ids="3" p1="{fmt_vec(q2_1a)}" p2="{fmt_vec(q2_1b)}"/>',
+        f'    <check-line kind="activate" same-group="3" other-ids="4" p1="{fmt_vec(q3_1a)}" p2="{fmt_vec(q3_1b)}"/>',
+        f'    <check-line kind="activate" same-group="4" other-ids="5" p1="{fmt_vec(finish_2a)}" p2="{fmt_vec(finish_2b)}"/>',
+        f'    <check-line kind="activate" same-group="5" other-ids="6" p1="{fmt_vec(q1_2a)}" p2="{fmt_vec(q1_2b)}"/>',
+        f'    <check-line kind="activate" same-group="6" other-ids="7" p1="{fmt_vec(q2_2a)}" p2="{fmt_vec(q2_2b)}"/>',
+        f'    <check-line kind="activate" same-group="7" other-ids="8" p1="{fmt_vec(q3_2a)}" p2="{fmt_vec(q3_2b)}"/>',
+        f'    <check-line kind="lap" active="false" same-group="8" other-ids="1" p1="{fmt_vec(finish_1a)}" p2="{fmt_vec(finish_1b)}"/>',
         '  </checks>',
     ])
     for idx, p, heading in generated_start_positions():
@@ -1914,7 +2255,7 @@ def write_license(track_dir):
     (track_dir / "LICENSE.txt").write_text(
         "Mobius Track procedural prototype generated by BlenderConversionScripts/generate_mobius_track.py.\n"
         "Geometry, textures, and metadata are deterministic project-local generated assets.\n"
-        "Sun core, coronas, and textures are procedural project-local generated assets.\n"
+        "Sun, black hole, accretion disk, and textures are procedural project-local generated assets.\n"
         "Planet landmark meshes/textures are imported from local source archives; see mobius_local_planets_manifest.json.\n",
         encoding="utf-8",
     )
@@ -1940,9 +2281,11 @@ def create_blender_scene(meshes, track_dir):
         "guardrail": make_blender_material("Guardrail panel material", (0.38, 0.62, 0.72, 1.0)),
         "sun": make_blender_material("Procedural 3D Sun material", (1.0, 0.58, 0.14, 1.0), True),
         "corona": make_blender_material("Animated Sun Corona material", (1.0, 0.48, 0.12, 0.48), True),
+        "black_hole": make_blender_material("Procedural black hole core material", (0.0, 0.0, 0.0, 1.0)),
+        "accretion": make_blender_material("Animated black hole accretion material", (1.0, 0.42, 0.08, 0.78), True),
         "stars": make_blender_material("Relativistic star sphere material", (0.55, 0.70, 1.0, 1.0)),
         "planet": make_blender_material("BlenderKit planet landmark material", (0.58, 0.62, 0.68, 1.0)),
-        "marker": make_blender_material("Direction marker material", (0.9, 1.0, 0.22, 0.9), True),
+        "zipper": make_blender_material("Ground zipper boost material", (1.0, 0.86, 0.18, 1.0), True),
         "reset": make_blender_material("Reset fall surface material", (0.3, 0.02, 0.18, 0.25), True),
     }
     for mesh in meshes:
@@ -1954,14 +2297,18 @@ def create_blender_scene(meshes, track_dir):
             material = materials["guardrail"]
         elif mesh["name"] == "Mobius_Sun_Core":
             material = materials["sun"]
-        elif mesh["name"].startswith("Mobius_Sun_Corona"):
+        elif mesh["name"].startswith("Mobius_Sun_Corona") or mesh["name"] == "Mobius_Sun_Prominence":
             material = materials["corona"]
+        elif mesh["name"] == "Mobius_Black_Hole_Core":
+            material = materials["black_hole"]
+        elif mesh["name"].startswith("Mobius_Black_Hole_"):
+            material = materials["accretion"]
         elif mesh["name"] == "Mobius_Relativistic_Star_Sphere":
             material = materials["stars"]
         elif mesh["name"].startswith("Mobius_Planet_"):
             material = materials["planet"]
-        elif mesh["name"] == "Direction_Markers":
-            material = materials["marker"]
+        elif mesh["name"] == "Mobius_Zippers":
+            material = materials["zipper"]
         elif mesh["name"] == "Reset_Fall_Surface":
             material = materials["reset"]
         else:
@@ -1976,7 +2323,7 @@ def create_blender_scene(meshes, track_dir):
     bpy.context.collection.objects.link(light_obj)
 
     sun_data = bpy.data.lights.new("Track_Sun_Key", "SUN")
-    sun_data.energy = 1.8
+    sun_data.energy = 3.2
     sun_obj = bpy.data.objects.new("Track_Sun_Key", sun_data)
     sun_obj.rotation_euler = (math.radians(55.0), 0.0, math.radians(-38.0))
     bpy.context.collection.objects.link(sun_obj)
@@ -1991,7 +2338,7 @@ def create_blender_scene(meshes, track_dir):
 
     engines = {item.identifier for item in bpy.context.scene.render.bl_rna.properties["engine"].enum_items}
     bpy.context.scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in engines else "BLENDER_EEVEE"
-    bpy.context.scene.world.color = (0.006, 0.009, 0.018)
+    bpy.context.scene.world.color = (0.0, 0.0, 0.0)
     old_save_version = bpy.context.preferences.filepaths.save_version
     try:
         bpy.context.preferences.filepaths.save_version = 0
@@ -2056,11 +2403,20 @@ def remove_stale_generated_assets(track_dir):
         "mobius_start_gate*.spm",
         "mobius_start_gate.png",
         "mobius_minimap.png",
+        "direction_marker.png",
+        "direction_markers.spm",
         "mobius_sun*.spm",
         "mobius_sun_corona.png",
         "mobius_sun_core.png",
+        "mobius_black_hole*.spm",
+        "mobius_black_hole*.png",
+        "mobius_zipper.png",
+        "mobius_zippers.spm",
+        "zipper.png",
+        "zipper-effect.png",
         "mobius_blenderkit_realistic_sun*.spm",
         "mobius_blenderkit_realistic_sun.png",
+        "mobius_blenderkit_sun_reference.json",
         "mobius_planet_*.spm",
         "mobius_planet_*.png",
         "mobius_blenderkit_planets_manifest.json",
@@ -2155,10 +2511,23 @@ def generate_mobius_track(project_root):
         math.radians(-18.0),
         1.1,
     )
+    sun_prominence = make_sun_corona_mesh(
+        "Mobius_Sun_Prominence",
+        SUN_PROMINENCE_RADIUS,
+        "mobius_sun_corona.png",
+        math.radians(38.0),
+        2.2,
+    )
+    black_hole_halo = make_black_hole_halo_mesh()
+    black_hole_accretion = make_black_hole_accretion_mesh()
+    black_hole_inner_glow = make_black_hole_inner_glow_mesh()
+    black_hole_photon_ring = make_black_hole_photon_ring_mesh()
+    black_hole_core = make_black_hole_core_mesh()
     star_sphere = make_star_sphere_mesh()
     start_gate = make_start_gate_mesh()
-    markers = make_direction_markers()
+    zippers = make_zipper_mesh()
     reset_surface = make_reset_surface()
+    record_blenderkit_black_hole_reference(track_dir)
     planet_meshes = import_local_planets(track_dir)
     meshes = [
         road_visual,
@@ -2173,9 +2542,15 @@ def generate_mobius_track(project_root):
         sun_core,
         sun_corona_inner,
         sun_corona_outer,
+        sun_prominence,
+        black_hole_halo,
+        black_hole_accretion,
+        black_hole_inner_glow,
+        black_hole_photon_ring,
+        black_hole_core,
         star_sphere,
         start_gate,
-        markers,
+        zippers,
         reset_surface,
         *planet_meshes,
     ]
@@ -2193,9 +2568,15 @@ def generate_mobius_track(project_root):
     write_spm(track_dir / "mobius_sun_core.spm", sun_core)
     write_spm(track_dir / "mobius_sun_corona_inner.spm", sun_corona_inner)
     write_spm(track_dir / "mobius_sun_corona_outer.spm", sun_corona_outer)
+    write_spm(track_dir / "mobius_sun_prominence.spm", sun_prominence)
+    write_spm(track_dir / "mobius_black_hole_halo.spm", black_hole_halo)
+    write_spm(track_dir / "mobius_black_hole_accretion.spm", black_hole_accretion)
+    write_spm(track_dir / "mobius_black_hole_inner_glow.spm", black_hole_inner_glow)
+    write_spm(track_dir / "mobius_black_hole_photon_ring.spm", black_hole_photon_ring)
+    write_spm(track_dir / "mobius_black_hole_core.spm", black_hole_core)
     write_spm(track_dir / "mobius_star_sphere.spm", star_sphere)
     write_spm(track_dir / "mobius_start_gate.spm", start_gate)
-    write_spm(track_dir / "direction_markers.spm", markers)
+    write_spm(track_dir / "mobius_zippers.spm", zippers)
     write_spm(track_dir / "reset_fall_surface.spm", reset_surface)
     write_track_xml(track_dir)
     write_materials_xml(track_dir)
