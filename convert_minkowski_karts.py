@@ -44,7 +44,7 @@ KART_YAW_DEGREES = {
     "maxwell": -90.0,
     "minkowski": 180.0,
     "newton": -90.0,
-    "noether": -90.0,
+    "noether": 180.0,
     "planck": 135.0,
     "oppenheimer": -90.0,
 }

@@ -2,7 +2,7 @@
 <track  name           = "Mobius Track"
         version        = "7"
         groups         = "minkowski"
-        designer       = "A Mobius trip through the solar system"
+        designer       = "Robson Christie"
         screenshot     = "screenshot.jpg"
         music          = "highway_gravel.music"
         smooth-normals = "true"
