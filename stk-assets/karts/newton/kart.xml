@@ -5,5 +5,9 @@
       icon-file="newton_icon.png"
       minimap-icon-file="newton_icon.png"
       type="medium"
+      width="0.77"
+      height="0.949"
+      length="1.345"
       groups="minkowski">
+  <center gravity-shift="0 0.4035 0" />
 </kart>

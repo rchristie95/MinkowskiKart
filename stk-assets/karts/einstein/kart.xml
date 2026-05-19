@@ -4,6 +4,10 @@
       model-file="einstein.spm"
       icon-file="einstein_icon.png"
       minimap-icon-file="einstein_icon.png"
-      type="medium"
+      type="heavy"
+      width="1.119"
+      height="0.764"
+      length="1.476"
       groups="minkowski">
+  <center gravity-shift="0 0.382 0" />
 </kart>

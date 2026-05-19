@@ -5,5 +5,9 @@
       icon-file="minkowski_icon.png"
       minimap-icon-file="minkowski_icon.png"
       type="medium"
+      width="0.77"
+      height="0.614"
+      length="1.272"
       groups="minkowski">
+  <center gravity-shift="0 0.307 0" />
 </kart>

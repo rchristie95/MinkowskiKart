@@ -4,6 +4,10 @@
       model-file="planck.spm"
       icon-file="planck_icon.png"
       minimap-icon-file="planck_icon.png"
-      type="medium"
+      type="light"
+      width="0.866"
+      height="0.974"
+      length="1.227"
       groups="minkowski">
+  <center gravity-shift="0 0.3681 0" />
 </kart>

@@ -4,6 +4,10 @@
       model-file="feynman.spm"
       icon-file="feynman_icon.png"
       minimap-icon-file="feynman_icon.png"
-      type="medium"
+      type="heavy"
+      width="0.837"
+      height="0.847"
+      length="1.49"
       groups="minkowski">
+  <center gravity-shift="0 0.4235 0" />
 </kart>

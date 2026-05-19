@@ -29,7 +29,6 @@
 #include "karts/abstract_kart.hpp"
 #include "karts/explosion_animation.hpp"
 #include "karts/kart.hpp"
-#include "karts/kart_properties.hpp"
 #include "karts/rescue_animation.hpp"
 #include "karts/skidding.hpp"
 #include "modes/soccer_world.hpp"
@@ -56,27 +55,28 @@ const float RELATIVITY_CLOSE_CHASE_DEFAULT_NEAR_PLANE       = 0.05f;
 const float RELATIVITY_CLOSE_CHASE_MIN_NEAR_PLANE           = 0.02f;
 const float RELATIVITY_CLOSE_CHASE_NEAR_PLANE_PROBE_DISTANCE = 0.75f;
 
-// Relativity close-chase camera geometry. This is a hood/driver camera, so
-// keep it anchored slightly in front of the kart centre and never let
-// automatic clipping correction drag it behind the driver.
-const float RC_FORWARD_OFFSET = -0.50f;  // 50cm behind kart centre
-const float RC_HEIGHT         = 0.85f;   // 85cm above kart centre
+// Relativity close-chase camera geometry. Keep a fixed chase offset behind
+// the kart so relativistic speed does not push the camera into a first-person
+// or variable-distance view.
+const float RC_FORWARD_OFFSET = -2.65f;  // 2.65m behind kart centre
+const float RC_HEIGHT         = 1.25f;   // 1.25m above kart centre
 const float RC_CLEARANCE      = 0.34f;   // minimum distance from apparent road
-const float RC_TARGET_FORWARD = 3.10f;   // 3.1m ahead of kart for look-at point
+const float RC_TARGET_FORWARD = 4.25f;   // 4.25m ahead of kart for look-at point
 const float RC_FORWARD_TC     = 0.10f;   // support-frame forward smooth tc (s)
 const float RC_UP_TC          = 0.08f;   // support-frame up smooth tc (s)
 const float RC_BANKED_UP_TC   = 0.16f;   // extra smoothing on banked surfaces
 const float RC_STEEP_EXTRA    = 0.36f;   // extra clearance on steep normals (m)
 const float RC_SWEEP_SUBSTEP  = 0.08f;   // sweep step length (m)
 const int   RC_SWEEP_MAX_STEPS = 16;
-const float RC_MIN_FORWARD_OFFSET = -0.80f;
-const float RC_MIN_UP_OFFSET      = 0.60f;
+const float RC_MIN_FORWARD_OFFSET = -2.65f;
+const float RC_MIN_UP_OFFSET      = 0.95f;
 
 const float RESCUE_DROPOFF_DISTANCE_BOOST = 3.25f;
 const float RESCUE_DROPOFF_HEIGHT_BOOST   = 2.25f;
 const float RESCUE_DROPOFF_PITCH_BOOST    = 14.0f * DEGREE_TO_RAD;
 const float RESCUE_DROPOFF_FOV_BOOST      = 0.32f;
 const float RESCUE_BASE_CAMERA_BLEND      = 0.38f;
+const float FIXED_CLOSE_CHASE_MIN_DISTANCE = 2.4f;
 
 float clamp01(float value)
 {
@@ -592,11 +592,6 @@ void CameraNormal::moveCamera(float dt, bool smooth, float above_kart,
     }   // kart is flying
 
     core::vector3df current_position = m_camera->getPosition();
-    // Smoothly interpolate towards the position and target
-    const KartProperties *kp = m_kart->getKartProperties();
-    float max_speed_without_zipper = kp->getEngineMaxSpeed();
-    float current_speed = m_kart->getSpeed();
-
     const Skidding *ks = m_kart->getSkidding();
     float skid_factor = ks->getVisualSkidRotation();
 
@@ -604,18 +599,14 @@ void CameraNormal::moveCamera(float dt, bool smooth, float above_kart,
     if (useRelativityCloseChase(getMode()))
         skid_angle *= 0.15f;
 
-    // distance of camera from kart in x and z plane
+    // Distance of camera from kart in x and z plane. Keep it fixed: changing
+    // the chase distance with speed is disorienting on relativistic tracks.
     float camera_distance = distance;
-    if (!useRelativityCloseChase(getMode()))
+    if ((getMode() == CM_NORMAL || getMode() == CM_FALLING) &&
+        camera_distance < 0.0f)
     {
-        camera_distance = -2.8f - 5.6f * (current_speed / max_speed_without_zipper);
-        camera_distance = std::max(camera_distance, -0.12f);
-        if (Relativity::isEnabled())
-            camera_distance = std::min(camera_distance, 0.0f);
-        camera_distance *= sqrtf(UserConfigParams::m_camera_forward_smooth_position);
-        float min_distance = (distance * 2.0f);
-        if (distance > 0) camera_distance += distance + 1;
-        if (camera_distance > min_distance) camera_distance = min_distance;
+        camera_distance = -std::max(fabsf(camera_distance),
+                                    FIXED_CLOSE_CHASE_MIN_DISTANCE);
     }
 
     float tan_up = 0;
@@ -623,11 +614,7 @@ void CameraNormal::moveCamera(float dt, bool smooth, float above_kart,
 
     // Defines how far camera should be from player kart.
     float vertical_offset = 0.85f - tan_up;
-    if (!useRelativityCloseChase(getMode()))
-    {
-        vertical_offset += current_speed / max_speed_without_zipper / 2.5f;
-    }
-    else
+    if (useRelativityCloseChase(getMode()))
     {
         vertical_offset = fabsf(camera_distance) * tan_up + above_kart;
     }
@@ -696,7 +683,7 @@ void CameraNormal::restart()
             return;
         }
 
-        float offset_z = -33.f * sqrtf(UserConfigParams::m_camera_forward_smooth_position);
+        float offset_z = -std::max(m_distance, FIXED_CLOSE_CHASE_MIN_DISTANCE);
         float offset_y = -offset_z * tanf(UserConfigParams::m_camera_forward_up_angle * DEGREE_TO_RAD);
         m_camera_offset = irr::core::vector3df(0., offset_y + 1.0f, offset_z);
         m_camera_offset = clampOffsetToRelativityBubble(m_camera_offset);

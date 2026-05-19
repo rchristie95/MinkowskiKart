@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<kart name="Oppenheimer"
+      version="3"
+      model-file="oppenheimer.spm"
+      icon-file="oppenheimer_icon.png"
+      minimap-icon-file="oppenheimer_icon.png"
+      type="medium"
+      width="0.725"
+      height="0.645"
+      length="1.413"
+      groups="minkowski">
+  <center gravity-shift="0 0.3225 0" />
+</kart>

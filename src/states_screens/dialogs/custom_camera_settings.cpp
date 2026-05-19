@@ -168,7 +168,7 @@ GUIEngine::EventPropagation CustomCameraSettingsDialog::processEvent(const std::
             if (UserConfigParams::m_camera_present == 1) // Standard camera
             {
                 UserConfigParams::m_camera_fov = 80;
-                UserConfigParams::m_camera_distance = 1.0;
+                UserConfigParams::m_camera_distance = 2.4;
                 UserConfigParams::m_camera_forward_up_angle = 0.0;
                 UserConfigParams::m_camera_forward_smooth_position = 0.2;
                 UserConfigParams::m_camera_forward_smooth_rotation = 0.125;

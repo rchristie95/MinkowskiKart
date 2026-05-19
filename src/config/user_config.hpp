@@ -1037,7 +1037,7 @@ namespace UserConfigParams
                         "Camera settings for player.") );
 
     PARAM_PREFIX FloatUserConfigParam         m_camera_distance
-            PARAM_DEFAULT(  FloatUserConfigParam(1.0, "distance",
+            PARAM_DEFAULT(  FloatUserConfigParam(2.4, "distance",
             &m_camera_normal,
             "Distance between kart and camera"));
 
@@ -1087,7 +1087,7 @@ namespace UserConfigParams
                         "Standard camera settings for player.") );
 
     PARAM_PREFIX FloatUserConfigParam         m_standard_camera_distance
-            PARAM_DEFAULT(  FloatUserConfigParam(1.0, "distance",
+            PARAM_DEFAULT(  FloatUserConfigParam(2.4, "distance",
             &m_standard_camera_settings,
             "Distance between kart and camera"));
 

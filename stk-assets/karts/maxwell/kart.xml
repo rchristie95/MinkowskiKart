@@ -5,5 +5,9 @@
       icon-file="maxwell_icon.png"
       minimap-icon-file="maxwell_icon.png"
       type="medium"
+      width="0.625"
+      height="0.735"
+      length="1.146"
       groups="minkowski">
+  <center gravity-shift="0 0.3438 0" />
 </kart>

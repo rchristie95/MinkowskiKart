@@ -4,6 +4,7 @@ import shutil
 import math
 from pathlib import Path
 from zipfile import ZipFile
+import xml.etree.ElementTree as ET
 
 # Add script directory to sys.path so we can import the generator's SPM tools
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -31,7 +32,7 @@ KART_SOURCE_NAMES = {
     "newton": "Newton",
     "noether": "Noether",
     "planck": "Planck",
-    "schrodinger": "Schrodinger",
+    "oppenheimer": "Oppenheimer",
 }
 
 # Source meshes are authored with inconsistent yaw. Blender +Y is the intended
@@ -44,8 +45,20 @@ KART_YAW_DEGREES = {
     "minkowski": 180.0,
     "newton": -90.0,
     "noether": -90.0,
-    "planck": -45.0,
-    "schrodinger": 180.0,
+    "planck": 135.0,
+    "oppenheimer": -90.0,
+}
+
+KART_STATS_PROFILE = {
+    "curie": "adiumy",
+    "einstein": "amanda",
+    "feynman": "beastie",
+    "maxwell": "emule",
+    "minkowski": "gavroche",
+    "newton": "gnu",
+    "noether": "hexley",
+    "planck": "kiki",
+    "oppenheimer": "nolok",
 }
 
 
@@ -77,7 +90,59 @@ def copy_source_icon(kart_name, kart_dir):
     shutil.copy2(candidates[0], kart_dir / f"{kart_name}_icon.png")
 
 
+def load_official_kart_profiles():
+    profiles = {}
+    root = ET.parse(PROJECT_ROOT / "data" / "official_karts.xml").getroot()
+    for kart in root.findall("kart"):
+        name = kart.get("name")
+        if not name:
+            continue
+        profiles[name] = {
+            "type": kart.get("type", "medium"),
+            "width": kart.get("width", "1.0"),
+            "height": kart.get("height", "1.0"),
+            "length": kart.get("length", "1.0"),
+            "gravity_shift": kart.get("gravity-shift", "0 0.35 0"),
+        }
+    return profiles
+
+
+def get_stats_profile(kart_name, official_profiles):
+    source_profile = KART_STATS_PROFILE[kart_name]
+    if source_profile not in official_profiles:
+        raise KeyError(f"Missing official kart profile '{source_profile}'")
+    return source_profile, official_profiles[source_profile]
+
+
+def get_local_bounds(mesh):
+    coords = [vertex.co for vertex in mesh.vertices]
+    mins = [min(co[i] for co in coords) for i in range(3)]
+    maxs = [max(co[i] for co in coords) for i in range(3)]
+    return mins, maxs
+
+
+def get_world_bounds(obj):
+    positions = [obj.matrix_world @ vertex.co for vertex in obj.data.vertices]
+    mins = [min(position[i] for position in positions) for i in range(3)]
+    maxs = [max(position[i] for position in positions) for i in range(3)]
+    return mins, maxs
+
+
+def recenter_and_ground_mesh(obj, horizontal=True):
+    mesh = obj.data
+    mins, maxs = get_local_bounds(mesh)
+    center_x = (mins[0] + maxs[0]) * 0.5 if horizontal else 0.0
+    center_y = (mins[1] + maxs[1]) * 0.5 if horizontal else 0.0
+    min_z = mins[2]
+    for vertex in mesh.vertices:
+        vertex.co.x -= center_x
+        vertex.co.y -= center_y
+        vertex.co.z -= min_z
+    mesh.update()
+
+
 def convert_kart(kart_name, karts_dir):
+    official_profiles = load_official_kart_profiles()
     kart_dir = karts_dir / kart_name
     print(f"\nProcessing kart: {kart_name}")
     reset_kart_dir_from_source(kart_name, kart_dir)
@@ -130,9 +195,7 @@ def convert_kart(kart_name, karts_dir):
             vertex.co = yaw @ vertex.co
         mesh.update()
 
-    world_positions = [obj.matrix_world @ vertex.co for vertex in mesh.vertices]
-    mins = [min(position[i] for position in world_positions) for i in range(3)]
-    maxs = [max(position[i] for position in world_positions) for i in range(3)]
+    mins, maxs = get_world_bounds(obj)
     center = tuple((mins[i] + maxs[i]) * 0.5 for i in range(3))
     
     try:
@@ -160,6 +223,8 @@ def convert_kart(kart_name, karts_dir):
     obj.location = (0.0, 0.0, 0.0)
     mesh.update()
     
+    recenter_and_ground_mesh(obj)
+
     source_images = [
         p
         for p in kart_dir.rglob("*.png")
@@ -194,14 +259,30 @@ def convert_kart(kart_name, karts_dir):
     icon_name = f"{kart_name}_icon.png"
     copy_source_icon(kart_name, kart_dir)
     
+    profile_name, stats = get_stats_profile(kart_name, official_profiles)
+    mins, maxs = get_local_bounds(mesh)
+    ground_contact = mins[2]
+    size = tuple(maxs[i] - mins[i] for i in range(3))
+    print(
+        "  Self-check: "
+        f"yaw={yaw_degrees:.1f} scale={scale:.6f} "
+        f"bbox={size[0]:.3f}x{size[1]:.3f}x{size[2]:.3f} "
+        f"ground-z={ground_contact:.6f} "
+        f"stats={profile_name}/{stats['type']}"
+    )
+
     kart_xml = f"""<?xml version="1.0"?>
 <kart name="{kart_name.title()}"
       version="3"
       model-file="{kart_name}.spm"
       icon-file="{icon_name}"
       minimap-icon-file="{icon_name}"
-      type="medium"
+      type="{stats['type']}"
+      width="{stats['width']}"
+      height="{stats['height']}"
+      length="{stats['length']}"
       groups="minkowski">
+  <center gravity-shift="{stats['gravity_shift']}" />
 </kart>"""
     (kart_dir / "kart.xml").write_text(kart_xml, encoding="utf-8")
     
@@ -213,7 +294,17 @@ def convert_kart(kart_name, karts_dir):
 
 if __name__ == "__main__":
     karts_dir = PROJECT_ROOT / "stk-assets" / "karts"
-    default_karts = ["curie", "einstein", "feynman", "maxwell", "minkowski", "newton", "noether", "planck", "schrodinger"]
+    default_karts = [
+        "curie",
+        "einstein",
+        "feynman",
+        "maxwell",
+        "minkowski",
+        "newton",
+        "noether",
+        "planck",
+        "oppenheimer",
+    ]
     script_args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     requested_karts = [arg.lower() for arg in script_args]
     karts_to_process = requested_karts or default_karts
