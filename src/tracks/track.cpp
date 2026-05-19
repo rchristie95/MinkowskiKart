@@ -2978,6 +2978,7 @@ std::vector< std::vector<float> > Track::buildHeightMap()
 // ----------------------------------------------------------------------------
 void Track::drawMiniMap(const core::rect<s32>& dest_rect) const
 {
+#ifndef SERVER_ONLY
     if (m_ident == "mobius_track")
     {
         video::ITexture *texture = irr_driver->getTexture(m_root + "mobius_minimap.png");
@@ -2989,6 +2990,7 @@ void Track::drawMiniMap(const core::rect<s32>& dest_rect) const
             return;
         }
     }
+#endif
     if(m_render_target)
         m_render_target->draw2DImage(dest_rect, NULL,
                                      video::SColor(127, 255, 255, 255),
