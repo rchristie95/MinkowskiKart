@@ -102,8 +102,43 @@ jobs:
           # 3. Build APK and compile JNI shared libraries
           ./make.sh
 
+      - name: Set release target
+        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "release_tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+            echo "release_pre=false" >> $GITHUB_ENV
+          else
+            echo "release_tag=preview" >> $GITHUB_ENV
+            echo "release_pre=true" >> $GITHUB_ENV
+          fi
+
+      - name: Rename APK with datestamp
+        if: ${{ env.release_tag != '' }}
+        shell: bash
+        run: |
+          APK=$(ls android/build/outputs/apk/debug/*.apk | head -1)
+          DEST="MinkowskiKart-git$(date +%Y%m%d)-android.apk"
+          cp "$APK" "$DEST"
+          echo "apk_path=$DEST" >> $GITHUB_ENV
+
+      - name: Upload APK to release
+        if: ${{ env.release_tag != '' }}
+        uses: ncipollo/release-action@v1.8.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "${{ env.apk_path }}"
+          tag: ${{ env.release_tag }}
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          allowUpdates: true
+          replacesArtifacts: true
+          prerelease: ${{ env.release_pre }}
+
       - name: Upload MinkowskiKart APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MinkowskiKart-Android-Debug
           path: android/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
