@@ -27,6 +27,8 @@ jobs:
             --jq '[.assets[] | select(.name | endswith("-mac.zip"))] | sort_by(.updatedAt) | last | .url')
           IOS_URL=$(gh release view preview --repo "$REPO" --json assets \
             --jq '[.assets[] | select(.name | endswith(".ipa"))] | sort_by(.updatedAt) | last | .url')
+          APK_URL=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith("-android.apk"))] | sort_by(.updatedAt) | last | .url')
 
           WIN_NAME=$(gh release view preview --repo "$REPO" --json assets \
             --jq '[.assets[] | select(.name | endswith("-win.zip"))] | sort_by(.updatedAt) | last | .name')
@@ -34,12 +36,15 @@ jobs:
             --jq '[.assets[] | select(.name | endswith("-mac.zip"))] | sort_by(.updatedAt) | last | .name')
           IOS_NAME=$(gh release view preview --repo "$REPO" --json assets \
             --jq '[.assets[] | select(.name | endswith(".ipa"))] | sort_by(.updatedAt) | last | .name')
+          APK_NAME=$(gh release view preview --repo "$REPO" --json assets \
+            --jq '[.assets[] | select(.name | endswith("-android.apk"))] | sort_by(.updatedAt) | last | .name')
 
-          echo "Copying: $WIN_NAME, $MAC_NAME, $IOS_NAME -> $TARGET"
+          echo "Copying: $WIN_NAME, $MAC_NAME, $IOS_NAME, $APK_NAME -> $TARGET"
 
           wget -q -O "$WIN_NAME" "$WIN_URL"
           wget -q -O "$MAC_NAME" "$MAC_URL"
           wget -q -O "$IOS_NAME" "$IOS_URL"
+          wget -q -O "$APK_NAME" "$APK_URL"
 
-          gh release upload "$TARGET" "$WIN_NAME" "$MAC_NAME" "$IOS_NAME" \
+          gh release upload "$TARGET" "$WIN_NAME" "$MAC_NAME" "$IOS_NAME" "$APK_NAME" \
             --repo "$REPO" --clobber
