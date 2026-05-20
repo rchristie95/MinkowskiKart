@@ -59,6 +59,11 @@ jobs:
           tar -C 'lib' -xf dependencies-android-src.tar.xz
           echo "Dependencies set up successfully."
 
+      - name: Patch libpng CMakeLists.txt to bypass space-in-path nested quoting bug
+        shell: bash
+        run: |
+          sed -i 's/"${CMAKE_COMMAND}"/cmake/g' lib/libpng/CMakeLists.txt
+
       - name: Build MinkowskiKart APK
         shell: bash
         run: |
