@@ -66,8 +66,8 @@ jobs:
       - name: Install Make
         run: choco install make -y
 
-      - name: Install meson and ninja
-        run: pip install "meson==1.4.0" ninja
+      - name: Install meson, ninja, and mako
+        run: pip install "meson==1.4.0" ninja mako
 
       - name: Install Android NDK 23.1.7779620
         shell: pwsh
