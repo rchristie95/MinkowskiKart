@@ -103,16 +103,8 @@ void configureRelativisticCCD(const AbstractKart* kart)
         btScalar(0.25f),
         btScalar(0.25f *
             std::min(kart->getKartWidth(), kart->getKartLength())));
-    btScalar ccd_radius = extent * btScalar(0.8f);
-    btScalar ccd_threshold = extent;
-#if defined(__ANDROID__)
-    // On Android we need CCD to trigger earlier to reduce high-speed
-    // clipping/sinking through the Mobius collision surface.
-    ccd_radius = extent * btScalar(0.9f);
-    ccd_threshold = extent * btScalar(0.5f);
-#endif
-    body->setCcdSweptSphereRadius(ccd_radius);
-    body->setCcdMotionThreshold(ccd_threshold);
+    body->setCcdSweptSphereRadius(extent * btScalar(0.8f));
+    body->setCcdMotionThreshold(extent);
 }   // configureRelativisticCCD
 
 void applyRelativisticStaticContactCorrection(AbstractKart* kart,
@@ -278,7 +270,13 @@ void Physics::update(int ticks)
     if(UserConfigParams::m_physics_debug) start = StkTime::getRealTime();
 
     const float dt = stk_config->ticks2Time(1);
-    const int substeps = getRelativisticSubsteps();
+    int substeps = getRelativisticSubsteps();
+#if defined(__ANDROID__) || defined(_WIN32)
+    // On Android and Windows double the substeps so Bullet samples the
+    // Mobius collision surface twice per physics tick, halving the
+    // effective integration step and eliminating clipping/sinking.
+    substeps = std::max(2, substeps);
+#endif
     m_dynamics_world->stepSimulation(dt, substeps,
                                      dt / (float)substeps);
     if (UserConfigParams::m_physics_debug)
