@@ -37,7 +37,6 @@ struct ApparentSurfaceHit
     btVector3        m_world_normal;
     btVector3        m_apparent_point;
     btVector3        m_apparent_normal;
-    float            m_visual_fade;
     const Material*  m_material;
 
     ApparentSurfaceHit();
@@ -106,8 +105,6 @@ unsigned int getVelocityClampCount();
 unsigned int getResponseScaleCount();
 void resetDebugCounters();
 
-float getVisualFadeForWorldPosition(const btVector3& world_position,
-                                    const btVector3& observer_position);
 float getVisualShellOffset(const AbstractKart* observer_kart,
                            const btVector3& observer_position,
                            const btVector3& world_position,
@@ -117,12 +114,10 @@ float getVisualShellOffset(const AbstractKart* observer_kart,
 btVector3 applyVisualPosition(const btVector3& world_position,
                               const ObserverVisualState& observer_state,
                               const btVector3& object_velocity =
-                                  btVector3(0.0f, 0.0f, 0.0f),
-                              float visual_fade = -1.0f);
+                                  btVector3(0.0f, 0.0f, 0.0f));
 btVector3 applyVisualNormal(const btVector3& world_position,
                             const btVector3& world_normal,
-                            const ObserverVisualState& observer_state,
-                            float visual_fade = -1.0f);
+                            const ObserverVisualState& observer_state);
 bool castApparentDriveableRay(const AbstractKart* observer_kart,
                               const btVector3& observer_position,
                               const btVector3& from,

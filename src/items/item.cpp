@@ -663,7 +663,7 @@ bool Item::hitKart(const Vec3 &xyz, const AbstractKart *kart) const
             return false;
     }
 
-    Vec3 lc = quatRotate(getOriginalRotation(), xyz - getXYZ());
+    Vec3 lc = quatRotate(getOriginalRotation().inverse(), xyz - getXYZ());
     // Don't be too strict if the kart is a bit above the item
     lc.setY(lc.getY() / 2.0f);
     return lc.length2() < m_distance_2;

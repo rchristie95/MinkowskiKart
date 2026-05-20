@@ -3,9 +3,6 @@ bool relativityVisualsEnabled()
     return u_relativity_params.x > 0.5;
 }
 
-const float RELATIVITY_OBSERVER_STABILITY_RADIUS = 0.0;
-const float RELATIVITY_OBSERVER_STABILITY_FADE_WIDTH = 0.0;
-
 vec4 applyRelativisticVisualPosition(vec4 world_position, vec3 object_velocity,
                                      float visual_fade);
 
@@ -13,12 +10,7 @@ float getRelativisticVisualFade(vec3 world_position, vec3 object_velocity)
 {
     if (!relativityVisualsEnabled())
         return 0.0;
-
-    float observer_distance =
-        length(world_position - u_relativity_observer_pos.xyz);
-    return smoothstep(RELATIVITY_OBSERVER_STABILITY_RADIUS,
-        RELATIVITY_OBSERVER_STABILITY_RADIUS +
-        RELATIVITY_OBSERVER_STABILITY_FADE_WIDTH, observer_distance);
+    return 1.0;
 }
 
 float getRelativisticVisualFade(vec3 world_position, vec3 object_velocity,

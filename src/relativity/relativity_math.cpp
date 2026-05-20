@@ -49,8 +49,6 @@ const float MAX_ADJUSTABLE_C_LIGHT = 1000.0f;
 // setCurrentCLight stores values that align with what the slider can express.
 const int C_LIGHT_SNAP_STEP = 5;
 const float DEFAULT_WARP_BUBBLE_RADIUS = 3.5f;
-const float VISUAL_STABILITY_RADIUS = 0.0f;
-const float VISUAL_STABILITY_FADE_WIDTH = 0.0f;
 const float APPARENT_NORMAL_SAMPLE_DISTANCE = 0.20f;
 
 enum RuntimeRelativityMode
@@ -347,7 +345,6 @@ ApparentSurfaceHit::ApparentSurfaceHit()
       m_world_normal(0.0f, 1.0f, 0.0f),
       m_apparent_point(0.0f, 0.0f, 0.0f),
       m_apparent_normal(0.0f, 1.0f, 0.0f),
-      m_visual_fade(0.0f),
       m_material(nullptr)
 {
 }   // ApparentSurfaceHit
@@ -837,23 +834,6 @@ void resetDebugCounters()
 }   // resetDebugCounters
 
 // ----------------------------------------------------------------------------
-float getVisualFadeForWorldPosition(const btVector3& world_position,
-                                    const btVector3& observer_position)
-{
-    if (!Relativity::isEnabled() || !isFiniteVector(world_position) ||
-        !isFiniteVector(observer_position))
-    {
-        return 0.0f;
-    }
-
-    const btScalar observer_distance =
-        (world_position - observer_position).length();
-    const float fade_t = ((float)observer_distance - VISUAL_STABILITY_RADIUS) /
-                         VISUAL_STABILITY_FADE_WIDTH;
-    return smoothstep01(fade_t);
-}   // getVisualFadeForWorldPosition
-
-// ----------------------------------------------------------------------------
 float getVisualShellOffset(const AbstractKart* observer_kart,
                            const btVector3& observer_position,
                            const btVector3& world_position,
@@ -871,15 +851,10 @@ float getVisualShellOffset(const AbstractKart* observer_kart,
     if (!observer_state.m_valid)
         return 0.0f;
 
-    const float visual_fade = getVisualFadeForWorldPosition(
-        world_position, observer_state.m_observer_position);
-    if (visual_fade <= 1.0e-4f)
-        return 0.0f;
-
     const btVector3 normal = normalizedOrDefault(
         world_normal, btVector3(0.0f, 1.0f, 0.0f));
     const btVector3 apparent_point = applyVisualPosition(
-        world_position, observer_state, object_velocity, visual_fade);
+        world_position, observer_state, object_velocity);
     const float shell = (float)((apparent_point - world_position).dot(normal));
     if (!std::isfinite((double)shell) || shell <= 0.0f)
         return 0.0f;
@@ -889,22 +864,13 @@ float getVisualShellOffset(const AbstractKart* observer_kart,
 // ----------------------------------------------------------------------------
 btVector3 applyVisualPosition(const btVector3& world_position,
                               const ObserverVisualState& observer_state,
-                              const btVector3& object_velocity,
-                              float visual_fade)
+                              const btVector3& object_velocity)
 {
     if (!Relativity::isEnabled() || !observer_state.m_valid ||
         !isFiniteVector(world_position))
     {
         return world_position;
     }
-
-    if (visual_fade < 0.0f)
-    {
-        visual_fade = getVisualFadeForWorldPosition(world_position,
-                                                    observer_state.m_observer_position);
-    }
-    if (visual_fade <= 1.0e-4f)
-        return world_position;
 
     btVector3 relative = world_position - observer_state.m_observer_position;
     if (relative.length2() <= btScalar(1.0e-6f))
@@ -921,17 +887,13 @@ btVector3 applyVisualPosition(const btVector3& world_position,
         worldDirectionToObserverDirection(world_direction,
                                           observer_state.m_beta_vector,
                                           observer_state.m_gamma);
-    const btVector3 observer_relative = observer_direction * distance;
-    const btVector3 blended_relative =
-        relative.lerp(observer_relative, clamp01(visual_fade));
-    return observer_state.m_observer_position + blended_relative;
+    return observer_state.m_observer_position + observer_direction * distance;
 }   // applyVisualPosition
 
 // ----------------------------------------------------------------------------
 btVector3 applyVisualNormal(const btVector3& world_position,
                             const btVector3& world_normal,
-                            const ObserverVisualState& observer_state,
-                            float visual_fade)
+                            const ObserverVisualState& observer_state)
 {
     if (!Relativity::isEnabled() || !observer_state.m_valid ||
         !isFiniteVector(world_position) || !isFiniteVector(world_normal))
@@ -939,22 +901,13 @@ btVector3 applyVisualNormal(const btVector3& world_position,
         return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
     }
 
-    if (visual_fade < 0.0f)
-    {
-        visual_fade = getVisualFadeForWorldPosition(world_position,
-                                                    observer_state.m_observer_position);
-    }
-    if (visual_fade <= 1.0e-4f)
-        return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
-
     const btVector3 base = applyVisualPosition(world_position, observer_state,
-                                               btVector3(0.0f, 0.0f, 0.0f),
-                                               visual_fade);
+                                               btVector3(0.0f, 0.0f, 0.0f));
     const btVector3 tip = applyVisualPosition(
         world_position +
             normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f)) *
                 APPARENT_NORMAL_SAMPLE_DISTANCE,
-        observer_state, btVector3(0.0f, 0.0f, 0.0f), visual_fade);
+        observer_state, btVector3(0.0f, 0.0f, 0.0f));
     return normalizedOrDefault(tip - base, btVector3(0.0f, 1.0f, 0.0f));
 }   // applyVisualNormal
 
@@ -1032,18 +985,13 @@ bool castApparentDriveableRay(const AbstractKart* observer_kart,
     {
         hit->m_apparent_point = world_hit_point;
         hit->m_apparent_normal = hit->m_world_normal;
-        hit->m_visual_fade = 0.0f;
         return true;
     }
 
-    hit->m_visual_fade = getVisualFadeForWorldPosition(
-        world_hit_point, observer_state.m_observer_position);
     hit->m_apparent_point = applyVisualPosition(
-        world_hit_point, observer_state, btVector3(0.0f, 0.0f, 0.0f),
-        hit->m_visual_fade);
+        world_hit_point, observer_state, btVector3(0.0f, 0.0f, 0.0f));
     hit->m_apparent_normal = applyVisualNormal(
-        world_hit_point, hit->m_world_normal, observer_state,
-        hit->m_visual_fade);
+        world_hit_point, hit->m_world_normal, observer_state);
     return true;
 }   // castApparentDriveableRay
 
@@ -1162,8 +1110,7 @@ void unitTesting()
     test_observer.m_inverse_gamma = 1.0f / test_observer.m_gamma;
     test_observer.m_c_light = (float)c_light;
     const btVector3 warped = applyVisualPosition(
-        btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f),
-        1.0f);
+        btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f));
     MK_CHECK(warped.x() > 5.0f);
 
     MK_CHECK(std::fabs(betaForSpeed(0.0, c_light)) < 0.000001);
@@ -1297,7 +1244,7 @@ void unitTesting()
         normal_test_observer.m_c_light = (float)c_light;
         const btVector3 apparent_normal = applyVisualNormal(
             btVector3(5.0f, 1.0f, 0.0f), btVector3(0.0f, 1.0f, 0.0f),
-            normal_test_observer, 1.0f);
+            normal_test_observer);
         MK_CHECK(std::fabs((double)apparent_normal.length() - 1.0) < 0.001);
     }
 

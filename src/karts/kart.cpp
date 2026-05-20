@@ -267,6 +267,12 @@ void Kart::changeKart(const std::string& new_ident,
  */
 Kart::~Kart()
 {
+    // Explicitly reset the attachment here, so that its destructor is called
+    // while this object is still a Kart. Otherwise, it would be destroyed
+    // in the AbstractKart destructor, at which point calling virtual methods
+    // on the kart would cause a pure virtual function call crash.
+    m_attachment.reset();
+
     // Delete all custom sounds (TODO: add back when properly done)
     /*
     for (int n = 0; n < SFXManager::NUM_CUSTOMS; n++)

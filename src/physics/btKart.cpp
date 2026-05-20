@@ -45,7 +45,12 @@
 namespace
 {
 
-const btScalar APPARENT_SURFACE_SHELL_LIMIT = btScalar(0.40f);
+// With no stability zone suppressing relativistic warping near the kart, the
+// full Lorentz displacement can apply to geometry immediately adjacent to the
+// wheels. 1.0 game unit gives enough headroom that the apparent surface (as
+// seen by a relativistic observer) remains within a physically reasonable
+// offset from the true collision surface, without letting physics diverge.
+const btScalar APPARENT_SURFACE_SHELL_LIMIT = btScalar(1.00f);
 const btScalar SUPPORT_NORMAL_TIME_CONSTANT = btScalar(0.06f);
 const btScalar SUPPORT_NORMAL_MAX_RATE = btScalar(7.0f);
 const btScalar INTO_GROUND_SPEED_TOLERANCE = btScalar(0.15f);
