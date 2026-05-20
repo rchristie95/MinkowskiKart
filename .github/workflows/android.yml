@@ -50,7 +50,7 @@ jobs:
           if [ -z "$1" ]; then
               echo ""
           else
-              python -c "import os, sys; path = sys.argv[1]; (drive, path) = (path[1].upper(), path[2:]) if path.startswith('/') and len(path) > 2 and path[2] == '/' else ('', path); print(os.path.abspath(drive + ':' + path if drive else path).replace(chr(92), '/'))" "$1"
+              python -c "import os, sys; path = sys.argv[1]; (drive, path) = (path[1].upper(), path[2:]) if path.startswith('/') and len(path) > 2 and path[2] == '/' else ('', path); abs_path = os.path.abspath(drive + ':' + path if drive else path).replace(chr(92), '/'); print('/' + abs_path[0].lower() + abs_path[2:] if len(abs_path) > 1 and abs_path[1] == ':' else abs_path)" "$1"
           fi
           '@
           Set-Content -Path "C:\s\bin\realpath" -Value $content -NoNewline
