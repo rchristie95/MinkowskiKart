@@ -41,6 +41,20 @@ jobs:
           mklink /J C:\cmake "C:\Program Files\CMake"
         shell: cmd
 
+      - name: Create custom space-free realpath wrapper
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "C:\s\bin"
+          $content = @'
+          #!/bin/sh
+          if [ -z "$1" ]; then
+              echo ""
+          else
+              python -c "import os, sys; path = sys.argv[1]; (drive, path) = (path[1].upper(), path[2:]) if path.startswith('/') and len(path) > 2 and path[2] == '/' else ('', path); print(os.path.abspath(drive + ':' + path if drive else path).replace(chr(92), '/'))" "$1"
+          fi
+          '@
+          Set-Content -Path "C:\s\bin\realpath" -Value $content -NoNewline
+
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
@@ -72,8 +86,11 @@ jobs:
       - name: Build MinkowskiKart APK
         shell: bash
         run: |
-          # Prepend space-free CMake junction path to bypass cmd.exe nested quoting issues
-          export PATH="C:/cmake/bin:$PATH"
+          # Make custom realpath wrapper executable
+          chmod +x /c/s/bin/realpath
+
+          # Prepend space-free CMake junction path and custom realpath to bypass cmd.exe nested quoting issues
+          export PATH="/c/s/bin:C:/cmake/bin:$PATH"
 
           # Align Android SDK environment variables to prevent path conflicts
           export ANDROID_HOME="C:\android-sdk"
