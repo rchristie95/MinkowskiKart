@@ -19,6 +19,9 @@
 #include "karts/abstract_kart.hpp"
 #include "modes/world.hpp"
 #include "utils/time.hpp"
+#include "race/race_manager.hpp"
+#include "tracks/graph.hpp"
+#include "tracks/quad.hpp"
 
 /** Constructor for a check trigger.
  *  \param center Center point of this trigger
@@ -48,6 +51,23 @@ bool CheckTrigger::isTriggered(const Vec3 &old_pos, const Vec3 &new_pos,
     AbstractKart* k = World::getWorld()->getKart(kart_id);
     if ((k->getXYZ() - m_center).length2() < m_distance2)
     {
+        if (RaceManager::get()->getTrackName() == "mobius_track")
+        {
+            Graph* g = Graph::get();
+            if (g)
+            {
+                int sector = -1;
+                g->findRoadSector(m_center, &sector);
+                if (sector >= 0 && sector < (int)g->getNumNodes())
+                {
+                    Vec3 trigger_normal = g->getQuad(sector)->getNormal();
+                    if (k->getNormal().dot(trigger_normal) < 0.0f)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
         m_last_triggered_time = StkTime::getMonoTimeMs();
         return true;
     }

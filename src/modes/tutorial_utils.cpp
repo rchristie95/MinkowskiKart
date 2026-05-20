@@ -43,13 +43,21 @@ namespace TutorialUtils
         // Create player and associate player with device
         StateManager::get()->createActivePlayer(PlayerManager::getCurrentPlayer(), device);
 
-        if (kart_properties_manager->getKart(UserConfigParams::m_default_kart) == NULL)
+        std::string tutorial_kart = "minkowski";
+        if (kart_properties_manager->getKart(tutorial_kart) == NULL)
         {
-            Log::warn("HelpScreen1", "Cannot find kart '%s', will revert to default",
+            Log::info("TutorialUtils", "Cannot find tutorial kart 'minkowski', reverting to default player kart '%s'",
                       UserConfigParams::m_default_kart.c_str());
-            UserConfigParams::m_default_kart.revertToDefaults();
+            tutorial_kart = UserConfigParams::m_default_kart;
+            if (kart_properties_manager->getKart(tutorial_kart) == NULL)
+            {
+                Log::warn("TutorialUtils", "Cannot find default kart '%s', will revert to default",
+                          tutorial_kart.c_str());
+                UserConfigParams::m_default_kart.revertToDefaults();
+                tutorial_kart = UserConfigParams::m_default_kart;
+            }
         }
-        RaceManager::get()->setPlayerKart(0, UserConfigParams::m_default_kart);
+        RaceManager::get()->setPlayerKart(0, tutorial_kart);
 
         // ASSIGN should make sure that only input from assigned devices is read.
         input_manager->getDeviceManager()->setAssignMode(ASSIGN);

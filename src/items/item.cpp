@@ -18,6 +18,7 @@
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "items/item.hpp"
+#include "race/race_manager.hpp"
 
 #include "SColor.h"
 #include "graphics/irr_driver.hpp"
@@ -649,3 +650,21 @@ void Item::updateGraphics(float dt)
 
     m_was_available_previously = isAvailable();
 }   // updateGraphics
+
+// ----------------------------------------------------------------------------
+bool Item::hitKart(const Vec3 &xyz, const AbstractKart *kart) const
+{
+    if (getPreviousOwner() == kart && getDeactivatedTicks() > 0)
+        return false;
+
+    if (kart && RaceManager::get()->getTrackName() == "mobius_track")
+    {
+        if (kart->getNormal().dot(getNormal()) < 0.0f)
+            return false;
+    }
+
+    Vec3 lc = quatRotate(getOriginalRotation(), xyz - getXYZ());
+    // Don't be too strict if the kart is a bit above the item
+    lc.setY(lc.getY() / 2.0f);
+    return lc.length2() < m_distance_2;
+}   // hitKart

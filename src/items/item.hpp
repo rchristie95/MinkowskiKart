@@ -422,15 +422,7 @@ public:
      *         kart.hpp does not need to be included here).
      */
     virtual bool hitKart(const Vec3 &xyz, const AbstractKart *kart=NULL) const
-        OVERRIDE
-    {
-        if (getPreviousOwner() == kart && getDeactivatedTicks() > 0)
-            return false;
-        Vec3 lc = quatRotate(getOriginalRotation(), xyz - getXYZ());
-        // Don't be too strict if the kart is a bit above the item
-        lc.setY(lc.getY() / 2.0f);
-        return lc.length2() < m_distance_2;
-    }   // hitKart
+        OVERRIDE;
     // ------------------------------------------------------------------------
     bool rotating() const               { return getType() != ITEM_WARP_BUBBLE; }
 

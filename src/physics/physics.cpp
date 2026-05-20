@@ -104,7 +104,7 @@ void configureRelativisticCCD(const AbstractKart* kart)
         btScalar(0.25f *
             std::min(kart->getKartWidth(), kart->getKartLength())));
     body->setCcdSweptSphereRadius(extent * btScalar(0.8f));
-    body->setCcdMotionThreshold(extent);
+    body->setCcdMotionThreshold(btScalar(0.02f));
 }   // configureRelativisticCCD
 
 void applyRelativisticStaticContactCorrection(AbstractKart* kart,
