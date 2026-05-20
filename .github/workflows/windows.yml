@@ -247,6 +247,19 @@ jobs:
           echo "${{ env.release_tag }}"
           echo "${{ env.release_name }}"
           echo "${{ env.release_pre }}"
+
+      - name: Force update preview tag and release target to current commit
+        if: ${{ env.release_tag == 'preview' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if command -v gh &> /dev/null; then
+            gh api -X PATCH "repos/${{ github.repository }}/git/refs/tags/preview" -F sha="${{ github.sha }}" -F force=true || true
+            gh release edit preview --target "${{ github.sha }}" --prerelease || true
+          else
+            echo "gh CLI not found, skipping tag update"
+          fi
       - name: Download MinGW binaries and data
         uses: actions/download-artifact@v4
       - name: Generate .pdb files

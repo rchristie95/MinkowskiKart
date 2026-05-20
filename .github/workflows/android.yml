@@ -114,6 +114,20 @@ jobs:
             echo "release_pre=true" >> $GITHUB_ENV
           fi
 
+      - name: Force update preview tag and release target to current commit
+        if: ${{ env.release_tag == 'preview' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if command -v gh &> /dev/null; then
+            gh api -X PATCH "repos/${{ github.repository }}/git/refs/tags/preview" -F sha="${{ github.sha }}" -F force=true || true
+            gh release edit preview --target "${{ github.sha }}" --prerelease || true
+          else
+            echo "gh CLI not found, skipping tag update"
+          fi
+
+
       - name: Rename APK with release tag
         if: ${{ env.release_tag != '' }}
         shell: bash
