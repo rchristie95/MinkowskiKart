@@ -31,6 +31,11 @@ jobs:
           mkdir C:\s
         shell: cmd
 
+      - name: Create space-free CMake junction
+        run: |
+          mklink /J C:\cmake "C:\Program Files\CMake"
+        shell: cmd
+
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
@@ -57,8 +62,8 @@ jobs:
       - name: Build MinkowskiKart APK
         shell: bash
         run: |
-          # Prepend space-free CMake path to bypass cmd.exe nested quoting issues
-          export PATH="C:/PROGRA~1/CMake/bin:$PATH"
+          # Prepend space-free CMake junction path to bypass cmd.exe nested quoting issues
+          export PATH="C:/cmake/bin:$PATH"
 
           # Align Android SDK environment variables to prevent path conflicts
           export ANDROID_HOME="C:\PROGRA~2\Android\android-sdk"
