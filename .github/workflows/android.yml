@@ -76,6 +76,14 @@ jobs:
           curl -L -o dependencies-android-src.tar.xz https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-android-src.tar.xz
           echo "Extracting dependency sources into lib/..."
           tar -C 'lib' -xf dependencies-android-src.tar.xz
+          
+          echo "Downloading missing linkernsbypass dependency..."
+          mkdir -p lib/libadrenotools/lib/linkernsbypass
+          curl -L -o linkernsbypass.tar.gz https://github.com/bylaws/liblinkernsbypass/archive/aa3975893d83ef1bc84c321ec60c65fbf1287887.tar.gz
+          echo "Extracting linkernsbypass..."
+          tar -C lib/libadrenotools/lib/linkernsbypass --strip-components=1 -xf linkernsbypass.tar.gz
+          rm linkernsbypass.tar.gz
+          
           echo "Dependencies set up successfully."
 
       - name: Patch libpng CMakeLists.txt to bypass space-in-path nested quoting bug
