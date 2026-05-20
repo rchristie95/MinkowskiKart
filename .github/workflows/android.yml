@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - 'antigravity/**'
     tags:
       - '*'
   pull_request: {}
