@@ -143,7 +143,7 @@ build_deps()
                 -DZLIB_LIBRARY="$DIRNAME/deps-$ARCH_OPTION/zlib/libz.a"       \
                 -DZLIB_INCLUDE_DIR="$DIRNAME/deps-$ARCH_OPTION/zlib/"         \
                 -DM_LIBRARY="$MLIBRARY"                                       \
-                -DPNG_TESTS=0 -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+                -DPNG_TESTS=0 -DPNG_SHARED=OFF -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
         make -j $(($(nproc) + 1))
         check_error
         touch "$DIRNAME/deps-$ARCH_OPTION/libpng.stamp"
