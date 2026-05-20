@@ -275,7 +275,7 @@ void Physics::update(int ticks)
     // On Android and Windows double the substeps so Bullet samples the
     // Mobius collision surface twice per physics tick, halving the
     // effective integration step and eliminating clipping/sinking.
-    substeps = std::max(2, substeps);
+    substeps *= 2;
 #endif
     m_dynamics_world->stepSimulation(dt, substeps,
                                      dt / (float)substeps);
