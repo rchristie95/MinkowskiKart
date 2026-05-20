@@ -870,6 +870,15 @@ void World::resetAllKarts()
     for ( KartList::iterator i=m_karts.begin(); i!=m_karts.end(); i++)
     {
         if ((*i)->isGhostKart()) continue;
+        if (Track::getCurrentTrack()->getIdent() == "mobius_track")
+        {
+            const int kart_index = (int)(i - m_karts.begin());
+            const Vec3 trace_xyz = (*i)->getXYZ();
+            Log::info("MobiusStartTrace",
+                "pre-project kart=%d xyz=%f,%f,%f heading=%f",
+                kart_index, trace_xyz.x(), trace_xyz.y(), trace_xyz.z(),
+                (*i)->getHeading());
+        }
         Vec3 xyz = (*i)->getXYZ();
         //start projection from top of kart
         Vec3 up_offset = (*i)->getNormal() * (0.5f * ((*i)->getKartHeight()));
@@ -902,16 +911,66 @@ void World::resetAllKarts()
     for (KartList::iterator i = m_karts.begin(); i != m_karts.end(); i++)
     {
         if ((*i)->isGhostKart()) continue;
+        btVector3 mobius_gravity_normal;
+        if ((*i)->getVehicle()->getMobiusGravityNormal(&mobius_gravity_normal))
+        {
+            (*i)->getBody()->setGravity(Vec3(mobius_gravity_normal) * -g);
+            continue;
+        }
         (*i)->getBody()->setGravity(
             (*i)->getMaterial() && (*i)->getMaterial()->hasGravity() ?
             (*i)->getNormal() * -g : Vec3(0, -g, 0));
     }
+    std::vector<AbstractKart*> settle_karts;
+    if (Track::getCurrentTrack()->getIdent() == "mobius_track")
+    {
+        for (KartList::iterator i = m_karts.begin(); i != m_karts.end(); i++)
+        {
+            if ((*i)->isGhostKart()) continue;
+            settle_karts.push_back(i->get());
+        }
+
+        STKDynamicsWorld* dynamics_world = Physics::get()->getPhysicsWorld();
+        for (AbstractKart* kart : settle_karts)
+        {
+            Physics::get()->removeKart(kart);
+            dynamics_world->addRigidBody(kart->getBody(),
+                btBroadphaseProxy::CharacterFilter,
+                btBroadphaseProxy::AllFilter ^
+                    btBroadphaseProxy::CharacterFilter);
+            dynamics_world->addVehicle(kart->getVehicle());
+        }
+        Log::info("MobiusStartTrace",
+            "pre-race settle kart-kart collisions disabled");
+    }
+
     for(int i=0; i<stk_config->getPhysicsFPS(); i++)
         Physics::get()->update(1);
+
+    if (!settle_karts.empty())
+    {
+        for (AbstractKart* kart : settle_karts)
+        {
+            Physics::get()->removeKart(kart);
+            Physics::get()->addKart(kart);
+        }
+        Log::info("MobiusStartTrace",
+            "pre-race settle kart-kart collisions restored");
+    }
 
     for ( KartList::iterator i=m_karts.begin(); i!=m_karts.end(); i++)
     {
         (*i)->kartIsInRestNow();
+        if (!(*i)->isGhostKart() &&
+            Track::getCurrentTrack()->getIdent() == "mobius_track")
+        {
+            const int kart_index = (int)(i - m_karts.begin());
+            const Vec3 trace_xyz = (*i)->getXYZ();
+            Log::info("MobiusStartTrace",
+                "post-settle kart=%d xyz=%f,%f,%f heading=%f",
+                kart_index, trace_xyz.x(), trace_xyz.y(), trace_xyz.z(),
+                (*i)->getHeading());
+        }
     }
 
     // Initialise the cameras, now that the correct kart positions are set
