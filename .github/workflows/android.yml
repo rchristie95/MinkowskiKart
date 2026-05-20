@@ -94,7 +94,40 @@ jobs:
           export DECREASE_QUALITY=0
           export CONVERT_TO_JPG=0
           export ASSETS_PATHS="../data ../stk-assets"
+          export KARTS="curie einstein feynman maxwell minkowski newton noether oppenheimer planck tux"
+          export TRACKS="abyss cornfield_crossing hacienda ravenbridge_mansion sandtrack scotland snowtuxpeak volcano_island mobius_track tutorial endcutscene featunlocked gplose gpwin introcutscene introcutscene2 overworld arena_candela_city battleisland icy_soccer_field lasdunasarena lasdunassoccer soccer_field xr_soccer alien_signal ancient_colosseum_labyrinth cave hole_drop oasis pumpkin_park stadium temple"
           ./generate_assets.sh
+
+          # Post-process assets for lightweight fork
+          echo "Overwriting official_karts.xml in assets..."
+          cat << 'EOF' > assets/data/official_karts.xml
+<?xml version="1.0"?>
+<karts>
+    <kart name="tux" type="medium" width="0.821" height="0.675" length="1.437" gravity-shift="0 0.3375 0"/>
+</karts>
+EOF
+
+          echo "Pruning locked/grand prix challenges in assets..."
+          rm -f assets/data/challenges/candela_city.challenge
+          rm -f assets/data/challenges/cocoa_temple.challenge
+          rm -f assets/data/challenges/fortmagma.challenge
+          rm -f assets/data/challenges/gp1.challenge
+          rm -f assets/data/challenges/gp2.challenge
+          rm -f assets/data/challenges/gp3.challenge
+          rm -f assets/data/challenges/gp4.challenge
+          rm -f assets/data/challenges/granparadiso_island.challenge
+          rm -f assets/data/challenges/green_valley.challenge
+          rm -f assets/data/challenges/lighthouse.challenge
+          rm -f assets/data/challenges/mines.challenge
+          rm -f assets/data/challenges/minigolf.challenge
+          rm -f assets/data/challenges/olivermath.challenge
+          rm -f assets/data/challenges/snowmountain.challenge
+          rm -f assets/data/challenges/stk_enterprise.challenge
+          rm -f assets/data/challenges/unlock_bonus_kart1.challenge
+          rm -f assets/data/challenges/unlock_bonus_kart2.challenge
+          rm -f assets/data/challenges/unlock_supertux.challenge
+          rm -f assets/data/challenges/xr591.challenge
+          rm -f assets/data/challenges/zengarden.challenge
           
           # 2. Compile static native libraries
           ./make_deps.sh
