@@ -3,8 +3,8 @@ bool relativityVisualsEnabled()
     return u_relativity_params.x > 0.5;
 }
 
-const float RELATIVITY_OBSERVER_STABILITY_RADIUS = 0.45;
-const float RELATIVITY_OBSERVER_STABILITY_FADE_WIDTH = 0.65;
+const float RELATIVITY_OBSERVER_STABILITY_RADIUS = 0.0;
+const float RELATIVITY_OBSERVER_STABILITY_FADE_WIDTH = 0.0;
 
 vec4 applyRelativisticVisualPosition(vec4 world_position, vec3 object_velocity,
                                      float visual_fade);

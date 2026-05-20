@@ -49,8 +49,8 @@ const float MAX_ADJUSTABLE_C_LIGHT = 1000.0f;
 // setCurrentCLight stores values that align with what the slider can express.
 const int C_LIGHT_SNAP_STEP = 5;
 const float DEFAULT_WARP_BUBBLE_RADIUS = 3.5f;
-const float VISUAL_STABILITY_RADIUS = 0.45f;
-const float VISUAL_STABILITY_FADE_WIDTH = 0.65f;
+const float VISUAL_STABILITY_RADIUS = 0.0f;
+const float VISUAL_STABILITY_FADE_WIDTH = 0.0f;
 const float APPARENT_NORMAL_SAMPLE_DISTANCE = 0.20f;
 
 enum RuntimeRelativityMode
