@@ -105,7 +105,7 @@ void configureRelativisticCCD(const AbstractKart* kart)
             std::min(kart->getKartWidth(), kart->getKartLength())));
     btScalar ccd_radius = extent * btScalar(0.8f);
     btScalar ccd_threshold = extent;
-#if defined(ANDROID) || defined(__ANDROID__)
+#if defined(__ANDROID__)
     // On Android we need CCD to trigger earlier to reduce high-speed
     // clipping/sinking through the Mobius collision surface.
     ccd_radius = extent * btScalar(0.9f);
