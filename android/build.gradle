@@ -26,8 +26,6 @@ allprojects
 
 apply plugin: 'com.android.application'
 
-buildDir = file("C:/s")
-
 android
 {
     // Setting the namespace via a source AndroidManifest.xml's package attribute is deprecated.

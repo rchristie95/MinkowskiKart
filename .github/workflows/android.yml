@@ -17,45 +17,13 @@ permissions:
 jobs:
   build:
     name: Build Android APK
-    runs-on: windows-2022
+    runs-on: ubuntu-24.04
     env:
-      ANDROID_HOME: "C:/android-sdk"
-      ANDROID_SDK_ROOT: "C:/android-sdk"
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ANDROID_HOME: "/usr/local/lib/android/sdk"
+      ANDROID_SDK_ROOT: "/usr/local/lib/android/sdk"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create space-free Android SDK junction
-        run: |
-          mklink /J C:\android-sdk "C:\Program Files (x86)\Android\android-sdk"
-        shell: cmd
-
-      - name: Create short build directory
-        run: |
-          mkdir C:\s
-        shell: cmd
-
-      - name: Create space-free CMake junction
-        run: |
-          mklink /J C:\cmake "C:\Program Files\CMake"
-        shell: cmd
-
-      - name: Create custom space-free realpath wrapper
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path "C:\s\bin"
-          $content = @'
-          #!/bin/sh
-          if [ -z "$1" ]; then
-              echo ""
-          else
-              python -c "import os, sys; path = sys.argv[1]; (drive, path) = (path[1].upper(), path[2:]) if path.startswith('/') and len(path) > 2 and path[2] == '/' else ('', path); abs_path = os.path.abspath(drive + ':' + path if drive else path).replace(chr(92), '/'); print('/' + abs_path[0].lower() + abs_path[2:] if len(abs_path) > 1 and abs_path[1] == ':' else abs_path)" "$1"
-          fi
-          '@
-          Set-Content -Path "C:\s\bin\realpath" -Value $content -NoNewline
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -63,18 +31,28 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Install Make
-        run: choco install make -y
-
-      - name: Install meson and ninja
-        run: pip install "meson==1.4.0" ninja
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make ninja-build glslang-tools python3-mako
+          pip install "meson==1.4.0" --break-system-packages
 
       - name: Install Android NDK 23.1.7779620
-        shell: pwsh
         run: |
-          echo "y" | & "$env:ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager.bat" --install "ndk;23.1.7779620"
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "ndk;23.1.7779620"
+
+      - name: Cache Android Dependencies Source and Prebuilts
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            lib
+            android/deps-arm64-v8a
+            android/mesa
+          key: ${{ runner.os }}-android-deps-v1-${{ hashFiles('.github/workflows/android.yml') }}
 
       - name: Download and Extract Android Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         shell: bash
         run: |
           echo "Downloading dependency source archive..."
@@ -92,6 +70,7 @@ jobs:
           echo "Dependencies set up successfully."
 
       - name: Patch libpng CMakeLists.txt to bypass space-in-path nested quoting bug
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         shell: bash
         run: |
           sed -i 's/"${CMAKE_COMMAND}"/cmake/g' lib/libpng/CMakeLists.txt
@@ -99,22 +78,8 @@ jobs:
       - name: Build MinkowskiKart APK
         shell: bash
         run: |
-          # Make custom realpath wrapper executable
-          chmod +x /c/s/bin/realpath
-
-          # Prepend space-free CMake junction path and custom realpath to bypass cmd.exe nested quoting issues
-          export PATH="/c/s/bin:C:/cmake/bin:$PATH"
-
-          # Align Android SDK environment variables to prevent path conflicts
-          export ANDROID_HOME="C:\android-sdk"
-          export ANDROID_SDK_ROOT="C:\android-sdk"
-          
-          # Use cygpath to dynamically find the correct Unix SDK & NDK paths
-          SDK_PATH=$(cygpath -u "$ANDROID_HOME")
-          NDK_PATH="$SDK_PATH/ndk"
-          
-          export SDK_PATH="$SDK_PATH"
-          export NDK_PATH="$NDK_PATH"
+          export SDK_PATH="$ANDROID_SDK_ROOT"
+          export NDK_PATH="$ANDROID_SDK_ROOT/ndk"
           export STK_MIN_ANDROID_SDK=21
           export STK_TARGET_ANDROID_SDK=35
           export STK_NDK_VERSION="23.1.7779620"
@@ -123,6 +88,7 @@ jobs:
           
           # Go to android/ folder
           cd android
+          chmod +x *.sh gradlew
           
           # 1. Package assets (disable resizing/compression for build speed and dependency simplification)
           export DECREASE_QUALITY=0
@@ -140,4 +106,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MinkowskiKart-Android-Debug
-          path: C:/s/outputs/apk/debug/*.apk
+          path: android/build/outputs/apk/debug/*.apk
