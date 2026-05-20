@@ -100,6 +100,16 @@ jobs:
           
           echo "Dependencies set up successfully."
 
+      - name: Build and install glslangValidator for Windows host
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "Building native Windows glslangValidator to compile Mesa Vulkan shaders..."
+          cd lib/shaderc
+          python utils/git-sync-deps
+          cmake -S third_party/glslang -B build-glslang -DCMAKE_BUILD_TYPE=Release -DENABLE_GLSLANG_BINARIES=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install-glslang"
+          cmake --build build-glslang --config Release --target install
+
       - name: Patch libpng CMakeLists.txt to bypass space-in-path nested quoting bug
         if: steps.cache-deps.outputs.cache-hit != 'true'
         shell: bash
@@ -112,8 +122,8 @@ jobs:
           # Make custom realpath wrapper executable
           chmod +x /c/s/bin/realpath
 
-          # Prepend space-free CMake junction path and custom realpath to bypass cmd.exe nested quoting issues
-          export PATH="/c/s/bin:C:/cmake/bin:$PATH"
+          # Prepend space-free CMake junction path, glslangValidator, and custom realpath to bypass cmd.exe nested quoting issues
+          export PATH="$(pwd)/lib/shaderc/install-glslang/bin:/c/s/bin:C:/cmake/bin:$PATH"
 
           # Align Android SDK environment variables to prevent path conflicts
           export ANDROID_HOME="C:\android-sdk"
