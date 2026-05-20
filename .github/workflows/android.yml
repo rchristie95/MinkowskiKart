@@ -63,6 +63,7 @@ jobs:
           # 1. Package assets (disable resizing/compression for build speed and dependency simplification)
           export DECREASE_QUALITY=0
           export CONVERT_TO_JPG=0
+          export ASSETS_PATHS="../data ../stk-assets"
           ./generate_assets.sh
           
           # 2. Compile static native libraries
