@@ -131,6 +131,8 @@ else
 fi
 
 # Check if we have access to the Android NDK and SDK
+unset ANDROID_SDK_ROOT
+
 if [ -z "$NDK_PATH" ]; then
     export NDK_PATH="$NDK_PATH_DEFAULT"
 fi

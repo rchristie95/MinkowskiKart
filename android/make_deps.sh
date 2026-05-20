@@ -45,6 +45,8 @@ fi
 
 export SYSTEM_PYTHON=$(which python)
 
+unset ANDROID_SDK_ROOT
+
 if [ -z "$NDK_PATH" ]; then
     export NDK_PATH="$NDK_PATH_DEFAULT"
 fi
