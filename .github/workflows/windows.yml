@@ -211,7 +211,7 @@ jobs:
         shell : bash
         if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
         run: |
-          echo "release_tag=git`date +%Y%m%d`" >> $GITHUB_ENV
+          echo "release_tag=preview" >> $GITHUB_ENV
           echo "release_name=preview" >> $GITHUB_ENV
       - name: Configure packaging name for tag
         shell : bash

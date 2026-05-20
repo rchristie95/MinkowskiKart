@@ -114,12 +114,12 @@ jobs:
             echo "release_pre=true" >> $GITHUB_ENV
           fi
 
-      - name: Rename APK with datestamp
+      - name: Rename APK with release tag
         if: ${{ env.release_tag != '' }}
         shell: bash
         run: |
           APK=$(ls android/build/outputs/apk/debug/*.apk | head -1)
-          DEST="MinkowskiKart-git$(date +%Y%m%d)-android.apk"
+          DEST="MinkowskiKart-${{ env.release_tag }}-android.apk"
           cp "$APK" "$DEST"
           echo "apk_path=$DEST" >> $GITHUB_ENV
 
