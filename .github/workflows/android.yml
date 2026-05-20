@@ -65,7 +65,7 @@ jobs:
         run: choco install make -y
 
       - name: Install meson
-        run: pip install meson
+        run: pip install "meson==1.3.2"
 
       - name: Install Android NDK 23.1.7779620
         shell: pwsh
