@@ -82,9 +82,17 @@ if [ ! -d "$NDK_PATH" ]; then
     exit
 fi
 
-export NDK_TOOLCHAIN_PATH="$NDK_PATH/toolchains/llvm/prebuilt/windows-x86_64/bin"
-export NDK_PREBUILT_PATH="$NDK_PATH/prebuilt/windows-x86_64/bin"
-export NDK_SYSROOT="$NDK_PATH/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+HOST_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+case $HOST_OS in
+  linux*) HOST_TAG="linux-x86_64"; CMD_EXT="" ;;
+  darwin*) HOST_TAG="darwin-x86_64"; CMD_EXT="" ;;
+  msys*|mingw*|cygwin*) HOST_TAG="windows-x86_64"; CMD_EXT=".cmd" ;;
+  *) echo "Unknown OS: $HOST_OS"; exit 1 ;;
+esac
+
+export NDK_TOOLCHAIN_PATH="$NDK_PATH/toolchains/llvm/prebuilt/$HOST_TAG/bin"
+export NDK_PREBUILT_PATH="$NDK_PATH/prebuilt/$HOST_TAG/bin"
+export NDK_SYSROOT="$NDK_PATH/toolchains/llvm/prebuilt/$HOST_TAG/sysroot"
 export PATH="$NDK_TOOLCHAIN_PATH:$NDK_PREBUILT_PATH:$PATH"
 
 build_deps()
@@ -432,7 +440,15 @@ build_deps()
             cp -a -f "$DIRNAME/../lib/mesa/"* "$DIRNAME/deps-$ARCH_OPTION/mesa"
 
             cd "$DIRNAME/deps-$ARCH_OPTION/mesa"
-            NDK_PATH_WIN=$(cygpath -m "$NDK_PATH")
+            if command -v cygpath >/dev/null 2>&1; then
+                NDK_PATH_MESON=$(cygpath -m "$NDK_PATH")
+                SYSTEM_PYTHON_MESON=$(cygpath -m "$SYSTEM_PYTHON")
+                PKG_CONFIG_DUMMY_MESON=$(cygpath -m "$DIRNAME/deps-$ARCH_OPTION/mesa/pkg-config-dummy.sh")
+            else
+                NDK_PATH_MESON="$NDK_PATH"
+                SYSTEM_PYTHON_MESON="$SYSTEM_PYTHON"
+                PKG_CONFIG_DUMMY_MESON="$DIRNAME/deps-$ARCH_OPTION/mesa/pkg-config-dummy.sh"
+            fi
             
             # Create a dummy pkg-config script to make meson happy
             cat > pkg-config-dummy.sh <<'EOF'
@@ -440,22 +456,19 @@ build_deps()
 exit 1
 EOF
             chmod +x pkg-config-dummy.sh
-            PKG_CONFIG_DUMMY_WIN=$(cygpath -m "$DIRNAME/deps-$ARCH_OPTION/mesa/pkg-config-dummy.sh")
-
-            SYSTEM_PYTHON_WIN=$(cygpath -m "$SYSTEM_PYTHON")
 
             cat > crossfile <<EOF
 [constants]
-ndk_path = '$NDK_PATH_WIN'
+ndk_path = '$NDK_PATH_MESON'
 
 [binaries]
-ar = ndk_path / 'toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-ar'
-c = [ndk_path / 'toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android26-clang.cmd']
-cpp = [ndk_path / 'toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android26-clang++.cmd', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++', '-Wno-c++11-narrowing']
+ar = ndk_path / 'toolchains/llvm/prebuilt/$HOST_TAG/bin/llvm-ar'
+c = [ndk_path / 'toolchains/llvm/prebuilt/$HOST_TAG/bin/aarch64-linux-android26-clang$CMD_EXT']
+cpp = [ndk_path / 'toolchains/llvm/prebuilt/$HOST_TAG/bin/aarch64-linux-android26-clang++$CMD_EXT', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-static-libstdc++', '-Wno-c++11-narrowing']
 c_ld = 'lld'
 cpp_ld = 'lld'
-python = '$SYSTEM_PYTHON_WIN'
-python3 = '$SYSTEM_PYTHON_WIN'
+python = '$SYSTEM_PYTHON_MESON'
+python3 = '$SYSTEM_PYTHON_MESON'
 
 # Android doesn't come with a pkg-config, but we need one for meson to be happy not
 # finding all the optional deps it looks for.  Use system pkg-config pointing at a
@@ -463,9 +476,9 @@ python3 = '$SYSTEM_PYTHON_WIN'
 
 # Also, include the plain DRM lib we found earlier. Panfrost relies on it rather heavily, especially when
 # interacting with the panfrost DRM module and not kbase
-pkg-config = ['bash', '$PKG_CONFIG_DUMMY_WIN']
+pkg-config = ['bash', '$PKG_CONFIG_DUMMY_MESON']
 
-strip = [ndk_path / 'toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android-strip', '-s']
+strip = [ndk_path / 'toolchains/llvm/prebuilt/$HOST_TAG/bin/aarch64-linux-android-strip', '-s']
 
 [host_machine]
 system = 'android'
