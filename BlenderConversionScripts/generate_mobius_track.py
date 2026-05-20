@@ -60,7 +60,7 @@ BLACK_HOLE_BLENDERKIT_REFERENCE_ASSET_ID = "5dc596e9-158f-4191-8f33-8ca68768d330
 ZIPPER_U_POSITIONS = (0.78, 2.20, 3.68, 5.18)
 ZIPPER_LENGTH = 7.2
 ZIPPER_WIDTH = 4.2
-ZIPPER_SURFACE_LIFT = 0.12
+ZIPPER_SURFACE_LIFT = 0.08
 START_U = 0.55
 START_GRID_ROWS = 4
 START_GRID_COLS = 3
@@ -666,31 +666,33 @@ def make_zipper_mesh():
     v_subdivisions = 4
 
     def append_zipper_patch(u_center):
-        base = len(verts)
-        for i in range(u_subdivisions + 1):
-            s = i / u_subdivisions
-            u = u_center - half_length_u + 2.0 * half_length_u * s
-            for j in range(v_subdivisions + 1):
-                t = j / v_subdivisions
-                lateral = -half_width + 2.0 * half_width * t
-                n = mobius_normal(u, lateral)
-                
-                # Single-sided patch floating just above the local surface
-                verts.append(vadd(mobius_point(u, lateral), vmul(n, ZIPPER_SURFACE_LIFT)))     
-                normals.append(n)
-                # s is forward (u), t is lateral (v)
-                uvs.append((s, t))
-                
-        row = v_subdivisions + 1
-        for i in range(u_subdivisions):
-            for j in range(v_subdivisions):
-                a = base + i * row + j
-                b = base + (i + 1) * row + j
-                c = base + (i + 1) * row + j + 1
-                d = base + i * row + j + 1
-                # Standard CCW winding, automatically produces outward normals
-                # when mapped through mobius_point on both laps.
-                indices.extend((a, b, c, a, c, d))
+        for lift_sign in (-1.0, 1.0):
+            base = len(verts)
+            for i in range(u_subdivisions + 1):
+                s = i / u_subdivisions
+                u = u_center - half_length_u + 2.0 * half_length_u * s
+                for j in range(v_subdivisions + 1):
+                    t = j / v_subdivisions
+                    lateral = -half_width + 2.0 * half_width * t
+                    n = mobius_normal(u, lateral)
+                    
+                    surface_normal = vmul(n, lift_sign)
+                    verts.append(vadd(mobius_point(u, lateral), vmul(n, ZIPPER_SURFACE_LIFT * lift_sign)))     
+                    normals.append(surface_normal)
+                    uv_t = t if lift_sign > 0 else 1.0 - t
+                    uvs.append((s, uv_t))
+                    
+            row = v_subdivisions + 1
+            for i in range(u_subdivisions):
+                for j in range(v_subdivisions):
+                    a = base + i * row + j
+                    b = base + (i + 1) * row + j
+                    c = base + (i + 1) * row + j + 1
+                    d = base + i * row + j + 1
+                    if lift_sign > 0:
+                        indices.extend((a, b, c, a, c, d))
+                    else:
+                        indices.extend((a, c, b, a, d, c))
 
     for u_center in ZIPPER_U_POSITIONS:
         append_zipper_patch(u_center)
