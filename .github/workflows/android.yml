@@ -17,6 +17,9 @@ jobs:
   build:
     name: Build Android APK
     runs-on: windows-2022
+    env:
+      ANDROID_HOME: "C:/PROGRA~2/Android/android-sdk"
+      ANDROID_SDK_ROOT: "C:/PROGRA~2/Android/android-sdk"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -55,8 +58,8 @@ jobs:
         shell: bash
         run: |
           # Align Android SDK environment variables to prevent path conflicts
-          export ANDROID_HOME="C:\Android\android-sdk"
-          export ANDROID_SDK_ROOT="C:\Android\android-sdk"
+          export ANDROID_HOME="C:\PROGRA~2\Android\android-sdk"
+          export ANDROID_SDK_ROOT="C:\PROGRA~2\Android\android-sdk"
           
           # Use cygpath to dynamically find the correct Unix SDK & NDK paths
           SDK_PATH=$(cygpath -u "$ANDROID_HOME")
