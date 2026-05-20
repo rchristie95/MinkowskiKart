@@ -29,9 +29,28 @@ check_error()
     fi
 }
 
+if command -v ninja >/dev/null 2>&1; then
+    export USE_NINJA=1
+else
+    export USE_NINJA=0
+fi
+
 cmake()
 {
-    command cmake -G "Unix Makefiles" "$@"
+    if [ "$USE_NINJA" -eq 1 ]; then
+        command cmake -G "Ninja" "$@"
+    else
+        command cmake -G "Unix Makefiles" "$@"
+    fi
+}
+
+make()
+{
+    if [ "$USE_NINJA" -eq 1 ]; then
+        ninja
+    else
+        command make "$@"
+    fi
 }
 
 # Handle clean command
