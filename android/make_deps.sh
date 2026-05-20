@@ -38,7 +38,7 @@ fi
 cmake()
 {
     if [ "$USE_NINJA" -eq 1 ]; then
-        command cmake -G "Ninja" "$@"
+        command cmake -G "Ninja" -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON "$@"
     else
         command cmake -G "Unix Makefiles" "$@"
     fi
