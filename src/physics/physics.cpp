@@ -103,8 +103,16 @@ void configureRelativisticCCD(const AbstractKart* kart)
         btScalar(0.25f),
         btScalar(0.25f *
             std::min(kart->getKartWidth(), kart->getKartLength())));
-    body->setCcdSweptSphereRadius(extent * btScalar(0.8f));
-    body->setCcdMotionThreshold(extent);
+    btScalar ccd_radius = extent * btScalar(0.8f);
+    btScalar ccd_threshold = extent;
+#if defined(MOBILE_STK) || defined(ANDROID)
+    // On Android we need CCD to trigger earlier to reduce high-speed
+    // clipping/sinking through the Mobius collision surface.
+    ccd_radius = extent * btScalar(0.9f);
+    ccd_threshold = extent * btScalar(0.5f);
+#endif
+    body->setCcdSweptSphereRadius(ccd_radius);
+    body->setCcdMotionThreshold(ccd_threshold);
 }   // configureRelativisticCCD
 
 void applyRelativisticStaticContactCorrection(AbstractKart* kart,
