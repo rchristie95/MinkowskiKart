@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Tested with NDK 28.1.13356709
 
 export DIRNAME=$(realpath "$(dirname "$0")")
@@ -62,7 +62,7 @@ if [ ! -z "$1" ] && [ "$1" = "clean" ]; then
     exit
 fi
 
-export SYSTEM_PYTHON=$(which python)
+export SYSTEM_PYTHON=$(which python3 2>/dev/null || which python 2>/dev/null)
 
 unset ANDROID_SDK_ROOT
 
