@@ -18,13 +18,18 @@ jobs:
     name: Build Android APK
     runs-on: windows-2022
     env:
-      ANDROID_HOME: "C:/PROGRA~2/Android/android-sdk"
-      ANDROID_SDK_ROOT: "C:/PROGRA~2/Android/android-sdk"
+      ANDROID_HOME: "C:/android-sdk"
+      ANDROID_SDK_ROOT: "C:/android-sdk"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Create space-free Android SDK junction
+        run: |
+          mklink /J C:\android-sdk "C:\Program Files (x86)\Android\android-sdk"
+        shell: cmd
 
       - name: Create short build directory
         run: |
@@ -71,8 +76,8 @@ jobs:
           export PATH="C:/cmake/bin:$PATH"
 
           # Align Android SDK environment variables to prevent path conflicts
-          export ANDROID_HOME="C:\PROGRA~2\Android\android-sdk"
-          export ANDROID_SDK_ROOT="C:\PROGRA~2\Android\android-sdk"
+          export ANDROID_HOME="C:\android-sdk"
+          export ANDROID_SDK_ROOT="C:\android-sdk"
           
           # Use cygpath to dynamically find the correct Unix SDK & NDK paths
           SDK_PATH=$(cygpath -u "$ANDROID_HOME")
