@@ -1,0 +1,13 @@
+# Android local builds and Gradle outputs
+.gradle/
+.cxx/
+build/
+bin/
+libs/
+obj/
+res/
+deps-*/
+*.apk
+
+# Assets are generated dynamically during build
+assets/

@@ -28,5 +28,5 @@ __pycache__/
 tools/windows_installer/
 
 # Platform targets not used in this fork
-android/
+# android/
 switch/

@@ -1,0 +1,78 @@
+name: Android Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - '*'
+  pull_request: {}
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: windows-2022
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create short build directory
+        run: |
+          mkdir C:\s
+        shell: cmd
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Make
+        run: choco install make -y
+
+      - name: Install Android NDK 23.1.7779620
+        shell: pwsh
+        run: |
+          echo "y" | & "$env:ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager.bat" --install "ndk;23.1.7779620"
+
+      - name: Build MinkowskiKart APK
+        shell: bash
+        run: |
+          # Use cygpath to dynamically find the correct Unix SDK & NDK paths
+          SDK_PATH=$(cygpath -u "$ANDROID_HOME")
+          NDK_PATH="$SDK_PATH/ndk"
+          
+          export SDK_PATH="$SDK_PATH"
+          export NDK_PATH="$NDK_PATH"
+          export STK_MIN_ANDROID_SDK=21
+          export STK_TARGET_ANDROID_SDK=35
+          export STK_NDK_VERSION="23.1.7779620"
+          export COMPILE_ARCH="aarch64"
+          export BUILD_TYPE="debug"
+          
+          # Go to android/ folder
+          cd android
+          
+          # 1. Package assets (disable resizing/compression for build speed and dependency simplification)
+          export DECREASE_QUALITY=0
+          export CONVERT_TO_JPG=0
+          ./generate_assets.sh
+          
+          # 2. Compile static native libraries
+          ./make_deps.sh
+          
+          # 3. Build APK and compile JNI shared libraries
+          ./make.sh
+
+      - name: Upload MinkowskiKart APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MinkowskiKart-Android-Debug
+          path: C:/s/outputs/apk/debug/*.apk

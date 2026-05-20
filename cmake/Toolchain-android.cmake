@@ -9,8 +9,14 @@
 SET(CMAKE_SYSTEM_NAME Linux)
 
 # which compilers to use for C and C++
-SET(CMAKE_C_COMPILER "${HOST}-clang")
-SET(CMAKE_CXX_COMPILER "${HOST}-clang++")
+if(WIN32)
+    SET(CMAKE_C_COMPILER "${HOST}-clang.cmd")
+    SET(CMAKE_CXX_COMPILER "${HOST}-clang++.cmd")
+else()
+    SET(CMAKE_C_COMPILER "${HOST}-clang")
+    SET(CMAKE_CXX_COMPILER "${HOST}-clang++")
+endif()
+
 
 set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
 
