@@ -20,6 +20,7 @@ jobs:
     env:
       ANDROID_HOME: "C:/android-sdk"
       ANDROID_SDK_ROOT: "C:/android-sdk"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
