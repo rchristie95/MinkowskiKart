@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: |
           export SDK_PATH="$ANDROID_SDK_ROOT"
-          export NDK_PATH="$ANDROID_SDK_ROOT/ndk/23.1.7779620"
+          export NDK_PATH="$ANDROID_SDK_ROOT/ndk"
           export STK_MIN_ANDROID_SDK=21
           export STK_TARGET_ANDROID_SDK=35
           export STK_NDK_VERSION="23.1.7779620"
