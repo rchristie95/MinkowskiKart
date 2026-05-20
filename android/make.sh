@@ -57,7 +57,7 @@ check_error()
 {
     if [ $? -gt 0 ]; then
         echo "Error ocurred."
-        exit
+        exit 1
     fi
 }
 
@@ -469,6 +469,8 @@ export ANDROID_HOME="$SDK_PATH"
           -Pversion_name="$PROJECT_VERSION"              \
           -Pversion_code="$PROJECT_CODE"                 \
           $GRADLE_BUILD_TYPE
+
+check_error
 
 if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
 ./gradlew -Pcompile_sdk_version="$COMPILE_SDK_VERSION"   \

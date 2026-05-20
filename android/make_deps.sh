@@ -25,7 +25,7 @@ check_error()
 {
     if [ $? -gt 0 ]; then
         echo "Error ocurred."
-        exit
+        exit 1
     fi
 }
 

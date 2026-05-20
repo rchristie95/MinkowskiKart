@@ -42,6 +42,15 @@ jobs:
         run: |
           echo "y" | & "$env:ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager.bat" --install "ndk;23.1.7779620"
 
+      - name: Download and Extract Android Dependencies
+        shell: bash
+        run: |
+          echo "Downloading dependency source archive..."
+          curl -L -o dependencies-android-src.tar.xz https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-android-src.tar.xz
+          echo "Extracting dependency sources into lib/..."
+          tar -C 'lib' -xf dependencies-android-src.tar.xz
+          echo "Dependencies set up successfully."
+
       - name: Build MinkowskiKart APK
         shell: bash
         run: |
