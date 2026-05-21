@@ -235,9 +235,9 @@ float getRelativisticShadowFade()
 
     // PCSS is especially sensitive to camera-relative optical warping because
     // both blocker search and filter radii depend on the receiver's projected
-    // shadow-map position. Fade those unstable dynamic samples out at
-    // relativistic beta instead of letting them flip surfaces dark/light.
-    return smoothstep(0.02, 0.12, length(u_relativity_beta.xyz));
+    // shadow-map position. Keep the relativistic lighting model independent of
+    // beta so parked and moving karts do not jump between dark and lit states.
+    return 1.0;
 }
 
 void main() {

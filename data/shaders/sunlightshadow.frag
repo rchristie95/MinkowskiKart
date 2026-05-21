@@ -93,11 +93,11 @@ float getRelativisticShadowFade()
     if (u_relativity_params.x <= 0.5)
         return 0.0;
 
-    // Cascaded shadow maps are generated and filtered in the camera/sun frame.
-    // At relativistic speeds the visible scene is optically warped, so the
-    // sampled receiver-to-shadow-map relation becomes unstable. Fade dynamic
-    // shadow samples out once beta is large enough to shimmer.
-    return smoothstep(0.02, 0.12, length(u_relativity_beta.xyz));
+    // Cascaded shadow maps are generated from unwarped world positions, while
+    // relativity visuals warp the visible receiver geometry. If this depends on
+    // beta, parked karts can be shadowed while moving karts are lit. Keep the
+    // lighting model consistent whenever relativity visuals are active.
+    return 1.0;
 }
 
 vec3 getXcYcZc(int x, int y, float zC)
