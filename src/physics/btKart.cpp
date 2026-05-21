@@ -31,6 +31,7 @@
 #include "modes/world.hpp"
 #include "physics/triangle_mesh.hpp"
 #include "race/race_manager.hpp"
+#include "config/user_config.hpp"
 #include "relativity/observer_snapshot.hpp"
 #include "relativity/relativity_math.hpp"
 #include "tracks/terrain_info.hpp"
@@ -297,7 +298,7 @@ btVector3 getGroundStickImpulse(Kart* kart,
         return btVector3(0.0f, 0.0f, 0.0f);
 
     btVector3 impulse;
-    if (Relativity::isEnabled())
+    if (UserConfigParams::m_relativity_physics_enabled && Relativity::isEnabled())
     {
         impulse = -normalizedOrDefault(support_normal,
                   btVector3(0.0f, 1.0f, 0.0f)) *
@@ -1073,7 +1074,7 @@ void btKart::updateVehicle( btScalar step )
         iwt.setRotation(iwt.getRotation()*add_rot);
         m_ticks_additional_rotation--;
     }
-    if (Relativity::isEnabled())
+    if (UserConfigParams::m_relativity_physics_enabled && Relativity::isEnabled())
     {
         // Keep grounded relativistic motion tangent to current wheel contacts.
         // The smoothed support normal feeds camera/stickiness, but projecting
@@ -1516,7 +1517,7 @@ void btKart::setSliding(bool active)
  */
 void btKart::adjustSpeed(btScalar min_speed, btScalar max_speed)
 {
-    if (Relativity::isEnabled())
+    if (UserConfigParams::m_relativity_physics_enabled && Relativity::isEnabled())
     {
         btScalar relativity_max_speed =
             (btScalar)Relativity::getMaxCoordinateSpeed();

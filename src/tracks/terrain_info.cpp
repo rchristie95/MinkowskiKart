@@ -18,6 +18,7 @@
 
 #include "tracks/terrain_info.hpp"
 
+#include "graphics/material.hpp"
 #include "physics/triangle_mesh.hpp"
 #include "race/race_manager.hpp"
 #include "tracks/track.hpp"
@@ -91,6 +92,30 @@ void TerrainInfo::update(const btMatrix3x3 &rotation, const Vec3 &from)
     Track::getCurrentTrack()->getTrackObjectManager()
                             ->castRay(from, to, &m_hit_point, &m_material,
                                       &m_normal, /*interpolate*/true);
+
+    // Check for ghost textures (e.g. visual-only zippers) in the GFX mesh.
+    // If a zipper is found here, we override the material but keep the
+    // physical hit point and normal from the track/objects.
+    const TriangleMesh &gfx_tm = Track::getCurrentTrack()->getGFXEffectMesh();
+    Vec3 gfx_hit_point;
+    const Material *gfx_material = NULL;
+    Vec3 gfx_normal;
+    if (gfx_tm.castRay(from, to, &gfx_hit_point, &gfx_material, &gfx_normal,
+                       /*interpolate*/true))
+    {
+        // If the ghost hit is closer than or roughly at the same depth as the
+        // physical hit, and it's a zipper, use it.
+        if (gfx_material && gfx_material->isZipper())
+        {
+            float physical_dist = (from - m_hit_point).length();
+            float ghost_dist    = (from - gfx_hit_point).length();
+            // Allow the ghost texture to be slightly 'below' the road if needed
+            if (ghost_dist < physical_dist + 0.5f)
+            {
+                m_material = gfx_material;
+            }
+        }
+    }
 }   // update
 //-----------------------------------------------------------------------------
 /** Update the terrain information based on the latest position.

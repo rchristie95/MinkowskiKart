@@ -122,6 +122,10 @@ void OptionsScreenRelativity::init()
     beta_w->setValue(maxBetaToIndex(
         (float)UserConfigParams::m_relativity_max_beta));
 
+    CheckBoxWidget* phys_w = getWidget<CheckBoxWidget>("physics_enabled");
+    assert(phys_w != NULL);
+    phys_w->setState(UserConfigParams::m_relativity_physics_enabled);
+
     Relativity::getCurrentCLight();
 }   // init
 
@@ -162,6 +166,12 @@ void OptionsScreenRelativity::eventCallback(Widget* widget,
         SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
         assert(w != NULL);
         UserConfigParams::m_relativity_max_beta = indexToMaxBeta(w->getValue());
+    }
+    else if (name == "physics_enabled")
+    {
+        CheckBoxWidget* w = dynamic_cast<CheckBoxWidget*>(widget);
+        assert(w != NULL);
+        UserConfigParams::m_relativity_physics_enabled = w->getState();
     }
 }   // eventCallback
 

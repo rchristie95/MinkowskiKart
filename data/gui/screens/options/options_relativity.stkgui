@@ -51,6 +51,13 @@
                         <spinner id="max_beta" width="90%" height="fit"/>
                         <spacer width="5%" height="100%"/>
                     </div>
+                    <spacer width="5" height="6%"/>
+                    <div layout="horizontal-row" width="90%" height="fit" align="center">
+                        <spacer width="5%" height="100%"/>
+                        <checkbox id="physics_enabled"/>
+                        <spacer width="2%" height="100%"/>
+                        <label height="100%" text="Relativistic collision physics"/>
+                    </div>
                     <spacer width="5" height="4%"/>
                 </box>
 

@@ -1039,7 +1039,8 @@ void Track::createPhysicsModel(unsigned int main_track_count,
  *  \param occluder Optional destination for storing occluder triangles
  */
 void Track::convertTrackToBullet(scene::ISceneNode *node,
-                               std::vector<std::array<btVector3, 3> >* occluder)
+                               std::vector<std::array<btVector3, 3> >* occluder,
+                               bool force_gfx_mesh)
 {
     if (node->getType() == scene::ESNT_TEXT)
         return;
@@ -1120,9 +1121,9 @@ void Track::convertTrackToBullet(scene::ISceneNode *node,
             {
                 for (unsigned int j = 0; j < mb->getIndexCount(); j += 3)
                 {
-                    TriangleMesh* tmesh = m_track_mesh;
+                    TriangleMesh* tmesh = force_gfx_mesh ? m_gfx_effect_mesh : m_track_mesh;
                     Material* material = spmb->getSTKMaterial(j);
-                    if (material->isSurface())
+                    if (!force_gfx_mesh && material->isSurface())
                     {
                         tmesh = m_gfx_effect_mesh;
                     }
@@ -1484,6 +1485,7 @@ bool Track::loadMainTrack(const XMLNode &root)
     }
     main_loop->renderGUI(4200);
 
+    std::vector<scene::ISceneNode*> ghost_texture_nodes;
     for (unsigned int i=0; i<track_node->getNumNodes(); i++)
     {
         main_loop->renderGUI(4300, i, track_node->getNumNodes());
@@ -1667,6 +1669,8 @@ bool Track::loadMainTrack(const XMLNode &root)
             {
                 if(interaction=="physics-only")
                     m_static_physics_only_nodes.push_back(scene_node);
+                else if (interaction == "ghost-texture")
+                    ghost_texture_nodes.push_back(scene_node);
                 else
                     m_all_nodes.push_back( scene_node );
             }
@@ -1682,6 +1686,12 @@ bool Track::loadMainTrack(const XMLNode &root)
         main_loop->renderGUI(4360, i, m_all_nodes.size());
         uploadNodeVertexBuffer(m_all_nodes[i]);
         main_loop->renderGUI(4400, i, m_all_nodes.size());
+    }
+
+    for (unsigned int i = 0; i < ghost_texture_nodes.size(); i++)
+    {
+        convertTrackToBullet(ghost_texture_nodes[i], NULL, true/*force_gfx*/);
+        uploadNodeVertexBuffer(ghost_texture_nodes[i]);
     }
 
     // Free the tangent (track mesh) after converting to physics

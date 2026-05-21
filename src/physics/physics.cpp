@@ -67,7 +67,7 @@ btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
 
 int getRelativisticSubsteps()
 {
-    if (!Relativity::isPreferredFrameDynamics())
+    if (!UserConfigParams::m_relativity_physics_enabled && Relativity::isPreferredFrameDynamics())
         return 1;
 
     World* world = World::getWorld();
@@ -526,7 +526,7 @@ void Physics::KartKartCollision(AbstractKart *kart_a,
     kart_a->crashed(kart_b, /*handle_attachments*/true);
     kart_b->crashed(kart_a, /*handle_attachments*/false);
 
-    if (!Relativity::isPreferredFrameDynamics())
+    if (!UserConfigParams::m_relativity_physics_enabled && Relativity::isPreferredFrameDynamics())
     {
         AbstractKart *left_kart, *right_kart;
 

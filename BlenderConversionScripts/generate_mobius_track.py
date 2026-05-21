@@ -29,9 +29,9 @@ except ImportError as exc:  # pragma: no cover - this generator is Blender-first
 RADIUS = 82.0
 ROAD_HALF_WIDTH = 8.0
 GRAPH_HALF_WIDTH = 5.6
-COLLISION_U_SEGMENTS = 192
+COLLISION_U_SEGMENTS = 512
 COLLISION_V_SEGMENTS = 12
-VISUAL_U_SEGMENTS = 192
+VISUAL_U_SEGMENTS = 768
 VISUAL_V_SEGMENTS = 10
 SAFETY_SURFACE_OFFSET = -0.42
 SEAM_BRIDGE_SURFACE_OFFSET = 0.045
@@ -666,33 +666,28 @@ def make_zipper_mesh():
     v_subdivisions = 4
 
     def append_zipper_patch(u_center):
-        for lift_sign in (-1.0, 1.0):
-            base = len(verts)
-            for i in range(u_subdivisions + 1):
-                s = i / u_subdivisions
-                u = u_center - half_length_u + 2.0 * half_length_u * s
-                for j in range(v_subdivisions + 1):
-                    t = j / v_subdivisions
-                    lateral = -half_width + 2.0 * half_width * t
-                    n = mobius_normal(u, lateral)
-                    
-                    surface_normal = vmul(n, lift_sign)
-                    verts.append(vadd(mobius_point(u, lateral), vmul(n, ZIPPER_SURFACE_LIFT * lift_sign)))     
-                    normals.append(surface_normal)
-                    uv_t = t if lift_sign > 0 else 1.0 - t
-                    uvs.append((s, uv_t))
-                    
-            row = v_subdivisions + 1
-            for i in range(u_subdivisions):
-                for j in range(v_subdivisions):
-                    a = base + i * row + j
-                    b = base + (i + 1) * row + j
-                    c = base + (i + 1) * row + j + 1
-                    d = base + i * row + j + 1
-                    if lift_sign > 0:
-                        indices.extend((a, b, c, a, c, d))
-                    else:
-                        indices.extend((a, c, b, a, d, c))
+        base = len(verts)
+        for i in range(u_subdivisions + 1):
+            s = i / u_subdivisions
+            u = u_center - half_length_u + 2.0 * half_length_u * s
+            for j in range(v_subdivisions + 1):
+                t = j / v_subdivisions
+                lateral = -half_width + 2.0 * half_width * t
+                n = mobius_normal(u, lateral)
+                
+                # Single-sided visual patch
+                verts.append(vadd(mobius_point(u, lateral), vmul(n, ZIPPER_SURFACE_LIFT)))     
+                normals.append(n)
+                uvs.append((s, t))
+                
+        row = v_subdivisions + 1
+        for i in range(u_subdivisions):
+            for j in range(v_subdivisions):
+                a = base + i * row + j
+                b = base + (i + 1) * row + j
+                c = base + (i + 1) * row + j + 1
+                d = base + i * row + j + 1
+                indices.extend((a, b, c, a, c, d))
 
     for u_center in ZIPPER_U_POSITIONS:
         append_zipper_patch(u_center)
@@ -2151,7 +2146,7 @@ def write_scene_xml(track_dir):
         '    <static-object model="mobius_start_gate.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false"/>',
     ]
     lines.extend([
-        '    <static-object model="mobius_zippers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="static" shape="exact" driveable="true" shadow-pass="false"/>',
+        '    <static-object model="mobius_zippers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost-texture" shadow-pass="false"/>',
         '  </track>',
         '  <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">',
         '    <curve channel="RotY" interpolation="linear" extend="cyclic">',
@@ -2451,7 +2446,7 @@ def generate_mobius_track(project_root):
         VISUAL_V_SEGMENTS,
         0,
         VISUAL_U_SEGMENTS,
-        True,
+        False,
     )
     rails_visual = make_rail_visual_mesh(
         "Mobius_Rails_Visual",
@@ -2471,7 +2466,7 @@ def generate_mobius_track(project_root):
         COLLISION_U_SEGMENTS,
         COLLISION_V_SEGMENTS,
         0.0,
-        True,
+        False,
     )
     safety_collision = make_welded_mobius_surface(
         "Mobius_Safety_Collision",
@@ -2480,7 +2475,7 @@ def generate_mobius_track(project_root):
         COLLISION_U_SEGMENTS,
         COLLISION_V_SEGMENTS,
         SAFETY_SURFACE_OFFSET,
-        True,
+        False,
     )
     seam_bridge_collision = make_mobius_patch_mesh(
         "Mobius_Seam_Bridge_Collision",
@@ -2491,7 +2486,7 @@ def generate_mobius_track(project_root):
         32,
         COLLISION_V_SEGMENTS,
         SEAM_BRIDGE_SURFACE_OFFSET,
-        True,
+        False,
     )
     seam_jump_ramp_collision = make_seam_jump_ramp_mesh(
         "Mobius_Seam_Jump_Ramp_Collision",

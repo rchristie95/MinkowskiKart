@@ -747,7 +747,8 @@ public:
     bool isAddon() const                                 { return m_is_addon; }
     // ------------------------------------------------------------------------
     void convertTrackToBullet(scene::ISceneNode *node,
-                      std::vector<std::array<btVector3, 3> >* occluder = NULL);
+                      std::vector<std::array<btVector3, 3> >* occluder = NULL,
+                      bool force_gfx_mesh = false);
     // ------------------------------------------------------------------------
     CheckManager* getCheckManager() const           { return m_check_manager; }
     // ------------------------------------------------------------------------
