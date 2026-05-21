@@ -3468,7 +3468,35 @@ void Kart::updateGraphics(float dt)
     // Update the skidding jump height:
     Vec3 center_shift(0, 0, 0);
     float jump_height = m_skidding->updateGraphics(dt);
-    center_shift.setY(jump_height + fabsf(lean_height) + m_graphical_y_offset);
+    
+    float height_correction = 0.0f;
+    if (Relativity::isEnabled() && Camera::getActiveCamera())
+    {
+        btVector3 p_phys = m_terrain_info->getHitPoint();
+        if ((p_phys - getXYZ()).length() != Track::NOHIT)
+        {
+            const AbstractKart* observer_kart = Camera::getActiveCamera()->getKart();
+            btVector3 observer_position = Camera::getActiveCamera()->getXYZ();
+            Relativity::ObserverVisualState observer_state =
+                Relativity::buildObserverVisualState(observer_kart, observer_position);
+            if (observer_state.m_valid)
+            {
+                btVector3 x_phys = getSmoothedTrans().getOrigin();
+                
+                btVector3 p_apparent = Relativity::applyVisualPosition(p_phys, observer_state, btVector3(0.0f, 0.0f, 0.0f));
+                btVector3 x_apparent = Relativity::applyVisualPosition(x_phys, observer_state, getVelocity());
+                
+                btVector3 d_road = p_apparent - p_phys;
+                btVector3 d_kart = x_apparent - x_phys;
+                btVector3 delta = d_road - d_kart;
+                
+                btVector3 up_vector = getSmoothedTrans().getBasis().getColumn(1);
+                height_correction = (float)delta.dot(up_vector);
+            }
+        }
+    }
+    
+    center_shift.setY(jump_height + fabsf(lean_height) + m_graphical_y_offset + height_correction);
     center_shift = getSmoothedTrans().getBasis() * center_shift;
 
     float heading = m_skidding->getVisualSkidRotation();
