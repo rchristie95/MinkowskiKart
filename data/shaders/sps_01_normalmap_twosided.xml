@@ -1,0 +1,18 @@
+<spshader>
+    <shader-info name="normalmap_twosided" fallback-shader="solid_twosided" use-tangents="Y"/>
+    <first-pass use-function="noCullUse" unuse-function="noCullUnuse"
+        vertex-shader="sp_pass.vert"
+        tess-control-shader="sp_tess.tesc" tess-evaluation-shader="sp_tess.tese"
+        fragment-shader="sp_normal_map.frag"
+        skinned-mesh-shader="sp_skinning.vert">
+    </first-pass>
+    <shadow-pass use-function="noCullUse" unuse-function="noCullUnuse"
+        vertex-shader="sp_shadow.vert"
+        fragment-shader="white.frag"
+        skinned-mesh-shader="sp_skinning_shadow.vert">
+    </shadow-pass>
+    <uniform-assigners>
+        <uniform-assigner name="layer"
+        function="shadowCascadeUniformAssigner"/>
+    </uniform-assigners>
+</spshader>

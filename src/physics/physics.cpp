@@ -48,8 +48,14 @@
 
 #include <IVideoDriver.h>
 
+#include <algorithm>
+#include <cmath>
+
 namespace
 {
+
+const btScalar RELATIVISTIC_CONTACT_SYNC_RADIUS2 = btScalar(25.0f);
+const btScalar RELATIVISTIC_CONTACT_CORRECTION_RATE = btScalar(8.0f);
 
 btVector3 toBt(const Vec3& v)
 {
@@ -67,7 +73,8 @@ btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
 
 int getRelativisticSubsteps()
 {
-    if (!UserConfigParams::m_relativity_physics_enabled && Relativity::isPreferredFrameDynamics())
+    if (!UserConfigParams::m_relativity_physics_enabled ||
+        !Relativity::isPreferredFrameDynamics())
         return 1;
 
     World* world = World::getWorld();
@@ -99,6 +106,14 @@ void configureRelativisticCCD(const AbstractKart* kart)
     if (!body || body->isStaticOrKinematicObject())
         return;
 
+    if (!UserConfigParams::m_relativity_physics_enabled ||
+        !Relativity::isPreferredFrameDynamics())
+    {
+        body->setCcdSweptSphereRadius(btScalar(0.0f));
+        body->setCcdMotionThreshold(btScalar(0.0f));
+        return;
+    }
+
     const btScalar extent = std::max(
         btScalar(0.25f),
         btScalar(0.25f *
@@ -112,10 +127,67 @@ void applyRelativisticStaticContactCorrection(AbstractKart* kart,
                                               bool kart_is_body_a,
                                               float dt)
 {
-    (void)kart;
-    (void)manifold;
-    (void)kart_is_body_a;
-    (void)dt;
+    if (!kart || !manifold || dt <= 0.0f ||
+        !UserConfigParams::m_relativity_physics_enabled ||
+        !Relativity::isPreferredFrameDynamics())
+        return;
+
+    btRigidBody* body = kart->getBody();
+    if (!body || body->isStaticOrKinematicObject())
+        return;
+
+    const btVector3 kart_center = body->getCenterOfMassPosition();
+    btScalar best_offset = btScalar(0.0f);
+    btVector3 best_normal(0.0f, 1.0f, 0.0f);
+
+    for (int i = 0; i < manifold->getNumContacts(); i++)
+    {
+        const btManifoldPoint& contact = manifold->getContactPoint(i);
+        const btVector3 contact_point = kart_is_body_a
+            ? contact.m_positionWorldOnB : contact.m_positionWorldOnA;
+        if ((contact_point - kart_center).length2() >
+            RELATIVISTIC_CONTACT_SYNC_RADIUS2)
+            continue;
+
+        btVector3 normal = kart_is_body_a
+            ? contact.m_normalWorldOnB : -contact.m_normalWorldOnB;
+        normal = normalizedOrDefault(normal, best_normal);
+
+        Relativity::ApparentInteractionSurface apparent_surface;
+        if (!Relativity::getApparentInteractionSurface(
+                kart, kart_center, contact_point, normal,
+                &apparent_surface))
+            continue;
+
+        const btScalar offset =
+            btScalar(apparent_surface.m_offset_along_normal);
+        if (offset > best_offset)
+        {
+            best_offset = offset;
+            best_normal = normalizedOrDefault(
+                apparent_surface.m_apparent_normal, normal);
+        }
+    }
+
+    if (best_offset <= btScalar(0.0f))
+        return;
+
+    btVector3 velocity = body->getLinearVelocity();
+    const btScalar inward_speed = velocity.dot(best_normal);
+    if (inward_speed < btScalar(0.0f))
+    {
+        velocity -= best_normal * inward_speed;
+        body->setLinearVelocity(velocity);
+    }
+
+    const btScalar alpha = std::min(
+        btScalar(1.0f),
+        std::max(btScalar(0.0f),
+                 btScalar(dt) * RELATIVISTIC_CONTACT_CORRECTION_RATE));
+    btTransform transform = body->getWorldTransform();
+    transform.setOrigin(transform.getOrigin() + best_normal * best_offset * alpha);
+    body->setCenterOfMassTransform(transform);
+    body->activate();
 }   // applyRelativisticStaticContactCorrection
 
 }   // anonymous namespace
@@ -526,7 +598,8 @@ void Physics::KartKartCollision(AbstractKart *kart_a,
     kart_a->crashed(kart_b, /*handle_attachments*/true);
     kart_b->crashed(kart_a, /*handle_attachments*/false);
 
-    if (!UserConfigParams::m_relativity_physics_enabled && Relativity::isPreferredFrameDynamics())
+    if (!UserConfigParams::m_relativity_physics_enabled ||
+        !Relativity::isPreferredFrameDynamics())
     {
         AbstractKart *left_kart, *right_kart;
 

@@ -3023,7 +3023,7 @@ void Kart::updateSliding()
             wheel.m_frictionSlip = m_kart_properties->getFrictionSlip();
         }
         m_vehicle->setSliding(false);
-
+        return;
     }
 
     // Now test for each wheel if it should be sliding

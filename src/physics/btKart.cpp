@@ -46,15 +46,10 @@
 namespace
 {
 
-// With no stability zone suppressing relativistic warping near the kart, the
-// full Lorentz displacement can apply to geometry immediately adjacent to the
-// wheels. 1.0 game unit gives enough headroom that the apparent surface (as
-// seen by a relativistic observer) remains within a physically reasonable
-// offset from the true collision surface, without letting physics diverge.
-const btScalar APPARENT_SURFACE_SHELL_LIMIT = btScalar(1.00f);
 const btScalar SUPPORT_NORMAL_TIME_CONSTANT = btScalar(0.06f);
 const btScalar SUPPORT_NORMAL_MAX_RATE = btScalar(7.0f);
 const btScalar INTO_GROUND_SPEED_TOLERANCE = btScalar(0.15f);
+const btScalar RELATIVISTIC_SYNC_RADIUS2 = btScalar(25.0f);
 const btScalar MOBIUS_RADIUS = btScalar(82.0f);
 const btScalar MOBIUS_ROAD_HALF_WIDTH = btScalar(8.0f);
 const btScalar MOBIUS_PI = btScalar(3.14159265358979323846f);
@@ -191,7 +186,12 @@ MobiusSurfaceQuery evaluateMobiusQuery(const btVector3& position,
         surface_normal = -surface_normal;
 
     query.m_surface_normal = surface_normal;
-    query.m_gravity_normal = normalizedOrDefault(outward, surface_normal);
+    // Keep custom gravity exactly paired with the support normal used by the
+    // wheel contacts. Using the chassis-to-surface vector here lets suspension
+    // and chassis pitch introduce a tangential gravity component on steep
+    // Mobius sections; with relativity's tangent-velocity projection enabled,
+    // that can erase uphill traction.
+    query.m_gravity_normal = surface_normal;
     return query;
 }   // evaluateMobiusQuery
 
@@ -314,21 +314,6 @@ btVector3 getGroundStickImpulse(Kart* kart,
 
     return impulse;
 }   // getGroundStickImpulse
-
-btScalar getApparentSurfaceShellAlongNormal(const Kart* observer_kart,
-                                            const btVector3& observer_position,
-                                            const btVector3& world_point,
-                                            const btVector3& world_normal)
-{
-    if (!observer_kart || !Relativity::isEnabled())
-        return btScalar(0.0f);
-
-    const float shell = Relativity::getVisualShellOffset(
-        observer_kart, observer_position, world_point, world_normal);
-    if (!std::isfinite((double)shell) || shell <= 0.0f)
-        return btScalar(0.0f);
-    return std::min((btScalar)shell, APPARENT_SURFACE_SHELL_LIMIT);
-}   // getApparentSurfaceShellAlongNormal
 
 }   // anonymous namespace
 
@@ -680,11 +665,42 @@ btScalar btKart::rayCast(unsigned int index, float fraction)
     btScalar depth =  raylen * rayResults.m_distFraction;
     if (object &&  depth < max_susp_len)
     {
-        wheel.m_raycastInfo.m_contactNormalWS  = rayResults.m_hitNormalInWorld;
-        wheel.m_raycastInfo.m_contactNormalWS.normalize();
+        btVector3 contact_normal = rayResults.m_hitNormalInWorld;
+        contact_normal.normalize();
         btVector3 mobius_normal;
-        if (getMobiusSupportNormal(&mobius_normal))
-            wheel.m_raycastInfo.m_contactNormalWS = mobius_normal;
+        const bool has_mobius_normal = getMobiusSupportNormal(&mobius_normal);
+        if (has_mobius_normal)
+            contact_normal = mobius_normal;
+        btVector3 contact_point = rayResults.m_hitPointInWorld;
+
+        if (UserConfigParams::m_relativity_physics_enabled &&
+            Relativity::isPreferredFrameDynamics() &&
+            (rayResults.m_hitPointInWorld -
+                getRigidBody()->getCenterOfMassPosition()).length2() <=
+                    RELATIVISTIC_SYNC_RADIUS2)
+        {
+            Relativity::ApparentInteractionSurface apparent_surface;
+            if (Relativity::getApparentInteractionSurface(
+                    m_kart, getRigidBody()->getCenterOfMassPosition(),
+                    rayResults.m_hitPointInWorld, contact_normal,
+                    &apparent_surface))
+            {
+                const btScalar apparent_depth =
+                    (apparent_surface.m_apparent_point - source).dot(
+                        wheel.m_raycastInfo.m_wheelDirectionWS);
+                if (apparent_depth >= btScalar(0.0f) &&
+                    apparent_depth < depth && apparent_depth < max_susp_len)
+                {
+                    depth = apparent_depth;
+                    contact_point = apparent_surface.m_apparent_point;
+                    if (!has_mobius_normal)
+                        contact_normal = apparent_surface.m_apparent_normal;
+                }
+            }
+        }
+
+        wheel.m_raycastInfo.m_contactNormalWS = contact_normal;
+        wheel.m_raycastInfo.m_contactNormalWS.normalize();
         wheel.m_raycastInfo.m_isInContact = true;
         ///@todo for driving on dynamic/movable objects!;
         wheel.m_raycastInfo.m_triangle_index = rayResults.m_triangle_index;;
@@ -706,7 +722,7 @@ btScalar btKart::rayCast(unsigned int index, float fraction)
             wheel.m_raycastInfo.m_suspensionLength = maxSuspensionLength;
         }
 
-        wheel.m_raycastInfo.m_contactPointWS = rayResults.m_hitPointInWorld;
+        wheel.m_raycastInfo.m_contactPointWS = contact_point;
 
         btScalar denominator = wheel.m_raycastInfo.m_contactNormalWS.dot(
                                       wheel.m_raycastInfo.m_wheelDirectionWS );

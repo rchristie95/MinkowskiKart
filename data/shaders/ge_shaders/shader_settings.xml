@@ -9,6 +9,18 @@
         </shaders>
     </setting>
 
+    <setting name="solid_twosided">
+        <properties>
+            <backface-culling>false</backface-culling>
+        </properties>
+        <shaders>
+            <vertex>spm.vert</vertex>
+            <fragment>solid.frag</fragment>
+            <depth>depth_only.frag</depth>
+            <skinning-vertex>spm_skinning.vert</skinning-vertex>
+        </shaders>
+    </setting>
+
     <setting name="normalmap">
         <properties>
             <nonpbr-fallback>solid</nonpbr-fallback>
@@ -21,7 +33,32 @@
         </shaders>
     </setting>
 
+    <setting name="normalmap_twosided">
+        <properties>
+            <nonpbr-fallback>solid_twosided</nonpbr-fallback>
+            <backface-culling>false</backface-culling>
+        </properties>
+        <shaders>
+            <vertex>spm.vert</vertex>
+            <fragment>normalmap.frag</fragment>
+            <depth>depth_only.frag</depth>
+            <skinning-vertex>spm_skinning.vert</skinning-vertex>
+        </shaders>
+    </setting>
+
     <setting name="decal">
+        <shaders>
+            <vertex>spm.vert</vertex>
+            <fragment>decal.frag</fragment>
+            <depth>depth_only.frag</depth>
+            <skinning-vertex>spm_skinning.vert</skinning-vertex>
+        </shaders>
+    </setting>
+
+    <setting name="decal_twosided">
+        <properties>
+            <backface-culling>false</backface-culling>
+        </properties>
         <shaders>
             <vertex>spm.vert</vertex>
             <fragment>decal.frag</fragment>
@@ -51,6 +88,18 @@
         </shaders>
     </setting>
 
+    <setting name="alphatest_twosided">
+        <properties>
+            <backface-culling>false</backface-culling>
+        </properties>
+        <shaders>
+            <vertex>spm.vert</vertex>
+            <fragment>alphatest.frag</fragment>
+            <depth>alphatest_depth.frag</depth>
+            <skinning-vertex>spm_skinning.vert</skinning-vertex>
+        </shaders>
+    </setting>
+
     <setting name="unlit">
         <properties>
             <nonpbr-fallback>alphatest</nonpbr-fallback>
@@ -63,7 +112,31 @@
         </shaders>
     </setting>
 
+    <setting name="unlit_twosided">
+        <properties>
+            <nonpbr-fallback>alphatest_twosided</nonpbr-fallback>
+            <backface-culling>false</backface-culling>
+        </properties>
+        <shaders>
+            <vertex>spm.vert</vertex>
+            <fragment>unlit.frag</fragment>
+            <depth>alphatest_depth.frag</depth>
+            <skinning-vertex>spm_skinning.vert</skinning-vertex>
+        </shaders>
+    </setting>
+
     <setting name="grass">
+        <shaders>
+            <vertex>grass.vert</vertex>
+            <fragment>alphatest.frag</fragment>
+            <depth>alphatest_depth.frag</depth>
+        </shaders>
+    </setting>
+
+    <setting name="grass_twosided">
+        <properties>
+            <backface-culling>false</backface-culling>
+        </properties>
         <shaders>
             <vertex>grass.vert</vertex>
             <fragment>alphatest.frag</fragment>

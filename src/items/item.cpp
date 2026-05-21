@@ -55,6 +55,26 @@ core::vector3df getItemVisualOffset(Item::ItemType type)
         return core::vector3df(0.0f, 0.5f, 0.0f);
     return core::vector3df(0.0f, 0.0f, 0.0f);
 }
+
+bool hitKartInItemFrame(const Item& item, const Vec3& xyz,
+                        const AbstractKart* kart, const Vec3& item_xyz,
+                        const btQuaternion& item_rotation,
+                        const Vec3& item_normal)
+{
+    if (item.getPreviousOwner() == kart && item.getDeactivatedTicks() > 0)
+        return false;
+
+    if (kart && RaceManager::get()->getTrackName() == "mobius_track")
+    {
+        if (kart->getNormal().dot(item_normal) < 0.0f)
+            return false;
+    }
+
+    Vec3 lc = quatRotate(item_rotation.inverse(), xyz - item_xyz);
+    // Don't be too strict if the kart is a bit above the item.
+    lc.setY(lc.getY() / 2.0f);
+    return lc.length2() < item.getHitDistanceSquared();
+}   // hitKartInItemFrame
 }
 
 #ifndef SERVER_ONLY
@@ -654,17 +674,18 @@ void Item::updateGraphics(float dt)
 // ----------------------------------------------------------------------------
 bool Item::hitKart(const Vec3 &xyz, const AbstractKart *kart) const
 {
-    if (getPreviousOwner() == kart && getDeactivatedTicks() > 0)
-        return false;
-
-    if (kart && RaceManager::get()->getTrackName() == "mobius_track")
-    {
-        if (kart->getNormal().dot(getNormal()) < 0.0f)
-            return false;
-    }
-
-    Vec3 lc = quatRotate(getOriginalRotation().inverse(), xyz - getXYZ());
-    // Don't be too strict if the kart is a bit above the item
-    lc.setY(lc.getY() / 2.0f);
-    return lc.length2() < m_distance_2;
+    return hitKartInItemFrame(*this, xyz, kart, getXYZ(),
+                              getOriginalRotation(), getNormal());
 }   // hitKart
+
+// ----------------------------------------------------------------------------
+bool Item::hitKartAtItemPosition(const Vec3 &xyz, const AbstractKart *kart,
+                                 const Vec3 &item_xyz,
+                                 const Vec3 &item_normal) const
+{
+    const Vec3 normal = item_normal.length2() > btScalar(1.0e-8f)
+        ? Vec3(item_normal.normalized()) : getNormal();
+    return hitKartInItemFrame(*this, xyz, kart, item_xyz,
+                              shortestArcQuat(Vec3(0, 1, 0), normal),
+                              normal);
+}   // hitKartAtItemPosition

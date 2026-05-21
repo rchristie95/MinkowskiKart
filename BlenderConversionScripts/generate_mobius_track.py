@@ -29,10 +29,10 @@ except ImportError as exc:  # pragma: no cover - this generator is Blender-first
 RADIUS = 82.0
 ROAD_HALF_WIDTH = 8.0
 GRAPH_HALF_WIDTH = 5.6
-COLLISION_U_SEGMENTS = 512
-COLLISION_V_SEGMENTS = 12
 VISUAL_U_SEGMENTS = 768
 VISUAL_V_SEGMENTS = 10
+COLLISION_U_SEGMENTS = VISUAL_U_SEGMENTS
+COLLISION_V_SEGMENTS = VISUAL_V_SEGMENTS
 SAFETY_SURFACE_OFFSET = -0.42
 SEAM_BRIDGE_SURFACE_OFFSET = 0.045
 SUN_RADIUS = 12.0
@@ -57,7 +57,12 @@ BLACK_HOLE_DISK_SEGMENTS = 160
 BLACK_HOLE_DISK_RINGS = 8
 BLACK_HOLE_HALO_RINGS = 6
 BLACK_HOLE_BLENDERKIT_REFERENCE_ASSET_ID = "5dc596e9-158f-4191-8f33-8ca68768d330"
-ZIPPER_U_POSITIONS = (0.78, 2.20, 3.68, 5.18)
+# Space zipper pads evenly on the first-lap surface only.
+ZIPPER_COUNT = 10
+ZIPPER_U_POSITIONS = tuple(
+    (0.78 + i * (2.0 * math.pi / ZIPPER_COUNT)) % (2.0 * math.pi)
+    for i in range(ZIPPER_COUNT)
+)
 ZIPPER_LENGTH = 7.2
 ZIPPER_WIDTH = 4.2
 ZIPPER_SURFACE_LIFT = 0.08
@@ -322,6 +327,35 @@ def make_welded_mobius_surface(name, texture, half_width, u_segments,
             if double_sided:
                 indices.extend((c, b, a, d, c, a))
     return mesh_dict(name, texture, verts, normals, uvs, indices)
+
+
+def verify_mobius_visual_collision_sync(visual, collision, epsilon=1.0e-5):
+    """Fail generation if road visual and collision vertices drift apart."""
+    row = VISUAL_V_SEGMENTS + 1
+    max_delta = 0.0
+    for i in range(COLLISION_U_SEGMENTS):
+        for j in range(COLLISION_V_SEGMENTS + 1):
+            dv = vlength(vsub(visual["verts"][i * row + j],
+                              collision["verts"][i * row + j]))
+            max_delta = max(max_delta, dv)
+
+    seam_i = VISUAL_U_SEGMENTS
+    for j in range(COLLISION_V_SEGMENTS + 1):
+        dv = vlength(vsub(visual["verts"][seam_i * row + j],
+                          collision["verts"][COLLISION_V_SEGMENTS - j]))
+        max_delta = max(max_delta, dv)
+
+    expected_visual_triangles = VISUAL_U_SEGMENTS * VISUAL_V_SEGMENTS * 2
+    actual_visual_triangles = len(visual["indices"]) // 3
+    if actual_visual_triangles != expected_visual_triangles:
+        raise RuntimeError(
+            f"mobius_visual.spm road should be single-sided: "
+            f"{actual_visual_triangles} triangles, expected "
+            f"{expected_visual_triangles}")
+    if max_delta > epsilon:
+        raise RuntimeError(
+            f"Mobius visual/collision road mismatch: max delta {max_delta}")
+    return max_delta
 
 
 def make_rail_visual_mesh(name="Mobius_Rails_Visual", u_start=0, u_end=None):
@@ -1995,33 +2029,33 @@ def write_track_xml(track_dir):
 
 def write_materials_xml(track_dir):
     planet_materials = "\n".join(
-        f'  <material name="mobius_planet_{spec["id"]}.png" ignore="Y"/>'
+        f'  <material name="mobius_planet_{spec["id"]}.png" ignore="Y" backface-culling="N"/>'
         for spec in PLANET_SPECS
     )
     (track_dir / "materials.xml").write_text(
         f"""<?xml version="1.0"?>
 <materials>
-  <material name="mobius_road_visual.png" ignore="Y"/>
-  <material name="mobius_collision.png" high-adhesion="Y" has-gravity="Y"/>
-  <material name="mobius_safety_collision.png" high-adhesion="Y" has-gravity="Y"/>
-  <material name="mobius_wall_collision.png" high-adhesion="Y"/>
-  <material name="mobius_rail.png" shader="additive" ignore="Y"/>
-  <material name="mobius_guardrail.png" ignore="Y"/>
-  <material name="mobius_start_gate.png" shader="additive" ignore="Y"/>
-  <material name="mobius_seam_ramp.png" high-adhesion="Y" has-gravity="Y"/>
-  <material name="mobius_seam_ramp_visual.png" ignore="Y"/>
-  <material name="mobius_sun_core.png" shader="additive" ignore="Y"/>
-  <material name="mobius_sun_corona.png" shader="additive" ignore="Y"/>
-  <material name="mobius_black_hole_core.png" shader="additive" ignore="Y"/>
-  <material name="mobius_black_hole_inner_glow.png" shader="additive" ignore="Y"/>
-  <material name="mobius_black_hole_accretion.png" shader="additive" ignore="Y"/>
-  <material name="mobius_black_hole_photon_ring.png" shader="additive" ignore="Y"/>
-  <material name="mobius_black_hole_halo.png" shader="additive" ignore="Y"/>
-  <material name="mobius_starfield.png" shader="additive" ignore="Y"/>
+  <material name="mobius_road_visual.png" ignore="Y" backface-culling="N"/>
+  <material name="mobius_collision.png" high-adhesion="Y" has-gravity="Y" backface-culling="N"/>
+  <material name="mobius_safety_collision.png" high-adhesion="Y" has-gravity="Y" backface-culling="N"/>
+  <material name="mobius_wall_collision.png" high-adhesion="Y" backface-culling="N"/>
+  <material name="mobius_rail.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_guardrail.png" ignore="Y" backface-culling="N"/>
+  <material name="mobius_start_gate.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_seam_ramp.png" high-adhesion="Y" has-gravity="Y" backface-culling="N"/>
+  <material name="mobius_seam_ramp_visual.png" ignore="Y" backface-culling="N"/>
+  <material name="mobius_sun_core.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_sun_corona.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_black_hole_core.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_black_hole_inner_glow.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_black_hole_accretion.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_black_hole_photon_ring.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_black_hole_halo.png" shader="additive" ignore="Y" backface-culling="N"/>
+  <material name="mobius_starfield.png" shader="additive" ignore="Y" backface-culling="N"/>
   <material name="mobius_zipper.png" shader="alphablend" ignore="N" backface-culling="N">
     <zipper duration="2.5" max-speed-increase="12.0" fade-out-time="2.0" speed-gain="5.0" min-speed="0.0"/>
   </material>
-  <material name="reset_surface.png" reset="Y" falling-effect="Y"/>
+  <material name="reset_surface.png" reset="Y" falling-effect="Y" backface-culling="N"/>
 {planet_materials}
 </materials>
 """,
@@ -2374,7 +2408,7 @@ def mobius_self_check(meshes):
     last_row_as_next = []
     for j in range(COLLISION_V_SEGMENTS + 1):
         t = j / COLLISION_V_SEGMENTS
-        v = -ROAD_HALF_WIDTH * 0.985 + 2.0 * ROAD_HALF_WIDTH * 0.985 * t
+        v = -ROAD_HALF_WIDTH + 2.0 * ROAD_HALF_WIDTH * t
         last_row_as_next.append(mobius_point(2.0 * math.pi, -v))
 
     return {
@@ -2462,12 +2496,14 @@ def generate_mobius_track(project_root):
     collision = make_welded_mobius_surface(
         "Mobius_Collision_Surface",
         "mobius_collision.png",
-        ROAD_HALF_WIDTH * 0.985,
+        ROAD_HALF_WIDTH,
         COLLISION_U_SEGMENTS,
         COLLISION_V_SEGMENTS,
         0.0,
         False,
     )
+    sync_delta = verify_mobius_visual_collision_sync(road_visual, collision)
+    print(f"Mobius visual/collision road sync max delta: {sync_delta:.6g}")
     safety_collision = make_welded_mobius_surface(
         "Mobius_Safety_Collision",
         "mobius_safety_collision.png",

@@ -66,6 +66,7 @@ const float RC_FORWARD_TC     = 0.10f;   // support-frame forward smooth tc (s)
 const float RC_UP_TC          = 0.08f;   // support-frame up smooth tc (s)
 const float RC_BANKED_UP_TC   = 0.16f;   // extra smoothing on banked surfaces
 const float RC_STEEP_EXTRA    = 0.36f;   // extra clearance on steep normals (m)
+const float RC_CLEARANCE_TC   = 0.055f;  // apparent surface correction smooth tc
 const float RC_SWEEP_SUBSTEP  = 0.08f;   // sweep step length (m)
 const int   RC_SWEEP_MAX_STEPS = 16;
 const float RC_MIN_FORWARD_OFFSET = -2.65f;
@@ -331,9 +332,14 @@ void enforceRelativityCameraClearance(const Kart* observer_kart,
                                       const btVector3& support_forward,
                                       const btVector3& support_right,
                                       const btVector3& support_up,
+                                      float correction_alpha,
                                       btVector3* position)
 {
     if (!observer_kart || !position)
+        return;
+
+    correction_alpha = clamp01(correction_alpha);
+    if (correction_alpha <= 0.0f)
         return;
 
     btVector3 hit_point;
@@ -346,7 +352,8 @@ void enforceRelativityCameraClearance(const Kart* observer_kart,
         const float clearance = RC_CLEARANCE + RC_STEEP_EXTRA * steepness;
         const float support_clearance = ((*position) - hit_point).dot(support_up);
         if (support_clearance < clearance)
-            *position += support_up * (clearance - support_clearance);
+            *position += support_up * ((clearance - support_clearance) *
+                         correction_alpha);
     }
 
     const btVector3 from = *position + support_up * 0.08f;
@@ -372,7 +379,8 @@ void enforceRelativityCameraClearance(const Kart* observer_kart,
         const float clearance = RC_CLEARANCE + RC_STEEP_EXTRA * steepness;
         const float support_clearance = ((*position) - hit_point).dot(support_up);
         if (support_clearance < clearance)
-            *position += support_up * (clearance - support_clearance);
+            *position += support_up * ((clearance - support_clearance) *
+                         correction_alpha);
     }
 }   // enforceRelativityCameraClearance
 
@@ -457,12 +465,16 @@ void CameraNormal::updateRelativityCamera(float dt)
         + support_up * RC_HEIGHT;
     const btVector3 kart_anchor =
         kart_pos + support_up * 0.28f + support_forward * 0.08f;
+    const float clearance_alpha = m_rc_initialized
+        ? std::max(0.35f, getSmoothAlpha(dt, RC_CLEARANCE_TC))
+        : 1.0f;
 
     btVector3 next_pos = desired;
     if (!m_rc_initialized)
     {
         enforceRelativityCameraClearance(kart, kart_anchor, support_forward,
-                                         support_right, support_up, &next_pos);
+                                         support_right, support_up,
+                                         clearance_alpha, &next_pos);
         m_rc_initialized = true;
     }
     else
@@ -476,7 +488,8 @@ void CameraNormal::updateRelativityCamera(float dt)
         {
             btVector3 step_pos = prev_pos.lerp(desired, (float)i / (float)steps);
             enforceRelativityCameraClearance(kart, kart_anchor, support_forward,
-                                             support_right, support_up, &step_pos);
+                                             support_right, support_up,
+                                             clearance_alpha, &step_pos);
             next_pos = step_pos;
         }
     }
@@ -490,7 +503,8 @@ void CameraNormal::updateRelativityCamera(float dt)
         next_pos += support_up * (RC_MIN_UP_OFFSET - up_offset);
 
     enforceRelativityCameraClearance(kart, kart_anchor, support_forward,
-                                     support_right, support_up, &next_pos);
+                                     support_right, support_up,
+                                     clearance_alpha, &next_pos);
 
     m_rc_pos = next_pos;
     m_rc_target = desired_tgt;

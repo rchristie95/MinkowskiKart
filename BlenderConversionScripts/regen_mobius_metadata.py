@@ -22,6 +22,31 @@ gen.write_scene_xml(track_dir)
 gen.write_quads_xml(track_dir)
 gen.write_graph_xml(track_dir)
 gen.create_textures(track_dir)
+road_visual = gen.make_strip_mesh(
+    "Mobius_Road_Visual",
+    "mobius_road_visual.png",
+    gen.ROAD_HALF_WIDTH,
+    gen.VISUAL_U_SEGMENTS,
+    gen.VISUAL_V_SEGMENTS,
+    0,
+    gen.VISUAL_U_SEGMENTS,
+    False,
+)
+gen.write_spm(track_dir / "mobius_visual.spm", road_visual)
+print("Wrote mobius_visual.spm")
+collision = gen.make_welded_mobius_surface(
+    "Mobius_Collision_Surface",
+    "mobius_collision.png",
+    gen.ROAD_HALF_WIDTH,
+    gen.COLLISION_U_SEGMENTS,
+    gen.COLLISION_V_SEGMENTS,
+    0.0,
+    False,
+)
+sync_delta = gen.verify_mobius_visual_collision_sync(road_visual, collision)
+print(f"Mobius visual/collision road sync max delta: {sync_delta:.6g}")
+gen.write_spm(track_dir / "mobius_collision.spm", collision)
+print("Wrote mobius_collision.spm")
 for mesh in (
     gen.make_black_hole_halo_mesh(),
     gen.make_black_hole_accretion_mesh(),

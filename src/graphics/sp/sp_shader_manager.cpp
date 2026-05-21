@@ -118,6 +118,11 @@ SPShaderManager::SPShaderManager()
                 glBlendFunc(GL_ONE, GL_ONE);
             }
         },
+        { "noCullUse", []()
+            {
+                glDisable(GL_CULL_FACE);
+            }
+        },
         { "ghostUse", []()
             {
                 glEnable(GL_DEPTH_TEST);
@@ -130,6 +135,11 @@ SPShaderManager::SPShaderManager()
 
     m_official_unuse_functions =
     {
+        { "noCullUnuse", []()
+            {
+                glEnable(GL_CULL_FACE);
+            }
+        },
         { "ghostUnuse", []()
             {
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);

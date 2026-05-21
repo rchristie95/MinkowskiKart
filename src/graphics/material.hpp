@@ -138,6 +138,9 @@ private:
      *  displaced above the track plane at relativistic speeds. */
     bool             m_no_relativity_warp;
 
+    /** True if renderer backface culling should be enabled. */
+    bool             m_backface_culling;
+
     /** True if this material should use texture compression. */
     bool             m_tex_compression;
 
@@ -218,11 +221,13 @@ private:
 
     // SP usage
     std::string      m_shader_name;
+    std::string      m_render_shader_name;
     std::string      m_uv_two_tex;
     // Full path for textures in sp shader
     std::array<std::string, 6> m_sampler_path;
     std::string      m_container_id;
     void loadContainerId();
+    void updateRenderShaderName();
 
 public:
           Material(const XMLNode *node, bool deprecated);
@@ -244,6 +249,8 @@ public:
     bool  isIgnore           () const { return m_ignore;             }
     // ------------------------------------------------------------------------
     bool  isNoRelativityWarp () const { return m_no_relativity_warp; }
+    // ------------------------------------------------------------------------
+    bool  isBackfaceCullingEnabled() const { return m_backface_culling; }
     // ------------------------------------------------------------------------
     /** Returns true if this material is a zipper. */
     bool  isZipper           () const { return m_zipper;             }
@@ -375,9 +382,13 @@ public:
     const std::string& getColorizationMask() const
                                                { return m_colorization_mask; }
     // ------------------------------------------------------------------------
-    void setShaderName(const std::string& name)      { m_shader_name = name; }
+    void setShaderName(const std::string& name)
+    {
+        m_shader_name = name;
+        updateRenderShaderName();
+    }
     // ------------------------------------------------------------------------
-    const std::string& getShaderName() const         { return m_shader_name; }
+    const std::string& getShaderName() const { return m_render_shader_name; }
     // ------------------------------------------------------------------------
     /* This is used for finding correct material for spm*/
     const std::string& getUVTwoTexture() const

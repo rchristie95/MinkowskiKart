@@ -349,6 +349,17 @@ ApparentSurfaceHit::ApparentSurfaceHit()
 {
 }   // ApparentSurfaceHit
 
+// ----------------------------------------------------------------------------
+ApparentInteractionSurface::ApparentInteractionSurface()
+    : m_valid(false),
+      m_world_point(0.0f, 0.0f, 0.0f),
+      m_world_normal(0.0f, 1.0f, 0.0f),
+      m_apparent_point(0.0f, 0.0f, 0.0f),
+      m_apparent_normal(0.0f, 1.0f, 0.0f),
+      m_offset_along_normal(0.0f)
+{
+}   // ApparentInteractionSurface
+
 bool isEnabled()
 {
     updateRuntimeRelativityState();
@@ -862,6 +873,52 @@ float getVisualShellOffset(const AbstractKart* observer_kart,
 }   // getVisualShellOffset
 
 // ----------------------------------------------------------------------------
+bool getApparentInteractionSurface(
+    const AbstractKart* observer_kart,
+    const btVector3& observer_position,
+    const btVector3& world_position,
+    const btVector3& world_normal,
+    ApparentInteractionSurface* surface,
+    const btVector3& object_velocity)
+{
+    if (surface)
+        *surface = ApparentInteractionSurface();
+
+    if (!surface || !Relativity::isEnabled() ||
+        !isFiniteVector(world_position) || !isFiniteVector(world_normal))
+    {
+        return false;
+    }
+
+    const ObserverVisualState observer_state =
+        buildObserverVisualState(observer_kart, observer_position);
+    if (!observer_state.m_valid)
+        return false;
+
+    surface->m_world_point = world_position;
+    surface->m_world_normal = normalizedOrDefault(
+        world_normal, btVector3(0.0f, 1.0f, 0.0f));
+    surface->m_apparent_point = applyVisualPosition(
+        world_position, observer_state, object_velocity);
+    surface->m_apparent_normal = applyVisualNormal(
+        world_position, surface->m_world_normal, observer_state);
+    surface->m_offset_along_normal =
+        (float)((surface->m_apparent_point - world_position)
+            .dot(surface->m_world_normal));
+
+    if (!isFiniteVector(surface->m_apparent_point) ||
+        !isFiniteVector(surface->m_apparent_normal) ||
+        !std::isfinite((double)surface->m_offset_along_normal))
+    {
+        *surface = ApparentInteractionSurface();
+        return false;
+    }
+
+    surface->m_valid = true;
+    return true;
+}   // getApparentInteractionSurface
+
+// ----------------------------------------------------------------------------
 btVector3 applyVisualPosition(const btVector3& world_position,
                               const ObserverVisualState& observer_state,
                               const btVector3& object_velocity)
@@ -1015,7 +1072,8 @@ btVector3 clampVelocity(const btVector3& velocity, bool *was_clamped)
 btVector3 scaleResponse(const btVector3& response_vector,
                         const btVector3& coordinate_velocity)
 {
-    if (!Relativity::isPreferredFrameDynamics())
+    if (!UserConfigParams::m_relativity_physics_enabled ||
+        !Relativity::isPreferredFrameDynamics())
         return response_vector;
 
     return Relativity::scalePreferredFrameResponse(

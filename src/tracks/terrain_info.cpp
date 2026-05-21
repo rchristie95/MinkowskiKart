@@ -28,6 +28,77 @@
 
 #include <math.h>
 
+namespace
+{
+bool isMatchingGhostZipperHit(const Vec3 &hit_point,
+                              const Vec3 &surface_normal,
+                              const Vec3 &gfx_hit_point,
+                              const Material *gfx_material,
+                              const Vec3 &gfx_normal)
+{
+    if (!gfx_material || !gfx_material->isZipper())
+        return false;
+
+    Vec3 normal = surface_normal;
+    if (normal.length2() < 0.0001f)
+        normal = Vec3(0.0f, 1.0f, 0.0f);
+    else
+        normal.normalize();
+
+    Vec3 zipper_normal = gfx_normal;
+    if (zipper_normal.length2() < 0.0001f)
+        return false;
+    zipper_normal.normalize();
+
+    const float normal_alignment = zipper_normal.dot(normal);
+    const float surface_offset = (gfx_hit_point - hit_point).dot(normal);
+    return normal_alignment > 0.65f &&
+           surface_offset > -0.05f &&
+           surface_offset < 0.35f;
+}
+
+bool applyGhostZipperMaterialAtSurface(const Vec3 &hit_point,
+                                       const Vec3 &surface_normal,
+                                       const Material **material)
+{
+    if (!material || !*material || (*material)->isZipper())
+        return false;
+
+    Vec3 normal = surface_normal;
+    if (normal.length2() < 0.0001f)
+        normal = Vec3(0.0f, 1.0f, 0.0f);
+    else
+        normal.normalize();
+
+    const TriangleMesh &gfx_tm = Track::getCurrentTrack()->getGFXEffectMesh();
+    Vec3 gfx_hit_point;
+    const Material *gfx_material = NULL;
+    Vec3 gfx_normal;
+
+    const Vec3 probe_from = hit_point + normal * 0.75f;
+    const Vec3 probe_to   = hit_point - normal * 0.35f;
+    if (gfx_tm.castRay(probe_from, probe_to, &gfx_hit_point, &gfx_material,
+                       &gfx_normal, /*interpolate*/true) &&
+        isMatchingGhostZipperHit(hit_point, normal, gfx_hit_point,
+                                 gfx_material, gfx_normal))
+    {
+        *material = gfx_material;
+        return true;
+    }
+
+    if (gfx_tm.castRay(probe_to, probe_from, &gfx_hit_point, &gfx_material,
+                       &gfx_normal, /*interpolate*/true) &&
+        isMatchingGhostZipperHit(hit_point, normal, gfx_hit_point,
+                                 gfx_material, gfx_normal))
+    {
+        *material = gfx_material;
+        return true;
+    }
+
+    return false;
+}
+}
+
 /** Constructor to initialise terrain data.
  */
 TerrainInfo::TerrainInfo()
@@ -65,6 +136,7 @@ void TerrainInfo::update(const Vec3 &from)
     Track::getCurrentTrack()->getTrackObjectManager()
                      ->castRay(from, to, &m_hit_point, &m_material,
                                &m_normal, /*interpolate*/false);
+    applyGhostZipperMaterialAtSurface(m_hit_point, m_normal, &m_material);
 }   // update
 
 //-----------------------------------------------------------------------------
@@ -93,29 +165,7 @@ void TerrainInfo::update(const btMatrix3x3 &rotation, const Vec3 &from)
                             ->castRay(from, to, &m_hit_point, &m_material,
                                       &m_normal, /*interpolate*/true);
 
-    // Check for ghost textures (e.g. visual-only zippers) in the GFX mesh.
-    // If a zipper is found here, we override the material but keep the
-    // physical hit point and normal from the track/objects.
-    const TriangleMesh &gfx_tm = Track::getCurrentTrack()->getGFXEffectMesh();
-    Vec3 gfx_hit_point;
-    const Material *gfx_material = NULL;
-    Vec3 gfx_normal;
-    if (gfx_tm.castRay(from, to, &gfx_hit_point, &gfx_material, &gfx_normal,
-                       /*interpolate*/true))
-    {
-        // If the ghost hit is closer than or roughly at the same depth as the
-        // physical hit, and it's a zipper, use it.
-        if (gfx_material && gfx_material->isZipper())
-        {
-            float physical_dist = (from - m_hit_point).length();
-            float ghost_dist    = (from - gfx_hit_point).length();
-            // Allow the ghost texture to be slightly 'below' the road if needed
-            if (ghost_dist < physical_dist + 0.5f)
-            {
-                m_material = gfx_material;
-            }
-        }
-    }
+    applyGhostZipperMaterialAtSurface(m_hit_point, m_normal, &m_material);
 }   // update
 //-----------------------------------------------------------------------------
 /** Update the terrain information based on the latest position.

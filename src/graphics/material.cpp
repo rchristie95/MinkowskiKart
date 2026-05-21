@@ -58,6 +58,21 @@ using namespace irr::video;
 const unsigned int UCLAMP = 1;
 const unsigned int VCLAMP = 2;
 
+namespace
+{
+
+bool hasTwoSidedShaderVariant(const std::string& shader_name)
+{
+    return shader_name == "solid" ||
+           shader_name == "normalmap" ||
+           shader_name == "decal" ||
+           shader_name == "alphatest" ||
+           shader_name == "unlit" ||
+           shader_name == "grass";
+}   // hasTwoSidedShaderVariant
+
+}   // namespace
+
 //-----------------------------------------------------------------------------
 /** Create a new material using the parameters specified in the xml file.
  *  \param node Node containing the parameters for this material.
@@ -153,6 +168,7 @@ Material::Material(const XMLNode *node, bool deprecated)
 
     node->get("below-surface",    &m_below_surface     );
     node->get("no-relativity-warp", &m_no_relativity_warp);
+    node->get("backface-culling", &m_backface_culling);
     node->get("falling-effect",   &m_falling_effect    );
     // A terrain with falling effect has to force a reset
     // when the kart is on it. So to make it easier for artists,
@@ -397,6 +413,7 @@ Material::Material(const XMLNode *node, bool deprecated)
 
     if(m_has_gravity)
         m_high_tire_adhesion = true;
+    updateRenderShaderName();
 }   // Material
 
 //-----------------------------------------------------------------------------
@@ -514,6 +531,7 @@ void Material::init()
     m_collision_reaction        = NORMAL;
     m_colorizable               = false;
     m_no_relativity_warp        = false;
+    m_backface_culling          = true;
     m_tex_compression           = true;
     m_colorization_factor       = 0.0f;
     m_colorization_mask         = "";
@@ -540,7 +558,20 @@ void Material::init()
         m_particles_effects[n] = NULL;
     }
     m_vk_textures               = {{ }};
+    m_render_shader_name        = m_shader_name;
 }   // init
+
+//-----------------------------------------------------------------------------
+void Material::updateRenderShaderName()
+{
+    if (!m_backface_culling && !isTransparent() &&
+        hasTwoSidedShaderVariant(m_shader_name))
+    {
+        m_render_shader_name = m_shader_name + "_twosided";
+        return;
+    }
+    m_render_shader_name = m_shader_name;
+}   // updateRenderShaderName
 
 //-----------------------------------------------------------------------------
 void Material::install(std::function<void(video::IImage*)> image_mani,
@@ -839,6 +870,7 @@ void  Material::setMaterialProperties(video::SMaterial *m, scene::IMeshBuffer* m
     }
 
     m->setColorizable(m_colorizable);
+    m->BackfaceCulling = m_backface_culling;
     bool is_vk = irr_driver->getVideoDriver()->getDriverType() == EDT_VULKAN;
     // Default solid
     m->MaterialType = video::EMT_SOLID;
@@ -1006,7 +1038,7 @@ void  Material::setMaterialProperties(video::SMaterial *m, scene::IMeshBuffer* m
     if (is_vk)
     {
         m->MaterialType =
-            GE::GEMaterialManager::getIrrMaterialType(m_shader_name);
+            GE::GEMaterialManager::getIrrMaterialType(m_render_shader_name);
         for (unsigned i = 2; i < m_sampler_path.size(); i++)
         {
             if (m_vk_textures[i - 2])

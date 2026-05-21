@@ -1377,7 +1377,7 @@ namespace UserConfigParams
                                                "Maximum kart speed as a fraction of c (0.1-0.99)") );
 
     PARAM_PREFIX BoolUserConfigParam       m_relativity_physics_enabled
-            PARAM_DEFAULT( BoolUserConfigParam(true, "physics_enabled",
+            PARAM_DEFAULT( BoolUserConfigParam(false, "physics_enabled",
                                              &m_relativity_group,
                                              "Whether physics is affected by relativity (true) or Newtonian (false)") );
 

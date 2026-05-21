@@ -1,0 +1,16 @@
+<spshader>
+    <shader-info name="solid_twosided" fallback-shader="" transparent="N"
+                 drawing-priority="0" use-alpha-channel="N" use-tangents="N"
+                 srgb="Y Y N N N N"/>
+    <first-pass use-function="noCullUse" unuse-function="noCullUnuse"
+        vertex-shader="sp_pass.vert"
+        tess-control-shader="sp_tess.tesc" tess-evaluation-shader="sp_tess.tese"
+        fragment-shader="sp_solid.frag" skinned-mesh-shader="sp_skinning.vert">
+        <prefilled-textures>
+        </prefilled-textures>
+    </first-pass>
+    <shadow-pass use-function="noCullUse" unuse-function="noCullUnuse"
+        vertex-shader="sp_shadow.vert" fragment-shader="white.frag"
+        skinned-mesh-shader="sp_skinning_shadow.vert">
+    </shadow-pass>
+</spshader>

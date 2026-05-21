@@ -174,6 +174,22 @@ public:
     }   // hitKart
 
     // -----------------------------------------------------------------------
+    /** Tests this item as if its collision frame were at a supplied position
+     *  and normal. Used by relativistic visual/collision reconciliation
+     *  without changing the authoritative item state. */
+    virtual bool hitKartAtItemPosition(const Vec3 &xyz,
+                                       const AbstractKart *kart,
+                                       const Vec3 &item_xyz,
+                                       const Vec3 &item_normal) const
+    {
+        (void)xyz;
+        (void)kart;
+        (void)item_xyz;
+        (void)item_normal;
+        return false;
+    }   // hitKartAtItemPosition
+
+    // -----------------------------------------------------------------------
     virtual int getGraphNode() const
     {
         Log::fatal("ItemState", "getGraphNode() called for ItemState.");
@@ -423,8 +439,13 @@ public:
      */
     virtual bool hitKart(const Vec3 &xyz, const AbstractKart *kart=NULL) const
         OVERRIDE;
+    virtual bool hitKartAtItemPosition(const Vec3 &xyz,
+                                       const AbstractKart *kart,
+                                       const Vec3 &item_xyz,
+                                       const Vec3 &item_normal) const OVERRIDE;
     // ------------------------------------------------------------------------
     bool rotating() const               { return getType() != ITEM_WARP_BUBBLE; }
+    float getHitDistanceSquared() const { return m_distance_2; }
 
 public:
     // ------------------------------------------------------------------------
