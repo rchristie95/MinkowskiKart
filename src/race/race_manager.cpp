@@ -124,7 +124,7 @@ RaceManager::RaceManager()
     assert(DIFFICULTY_FIRST == 0);
     m_num_karts          = UserConfigParams::m_default_num_karts;
     m_num_ghost_karts    = 0;
-    m_difficulty         = DIFFICULTY_HARD;
+    m_difficulty         = DIFFICULTY_MEDIUM;
     m_major_mode         = MAJOR_MODE_SINGLE;
     m_minor_mode         = MINOR_MODE_NORMAL_RACE;
     m_ai_superpower      = SUPERPOWER_NONE;

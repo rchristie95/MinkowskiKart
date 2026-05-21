@@ -162,7 +162,7 @@
        -->
   <relativity enabled="true"
               c-light="35.0"
-              max-beta="0.95"
+              max-beta="0.98"
               mode="preferred-frame-dynamics"/>
 
   <!-- Various replaceable music tracks that play during certain events.

@@ -470,7 +470,7 @@ namespace UserConfigParams
             PARAM_DEFAULT(  BoolUserConfigParam(false, "random-arena-item",
             &m_race_setup_group, "Enable random location of items in an arena.") );
     PARAM_PREFIX IntUserConfigParam          m_difficulty
-            PARAM_DEFAULT(  IntUserConfigParam(0, "difficulty",
+            PARAM_DEFAULT(  IntUserConfigParam(1, "difficulty",
                             &m_race_setup_group,
                         "Default race difficulty. 0=easy, 1=medium, 2=hard, 3=supertux") );
     PARAM_PREFIX IntUserConfigParam          m_game_mode
@@ -695,7 +695,7 @@ namespace UserConfigParams
         PARAM_DEFAULT(BoolUserConfigParam(true, "enable_dynamic_lights",
         &m_video_group, "Enable Dynamic Lights"));
     PARAM_PREFIX BoolUserConfigParam        m_dof
-        PARAM_DEFAULT(BoolUserConfigParam(false, "enable_dof",
+        PARAM_DEFAULT(BoolUserConfigParam(true, "enable_dof",
         &m_video_group, "Enable Depth of Field"));
     PARAM_PREFIX BoolUserConfigParam        m_old_driver_popup
         PARAM_DEFAULT(BoolUserConfigParam(true, "old_driver_popup",
@@ -994,7 +994,7 @@ namespace UserConfigParams
                            &m_graphics_quality,
                            "Swap interval for vsync: 0 = disabled, 1 = full") );
     PARAM_PREFIX BoolUserConfigParam         m_motionblur
-            PARAM_DEFAULT( BoolUserConfigParam(false,
+            PARAM_DEFAULT( BoolUserConfigParam(true,
                            "motionblur_enabled", &m_graphics_quality,
                            "Whether motion blur should be enabled") );
     PARAM_PREFIX BoolUserConfigParam         m_mlaa
@@ -1372,7 +1372,7 @@ namespace UserConfigParams
                                              "Configured c_light during normal driving (15-1000)") );
 
     PARAM_PREFIX FloatUserConfigParam      m_relativity_max_beta
-            PARAM_DEFAULT( FloatUserConfigParam(0.95f, "max_beta",
+            PARAM_DEFAULT( FloatUserConfigParam(0.98f, "max_beta",
                                                &m_relativity_group,
                                                "Maximum kart speed as a fraction of c (0.1-0.99)") );
 
