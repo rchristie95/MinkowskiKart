@@ -3470,7 +3470,7 @@ void Kart::updateGraphics(float dt)
     float jump_height = m_skidding->updateGraphics(dt);
     
     float height_correction = 0.0f;
-    if (Relativity::isEnabled() && Camera::getActiveCamera())
+    if (Relativity::isEnabled() && Camera::getActiveCamera() && CVS->isGLSL())
     {
         btVector3 p_phys = m_terrain_info->getHitPoint();
         if ((p_phys - getXYZ()).length() != Track::NOHIT)

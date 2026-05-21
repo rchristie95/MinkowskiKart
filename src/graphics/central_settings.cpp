@@ -89,6 +89,35 @@ void CentralVideoSettings::init()
         const char *vendor = (const char *)glGetString(GL_VENDOR);
         const char *renderer = (const char *)glGetString(GL_RENDERER);
         const char *version = (const char *)glGetString(GL_VERSION);
+
+        if (version)
+        {
+            int parsed_major = 0, parsed_minor = 0;
+            std::string ver_str(version);
+            size_t es_pos = ver_str.find("OpenGL ES ");
+            if (es_pos != std::string::npos)
+            {
+                if (sscanf(version + es_pos + 10, "%d.%d", &parsed_major, &parsed_minor) == 2)
+                {
+                    m_gl_major_version = parsed_major;
+                    m_gl_minor_version = parsed_minor;
+                }
+            }
+            else if (ver_str.find("OpenGL ES-CM ") != std::string::npos)
+            {
+                m_gl_major_version = 1;
+                m_gl_minor_version = 1;
+            }
+            else
+            {
+                if (sscanf(version, "%d.%d", &parsed_major, &parsed_minor) == 2)
+                {
+                    m_gl_major_version = parsed_major;
+                    m_gl_minor_version = parsed_minor;
+                }
+            }
+        }
+
         Log::info("IrrDriver", "OpenGL version: %d.%d", m_gl_major_version, m_gl_minor_version);
         Log::info("IrrDriver", "OpenGL vendor: %s", vendor);
         Log::info("IrrDriver", "OpenGL renderer: %s", renderer);
