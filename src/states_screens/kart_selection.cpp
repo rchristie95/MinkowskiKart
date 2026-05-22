@@ -1156,7 +1156,7 @@ void KartSelectionScreen::onFocusChanged(GUIEngine::Widget* previous,
     {
         if (m_kart_widgets[i].getPlayerID() == playerID)
         {
-            if (!playerID == PLAYER_ID_GAME_MASTER
+            if (playerID != PLAYER_ID_GAME_MASTER
                 && GUIEngine::isFocusedForPlayer(kart_class, playerID))
             {
                 if (previous->getType() == WTYPE_RIBBON)

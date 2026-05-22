@@ -210,6 +210,28 @@ void AssetsAndroid::init()
                   "extracting assets...");
     }
 
+    const bool package_has_assets = hasAssets();
+    if (!needs_extract_data && package_has_assets)
+    {
+        const std::vector<std::string> required_data_files =
+        {
+            "/data/gui/screens/options/options_relativity.stkgui",
+            "/data/shaders/header.txt"
+        };
+
+        for (const std::string& required_file : required_data_files)
+        {
+            if (!m_file_manager->fileExists(m_stk_dir + required_file))
+            {
+                needs_extract_data = true;
+                Log::warn("AssetsAndroid",
+                    "Extracted data is missing %s. Force extracting assets...",
+                    required_file.c_str());
+                break;
+            }
+        }
+    }
+
     if (!m_file_manager->checkAndCreateDirectoryP(m_stk_dir + "/home"))
     {
         Log::warn("AssetsAndroid", "Couldn't create home directory");
@@ -223,7 +245,7 @@ void AssetsAndroid::init()
     // Extract data directory from apk if it's needed
     if (needs_extract_data)
     {
-        if (hasAssets())
+        if (package_has_assets)
         {
             setProgressBar(0);
             removeData();

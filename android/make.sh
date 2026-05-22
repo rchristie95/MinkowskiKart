@@ -236,6 +236,43 @@ if [ -z "$PROJECT_CODE" ]; then
     fi
 fi
 
+refresh_packaged_data_overlay()
+{
+    if [ ! -d "$DIRNAME/assets/data" ]; then
+        return
+    fi
+
+    echo "Refreshing packaged data overlay"
+    for DATA_DIR in challenges gamerzilla gfx grandprix gui po replay shaders skins ttf; do
+        if [ -d "$DIRNAME/../data/$DATA_DIR" ]; then
+            rm -rf "$DIRNAME/assets/data/$DATA_DIR"
+            cp -a "$DIRNAME/../data/$DATA_DIR" "$DIRNAME/assets/data/"
+        fi
+    done
+
+    find "$DIRNAME/../data" -maxdepth 1 -type f -exec cp -a {} "$DIRNAME/assets/data/" \;
+
+    if [ "$PROJECT_VERSION" != "git" ] &&
+       [ -f "$DIRNAME/assets/data/supertuxkart.git" ]; then
+        cp -a "$DIRNAME/assets/data/supertuxkart.git" \
+              "$DIRNAME/assets/data/supertuxkart.$PROJECT_VERSION"
+    fi
+
+    (
+        cd "$DIRNAME/assets"
+        find ./* -type d | sort > tmp_dirs.txt
+        sed -i 's|^\./||; s|$|/|' tmp_dirs.txt
+        find ./* -type f ! -name tmp_dirs.txt ! -name tmp_files.txt | sort > tmp_files.txt
+        sed -i 's|^\./||' tmp_files.txt
+        cat tmp_dirs.txt tmp_files.txt | sort > files.txt
+        rm -f tmp_dirs.txt tmp_files.txt
+    )
+
+    echo "has_assets" > "$DIRNAME/assets/has_assets.txt"
+}
+
+refresh_packaged_data_overlay
+
 if [ -d "$DIRNAME/assets/data" ]; then
     if [ ! -f "$DIRNAME/assets/data/supertuxkart.$PROJECT_VERSION" ]; then
         echo "Error: supertuxkart.$PROJECT_VERSION doesn't exist in" \

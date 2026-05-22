@@ -420,7 +420,7 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
 #ifndef USE_GLES2
                                    CVS->getGLSLVersion() >= 400;
 #else
-                                   false;
+                                   CVS->getGLSLVersion() >= 320;
 #endif
 
             if (use_tessellation)
@@ -473,18 +473,21 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
             shader->addShaderFile(skinned ?
                 pi[1].m_skinned_mesh_shader : pi[1].m_vertex_shader,
                 GL_VERTEX_SHADER, RP_SHADOW);
+            bool use_shadow_tessellation =
+                !pi[1].m_tess_control_shader.empty() &&
+                !pi[1].m_tess_evaluation_shader.empty() &&
 #ifndef USE_GLES2
-            if (!pi[1].m_tess_control_shader.empty())
+                CVS->getGLSLVersion() >= 400;
+#else
+                CVS->getGLSLVersion() >= 320;
+#endif
+            if (use_shadow_tessellation)
             {
                 shader->addShaderFile(pi[1].m_tess_control_shader,
                     GL_TESS_CONTROL_SHADER, RP_SHADOW);
-            }
-            if (!pi[1].m_tess_evaluation_shader.empty())
-            {
                 shader->addShaderFile(pi[1].m_tess_evaluation_shader,
                     GL_TESS_EVALUATION_SHADER, RP_SHADOW);
             }
-#endif
             if (!pi[1].m_fragment_shader.empty())
             {
                 shader->addShaderFile(pi[1].m_fragment_shader,

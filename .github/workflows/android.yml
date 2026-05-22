@@ -49,7 +49,7 @@ jobs:
             lib
             android/deps-arm64-v8a
             android/mesa
-          key: ${{ runner.os }}-android-deps-v1-${{ hashFiles('.github/workflows/android.yml') }}
+          key: ${{ runner.os }}-android-deps-v2-${{ hashFiles('.github/workflows/android.yml', 'android/Android.mk', 'android/build.gradle', 'android/make.sh') }}
 
       - name: Download and Extract Android Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
@@ -101,6 +101,35 @@ jobs:
           
           # 3. Build APK and compile JNI shared libraries
           ./make.sh
+
+      - name: Validate Android APK contents
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APK=$(ls android/build/outputs/apk/debug/*.apk | head -1)
+          unzip -l "$APK" | grep -q 'assets/data/gui/screens/options/options_relativity.stkgui'
+          unzip -l "$APK" | grep -q 'assets/data/shaders/header.txt'
+          unzip -l "$APK" | grep -q 'assets/files.txt'
+          unzip -l "$APK" | grep -q 'assets/has_assets.txt'
+
+          if unzip -l "$APK" | grep -E 'lib/arm64-v8a/lib(hook_impl|main_hook|vulkan_freedreno)\.so'; then
+            echo "Optional Mesa hook libraries must not be packaged by default."
+            exit 1
+          fi
+
+          ZIPALIGN=$(find "$ANDROID_SDK_ROOT/build-tools" -name zipalign -type f | sort -V | tail -1)
+          READELF="$ANDROID_SDK_ROOT/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+
+          "$ZIPALIGN" -c -p -v 4 "$APK"
+
+          for lib in \
+            android/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/arm64-v8a/libSDL2.so \
+            android/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/arm64-v8a/libmain.so
+          do
+            test -f "$lib"
+            "$READELF" -l "$lib" | awk '/LOAD/ && $NF != "0x4000" { bad=1 } END { exit bad }'
+          done
 
       - name: Set release target
         if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') }}

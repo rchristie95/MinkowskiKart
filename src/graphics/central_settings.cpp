@@ -355,9 +355,8 @@ unsigned CentralVideoSettings::getGLSLVersion() const
 {
 #if defined(USE_GLES2)
     if (m_gl_major_version >= 3)
-        return 300;
-    else
-        return 100;
+        return m_gl_major_version * 100 + m_gl_minor_version * 10;
+    return 100;
 #else
     if (m_gl_major_version > 3 || (m_gl_major_version == 3 && m_gl_minor_version == 3))
         return m_gl_major_version * 100 + m_gl_minor_version * 10;

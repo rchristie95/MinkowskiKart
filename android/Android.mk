@@ -1,4 +1,5 @@
 LOCAL_PATH := $(call my-dir)
+MK_ANDROID_16KB_LDFLAGS := -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384
 include $(CLEAR_VARS)
 
 
@@ -342,6 +343,7 @@ LOCAL_SRC_FILES    := $(wildcard ../lib/sdl2/src/*.c) \
                       $(wildcard ../lib/sdl2/src/video/yuv2rgb/*.c)
 LOCAL_CFLAGS       := -I../lib/sdl2/include/ -DGL_GLEXT_PROTOTYPES  \
                       -I../lib/libadrenotools/include
+LOCAL_LDFLAGS      += $(MK_ANDROID_16KB_LDFLAGS)
 LOCAL_LDLIBS       := -ldl -lGLESv1_CM -lGLESv2 -lOpenSLES -llog -landroid
 LOCAL_STATIC_LIBRARIES := cpufeatures
 ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
@@ -396,6 +398,7 @@ LOCAL_CFLAGS       := -I../lib/angelscript/include      \
                       -DSUPERTUXKART_VERSION=\"$(PROJECT_VERSION)\" \
                       -DANDROID_PACKAGE_CLASS_NAME=\"$(PACKAGE_CLASS_NAME)\"
 LOCAL_CPPFLAGS     := -std=gnu++0x
+LOCAL_LDFLAGS      += $(MK_ANDROID_16KB_LDFLAGS)
 
 LOCAL_STATIC_LIBRARIES := irrlicht bullet enet ifaddrs angelscript mcpp SDL2 \
                           vorbisfile vorbis ogg openal curl libmbedtls       \

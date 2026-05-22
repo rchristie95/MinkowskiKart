@@ -143,7 +143,7 @@ ShaderFilesManager::SharedShader ShaderFilesManager::loadShader
     code << "#version " << CVS->getGLSLVersion()<<"\n";
 #else
     if (CVS->isGLSL())
-        code << "#version 300 es\n";
+        code << "#version " << CVS->getGLSLVersion() << " es\n";
 #endif
 
 #if !defined(USE_GLES2)
@@ -193,25 +193,34 @@ ShaderFilesManager::SharedShader ShaderFilesManager::loadShader
     if (type == GL_FRAGMENT_SHADER)
         code << "precision highp float;\n";
 #else
-    int range[2], precision;
-    glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_HIGH_FLOAT, range,
-        &precision);
-
-    if (precision > 0)
+    if (type == GL_VERTEX_SHADER ||
+        type == GL_TESS_CONTROL_SHADER ||
+        type == GL_TESS_EVALUATION_SHADER)
     {
         code << "precision highp float;\n";
-        code << "precision highp sampler2DArrayShadow;\n";
-        code << "precision highp sampler2DArray;\n";
-        code << "precision highp sampler2DShadow;\n";
-        code << "precision highp sampler2D;\n";
     }
     else
     {
-        code << "precision mediump float;\n";
-        code << "precision mediump sampler2DArrayShadow;\n";
-        code << "precision mediump sampler2DArray;\n";
-        code << "precision mediump sampler2DShadow;\n";
-        code << "precision mediump sampler2D;\n";
+        int range[2], precision;
+        glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_HIGH_FLOAT, range,
+            &precision);
+
+        if (precision > 0)
+        {
+            code << "precision highp float;\n";
+            code << "precision highp sampler2DArrayShadow;\n";
+            code << "precision highp sampler2DArray;\n";
+            code << "precision highp sampler2DShadow;\n";
+            code << "precision highp sampler2D;\n";
+        }
+        else
+        {
+            code << "precision mediump float;\n";
+            code << "precision mediump sampler2DArrayShadow;\n";
+            code << "precision mediump sampler2DArray;\n";
+            code << "precision mediump sampler2DShadow;\n";
+            code << "precision mediump sampler2D;\n";
+        }
     }
 #endif
     code << "#define MAX_BONES " << stk_config->m_max_skinning_bones << "\n";

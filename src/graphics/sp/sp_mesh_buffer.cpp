@@ -26,6 +26,7 @@
 #include "graphics/sp/sp_texture_manager.hpp"
 #include "race/race_manager.hpp"
 #include "mini_glm.hpp"
+#include "utils/log.hpp"
 #include "utils/string_utils.hpp"
 
 #include <set>
@@ -35,6 +36,42 @@
 
 namespace SP
 {
+#ifndef SERVER_ONLY
+namespace
+{
+
+void setPatchVerticesToTriangles()
+{
+    if (glPatchParameteri)
+    {
+        glPatchParameteri(GL_PATCH_VERTICES, 3);
+        return;
+    }
+#ifdef USE_GLES2
+    if (glPatchParameteriOES)
+    {
+        glPatchParameteriOES(GL_PATCH_VERTICES, 3);
+        return;
+    }
+    if (glPatchParameteriEXT)
+    {
+        glPatchParameteriEXT(GL_PATCH_VERTICES, 3);
+        return;
+    }
+#endif
+
+    static bool warned = false;
+    if (!warned)
+    {
+        warned = true;
+        Log::warn("SPMeshBuffer",
+            "No glPatchParameteri entry point; using default patch vertex count.");
+    }
+}
+
+}
+#endif
+
 // ----------------------------------------------------------------------------
 SPMeshBuffer::~SPMeshBuffer()
 {
@@ -538,7 +575,7 @@ void SPMeshBuffer::draw(DrawCallType dct, int material_id) const
     if (shader && shader->hasTessellation(rp))
     {
         mode = GL_PATCHES;
-        glPatchParameteri(GL_PATCH_VERTICES, 3);
+        setPatchVerticesToTriangles();
     }
 
     if (material_id == -1)

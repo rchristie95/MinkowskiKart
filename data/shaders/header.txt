@@ -1,18 +1,18 @@
 #ifndef HEADER_TXT
 #define HEADER_TXT
 #ifdef UBO_DISABLED
-uniform mat4 ViewMatrix;
-uniform mat4 ProjectionMatrix;
-uniform mat4 InverseViewMatrix;
-uniform mat4 InverseProjectionMatrix;
-uniform mat4 ProjectionViewMatrix;
-uniform vec2 screen;
-uniform vec4 u_relativity_params;
-uniform vec4 u_relativity_beta;
-uniform vec4 u_relativity_observer_pos;
-uniform vec4 u_relativity_bubble;
-uniform vec4 u_black_hole;
-uniform vec4 u_wormhole;
+uniform highp mat4 ViewMatrix;
+uniform highp mat4 ProjectionMatrix;
+uniform highp mat4 InverseViewMatrix;
+uniform highp mat4 InverseProjectionMatrix;
+uniform highp mat4 ProjectionViewMatrix;
+uniform highp vec2 screen;
+uniform highp vec4 u_relativity_params;
+uniform highp vec4 u_relativity_beta;
+uniform highp vec4 u_relativity_observer_pos;
+uniform highp vec4 u_relativity_bubble;
+uniform highp vec4 u_black_hole;
+uniform highp vec4 u_wormhole;
 
 uniform vec3 sun_direction;
 uniform vec3 sun_col;
@@ -21,23 +21,30 @@ uniform float blueLmn[9];
 uniform float greenLmn[9];
 uniform float redLmn[9];
 
+#define u_view_matrix ViewMatrix
+#define u_projection_matrix ProjectionMatrix
+#define u_inverse_view_matrix InverseViewMatrix
+#define u_inverse_projection_matrix InverseProjectionMatrix
+#define u_projection_view_matrix ProjectionViewMatrix
+#define u_screen screen
+
 #else
 
 layout (std140) uniform Matrices
 {
-    mat4 u_view_matrix;
-    mat4 u_projection_matrix;
-    mat4 u_inverse_view_matrix;
-    mat4 u_inverse_projection_matrix;
-    mat4 u_projection_view_matrix;
-    mat4 u_shadow_projection_view_matrices[4];
-    vec2 u_screen;
-    vec4 u_relativity_params;
-    vec4 u_relativity_beta;
-    vec4 u_relativity_observer_pos;
-    vec4 u_relativity_bubble;
-    vec4 u_black_hole;
-    vec4 u_wormhole;
+    highp mat4 u_view_matrix;
+    highp mat4 u_projection_matrix;
+    highp mat4 u_inverse_view_matrix;
+    highp mat4 u_inverse_projection_matrix;
+    highp mat4 u_projection_view_matrix;
+    highp mat4 u_shadow_projection_view_matrices[4];
+    highp vec2 u_screen;
+    highp vec4 u_relativity_params;
+    highp vec4 u_relativity_beta;
+    highp vec4 u_relativity_observer_pos;
+    highp vec4 u_relativity_bubble;
+    highp vec4 u_black_hole;
+    highp vec4 u_wormhole;
 };
 
 // Expand because of catalyst (14.12) not correctly associating array in UBO

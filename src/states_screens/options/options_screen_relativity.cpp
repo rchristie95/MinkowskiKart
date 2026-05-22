@@ -22,6 +22,7 @@
 
 #include "config/stk_config.hpp"
 #include "relativity/relativity_math.hpp"
+#include "utils/log.hpp"
 
 #include <cmath>
 #include <sstream>
@@ -106,24 +107,44 @@ void OptionsScreenRelativity::init()
     OptionsCommon::setTabStatus();
 
     RibbonWidget* ribbon = getWidget<RibbonWidget>("options_choice");
-    assert(ribbon != NULL);
+    if (ribbon == NULL)
+    {
+        Log::error("OptionsScreenRelativity",
+            "Missing options_choice widget in options_relativity.stkgui.");
+        return;
+    }
     ribbon->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
     ribbon->select("tab_relativity", PLAYER_ID_GAME_MASTER);
 
     SpinnerWidget* normal_w = getWidget<SpinnerWidget>("normal_c_light");
-    assert(normal_w != NULL);
+    if (normal_w == NULL)
+    {
+        Log::error("OptionsScreenRelativity",
+            "Missing normal_c_light widget in options_relativity.stkgui.");
+        return;
+    }
     populateCLightSpinner(normal_w);
     normal_w->setValue(cLightToIndex(
         (int)UserConfigParams::m_relativity_normal_c_light));
 
     SpinnerWidget* beta_w = getWidget<SpinnerWidget>("max_beta");
-    assert(beta_w != NULL);
+    if (beta_w == NULL)
+    {
+        Log::error("OptionsScreenRelativity",
+            "Missing max_beta widget in options_relativity.stkgui.");
+        return;
+    }
     populateMaxBetaSpinner(beta_w);
     beta_w->setValue(maxBetaToIndex(
         (float)UserConfigParams::m_relativity_max_beta));
 
     CheckBoxWidget* phys_w = getWidget<CheckBoxWidget>("physics_enabled");
-    assert(phys_w != NULL);
+    if (phys_w == NULL)
+    {
+        Log::error("OptionsScreenRelativity",
+            "Missing physics_enabled widget in options_relativity.stkgui.");
+        return;
+    }
     phys_w->setState(UserConfigParams::m_relativity_physics_enabled);
 
     Relativity::getCurrentCLight();

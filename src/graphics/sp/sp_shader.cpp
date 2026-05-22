@@ -77,13 +77,11 @@ void SPShader::addShaderFile(const std::string& name, GLint shader_type,
     {
         m_shader_files.push_back(shader_file);
         glAttachShader(m_program[rp], *shader_file);
-#ifndef USE_GLES2
         if (shader_type == GL_TESS_CONTROL_SHADER ||
             shader_type == GL_TESS_EVALUATION_SHADER)
         {
             m_has_tessellation[rp] = true;
         }
-#endif
     }
 #endif
 }   // addShaderFile
