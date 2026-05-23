@@ -3470,6 +3470,7 @@ void Kart::updateGraphics(float dt)
     float jump_height = m_skidding->updateGraphics(dt);
     
     float height_correction = 0.0f;
+#ifndef SERVER_ONLY
     if (Relativity::isEnabled() && Camera::getActiveCamera() && CVS->isGLSL())
     {
         btVector3 p_phys = m_terrain_info->getHitPoint();
@@ -3495,6 +3496,7 @@ void Kart::updateGraphics(float dt)
             }
         }
     }
+#endif
     
     center_shift.setY(jump_height + fabsf(lean_height) + m_graphical_y_offset + height_correction);
     center_shift = getSmoothedTrans().getBasis() * center_shift;
