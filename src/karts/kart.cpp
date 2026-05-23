@@ -2557,8 +2557,6 @@ void Kart::crashed(const Material *m, const Vec3 &normal)
                 btVector3 push = m_body->getLinearVelocity().normalized();
                 push[1] = 0.1f;
                 btVector3 impulse = -4000.0f * push;
-                impulse = Relativity::KartAdapter::scaleResponse(
-                    impulse, m_body->getLinearVelocity());
                 m_body->applyCentralImpulse(impulse);
                 m_bounce_back_ticks = (uint8_t)stk_config->time2Ticks(2.0f);
             }   // if m_bounce_back_ticks <= 0.2f

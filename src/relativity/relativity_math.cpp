@@ -24,7 +24,6 @@
 #include "karts/abstract_kart.hpp"
 #include "karts/kart_properties.hpp"
 #include "modes/world.hpp"
-#include "network/network_config.hpp"
 #include "physics/triangle_mesh.hpp"
 #include "race/race_manager.hpp"
 #include "relativity/observer_snapshot.hpp"
@@ -41,7 +40,6 @@ namespace
 {
 const double MIN_C_LIGHT = 0.001;
 const double MAX_BETA_EPSILON = 1.0e-9;
-const double MIN_GAMMA_RESPONSE_DELTA = 1.0e-6;
 const float DEFAULT_NORMAL_C_LIGHT = 35.0f;
 const float MIN_ADJUSTABLE_C_LIGHT = 15.0f;
 const float MAX_ADJUSTABLE_C_LIGHT = 1000.0f;
@@ -51,22 +49,7 @@ const int C_LIGHT_SNAP_STEP = 5;
 const float DEFAULT_WARP_BUBBLE_RADIUS = 3.5f;
 const float APPARENT_NORMAL_SAMPLE_DISTANCE = 0.20f;
 
-enum RuntimeRelativityMode
-{
-    RUNTIME_RELATIVITY_MODE_OTHER = 0,
-    RUNTIME_RELATIVITY_MODE_PROPULSION_LIMITED,
-    RUNTIME_RELATIVITY_MODE_PREFERRED_FRAME_DYNAMICS
-};
-
 unsigned int g_velocity_clamp_count = 0;
-unsigned int g_response_scale_count = 0;
-
-bool g_runtime_relativity_enabled = false;
-RuntimeRelativityMode g_runtime_relativity_mode =
-    RUNTIME_RELATIVITY_MODE_OTHER;
-int g_runtime_relativity_tick = std::numeric_limits<int>::min();
-bool g_runtime_relativity_has_world = false;
-bool g_last_networking_state = false;
 
 // C-light ramp state. Kept at file scope so that resetCurrentCLight() can
 // clear it between races without the stale mid-ramp artefact described in
@@ -80,49 +63,6 @@ double g_clight_ramp_start_time = 0.0;
 // same render frame. Keyed by World tick; -1 forces recompute on first use.
 static int   g_clight_cache_tick  = -1;
 static float g_clight_cache_value = DEFAULT_NORMAL_C_LIGHT;
-
-RuntimeRelativityMode parseRelativityMode()
-{
-    if (!stk_config)
-        return RUNTIME_RELATIVITY_MODE_OTHER;
-
-    if (stk_config->m_relativity_mode == "propulsion-limited")
-        return RUNTIME_RELATIVITY_MODE_PROPULSION_LIMITED;
-    if (stk_config->m_relativity_mode == "preferred-frame-dynamics")
-        return RUNTIME_RELATIVITY_MODE_PREFERRED_FRAME_DYNAMICS;
-
-    return RUNTIME_RELATIVITY_MODE_OTHER;
-}   // parseRelativityMode
-
-void updateRuntimeRelativityState()
-{
-    const World* world = World::getWorld();
-    const bool has_world = world != NULL;
-    const int tick = has_world ? world->getTicksSinceStart()
-                               : std::numeric_limits<int>::min();
-    if (has_world && g_runtime_relativity_has_world &&
-        tick == g_runtime_relativity_tick)
-    {
-        return;
-    }
-
-    const bool networking = NetworkConfig::get()->isNetworking();
-    // Track the previously-observed networking state so the warning re-fires
-    // on every off->on transition rather than only once per process.
-    if (networking && !g_last_networking_state)
-    {
-        Log::warn("Relativity",
-                  "Relativistic mechanics are disabled for network games.");
-    }
-    g_last_networking_state = networking;
-
-    g_runtime_relativity_enabled =
-        stk_config && stk_config->m_relativity_enabled && !networking;
-    g_runtime_relativity_mode = g_runtime_relativity_enabled
-        ? parseRelativityMode() : RUNTIME_RELATIVITY_MODE_OTHER;
-    g_runtime_relativity_tick = tick;
-    g_runtime_relativity_has_world = has_world;
-}   // updateRuntimeRelativityState
 
 bool isFiniteVector(const btVector3& v)
 {
@@ -350,39 +290,10 @@ ApparentSurfaceHit::ApparentSurfaceHit()
 }   // ApparentSurfaceHit
 
 // ----------------------------------------------------------------------------
-ApparentInteractionSurface::ApparentInteractionSurface()
-    : m_valid(false),
-      m_world_point(0.0f, 0.0f, 0.0f),
-      m_world_normal(0.0f, 1.0f, 0.0f),
-      m_apparent_point(0.0f, 0.0f, 0.0f),
-      m_apparent_normal(0.0f, 1.0f, 0.0f),
-      m_offset_along_normal(0.0f)
-{
-}   // ApparentInteractionSurface
-
 bool isEnabled()
 {
-    updateRuntimeRelativityState();
-    return g_runtime_relativity_enabled;
+    return true;
 }   // isEnabled
-
-// ----------------------------------------------------------------------------
-bool isPropulsionLimited()
-{
-    updateRuntimeRelativityState();
-    return g_runtime_relativity_enabled &&
-        g_runtime_relativity_mode ==
-            RUNTIME_RELATIVITY_MODE_PROPULSION_LIMITED;
-}   // isPropulsionLimited
-
-// ----------------------------------------------------------------------------
-bool isPreferredFrameDynamics()
-{
-    updateRuntimeRelativityState();
-    return g_runtime_relativity_enabled &&
-        g_runtime_relativity_mode ==
-            RUNTIME_RELATIVITY_MODE_PREFERRED_FRAME_DYNAMICS;
-}   // isPreferredFrameDynamics
 
 // ----------------------------------------------------------------------------
 bool shouldUseFirstPersonObserverCamera()
@@ -462,9 +373,6 @@ float getCurrentCLight()
         const float c_light = computeCurrentCLight();
         g_clight_cache_value = c_light;
         g_clight_cache_tick  = tick;
-        // Write to stk_config once per tick rather than once per call site.
-        if (stk_config)
-            stk_config->m_relativity_c_light = c_light;
     }
     return g_clight_cache_value;
 }   // getCurrentCLight
@@ -592,22 +500,6 @@ float getMaxCoordinateSpeed()
 }   // getMaxCoordinateSpeed
 
 // ----------------------------------------------------------------------------
-int getRecommendedPhysicsSubsteps(float max_beta)
-{
-    if (!std::isfinite((double)max_beta) || max_beta <= 0.25f)
-        return 1;
-    if (max_beta <= 0.50f)
-        return 2;
-    if (max_beta <= 0.70f)
-        return 3;
-    if (max_beta <= 0.82f)
-        return 4;
-    if (max_beta <= 0.90f)
-        return 5;
-    return 6;
-}   // getRecommendedPhysicsSubsteps
-
-// ----------------------------------------------------------------------------
 double betaForSpeed(double speed, double c_light)
 {
     if (!std::isfinite(speed) || c_light < MIN_C_LIGHT ||
@@ -714,134 +606,15 @@ float scaleLongitudinalForce(float force, float signed_speed,
     return (float)(force * scale);
 }   // scaleLongitudinalForce
 
-// ----------------------------------------------------------------------------
-btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
-                                      const btVector3& coordinate_velocity,
-                                      float c_light)
-{
-    if (!isFiniteVector(response_vector) || !isFiniteVector(coordinate_velocity))
-        return response_vector;
-
-    if (response_vector.fuzzyZero())
-        return response_vector;
-
-    const btScalar speed = coordinate_velocity.length();
-    if (speed <= btScalar(0.0))
-        return response_vector;
-
-    const double gamma = gammaForSpeed((double)speed, c_light);
-    if (!std::isfinite(gamma) || gamma <= 1.0 + MIN_GAMMA_RESPONSE_DELTA)
-        return response_vector;
-
-    const btVector3 direction = coordinate_velocity / speed;
-    const btScalar parallel_magnitude = response_vector.dot(direction);
-    const btVector3 parallel = direction * parallel_magnitude;
-    const btVector3 perpendicular = response_vector - parallel;
-    const btScalar parallel_scale = (btScalar)(1.0 / (gamma * gamma * gamma));
-    const btScalar perpendicular_scale = (btScalar)(1.0 / gamma);
-    const btVector3 scaled = parallel * parallel_scale +
-                             perpendicular * perpendicular_scale;
-
-    if (!isFiniteVector(scaled))
-        return response_vector;
-
-    if ((scaled - response_vector).length2() > btScalar(1.0e-8f))
-        ++g_response_scale_count;
-
-    return scaled;
-}   // scalePreferredFrameResponse
-
-// ----------------------------------------------------------------------------
-float getDirectionalEffectiveMass(float rest_mass,
-                                  const btVector3& coordinate_velocity,
-                                  const btVector3& response_direction,
-                                  float c_light)
-{
-    if (!std::isfinite((double)rest_mass) || rest_mass <= 0.0f)
-        return 0.0f;
-
-    const btVector3 direction = normalizedOrDefault(
-        response_direction, btVector3(1.0f, 0.0f, 0.0f));
-    const btScalar speed = coordinate_velocity.length();
-    if (speed <= btScalar(1.0e-6f))
-        return rest_mass;
-
-    const btVector3 velocity_direction = coordinate_velocity / speed;
-    const btScalar parallel = direction.dot(velocity_direction);
-    const btScalar parallel2 = parallel * parallel;
-    const btScalar perpendicular2 = btScalar(1.0f) - parallel2;
-    const double gamma = gammaForSpeed((double)speed, c_light);
-    if (!std::isfinite(gamma) || gamma <= 1.0 + MIN_GAMMA_RESPONSE_DELTA)
-        return rest_mass;
-
-    const double inv_effective_mass =
-        (parallel2 / (gamma * gamma * gamma * rest_mass)) +
-        (perpendicular2 / (gamma * rest_mass));
-    if (!std::isfinite(inv_effective_mass) || inv_effective_mass <= 0.0)
-        return rest_mass;
-
-    return (float)(1.0 / inv_effective_mass);
-}   // getDirectionalEffectiveMass
-
-// ----------------------------------------------------------------------------
-float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
-                                       const btVector3& velocity_a,
-                                       float mass_a,
-                                       const btVector3& velocity_b,
-                                       float mass_b,
-                                       float restitution,
-                                       float c_light)
-{
-    if (mass_a <= 0.0f && mass_b <= 0.0f)
-        return 0.0f;
-
-    const btVector3 normal = normalizedOrDefault(
-        collision_normal, btVector3(1.0f, 0.0f, 0.0f));
-    const btVector3 relative_velocity = velocity_b - velocity_a;
-    const btScalar relative_normal_speed = relative_velocity.dot(normal);
-    if (relative_normal_speed >= btScalar(-1.0e-4f))
-        return 0.0f;
-
-    const float effective_mass_a = getDirectionalEffectiveMass(
-        mass_a, velocity_a, normal, c_light);
-    const float effective_mass_b = getDirectionalEffectiveMass(
-        mass_b, velocity_b, normal, c_light);
-
-    double effective_inverse_mass = 0.0;
-    if (effective_mass_a > 0.0f)
-        effective_inverse_mass += 1.0 / effective_mass_a;
-    if (effective_mass_b > 0.0f)
-        effective_inverse_mass += 1.0 / effective_mass_b;
-    if (effective_inverse_mass <= 0.0)
-        return 0.0f;
-
-    const double clamped_restitution =
-        std::max(0.0, std::min(1.0, (double)restitution));
-    const double impulse =
-        -(1.0 + clamped_restitution) *
-        (double)relative_normal_speed / effective_inverse_mass;
-    if (!std::isfinite(impulse) || impulse <= 0.0)
-        return 0.0f;
-    return (float)impulse;
-}   // computeCollisionImpulseMagnitude
-
-// ----------------------------------------------------------------------------
 unsigned int getVelocityClampCount()
 {
     return g_velocity_clamp_count;
 }   // getVelocityClampCount
 
 // ----------------------------------------------------------------------------
-unsigned int getResponseScaleCount()
-{
-    return g_response_scale_count;
-}   // getResponseScaleCount
-
-// ----------------------------------------------------------------------------
 void resetDebugCounters()
 {
     g_velocity_clamp_count = 0;
-    g_response_scale_count = 0;
 }   // resetDebugCounters
 
 // ----------------------------------------------------------------------------
@@ -871,52 +644,6 @@ float getVisualShellOffset(const AbstractKart* observer_kart,
         return 0.0f;
     return shell;
 }   // getVisualShellOffset
-
-// ----------------------------------------------------------------------------
-bool getApparentInteractionSurface(
-    const AbstractKart* observer_kart,
-    const btVector3& observer_position,
-    const btVector3& world_position,
-    const btVector3& world_normal,
-    ApparentInteractionSurface* surface,
-    const btVector3& object_velocity)
-{
-    if (surface)
-        *surface = ApparentInteractionSurface();
-
-    if (!surface || !Relativity::isEnabled() ||
-        !isFiniteVector(world_position) || !isFiniteVector(world_normal))
-    {
-        return false;
-    }
-
-    const ObserverVisualState observer_state =
-        buildObserverVisualState(observer_kart, observer_position);
-    if (!observer_state.m_valid)
-        return false;
-
-    surface->m_world_point = world_position;
-    surface->m_world_normal = normalizedOrDefault(
-        world_normal, btVector3(0.0f, 1.0f, 0.0f));
-    surface->m_apparent_point = applyVisualPosition(
-        world_position, observer_state, object_velocity);
-    surface->m_apparent_normal = applyVisualNormal(
-        world_position, surface->m_world_normal, observer_state);
-    surface->m_offset_along_normal =
-        (float)((surface->m_apparent_point - world_position)
-            .dot(surface->m_world_normal));
-
-    if (!isFiniteVector(surface->m_apparent_point) ||
-        !isFiniteVector(surface->m_apparent_normal) ||
-        !std::isfinite((double)surface->m_offset_along_normal))
-    {
-        *surface = ApparentInteractionSurface();
-        return false;
-    }
-
-    surface->m_valid = true;
-    return true;
-}   // getApparentInteractionSurface
 
 // ----------------------------------------------------------------------------
 btVector3 applyVisualPosition(const btVector3& world_position,
@@ -1068,19 +795,6 @@ btVector3 clampVelocity(const btVector3& velocity, bool *was_clamped)
         velocity, Relativity::getMaxCoordinateSpeed(), was_clamped);
 }   // clampVelocity
 
-// ----------------------------------------------------------------------------
-btVector3 scaleResponse(const btVector3& response_vector,
-                        const btVector3& coordinate_velocity)
-{
-    if (!UserConfigParams::m_relativity_physics_enabled ||
-        !Relativity::isPreferredFrameDynamics())
-        return response_vector;
-
-    return Relativity::scalePreferredFrameResponse(
-        response_vector, coordinate_velocity,
-        Relativity::getCurrentCLight());
-}   // scaleResponse
-
 }   // namespace KartAdapter
 
 // ----------------------------------------------------------------------------
@@ -1131,34 +845,6 @@ void unitTesting()
                  < 0.0001);
         MK_CHECK(setCurrentCLight(original_c_light));
     }
-
-    btVector3 scaled_response =
-        scalePreferredFrameResponse(btVector3(80.0f, 40.0f, 0.0f),
-                                    btVector3(48.0f, 0.0f, 0.0f),
-                                    (float)c_light);
-    (void)scaled_response;
-    MK_CHECK(std::fabs((double)scaled_response.getX() - 40.96) < 0.01);
-    MK_CHECK(std::fabs((double)scaled_response.getY() - 32.0) < 0.01);
-
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.10f) == 1);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.65f) == 3);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.95f) == 6);
-
-    const float effective_mass_parallel = getDirectionalEffectiveMass(
-        200.0f, btVector3(48.0f, 0.0f, 0.0f), btVector3(1.0f, 0.0f, 0.0f),
-        (float)c_light);
-    const float effective_mass_perpendicular = getDirectionalEffectiveMass(
-        200.0f, btVector3(48.0f, 0.0f, 0.0f), btVector3(0.0f, 1.0f, 0.0f),
-        (float)c_light);
-    (void)effective_mass_parallel;
-    (void)effective_mass_perpendicular;
-    MK_CHECK(effective_mass_parallel > effective_mass_perpendicular);
-
-    const float collision_impulse = computeCollisionImpulseMagnitude(
-        btVector3(1.0f, 0.0f, 0.0f), btVector3(20.0f, 0.0f, 0.0f), 200.0f,
-        btVector3(0.0f, 0.0f, 0.0f), 200.0f, 0.1f, (float)c_light);
-    (void)collision_impulse;
-    MK_CHECK(collision_impulse > 0.0f);
 
     ObserverVisualState test_observer;
     test_observer.m_valid = true;
@@ -1231,63 +917,16 @@ void unitTesting()
     MK_CHECK(scaleLongitudinalForce(100.0f, -0.6f * (float)c_light,
                                     (float)c_light) == 100.0f);
 
-    MK_CHECK(getRecommendedPhysicsSubsteps(-0.1f) == 1);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.25f) == 1);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.26f) == 2);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.50f) == 2);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.51f) == 3);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.70f) == 3);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.71f) == 4);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.82f) == 4);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.83f) == 5);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.90f) == 5);
-    MK_CHECK(getRecommendedPhysicsSubsteps(0.91f) == 6);
-
-    MK_CHECK(std::fabs((double)getDirectionalEffectiveMass(
-        200.0f, btVector3(0.0f, 0.0f, 0.0f),
-        btVector3(1.0f, 0.0f, 0.0f), (float)c_light) - 200.0) < 0.001);
-    MK_CHECK(std::fabs((double)effective_mass_parallel - 390.625) < 0.5);
-    MK_CHECK(std::fabs((double)effective_mass_perpendicular - 250.0) < 0.5);
-
-    {
-        const float separating_impulse = computeCollisionImpulseMagnitude(
-            btVector3(1.0f, 0.0f, 0.0f),
-            btVector3(0.0f, 0.0f, 0.0f), 200.0f,
-            btVector3(20.0f, 0.0f, 0.0f), 200.0f,
-            0.0f, (float)c_light);
-        MK_CHECK(std::fabs((double)separating_impulse) < 0.000001);
-
-        const float elastic_impulse = computeCollisionImpulseMagnitude(
-            btVector3(1.0f, 0.0f, 0.0f),
-            btVector3(20.0f, 0.0f, 0.0f), 200.0f,
-            btVector3(0.0f, 0.0f, 0.0f), 200.0f,
-            1.0f, (float)c_light);
-        const float inelastic_impulse = computeCollisionImpulseMagnitude(
-            btVector3(1.0f, 0.0f, 0.0f),
-            btVector3(20.0f, 0.0f, 0.0f), 200.0f,
-            btVector3(0.0f, 0.0f, 0.0f), 200.0f,
-            0.0f, (float)c_light);
-        MK_CHECK(elastic_impulse > inelastic_impulse);
-        MK_CHECK(inelastic_impulse > 0.0f);
-    }
-
     {
         resetDebugCounters();
         MK_CHECK(getVelocityClampCount() == 0u);
-        MK_CHECK(getResponseScaleCount() == 0u);
 
         bool dummy = false;
         clampVelocityToC(btVector3(200.0f, 0.0f, 0.0f), 78.4f, &dummy);
         MK_CHECK(getVelocityClampCount() == 1u);
 
-        scalePreferredFrameResponse(btVector3(80.0f, 40.0f, 0.0f),
-                                    btVector3(48.0f, 0.0f, 0.0f),
-                                    (float)c_light);
-        MK_CHECK(getResponseScaleCount() == 1u);
-
         resetDebugCounters();
         MK_CHECK(getVelocityClampCount() == 0u);
-        MK_CHECK(getResponseScaleCount() == 0u);
     }
 
     {

@@ -39,7 +39,6 @@
 #include "physics/stk_dynamics_world.hpp"
 #include "physics/triangle_mesh.hpp"
 #include "race/race_manager.hpp"
-#include "relativity/relativity_math.hpp"
 #include "scriptengine/script_engine.hpp"
 #include "tracks/track.hpp"
 #include "tracks/track_object.hpp"
@@ -50,147 +49,6 @@
 
 #include <algorithm>
 #include <cmath>
-
-namespace
-{
-
-const btScalar RELATIVISTIC_CONTACT_SYNC_RADIUS2 = btScalar(25.0f);
-const btScalar RELATIVISTIC_CONTACT_CORRECTION_RATE = btScalar(8.0f);
-
-btVector3 toBt(const Vec3& v)
-{
-    return btVector3(v.getX(), v.getY(), v.getZ());
-}   // toBt
-
-btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
-{
-    if (v.length2() <= btScalar(1.0e-8f))
-        return fallback;
-    btVector3 result(v);
-    result.normalize();
-    return result;
-}   // normalizedOrDefault
-
-int getRelativisticSubsteps()
-{
-    if (!UserConfigParams::m_relativity_physics_enabled ||
-        !Relativity::isPreferredFrameDynamics())
-        return 1;
-
-    World* world = World::getWorld();
-    if (!world)
-        return 1;
-
-    float max_beta = 0.0f;
-    const float c_light = Relativity::getCurrentCLight();
-    for (unsigned int i = 0; i < world->getNumKarts(); i++)
-    {
-        AbstractKart* kart = world->getKart(i);
-        if (!kart)
-            continue;
-
-        const float speed = kart->getVelocity().length();
-        max_beta = std::max(max_beta,
-            (float)Relativity::betaForSpeed((double)speed, (double)c_light));
-    }
-
-    return Relativity::getRecommendedPhysicsSubsteps(max_beta);
-}   // getRelativisticSubsteps
-
-void configureRelativisticCCD(const AbstractKart* kart)
-{
-    if (!kart)
-        return;
-
-    btRigidBody* body = kart->getBody();
-    if (!body || body->isStaticOrKinematicObject())
-        return;
-
-    if (!UserConfigParams::m_relativity_physics_enabled ||
-        !Relativity::isPreferredFrameDynamics())
-    {
-        body->setCcdSweptSphereRadius(btScalar(0.0f));
-        body->setCcdMotionThreshold(btScalar(0.0f));
-        return;
-    }
-
-    const btScalar extent = std::max(
-        btScalar(0.25f),
-        btScalar(0.25f *
-            std::min(kart->getKartWidth(), kart->getKartLength())));
-    body->setCcdSweptSphereRadius(extent * btScalar(0.8f));
-    body->setCcdMotionThreshold(extent);
-}   // configureRelativisticCCD
-
-void applyRelativisticStaticContactCorrection(AbstractKart* kart,
-                                              const btPersistentManifold* manifold,
-                                              bool kart_is_body_a,
-                                              float dt)
-{
-    if (!kart || !manifold || dt <= 0.0f ||
-        !UserConfigParams::m_relativity_physics_enabled ||
-        !Relativity::isPreferredFrameDynamics())
-        return;
-
-    btRigidBody* body = kart->getBody();
-    if (!body || body->isStaticOrKinematicObject())
-        return;
-
-    const btVector3 kart_center = body->getCenterOfMassPosition();
-    btScalar best_offset = btScalar(0.0f);
-    btVector3 best_normal(0.0f, 1.0f, 0.0f);
-
-    for (int i = 0; i < manifold->getNumContacts(); i++)
-    {
-        const btManifoldPoint& contact = manifold->getContactPoint(i);
-        const btVector3 contact_point = kart_is_body_a
-            ? contact.m_positionWorldOnB : contact.m_positionWorldOnA;
-        if ((contact_point - kart_center).length2() >
-            RELATIVISTIC_CONTACT_SYNC_RADIUS2)
-            continue;
-
-        btVector3 normal = kart_is_body_a
-            ? contact.m_normalWorldOnB : -contact.m_normalWorldOnB;
-        normal = normalizedOrDefault(normal, best_normal);
-
-        Relativity::ApparentInteractionSurface apparent_surface;
-        if (!Relativity::getApparentInteractionSurface(
-                kart, kart_center, contact_point, normal,
-                &apparent_surface))
-            continue;
-
-        const btScalar offset =
-            btScalar(apparent_surface.m_offset_along_normal);
-        if (offset > best_offset)
-        {
-            best_offset = offset;
-            best_normal = normalizedOrDefault(
-                apparent_surface.m_apparent_normal, normal);
-        }
-    }
-
-    if (best_offset <= btScalar(0.0f))
-        return;
-
-    btVector3 velocity = body->getLinearVelocity();
-    const btScalar inward_speed = velocity.dot(best_normal);
-    if (inward_speed < btScalar(0.0f))
-    {
-        velocity -= best_normal * inward_speed;
-        body->setLinearVelocity(velocity);
-    }
-
-    const btScalar alpha = std::min(
-        btScalar(1.0f),
-        std::max(btScalar(0.0f),
-                 btScalar(dt) * RELATIVISTIC_CONTACT_CORRECTION_RATE));
-    btTransform transform = body->getWorldTransform();
-    transform.setOrigin(transform.getOrigin() + best_normal * best_offset * alpha);
-    body->setCenterOfMassTransform(transform);
-    body->activate();
-}   // applyRelativisticStaticContactCorrection
-
-}   // anonymous namespace
 
 //=============================================================================
 Physics* g_physics[PT_COUNT];
@@ -285,7 +143,6 @@ void Physics::addKart(const AbstractKart *kart)
         if(btRigidBody::upcast(all_objs[i])== kart->getBody())
             return;
     }
-    configureRelativisticCCD(kart);
     m_dynamics_world->addRigidBody(kart->getBody());
     m_dynamics_world->addVehicle(kart->getVehicle());
 }   // addKart
@@ -342,9 +199,7 @@ void Physics::update(int ticks)
     if(UserConfigParams::m_physics_debug) start = StkTime::getRealTime();
 
     const float dt = stk_config->ticks2Time(1);
-    const int substeps = getRelativisticSubsteps();
-    m_dynamics_world->stepSimulation(dt, substeps,
-                                     dt / (float)substeps);
+    m_dynamics_world->stepSimulation(dt, 1, dt);
     if (UserConfigParams::m_physics_debug)
     {
         Log::verbose("Physics", "At %d physics duration %12.8f",
@@ -598,10 +453,7 @@ void Physics::KartKartCollision(AbstractKart *kart_a,
     kart_a->crashed(kart_b, /*handle_attachments*/true);
     kart_b->crashed(kart_a, /*handle_attachments*/false);
 
-    if (!UserConfigParams::m_relativity_physics_enabled ||
-        !Relativity::isPreferredFrameDynamics())
-    {
-        AbstractKart *left_kart, *right_kart;
+    AbstractKart *left_kart, *right_kart;
 
         if(contact_point_a.getX() < contact_point_b.getX())
         {
@@ -673,74 +525,6 @@ void Physics::KartKartCollision(AbstractKart *kart_a,
                 impulse);
             left_kart->getBody()->setAngularVelocity(btVector3(0,0,0));
         }
-        return;
-    }
-
-    if (kart_a->getVehicle()->getCentralImpulseTicks() > 0 ||
-        kart_b->getVehicle()->getCentralImpulseTicks() > 0)
-    {
-        return;
-    }
-
-    const btVector3 world_point_a =
-        kart_a->getBody()->getWorldTransform()(toBt(contact_point_a));
-    const btVector3 world_point_b =
-        kart_b->getBody()->getWorldTransform()(toBt(contact_point_b));
-    btVector3 collision_normal = world_point_b - world_point_a;
-    if (collision_normal.length2() <= btScalar(1.0e-6f))
-    {
-        collision_normal =
-            kart_b->getBody()->getCenterOfMassPosition() -
-            kart_a->getBody()->getCenterOfMassPosition();
-    }
-    collision_normal = normalizedOrDefault(
-        collision_normal, btVector3(1.0f, 0.0f, 0.0f));
-
-    const float c_light = Relativity::getCurrentCLight();
-    const float mass_a = std::max(1.0f, kart_a->getKartProperties()->getMass());
-    const float mass_b = std::max(1.0f, kart_b->getKartProperties()->getMass());
-    float impulse_magnitude = Relativity::computeCollisionImpulseMagnitude(
-        collision_normal, kart_a->getBody()->getLinearVelocity(), mass_a,
-        kart_b->getBody()->getLinearVelocity(), mass_b, 0.05f, c_light);
-    if (impulse_magnitude <= 0.0f)
-        return;
-
-    const float effective_mass_a = Relativity::getDirectionalEffectiveMass(
-        mass_a, kart_a->getBody()->getLinearVelocity(), collision_normal,
-        c_light);
-    const float effective_mass_b = Relativity::getDirectionalEffectiveMass(
-        mass_b, kart_b->getBody()->getLinearVelocity(), collision_normal,
-        c_light);
-    const float beta_a = (float)Relativity::betaForSpeed(
-        (double)kart_a->getBody()->getLinearVelocity().length(),
-        (double)c_light);
-    const float beta_b = (float)Relativity::betaForSpeed(
-        (double)kart_b->getBody()->getLinearVelocity().length(),
-        (double)c_light);
-    const float delta_v_limit = 3.0f + 6.0f * std::max(beta_a, beta_b);
-    const float impulse_cap =
-        delta_v_limit * std::min(effective_mass_a, effective_mass_b);
-    if (impulse_cap > 0.0f)
-        impulse_magnitude = std::min(impulse_magnitude, impulse_cap);
-
-    const float collision_time = std::max(
-        0.05f,
-        0.5f * (kart_a->getKartProperties()->getCollisionImpulseTime() +
-                kart_b->getKartProperties()->getCollisionImpulseTime()));
-    const uint16_t collision_ticks =
-        (uint16_t)std::max(1, stk_config->time2Ticks(collision_time));
-    const btVector3 distributed_impulse =
-        collision_normal * (impulse_magnitude / collision_time);
-
-    kart_a->getVehicle()->setTimedCentralImpulse(collision_ticks,
-                                                 -distributed_impulse);
-    kart_b->getVehicle()->setTimedCentralImpulse(collision_ticks,
-                                                 distributed_impulse);
-    kart_a->getBody()->setAngularVelocity(
-        kart_a->getBody()->getAngularVelocity() * 0.8f);
-    kart_b->getBody()->setAngularVelocity(
-        kart_b->getBody()->getAngularVelocity() * 0.8f);
-
 }   // KartKartCollision
 
 //-----------------------------------------------------------------------------
@@ -806,8 +590,6 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
             else if(upB->is(UserPointer::UP_KART))
             {
                 AbstractKart *kart=upB->getPointerKart();
-                applyRelativisticStaticContactCorrection(
-                    kart, contact_manifold, false, info.m_timeStep);
                 int n = contact_manifold->getContactPoint(0).m_index0;
                 const Material *m
                     = n>=0 ? upA->getPointerTriangleMesh()->getMaterial(n)
@@ -846,8 +628,6 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
             if(upB->is(UserPointer::UP_TRACK))
             {
                 AbstractKart *kart = upA->getPointerKart();
-                applyRelativisticStaticContactCorrection(
-                    kart, contact_manifold, true, info.m_timeStep);
                 int n = contact_manifold->getContactPoint(0).m_index1;
                 const Material *m
                     = n>=0 ? upB->getPointerTriangleMesh()->getMaterial(n)
@@ -877,8 +657,6 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
                 if (objB->isStaticObject())
                 {
                     AbstractKart *kart = upA->getPointerKart();
-                    applyRelativisticStaticContactCorrection(
-                        kart, contact_manifold, true, info.m_timeStep);
                     const btVector3 &normal = contact_manifold->getContactPoint(0)
                         .m_normalWorldOnB;
                     kart->crashed((Material*)NULL, normal);
@@ -920,12 +698,6 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
                 m_all_collisions.push_back(
                     upA, contact_manifold->getContactPoint(0).m_localPointA,
                     upB, contact_manifold->getContactPoint(0).m_localPointB);
-                if (objA->isStaticObject())
-                {
-                    applyRelativisticStaticContactCorrection(
-                        upB->getPointerKart(), contact_manifold, false,
-                        info.m_timeStep);
-                }
             }
             else if(upB->is(UserPointer::UP_TRACK))
             {

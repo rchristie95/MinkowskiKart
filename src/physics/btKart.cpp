@@ -31,9 +31,6 @@
 #include "modes/world.hpp"
 #include "physics/triangle_mesh.hpp"
 #include "race/race_manager.hpp"
-#include "config/user_config.hpp"
-#include "relativity/observer_snapshot.hpp"
-#include "relativity/relativity_math.hpp"
 #include "tracks/terrain_info.hpp"
 #include "tracks/track.hpp"
 
@@ -48,8 +45,6 @@ namespace
 
 const btScalar SUPPORT_NORMAL_TIME_CONSTANT = btScalar(0.06f);
 const btScalar SUPPORT_NORMAL_MAX_RATE = btScalar(7.0f);
-const btScalar INTO_GROUND_SPEED_TOLERANCE = btScalar(0.15f);
-const btScalar RELATIVISTIC_SYNC_RADIUS2 = btScalar(25.0f);
 const btScalar MOBIUS_RADIUS = btScalar(82.0f);
 const btScalar MOBIUS_ROAD_HALF_WIDTH = btScalar(8.0f);
 const btScalar MOBIUS_PI = btScalar(3.14159265358979323846f);
@@ -260,32 +255,8 @@ bool solveMobiusSurfaceGlobal(const btVector3& position,
            isFiniteVector(query->m_gravity_normal);
 }   // solveMobiusSurfaceGlobal
 
-void projectVelocityOntoGround(btRigidBody* body,
-                               const btVector3& ground_normal,
-                               int wheels_on_ground)
-{
-    if (!body || wheels_on_ground < 2)
-        return;
-
-    const btVector3 normal = normalizedOrDefault(
-        ground_normal, btVector3(0.0f, 1.0f, 0.0f));
-    const btVector3 velocity = body->getLinearVelocity();
-    const btScalar into_ground_speed = velocity.dot(normal);
-    if (into_ground_speed >= -INTO_GROUND_SPEED_TOLERANCE)
-        return;
-
-    btVector3 tangent_velocity = velocity -
-        normal * (into_ground_speed + INTO_GROUND_SPEED_TOLERANCE);
-    if (tangent_velocity.length2() <= btScalar(1.0e-8f))
-        tangent_velocity = btVector3(0.0f, 0.0f, 0.0f);
-
-    body->setLinearVelocity(tangent_velocity);
-    body->setInterpolationLinearVelocity(tangent_velocity);
-}   // projectVelocityOntoGround
-
 btVector3 getGroundStickImpulse(Kart* kart,
                                 btRigidBody* body,
-                                const btVector3& support_normal,
                                 int wheels_on_ground,
                                 float impulse_factor)
 {
@@ -297,22 +268,8 @@ btVector3 getGroundStickImpulse(Kart* kart,
     if (impulse_magnitude <= btScalar(0.0f))
         return btVector3(0.0f, 0.0f, 0.0f);
 
-    btVector3 impulse;
-    if (UserConfigParams::m_relativity_physics_enabled && Relativity::isEnabled())
-    {
-        impulse = -normalizedOrDefault(support_normal,
-                  btVector3(0.0f, 1.0f, 0.0f)) *
-                  impulse_magnitude;
-        impulse = Relativity::KartAdapter::scaleResponse(
-            impulse, body->getLinearVelocity());
-    }
-    else
-    {
-        impulse = body->getWorldTransform().getBasis()
-                * btVector3(0.0f, -impulse_magnitude, 0.0f);
-    }
-
-    return impulse;
+    return body->getWorldTransform().getBasis()
+         * btVector3(0.0f, -impulse_magnitude, 0.0f);
 }   // getGroundStickImpulse
 
 }   // anonymous namespace
@@ -671,33 +628,7 @@ btScalar btKart::rayCast(unsigned int index, float fraction)
         const bool has_mobius_normal = getMobiusSupportNormal(&mobius_normal);
         if (has_mobius_normal)
             contact_normal = mobius_normal;
-        btVector3 contact_point = rayResults.m_hitPointInWorld;
-
-        if (UserConfigParams::m_relativity_physics_enabled &&
-            Relativity::isPreferredFrameDynamics() &&
-            (rayResults.m_hitPointInWorld -
-                getRigidBody()->getCenterOfMassPosition()).length2() <=
-                    RELATIVISTIC_SYNC_RADIUS2)
-        {
-            Relativity::ApparentInteractionSurface apparent_surface;
-            if (Relativity::getApparentInteractionSurface(
-                    m_kart, getRigidBody()->getCenterOfMassPosition(),
-                    rayResults.m_hitPointInWorld, contact_normal,
-                    &apparent_surface))
-            {
-                const btScalar apparent_depth =
-                    (apparent_surface.m_apparent_point - source).dot(
-                        wheel.m_raycastInfo.m_wheelDirectionWS);
-                if (apparent_depth >= btScalar(0.0f) &&
-                    apparent_depth < depth && apparent_depth < max_susp_len)
-                {
-                    depth = apparent_depth;
-                    contact_point = apparent_surface.m_apparent_point;
-                    if (!has_mobius_normal)
-                        contact_normal = apparent_surface.m_apparent_normal;
-                }
-            }
-        }
+        const btVector3 contact_point = rayResults.m_hitPointInWorld;
 
         wheel.m_raycastInfo.m_contactNormalWS = contact_normal;
         wheel.m_raycastInfo.m_contactNormalWS.normalize();
@@ -892,59 +823,6 @@ btVector3 btKart::computeRawSupportNormal() const
     return normal_sum;
 }   // computeRawSupportNormal
 
-// ----------------------------------------------------------------------------
-btVector3 btKart::computeGroundProjectionNormal() const
-{
-    const btVector3 chassis_up = normalizedOrDefault(
-        getChassisWorldTransform().getBasis().getColumn(m_indexUpAxis),
-        btVector3(0.0f, 1.0f, 0.0f));
-    btVector3 mobius_normal;
-    if (getMobiusSupportNormal(&mobius_normal))
-        return mobius_normal;
-
-    btVector3 fallback = normalizedOrDefault(m_stable_support_normal,
-                                             chassis_up);
-    if (fallback.dot(chassis_up) < btScalar(0.0f))
-        fallback = -fallback;
-
-    if (m_num_wheels_on_ground < 2)
-        return fallback;
-
-    btVector3 normal_sum(0.0f, 0.0f, 0.0f);
-    btScalar total_weight = btScalar(0.0f);
-    for (int i = 0; i < m_wheelInfo.size(); i++)
-    {
-        const btWheelInfo& wheel = m_wheelInfo[i];
-        if (!wheel.m_raycastInfo.m_isInContact)
-            continue;
-
-        btVector3 normal = normalizedOrDefault(
-            wheel.m_raycastInfo.m_contactNormalWS, fallback);
-        if (normal.dot(chassis_up) < btScalar(0.0f))
-            normal = -normal;
-
-        btScalar weight = wheel.m_wheelsSuspensionForce;
-        if (weight <= btScalar(0.0f))
-            weight = btScalar(1.0f);
-
-        normal_sum += normal * weight;
-        total_weight += weight;
-    }
-
-    if (total_weight <= btScalar(0.0f) ||
-        normal_sum.length2() <= btScalar(1.0e-8f))
-    {
-        return fallback;
-    }
-
-    normal_sum /= total_weight;
-    normal_sum = normalizedOrDefault(normal_sum, fallback);
-    if (normal_sum.dot(chassis_up) < btScalar(0.0f))
-        normal_sum = -normal_sum;
-    return normal_sum;
-}   // computeGroundProjectionNormal
-
-// ----------------------------------------------------------------------------
 void btKart::updateStableSupportNormal(btScalar step)
 {
     const btVector3 desired = computeRawSupportNormal();
@@ -1050,7 +928,6 @@ void btKart::updateVehicle( btScalar step )
     {
         btVector3 downwards_impulse =
             getGroundStickImpulse(m_kart, m_chassisBody,
-                                  m_stable_support_normal,
                                   m_num_wheels_on_ground, dif);
         m_chassisBody->applyCentralImpulse(downwards_impulse);
     }
@@ -1061,10 +938,7 @@ void btKart::updateVehicle( btScalar step )
     {
         // We have fixed timestep
         float dt = stk_config->ticks2Time(1);
-        btVector3 additional_impulse = m_additional_impulse * dt;
-        additional_impulse = Relativity::KartAdapter::scaleResponse(
-            additional_impulse, m_chassisBody->getLinearVelocity());
-        m_chassisBody->applyCentralImpulse(additional_impulse);
+        m_chassisBody->applyCentralImpulse(m_additional_impulse * dt);
         m_ticks_additional_impulse--;
     }
 
@@ -1089,14 +963,6 @@ void btKart::updateVehicle( btScalar step )
         btTransform &iwt=m_chassisBody->getInterpolationWorldTransform();
         iwt.setRotation(iwt.getRotation()*add_rot);
         m_ticks_additional_rotation--;
-    }
-    if (UserConfigParams::m_relativity_physics_enabled && Relativity::isEnabled())
-    {
-        // Keep grounded relativistic motion tangent to current wheel contacts.
-        // The smoothed support normal feeds camera/stickiness, but projecting
-        // speed against it here can erase freshly applied zipper boosts.
-        projectVelocityOntoGround(m_chassisBody, computeGroundProjectionNormal(),
-                                  m_num_wheels_on_ground);
     }
     adjustSpeed(m_min_speed, m_max_speed);
 }   // updateVehicle
@@ -1433,8 +1299,6 @@ void btKart::updateFriction(btScalar timeStep)
             }
 
             btVector3 sideImp = m_axle[wheel] * m_sideImpulse[wheel];
-            sideImp = Relativity::KartAdapter::scaleResponse(
-                sideImp, m_chassisBody->getLinearVelocity());
 
 #if defined ROLLING_INFLUENCE_FIX && !defined COMPATIBLE_0_7_3
             // fix. It only worked if car's up was along Y - VT.
@@ -1533,17 +1397,6 @@ void btKart::setSliding(bool active)
  */
 void btKart::adjustSpeed(btScalar min_speed, btScalar max_speed)
 {
-    if (UserConfigParams::m_relativity_physics_enabled && Relativity::isEnabled())
-    {
-        btScalar relativity_max_speed =
-            (btScalar)Relativity::getMaxCoordinateSpeed();
-
-        if (max_speed < 0 || max_speed > relativity_max_speed)
-            max_speed = relativity_max_speed;
-        if (min_speed > max_speed)
-            min_speed = max_speed;
-    }
-
     const btVector3 &velocity = m_chassisBody->getLinearVelocity();
     float speed = velocity.length();
 

@@ -152,19 +152,6 @@
            solver-split-impulse-threshold="-0.00001"
            solver-mode=""/>
 
-  <!-- Relativity prototype
-       This is disabled by default. It keeps one global preferred simulation
-       frame, adds per-kart proper-time diagnostics, caps kart speed below c,
-       and applies preferred-frame response scaling without damping drive force.
-       c-light is expressed in STK coordinate meters per second.
-       mode can be "kinematics-only", "propulsion-limited", or
-       "preferred-frame-dynamics".
-       -->
-  <relativity enabled="true"
-              c-light="35.0"
-              max-beta="0.98"
-              mode="preferred-frame-dynamics"/>
-
   <!-- Various replaceable music tracks that play during certain events.
        title: Plays on the main menu.
        default: Plays if a track's music was not found.

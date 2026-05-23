@@ -42,21 +42,7 @@ struct ApparentSurfaceHit
     ApparentSurfaceHit();
 };   // struct ApparentSurfaceHit
 
-struct ApparentInteractionSurface
-{
-    bool      m_valid;
-    btVector3 m_world_point;
-    btVector3 m_world_normal;
-    btVector3 m_apparent_point;
-    btVector3 m_apparent_normal;
-    float     m_offset_along_normal;
-
-    ApparentInteractionSurface();
-};   // struct ApparentInteractionSurface
-
 bool isEnabled();
-bool isPropulsionLimited();
-bool isPreferredFrameDynamics();
 bool shouldUseFirstPersonObserverCamera();
 bool isPowerupCLightActive();
 
@@ -80,7 +66,6 @@ bool scaleCurrentCLight(float factor,
                         float* applied_c_light = 0);
 float getConfiguredMaxBeta();
 float getMaxCoordinateSpeed();
-int getRecommendedPhysicsSubsteps(float max_beta);
 
 double betaForSpeed(double speed, double c_light);
 double gammaForSpeed(double speed, double c_light);
@@ -98,23 +83,7 @@ btVector3 clampVelocityToC(const btVector3& velocity,
 
 float scaleLongitudinalForce(float force, float signed_speed,
                              float c_light);
-btVector3 scalePreferredFrameResponse(const btVector3& response_vector,
-                                      const btVector3& coordinate_velocity,
-                                      float c_light);
-float getDirectionalEffectiveMass(float rest_mass,
-                                  const btVector3& coordinate_velocity,
-                                  const btVector3& response_direction,
-                                  float c_light);
-float computeCollisionImpulseMagnitude(const btVector3& collision_normal,
-                                       const btVector3& velocity_a,
-                                       float mass_a,
-                                       const btVector3& velocity_b,
-                                       float mass_b,
-                                       float restitution,
-                                       float c_light);
-
 unsigned int getVelocityClampCount();
-unsigned int getResponseScaleCount();
 void resetDebugCounters();
 
 float getVisualShellOffset(const AbstractKart* observer_kart,
@@ -123,13 +92,6 @@ float getVisualShellOffset(const AbstractKart* observer_kart,
                            const btVector3& world_normal,
                            const btVector3& object_velocity =
                                btVector3(0.0f, 0.0f, 0.0f));
-bool getApparentInteractionSurface(
-    const AbstractKart* observer_kart,
-    const btVector3& observer_position,
-    const btVector3& world_position,
-    const btVector3& world_normal,
-    ApparentInteractionSurface* surface,
-    const btVector3& object_velocity = btVector3(0.0f, 0.0f, 0.0f));
 btVector3 applyVisualPosition(const btVector3& world_position,
                               const ObserverVisualState& observer_state,
                               const btVector3& object_velocity =
@@ -148,8 +110,6 @@ namespace KartAdapter
 {
 float scalePropulsiveForce(float force, float signed_speed);
 btVector3 clampVelocity(const btVector3& velocity, bool *was_clamped = 0);
-btVector3 scaleResponse(const btVector3& response_vector,
-                        const btVector3& coordinate_velocity);
 }
 
 void unitTesting();

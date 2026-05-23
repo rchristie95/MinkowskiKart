@@ -32,7 +32,6 @@
 #include "network/network_string.hpp"
 #include "network/rewind_manager.hpp"
 #include "physics/btKart.hpp"
-#include "relativity/relativity_math.hpp"
 #include "tracks/track.hpp"
 #include "utils/log.hpp"
 
@@ -451,8 +450,6 @@ void Skidding::update(int ticks, bool is_on_ground,
             float v = Track::getCurrentTrack()->getGravity()
                     * 0.5f * kp->getSkidPhysicalJumpTime();
             btVector3 imp(0, v / m_kart->getBody()->getInvMass(),0);
-            imp = Relativity::KartAdapter::scaleResponse(
-                imp, m_kart->getBody()->getLinearVelocity());
             m_kart->getVehicle()->getRigidBody()->applyCentralImpulse(imp);
 
             // Some karts might use a graphical-only jump. Set it up:

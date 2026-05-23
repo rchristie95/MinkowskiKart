@@ -98,7 +98,7 @@ private:
     /** Number of wheels that touch the ground. */
     int                 m_num_wheels_on_ground;
 
-    /** Smoothed support-surface normal shared by relativity physics/camera. */
+    /** Smoothed support-surface normal shared with the camera. */
     btVector3           m_stable_support_normal;
 
     /** True once m_stable_support_normal has been seeded. */
@@ -142,7 +142,6 @@ private:
     void     defaultInit();
     btScalar rayCast(btWheelInfo& wheel, const btVector3& ray);
     btVector3 computeRawSupportNormal() const;
-    btVector3 computeGroundProjectionNormal() const;
     bool     updateMobiusSurfaceCache() const;
     void     updateStableSupportNormal(btScalar step);
     void     updateWheelTransformsWS(btWheelInfo& wheel,

@@ -194,21 +194,6 @@ void STKConfig::load(const std::string &filename)
     CHECK_NEG(m_compactification_item_return_ticks, "compactification return time");
     CHECK_NEG(m_warp_bubble_item_return_ticks, "warp bubble return time");
 
-    if (m_relativity_enabled)
-    {
-        if (m_relativity_c_light <= 0.0f)
-            Log::fatal("StkConfig", "Relativity c-light must be > 0.");
-        if (m_relativity_max_beta <= 0.0f || m_relativity_max_beta >= 1.0f)
-            Log::fatal("StkConfig", "Relativity max-beta must be in (0, 1).");
-        if (m_relativity_mode != "kinematics-only" &&
-            m_relativity_mode != "propulsion-limited" &&
-            m_relativity_mode != "preferred-frame-dynamics")
-        {
-            Log::fatal("StkConfig", "Unknown relativity mode '%s'.",
-                       m_relativity_mode.c_str());
-        }
-    }
-
     // Square distance to make distance checks cheaper (no sqrt)
     m_default_kart_properties->checkAllSet(filename);
 }   // load
@@ -251,10 +236,6 @@ void STKConfig::init_defaults()
     m_solver_iterations          = -100;
     m_solver_set_flags           = 0;
     m_solver_reset_flags         = 0;
-    m_relativity_enabled         = false;
-    m_relativity_c_light         = 35.0f;
-    m_relativity_max_beta        = 0.98f;
-    m_relativity_mode            = "propulsion-limited";
     m_network_steering_reduction = -100;
     m_title_music                = NULL;
     m_default_music              = NULL;
@@ -410,15 +391,6 @@ void STKConfig::getAllData(const XMLNode * root)
             }
         }   // for mode in solver_modes
 
-    }
-
-    if (const XMLNode *relativity_node = root->getNode("relativity"))
-    {
-        relativity_node->get("enabled",        &m_relativity_enabled);
-        relativity_node->get("c-light", &m_relativity_c_light);
-        relativity_node->get("max-beta",       &m_relativity_max_beta);
-        relativity_node->get("mode",           &m_relativity_mode);
-        m_relativity_mode = StringUtils::toLowerCase(m_relativity_mode);
     }
 
     if (const XMLNode *startup_node= root->getNode("startup"))

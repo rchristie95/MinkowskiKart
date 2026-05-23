@@ -292,18 +292,6 @@ private:
     std::string m_unlock_music_file;
 
 public:
-    /** If true, use the prototype preferred-frame relativistic mechanics. */
-    bool m_relativity_enabled;
-
-    /** Game-scale c_light, in MK coordinate meters per second. */
-    float m_relativity_c_light;
-
-    /** Maximum beta allowed before the velocity safety clamp applies. */
-    float m_relativity_max_beta;
-
-    /** Relativity prototype mode, e.g. "propulsion-limited". */
-    std::string m_relativity_mode;
-
     STKConfig();
     ~STKConfig();
     void init_defaults();
