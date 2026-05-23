@@ -34,6 +34,13 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+      - name: Configure compiled project version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "project_version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          else
+            echo "project_version=git" >> "$GITHUB_ENV"
+          fi
       - id: sysroot
         uses: ASzc/change-string-case-action@v1
         with:
@@ -100,7 +107,7 @@ jobs:
           cd apple-build
           cmake .. -DCCTOOLS_PREFIX=/opt/cctools -DCCTOOLS_ARCH=${{ matrix.arch }} -DCCTOOLS_PLATFORM=${{ matrix.platform }} \
           -DRT=/opt/cctools/darwin/libclang_rt.${{ env.rt }}.a -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cctools.cmake -DCHECK_ASSETS=OFF \
-          -DBC7_ISPC=ON -DCMAKE_ISPC_COMPILER=/opt/ispc/bin/ispc
+          -DSTK_RELEASE_VERSION=${{ env.project_version }} -DBC7_ISPC=ON -DCMAKE_ISPC_COMPILER=/opt/ispc/bin/ispc
       - name: Build
         run: |
           cd apple-build

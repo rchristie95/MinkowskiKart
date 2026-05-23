@@ -84,6 +84,7 @@ cd "${STK_DIR}/cmake_build"
 
 cmake -G"Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE="${DEVKITPRO}/switch.cmake" \
     -DUSE_SWITCH=ON \
+    -DSTK_RELEASE_VERSION="${PROJECT_VERSION}" \
     -DCMAKE_INSTALL_PREFIX=/  \
     ../
 

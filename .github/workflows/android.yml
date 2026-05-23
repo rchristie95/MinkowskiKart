@@ -85,6 +85,11 @@ jobs:
           export STK_NDK_VERSION="23.1.7779620"
           export COMPILE_ARCH="aarch64"
           export BUILD_TYPE="debug"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            export PROJECT_VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            export PROJECT_VERSION="git"
+          fi
           
           # Go to android/ folder
           cd android

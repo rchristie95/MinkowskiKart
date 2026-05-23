@@ -33,6 +33,14 @@ jobs:
         with:
           fetch-depth: 0
           submodules: false
+      - name: Configure compiled project version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "project_version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          else
+            echo "project_version=git" >> "$GITHUB_ENV"
+          fi
       - name: Set up environment for windows-2022
         shell : bash
         if: ${{ matrix.os == 'windows-2022' }}
@@ -143,19 +151,19 @@ jobs:
         run: |
           mkdir -Force build
           cd build
-          cmake .. -G "Visual Studio 17 2022" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -A ${{ env.cmake_arch }} -DCHECK_ASSETS=OFF
+          cmake .. -G "Visual Studio 17 2022" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -A ${{ env.cmake_arch }} -DSTK_RELEASE_VERSION=${{ env.project_version }} -DCHECK_ASSETS=OFF
       - name: Configure bulid for MinGW (i686 or x86_64)
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.arch != 'armv7' && matrix.arch != 'aarch64' }}
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCHECK_ASSETS=OFF -DUSE_DIRECTX=ON -DBC7_ISPC=ON -DCMAKE_ISPC_COMPILER=/opt/ispc/bin/ispc
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSTK_RELEASE_VERSION=${{ env.project_version }} -DCHECK_ASSETS=OFF -DUSE_DIRECTX=ON -DBC7_ISPC=ON -DCMAKE_ISPC_COMPILER=/opt/ispc/bin/ispc
       - name: Configure bulid for MinGW (armv7 or aarch64)
         if: ${{ matrix.os == 'ubuntu-latest' && ( matrix.arch == 'armv7' || matrix.arch == 'aarch64' ) }}
         run: |
           mkdir -p build
           cd build
-          cmake .. -DLLVM_ARCH=${{ matrix.arch }} -DLLVM_PREFIX=/llvm-mingw -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-llvm-mingw.cmake -DCHECK_ASSETS=OFF -DUSE_DIRECTX=ON -DBC7_ISPC=ON -DCMAKE_ISPC_COMPILER=/opt/ispc/bin/ispc
+          cmake .. -DLLVM_ARCH=${{ matrix.arch }} -DLLVM_PREFIX=/llvm-mingw -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-llvm-mingw.cmake -DSTK_RELEASE_VERSION=${{ env.project_version }} -DCHECK_ASSETS=OFF -DUSE_DIRECTX=ON -DBC7_ISPC=ON -DCMAKE_ISPC_COMPILER=/opt/ispc/bin/ispc
       - name: Build for MSVC
         if: ${{ matrix.os == 'windows-2022' }}
         working-directory: build

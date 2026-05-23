@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.12...4.0)
 
 # root CMakeLists for the SuperTuxKart project
 project(SuperTuxKart)
-set(PROJECT_VERSION "git")
+if(DEFINED STK_RELEASE_VERSION AND NOT "${STK_RELEASE_VERSION}" STREQUAL "")
+    set(PROJECT_VERSION "${STK_RELEASE_VERSION}")
+else()
+    set(PROJECT_VERSION "git")
+endif()
 
 add_definitions( -DSUPERTUXKART_VERSION="${PROJECT_VERSION}" )
 
