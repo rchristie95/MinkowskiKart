@@ -85,7 +85,7 @@ android
             storeFile file(keystore)
             storePassword storepass
             keyAlias alias
-            keyPassword storepass
+            keyPassword keypass
         }
     }
 

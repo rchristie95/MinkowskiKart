@@ -179,9 +179,14 @@ if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
         echo "Error: STK_ALIAS variable is empty."
         exit
     fi
+
+    if [ -z "$STK_KEYPASS" ]; then
+        STK_KEYPASS="$STK_STOREPASS"
+    fi
 else
     STK_KEYSTORE="empty"
     STK_STOREPASS="empty"
+    STK_KEYPASS="empty"
     STK_ALIAS="empty"
 fi
 
@@ -492,6 +497,7 @@ export ANDROID_HOME="$SDK_PATH"
           -Pcompile_sdk_version="$STK_TARGET_ANDROID_SDK"\
           -Ptarget_sdk_version="$STK_TARGET_ANDROID_SDK" \
           -Pstorepass="$STK_STOREPASS"                   \
+          -Pkeypass="$STK_KEYPASS"                       \
           -Pkeystore="$STK_KEYSTORE"                     \
           -Palias="$STK_ALIAS"                           \
           -Pndk_version="$STK_NDK_VERSION"               \
@@ -510,6 +516,7 @@ if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
           -Pcompile_sdk_version="$STK_TARGET_ANDROID_SDK"\
           -Ptarget_sdk_version="$STK_TARGET_ANDROID_SDK" \
           -Pstorepass="$STK_STOREPASS"                   \
+          -Pkeypass="$STK_KEYPASS"                       \
           -Pkeystore="$STK_KEYSTORE"                     \
           -Palias="$STK_ALIAS"                           \
           -Pndk_version="$STK_NDK_VERSION"               \

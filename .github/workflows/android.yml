@@ -10,6 +10,11 @@ on:
       - '*'
   pull_request: {}
   workflow_dispatch:
+    inputs:
+      production_release_tag:
+        description: 'Existing release tag to replace with a signed production Android build (for example, 2.0)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -77,19 +82,70 @@ jobs:
 
       - name: Build MinkowskiKart APK
         shell: bash
+        env:
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           export SDK_PATH="$ANDROID_SDK_ROOT"
           export NDK_PATH="$ANDROID_SDK_ROOT/ndk"
           export STK_MIN_ANDROID_SDK=21
           export STK_TARGET_ANDROID_SDK=35
           export STK_NDK_VERSION="23.1.7779620"
           export COMPILE_ARCH="aarch64"
-          export BUILD_TYPE="debug"
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            export PROJECT_VERSION="${GITHUB_REF#refs/tags/}"
+          if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" ]]; then
+            export BUILD_TYPE="release"
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              export PROJECT_VERSION="${GITHUB_REF#refs/tags/}"
+            else
+              export PROJECT_VERSION="${{ github.event.inputs.production_release_tag }}"
+            fi
+            ANDROID_PACKAGE_NAME="org.supertuxkart.stk"
+            ANDROID_CHANNEL="Production"
+            ANDROID_APK_VARIANT="release"
+            ANDROID_GRADLE_VARIANT="Release"
+          elif [[ "$GITHUB_REF" == refs/heads/main || "$GITHUB_REF" == refs/heads/master ]]; then
+            export BUILD_TYPE="beta"
+            export PROJECT_VERSION="preview-${GITHUB_RUN_NUMBER}"
+            ANDROID_PACKAGE_NAME="org.supertuxkart.stk_beta"
+            ANDROID_CHANNEL="Beta"
+            ANDROID_APK_VARIANT="release"
+            ANDROID_GRADLE_VARIANT="Release"
           else
-            export PROJECT_VERSION="git"
+            export BUILD_TYPE="debug"
+            export PROJECT_VERSION="git-${GITHUB_SHA::7}"
+            ANDROID_PACKAGE_NAME="org.supertuxkart.stk_dbg"
+            ANDROID_CHANNEL="Debug"
+            ANDROID_APK_VARIANT="debug"
+            ANDROID_GRADLE_VARIANT="Debug"
           fi
+          export PROJECT_CODE="$GITHUB_RUN_NUMBER"
+
+          if [[ "$BUILD_TYPE" != "debug" ]]; then
+            if [[ -z "$ANDROID_UPLOAD_KEYSTORE_BASE64" ||
+                  -z "$ANDROID_UPLOAD_STORE_PASSWORD" ||
+                  -z "$ANDROID_UPLOAD_KEY_ALIAS" ||
+                  -z "$ANDROID_UPLOAD_KEY_PASSWORD" ]]; then
+              echo "Signed Android distributions require ANDROID_UPLOAD_KEYSTORE_BASE64,"
+              echo "ANDROID_UPLOAD_STORE_PASSWORD, ANDROID_UPLOAD_KEY_ALIAS, and"
+              echo "ANDROID_UPLOAD_KEY_PASSWORD repository secrets."
+              exit 1
+            fi
+            export STK_KEYSTORE="$RUNNER_TEMP/minkowskikart-upload.jks"
+            printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$STK_KEYSTORE"
+            export STK_STOREPASS="$ANDROID_UPLOAD_STORE_PASSWORD"
+            export STK_KEYPASS="$ANDROID_UPLOAD_KEY_PASSWORD"
+            export STK_ALIAS="$ANDROID_UPLOAD_KEY_ALIAS"
+          fi
+
+          echo "android_package_name=$ANDROID_PACKAGE_NAME" >> "$GITHUB_ENV"
+          echo "android_channel=$ANDROID_CHANNEL" >> "$GITHUB_ENV"
+          echo "android_apk_variant=$ANDROID_APK_VARIANT" >> "$GITHUB_ENV"
+          echo "android_gradle_variant=$ANDROID_GRADLE_VARIANT" >> "$GITHUB_ENV"
+          echo "android_version_code=$PROJECT_CODE" >> "$GITHUB_ENV"
+          echo "Android package: $ANDROID_PACKAGE_NAME ($ANDROID_CHANNEL), versionCode=$PROJECT_CODE"
           
           # Go to android/ folder
           cd android
@@ -112,7 +168,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          APK=$(ls android/build/outputs/apk/debug/*.apk | head -1)
+          APK=$(ls android/build/outputs/apk/"${{ env.android_apk_variant }}"/*.apk | head -1)
+          AAPT=$(find "$ANDROID_SDK_ROOT/build-tools" -name aapt -type f | sort -V | tail -1)
+          "$AAPT" dump badging "$APK" | grep -q "package: name='${{ env.android_package_name }}'"
+          "$AAPT" dump badging "$APK" | grep -q "versionCode='${{ env.android_version_code }}'"
           unzip -l "$APK" | grep -q 'assets/data/gui/screens/options/options_relativity.stkgui'
           unzip -l "$APK" | grep -q 'assets/data/shaders/header.txt'
           unzip -l "$APK" | grep -q 'assets/files.txt'
@@ -145,19 +204,24 @@ jobs:
           "$ZIPALIGN" -c -p -v 4 "$APK"
 
           for lib in \
-            android/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/arm64-v8a/libSDL2.so \
-            android/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/arm64-v8a/libmain.so
+            android/build/intermediates/merged_native_libs/${{ env.android_apk_variant }}/merge${{ env.android_gradle_variant }}NativeLibs/out/lib/arm64-v8a/libSDL2.so \
+            android/build/intermediates/merged_native_libs/${{ env.android_apk_variant }}/merge${{ env.android_gradle_variant }}NativeLibs/out/lib/arm64-v8a/libmain.so
           do
             test -f "$lib"
             "$READELF" -l "$lib" | awk '/LOAD/ && $NF != "0x4000" { bad=1 } END { exit bad }'
           done
 
       - name: Set release target
-        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '' }}
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            echo "release_tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" ]]; then
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              RELEASE_TAG="${GITHUB_REF#refs/tags/}"
+            else
+              RELEASE_TAG="${{ github.event.inputs.production_release_tag }}"
+            fi
+            echo "release_tag=$RELEASE_TAG" >> $GITHUB_ENV
             echo "release_pre=false" >> $GITHUB_ENV
           else
             echo "release_tag=preview" >> $GITHUB_ENV
@@ -182,13 +246,22 @@ jobs:
         if: ${{ env.release_tag != '' }}
         shell: bash
         run: |
-          APK=$(ls android/build/outputs/apk/debug/*.apk | head -1)
+          APK=$(ls android/build/outputs/apk/"${{ env.android_apk_variant }}"/*.apk | head -1)
           DEST="MinkowskiKart-${{ env.release_tag }}-android.apk"
           cp "$APK" "$DEST"
           echo "apk_path=$DEST" >> $GITHUB_ENV
 
-      - name: Upload APK to release
-        if: ${{ env.release_tag != '' }}
+      - name: Rename production app bundle
+        if: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '' }}
+        shell: bash
+        run: |
+          AAB=$(ls android/build/outputs/bundle/release/*.aab | head -1)
+          DEST="MinkowskiKart-${{ env.release_tag }}-android.aab"
+          cp "$AAB" "$DEST"
+          echo "aab_path=$DEST" >> $GITHUB_ENV
+
+      - name: Upload beta APK to preview release
+        if: ${{ env.release_tag == 'preview' }}
         uses: ncipollo/release-action@v1.8.8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -200,9 +273,24 @@ jobs:
           replacesArtifacts: true
           prerelease: ${{ env.release_pre }}
 
-      - name: Upload MinkowskiKart APK Artifact
+      - name: Upload production APK and app bundle to release
+        if: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '' }}
+        uses: ncipollo/release-action@v1.8.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "${{ env.apk_path }},${{ env.aab_path }}"
+          tag: ${{ env.release_tag }}
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          allowUpdates: true
+          replacesArtifacts: true
+          prerelease: ${{ env.release_pre }}
+
+      - name: Upload MinkowskiKart Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MinkowskiKart-Android-Debug
-          path: android/build/outputs/apk/debug/*.apk
+          name: MinkowskiKart-Android-${{ env.android_channel }}
+          path: |
+            android/build/outputs/apk/${{ env.android_apk_variant }}/*.apk
+            android/build/outputs/bundle/release/*.aab
           if-no-files-found: warn

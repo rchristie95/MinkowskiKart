@@ -157,7 +157,25 @@ Before compilation you have to set:
     export BUILD_TYPE=release
 
 It's also needed to set STK_STOREPASS, STK_KEYSTORE and STK_ALIAS environment
-variables, so that the apk files can be signed.
+variables, so that the apk files can be signed. If the key password differs
+from the keystore password, set STK_KEYPASS as well.
+
+For Google Play distribution, enroll in Play App Signing and keep a separate
+upload key for builds uploaded to Play. Do not publish APKs signed with an
+automatically generated debug key: each build machine can use a different
+certificate, which makes installed APK updates fail.
+
+The GitHub Android workflow expects the upload key in encrypted repository
+secrets:
+
+    ANDROID_UPLOAD_KEYSTORE_BASE64  - base64-encoded upload keystore file
+    ANDROID_UPLOAD_STORE_PASSWORD   - keystore password
+    ANDROID_UPLOAD_KEY_ALIAS        - key alias
+    ANDROID_UPLOAD_KEY_PASSWORD     - key password
+
+Builds on main/master use this key for the beta package used for direct
+testing. Tag builds use it for the production package and emit an Android App
+Bundle suitable for upload to Play Console.
 
 and then you make standard compilation with:
 
