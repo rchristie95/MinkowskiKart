@@ -202,6 +202,9 @@ jobs:
           unzip -q ../../../../../stk-assets-full.zip
           cp -r ../../../../../stk-assets/. .
           mkdir -p replay
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            cp supertuxkart.git "supertuxkart.${{ env.package_tag }}"
+          fi
           cd ../../../../..
           mv ./macosx-arm64/MinkowskiKart.app MinkowskiKart.app
           # Use Ad Hoc certificate for now, previous certificate has been expired.
@@ -249,6 +252,10 @@ jobs:
           unzip -q stk-assets-full.zip -d Payload/MinkowskiKart.app/data/
           cp -r stk-assets/. Payload/MinkowskiKart.app/data/
           cp -r data/. Payload/MinkowskiKart.app/data/
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            cp Payload/MinkowskiKart.app/data/supertuxkart.git \
+              "Payload/MinkowskiKart.app/data/supertuxkart.${{ env.package_tag }}"
+          fi
           codesign --force --deep -s - Payload/MinkowskiKart.app
           zip -r MinkowskiKart-${{ env.package_tag }}-ios.ipa Payload/
       - name: Upload macOS zip artifact
