@@ -2,7 +2,7 @@
 <stkgui>
     <icon-button id="back" x="1%" y="0" height="9%" icon="gui/icons/back.png"/>
     <div x="1%" y="1%" width="98%" height="98%" layout="vertical-row" >
-        <header width="80%" height="8%" align="center" text="MinkowskiKart Help" text_align="center"/>
+        <header width="80%" height="8%" align="center" text="MinkowskiKart Information" text_align="center"/>
         <spacer height="1%" width="100%"/>
 
         <div width="100%" height="91%" layout="horizontal-row" >
@@ -10,6 +10,8 @@
             <vertical-tabs id="category" height="100%" width="20%">
                 <icon-button id="page1" width="128" height="128" icon="gui/icons/options_general.png"
                         I18N="Tab in help menu" text="General"/>
+                <icon-button id="page8" width="128" height="128" icon="gui/icons/minkowski.png"
+                        I18N="Tab in help menu" text="Racers"/>
                 <icon-button id="page2" width="128" height="128" icon="gui/icons/mode_ftl.png"
                         I18N="Tab in help menu" text="Game Modes"/>
                 <icon-button id="page3" width="128" height="128" icon="gui/icons/gift.png"
