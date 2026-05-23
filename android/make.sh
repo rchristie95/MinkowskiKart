@@ -314,6 +314,13 @@ echo "$PROJECT_VERSION" > "$DIRNAME/obj/project_version"
 # Build apk
 echo "Building APK"
 
+rm -rf "$DIRNAME/res/drawable/" \
+       "$DIRNAME/res/drawable-anydpi-v26/" \
+       "$DIRNAME/res/drawable-mdpi/" \
+       "$DIRNAME/res/drawable-hdpi/" \
+       "$DIRNAME/res/drawable-xhdpi/" \
+       "$DIRNAME/res/drawable-xxhdpi/" \
+       "$DIRNAME/res/drawable-xxxhdpi/"
 mkdir -p "$DIRNAME/res/drawable/"
 mkdir -p "$DIRNAME/res/drawable-anydpi-v26/"
 mkdir -p "$DIRNAME/res/drawable-mdpi/"
@@ -424,7 +431,7 @@ ADAPTIVE_ICON_FILE="$DIRNAME/res/drawable-anydpi-v26/icon.xml"
 echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>"                      >  "$ADAPTIVE_ICON_FILE"
 echo "<adaptive-icon"                                                  >> "$ADAPTIVE_ICON_FILE"
 echo "  xmlns:android=\"http://schemas.android.com/apk/res/android\">" >> "$ADAPTIVE_ICON_FILE"
-echo "    <background android:drawable=\"@drawable/icon_bg\" />"       >> "$ADAPTIVE_ICON_FILE"
+echo "    <background android:drawable=\"@android:color/black\" />"    >> "$ADAPTIVE_ICON_FILE"
 echo "    <foreground android:drawable=\"@drawable/icon_fg\" />"       >> "$ADAPTIVE_ICON_FILE"
 echo "</adaptive-icon>"                                                >> "$ADAPTIVE_ICON_FILE"
 
@@ -472,18 +479,6 @@ magick_convert "$APP_ICON" -scale 72x72 "$DIRNAME/res/drawable-hdpi/icon.png"
 magick_convert "$APP_ICON" -scale 96x96 "$DIRNAME/res/drawable-xhdpi/icon.png"
 magick_convert "$APP_ICON" -scale 144x144 "$DIRNAME/res/drawable-xxhdpi/icon.png"
 magick_convert "$APP_ICON" -scale 192x192 "$DIRNAME/res/drawable-xxxhdpi/icon.png"
-
-#$MAGICK "$APP_ICON_ADAPTIVE_BG" -scale 108x108 "$DIRNAME/res/drawable-mdpi/icon_bg.png"
-#$MAGICK "$APP_ICON_ADAPTIVE_BG" -scale 162x162 "$DIRNAME/res/drawable-hdpi/icon_bg.png"
-#$MAGICK "$APP_ICON_ADAPTIVE_BG" -scale 216x216 "$DIRNAME/res/drawable-xhdpi/icon_bg.png"
-#$MAGICK "$APP_ICON_ADAPTIVE_BG" -scale 324x324 "$DIRNAME/res/drawable-xxhdpi/icon_bg.png"
-#$MAGICK "$APP_ICON_ADAPTIVE_BG" -scale 432x432 "$DIRNAME/res/drawable-xxxhdpi/icon_bg.png"
-
-magick_convert xc:"rgba(255,255,255,255)" -scale 108x108 "$DIRNAME/res/drawable-mdpi/icon_bg.png"
-magick_convert xc:"rgba(255,255,255,255)" -scale 162x162 "$DIRNAME/res/drawable-hdpi/icon_bg.png"
-magick_convert xc:"rgba(255,255,255,255)" -scale 216x216 "$DIRNAME/res/drawable-xhdpi/icon_bg.png"
-magick_convert xc:"rgba(255,255,255,255)" -scale 324x324 "$DIRNAME/res/drawable-xxhdpi/icon_bg.png"
-magick_convert xc:"rgba(255,255,255,255)" -scale 432x432 "$DIRNAME/res/drawable-xxxhdpi/icon_bg.png"
 
 magick_convert "$APP_ICON_ADAPTIVE_FG" -scale 108x108 "$DIRNAME/res/drawable-mdpi/icon_fg.png"
 magick_convert "$APP_ICON_ADAPTIVE_FG" -scale 162x162 "$DIRNAME/res/drawable-hdpi/icon_fg.png"
