@@ -1,6 +1,27 @@
 # Build artifacts
 build/
 build-dev/
+/MinkowskiKart-debug.apk
+/android/converted_textures
+/reports/
+
+# Android source dependencies downloaded for local native builds
+/lib/astc-encoder/
+/lib/curl/
+/lib/freetype/
+/lib/harfbuzz/
+/lib/ifaddrs/
+/lib/libadrenotools/
+/lib/libjpeg/
+/lib/libogg/
+/lib/libpng/
+/lib/libvorbis/
+/lib/mbedtls/
+/lib/mesa/
+/lib/openal/
+/lib/sdl2/
+/lib/shaderc/
+/lib/zlib/
 
 # Dev tools and pre-compiled dependencies
 .build-tools/
@@ -13,6 +34,13 @@ UnmodifiedSTK-reference/
 stk-assets/wip-tracks/
 stk-assets/wip-library/
 *.log
+
+# Local Android diagnostic captures and investigation notes
+/android_game_log*.txt
+/crash_log.txt
+/filtered_game_log.txt
+/latest_crash.txt
+/main_relativity_off_clipping_fix_learnings.txt
 
 # IDE / OS
 .vs/
