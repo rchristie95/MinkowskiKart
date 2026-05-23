@@ -541,7 +541,11 @@ endif()
 
 
 if(WIN32)
-    configure_file("${STK_SOURCE_DIR}/../tools/windows_installer/icon_rc.template" "${PROJECT_BINARY_DIR}/tmp/icon.rc")
+    set(STK_WINDOWS_ICON "${PROJECT_SOURCE_DIR}/tools/windows_installer/icon.ico")
+    set(STK_WINDOWS_ICON_RC "${PROJECT_BINARY_DIR}/tmp/icon.rc")
+    configure_file("${STK_SOURCE_DIR}/../tools/windows_installer/icon_rc.template" "${STK_WINDOWS_ICON_RC}")
+    set_source_files_properties("${STK_WINDOWS_ICON_RC}" PROPERTIES
+        OBJECT_DEPENDS "${STK_WINDOWS_ICON}")
 endif()
 
 # Provides list of source and header files (STK_SOURCES and STK_HEADERS)
