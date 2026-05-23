@@ -74,6 +74,16 @@ jobs:
           echo "${{ env.release_tag }}"
           echo "${{ env.release_name }}"
           echo "${{ env.release_pre }}"
+      - name: Verify configuration defaults
+        run: |
+          set -euo pipefail
+          if grep -Eq '<relativity([[:space:]>])' data/stk_config.xml; then
+            echo "stk_config.xml must not contain obsolete app-level relativity settings."
+            exit 1
+          fi
+          grep -Eq 'IntUserConfigParam\([[:space:]]*35,[[:space:]]*"c_light_normal"' src/config/user_config.hpp
+          grep -Eq '\{[[:space:]]*0u,[[:space:]]*9u[[:space:]]*\}' src/config/user_config.hpp
+          grep -Eq 'StringUserConfigParam\([[:space:]]*"mobius_track",[[:space:]]*"last_track"' src/config/user_config.hpp
       - name: Install linux dependencies
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |

@@ -210,6 +210,19 @@ jobs:
           # Use Ad Hoc certificate for now, previous certificate has been expired.
           codesign --force -s - MinkowskiKart.app/Contents/libs/*.dylib
           codesign --force --deep -s - MinkowskiKart.app
+      - name: Verify packaged configuration defaults
+        if: ${{ env.package_tag != '' }}
+        run: |
+          set -euo pipefail
+          CONFIG="MinkowskiKart.app/Contents/Resources/data/stk_config.xml"
+          test -f "$CONFIG"
+          if grep -Eq '<relativity([[:space:]>])' "$CONFIG"; then
+            echo "Packaged stk_config.xml must not contain obsolete app-level relativity settings."
+            exit 1
+          fi
+          grep -Eq 'IntUserConfigParam\([[:space:]]*35,[[:space:]]*"c_light_normal"' src/config/user_config.hpp
+          grep -Eq '\{[[:space:]]*0u,[[:space:]]*9u[[:space:]]*\}' src/config/user_config.hpp
+          grep -Eq 'StringUserConfigParam\([[:space:]]*"mobius_track",[[:space:]]*"last_track"' src/config/user_config.hpp
       - name: Archive macOS app
         if: ${{ env.package_tag != '' }}
         run: |

@@ -117,6 +117,13 @@ jobs:
           unzip -l "$APK" | grep -q 'assets/data/shaders/header.txt'
           unzip -l "$APK" | grep -q 'assets/files.txt'
           unzip -l "$APK" | grep -q 'assets/has_assets.txt'
+          if unzip -p "$APK" assets/data/stk_config.xml | grep -Eq '<relativity([[:space:]>])'; then
+            echo "Packaged stk_config.xml must not contain obsolete app-level relativity settings."
+            exit 1
+          fi
+          grep -Eq 'IntUserConfigParam\([[:space:]]*35,[[:space:]]*"c_light_normal"' src/config/user_config.hpp
+          grep -Eq '\{[[:space:]]*0u,[[:space:]]*9u[[:space:]]*\}' src/config/user_config.hpp
+          grep -Eq 'StringUserConfigParam\([[:space:]]*"mobius_track",[[:space:]]*"last_track"' src/config/user_config.hpp
           grep -q '@android:color/black' android/res/drawable-anydpi-v26/icon.xml
           test -s android/res/drawable/icon.png
           test -s android/res/drawable-xxxhdpi/icon_fg.png

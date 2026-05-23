@@ -315,16 +315,14 @@ jobs:
           # libwinpthread-1.dll is useless because we statically link
           rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/armv7/libwinpthread-1.dll
           rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/aarch64/libwinpthread-1.dll
-      - name: Verify packaged relativity defaults
+      - name: Verify packaged user relativity defaults
         if: ${{ env.release_tag != '' }}
         shell: pwsh
         run: |
           $pkg = "MinkowskiKart-${{ env.release_tag }}-win"
           [xml]$stkConfig = Get-Content "$pkg\data\stk_config.xml"
-          $cLight = $stkConfig.config.relativity.GetAttribute("c-light")
-          Write-Host "Packaged relativity c-light: $cLight"
-          if ($cLight -ne "35.0") {
-            throw "FAILED: packaged data/stk_config.xml must contain c-light=35.0"
+          if ($null -ne $stkConfig.config.SelectSingleNode("relativity")) {
+            throw "FAILED: packaged data/stk_config.xml must not contain obsolete app-level relativity settings"
           }
           $userConfigHeader = Get-Content "src\config\user_config.hpp" -Raw
           if ($userConfigHeader -match 'IntUserConfigParam\(\s*1000,\s*"c_light_normal"') {
@@ -332,6 +330,12 @@ jobs:
           }
           if ($userConfigHeader -notmatch 'IntUserConfigParam\(\s*35,\s*"c_light_normal"') {
             throw "FAILED: user_config.hpp does not default c_light_normal to 35"
+          }
+          if ($userConfigHeader -notmatch '\{\s*0u,\s*9u\s*\}') {
+            throw "FAILED: user_config.hpp does not default normal races to 9 total karts"
+          }
+          if ($userConfigHeader -notmatch 'StringUserConfigParam\(\s*"mobius_track",\s*"last_track"') {
+            throw "FAILED: user_config.hpp does not default fresh profiles to Mobius Trip"
           }
       - name: Start packaging MinkowskiKart
         if: ${{ env.release_tag != '' }}
@@ -371,6 +375,12 @@ jobs:
           }
           if ($freshConfig -notmatch 'c_light_normal="35"') {
             throw "FAILED: fresh generated config.xml does not contain c_light_normal=35"
+          }
+          if ($freshConfig -notmatch '<gamemode-list gamemode="0" num-karts="9"') {
+            throw "FAILED: fresh generated config.xml does not default normal races to 9 total karts"
+          }
+          if ($freshConfig -notmatch '<last_track value="mobius_track"') {
+            throw "FAILED: fresh generated config.xml does not default to Mobius Trip"
           }
           if (-not $alive) { throw "FAILED: process exited within 10s (crashed during init)" }
           Write-Host "Smoke test passed: game ran for 20s in race"

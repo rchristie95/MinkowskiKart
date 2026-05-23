@@ -945,7 +945,7 @@ namespace UserConfigParams
             "The Number of karts per gamemode.",
             {{ "gamemode-list", "gamemode", "num-karts" }},
             {
-                { 0u, 4u },
+                { 0u, 9u },
                 { 1002u, 5u },
                 { 1100u, 4u },
                 { 1101u, 4u },
@@ -1255,7 +1255,7 @@ namespace UserConfigParams
                             "Name of the .items file to use.") );
 
     PARAM_PREFIX StringUserConfigParam      m_last_track
-            PARAM_DEFAULT(  StringUserConfigParam("scotland", "last_track",
+            PARAM_DEFAULT(  StringUserConfigParam("mobius_track", "last_track",
                             "Name of the last track used.") );
     PARAM_PREFIX StringUserConfigParam m_last_used_track_group
             PARAM_DEFAULT( StringUserConfigParam("minkowski", "last_track_group",
