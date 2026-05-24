@@ -102,7 +102,7 @@ jobs:
             else
               export PROJECT_VERSION="${{ github.event.inputs.production_release_tag }}"
             fi
-            ANDROID_PACKAGE_NAME="org.supertuxkart.stk"
+            ANDROID_PACKAGE_NAME="com.rchristie95.minkowskikart"
             ANDROID_CHANNEL="Production"
             ANDROID_APK_VARIANT="release"
             ANDROID_GRADLE_VARIANT="Release"

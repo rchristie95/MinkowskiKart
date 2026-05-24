@@ -28,8 +28,8 @@ if [ -z "$STK_NDK_VERSION" ]; then
 fi
 
 export APP_NAME_RELEASE="MinkowskiKart"
-export PACKAGE_NAME_RELEASE="org.supertuxkart.stk"
-export PACKAGE_CLASS_NAME_RELEASE="org/supertuxkart/stk"
+export PACKAGE_NAME_RELEASE="com.rchristie95.minkowskikart"
+export PACKAGE_CLASS_NAME_RELEASE="com/rchristie95/minkowskikart"
 export APP_DIR_NAME_RELEASE="supertuxkart"
 export APP_ICON_RELEASE="$DIRNAME/icon.png"
 export APP_ICON_ADAPTIVE_BG_RELEASE="$DIRNAME/icon_adaptive_bg.png"

@@ -174,8 +174,9 @@ secrets:
     ANDROID_UPLOAD_KEY_PASSWORD     - key password
 
 Builds on main/master use this key for the beta package used for direct
-testing. Tag builds use it for the production package and emit an Android App
-Bundle suitable for upload to Play Console.
+testing. Tag builds use it for the production package
+`com.rchristie95.minkowskikart` and emit an Android App Bundle suitable for
+upload to Play Console.
 
 and then you make standard compilation with:
 
