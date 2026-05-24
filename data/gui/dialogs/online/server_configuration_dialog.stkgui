@@ -14,7 +14,7 @@
                 <icon-button id="expert" width="128" height="128" icon="gui/icons/difficulty_hard.png"
                         I18N="Difficulty"  text="Expert"/>
                 <icon-button id="best" width="128" height="128" icon="gui/icons/difficulty_best.png"
-                        I18N="Difficulty"  text="SuperTux"/>
+                        I18N="Difficulty"  text="Savant"/>
             </ribbon>
 
             <spacer height="1%" width="20"/>

@@ -14,9 +14,7 @@
     <button id="email"          x="51%" y="92%" width="23%" height="6%" text="robson.christie1995@gmail.com"/>
     <button id="openrelativity" x="76%" y="92%" width="23%" height="6%" text="OpenRelativity on GitHub"/>
 
-    <div x="2%" y="2%" width="96%" height="90%" layout="vertical-row">
-        <icon id="logo" align="center" proportion="4" width="100%" icon="gui/icons/logo_mk.png"/>
-
+    <div x="2%" y="9%" width="96%" height="83%" layout="vertical-row">
         <div x="0" y="0" width="100%" proportion="1" layout="horizontal-row">
             <button proportion="2" id="tab-mk"  width="fit" align="center" text="MinkowskiKart"/>
             <button proportion="2" id="tab-stk" width="fit" align="center" text="SuperTuxKart"/>

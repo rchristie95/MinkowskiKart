@@ -465,9 +465,6 @@ void CreditsScreen::eventCallback(GUIEngine::Widget* widget,
         getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(true);
         getWidget<GUIEngine::ButtonWidget>("email")->setVisible(true);
         getWidget<GUIEngine::ButtonWidget>("openrelativity")->setVisible(true);
-        getWidget<GUIEngine::IconButtonWidget>("logo")->setImage(
-            "gui/icons/logo_mk.png",
-            GUIEngine::IconButtonWidget::ICON_PATH_TYPE_RELATIVE);
     }
     else if (name == "tab-stk")
     {
@@ -477,9 +474,6 @@ void CreditsScreen::eventCallback(GUIEngine::Widget* widget,
         getWidget<GUIEngine::ButtonWidget>("scholar")->setVisible(false);
         getWidget<GUIEngine::ButtonWidget>("email")->setVisible(false);
         getWidget<GUIEngine::ButtonWidget>("openrelativity")->setVisible(false);
-        getWidget<GUIEngine::IconButtonWidget>("logo")->setImage(
-            "gui/icons/logo_slim.png",
-            GUIEngine::IconButtonWidget::ICON_PATH_TYPE_RELATIVE);
         reset();
     }
     else if (name == "github-mk")

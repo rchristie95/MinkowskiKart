@@ -144,7 +144,7 @@ void MainMenuScreen::init()
     // White labels so they read against the dark background image.
     const video::SColor white(255, 255, 255, 255);
     static const char* const BTNS_WITH_WHITE_LABELS[] = {
-        "story", "new", "multiplayer", "online", "addons",
+        "new", "multiplayer", "online", "addons",
         "options", "help", "startTutorial", "highscores",
         "achievements", "gpEditor", "about", "quit"
     };

@@ -177,7 +177,7 @@ core::stringw AchievementProgressDialog::niceGoalName(std::string internal_name)
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="cons-won-races") nice_name = _("Consecutive won races");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="cons-won-races-hard") nice_name = _("Consecutive won races in Expert or SuperTux");
+    if(internal_name=="cons-won-races-hard") nice_name = _("Consecutive won races in Expert or Savant");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="easy-started") nice_name = _("Novice races started");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
@@ -191,9 +191,9 @@ core::stringw AchievementProgressDialog::niceGoalName(std::string internal_name)
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="hard-finished") nice_name = _("Expert races finished");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="best-started") nice_name = _("SuperTux races started");
+    if(internal_name=="best-started") nice_name = _("Savant races started");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
-    if(internal_name=="best-finished") nice_name = _("SuperTux races finished");
+    if(internal_name=="best-finished") nice_name = _("Savant races finished");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.
     if(internal_name=="normal-started") nice_name = _("Normal races started");
     // I18N: A goal for achievements. If this text is in (), it's a precision added to multiple different goals.

@@ -202,7 +202,7 @@ public:
     /** Returnes if the feature (kart, track) is locked. */
     bool isLocked(const std::string &feature) const
     {
-        return m_story_mode_status->isLocked(feature);
+        return false;
     }   // isLocked
     // ----------------------------------------------------------------------------------------
     /** Returns all active challenges. */
