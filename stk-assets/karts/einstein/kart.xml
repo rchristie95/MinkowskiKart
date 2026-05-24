@@ -4,7 +4,7 @@
       model-file="einstein.spm"
       icon-file="einstein_icon.png"
       minimap-icon-file="einstein_icon.png"
-      type="heavy"
+      type="medium"
       width="1.119"
       height="0.764"
       length="1.476"

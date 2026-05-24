@@ -438,9 +438,9 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         scene->push();
         const std::pair<std::string, float> winners[] =
             {
-                { "kiki", 0.6f },
-                { "nolok", 1.0f },
-                { "pidgin", 0.0f },
+                 { "minkowski", 0.6f },
+                 { "einstein", 1.0f },
+                 { "newton", 0.0f },
             };
         scene->setKarts(winners);
     }
@@ -455,8 +455,8 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         GrandPrixLose* scene = GrandPrixLose::getInstance();
         scene->push();
         std::vector<std::pair<std::string, float> > losers;
-        losers.emplace_back("nolok", 1.0f);
-        losers.emplace_back("kiki", 0.6f);
+        losers.emplace_back("minkowski", 1.0f);
+        losers.emplace_back("einstein", 0.6f);
         //losers.push_back("wilber");
         //losers.push_back("tux");
         scene->setKarts(losers);
@@ -485,7 +485,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
 
         if (selection == "test_unlocked")
         {
-            scene->addUnlockedKart(kart_properties_manager->getKart("tux"));
+            scene->addUnlockedKart(kart_properties_manager->getKart("minkowski"));
             scene->addUnlockedTrack(track_manager->getTrack("lighthouse"));
             scene->push();
         }

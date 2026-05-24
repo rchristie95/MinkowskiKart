@@ -1153,7 +1153,7 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
         RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_SOCCER);
         std::vector<std::string> l;
         for (int i = 0; i < 8; i++)
-            l.push_back("tux");
+            l.push_back("minkowski");
         RaceManager::get()->setDefaultAIKartList(l);
         RaceManager::get()->setNumKarts(9);
         RaceManager::get()->setMaxGoal(30);
@@ -1173,7 +1173,7 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
         RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_3_STRIKES);
         std::vector<std::string> l;
         for (int i = 0; i < 8; i++)
-            l.push_back("tux");
+            l.push_back("minkowski");
         RaceManager::get()->setDefaultAIKartList(l);
         RaceManager::get()->setTrack(track);
         RaceManager::get()->setNumKarts(8);

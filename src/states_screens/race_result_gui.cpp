@@ -1668,7 +1668,7 @@ void RaceResultGUI::drawTeamScorers(KartTeam team, int x, int y, int height)
         const KartProperties* kp = kart_properties_manager->getKart(scorers.at(i).m_kart);
         // For addon kart online
         if (!kp)
-            kp = kart_properties_manager->getKart("tux");
+            kp = kart_properties_manager->getKart("minkowski");
         if (kp)
             scorer_icon = kp->getIconMaterial()->getTexture();
         if (scorer_icon)

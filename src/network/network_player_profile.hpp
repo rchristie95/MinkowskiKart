@@ -86,7 +86,7 @@ public:
      * is uint32_t max. */
     NetworkPlayerProfile(KartTeam team)
     {
-        m_kart_name             = "tux";
+        m_kart_name             = "minkowski";
         m_host_id               = std::numeric_limits<uint32_t>::max();
         m_default_kart_color    = 0.0f;
         m_online_id             = 0;

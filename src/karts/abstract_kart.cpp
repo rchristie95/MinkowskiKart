@@ -97,11 +97,11 @@ void AbstractKart::loadKartProperties(const std::string& new_ident,
     if (NetworkConfig::get()->isNetworking() &&
         NetworkConfig::get()->useTuxHitboxAddon() && kp && kp->isAddon())
     {
-        // For addon kart in network we use the same hitbox (tux) so anyone
+        // For addon kart in network we use the same hitbox (minkowski) so anyone
         // can use any addon karts with different graphical kart model
         if (!UserConfigParams::m_addon_tux_online)
             kp_addon = kp;
-        kp = kart_properties_manager->getKart(std::string("tux"));
+        kp = kart_properties_manager->getKart(std::string("minkowski"));
     }
     if (kp == NULL)
     {
@@ -109,10 +109,10 @@ void AbstractKart::loadKartProperties(const std::string& new_ident,
         if (!NetworkConfig::get()->isNetworking() ||
             (!NetworkConfig::get()->useTuxHitboxAddon() && !official_kart))
         {
-            Log::warn("Abstract_Kart", "Unknown kart %s, fallback to tux",
+            Log::warn("Abstract_Kart", "Unknown kart %s, fallback to minkowski",
                 new_ident.c_str());
         }
-        kp = kart_properties_manager->getKart(std::string("tux"));
+        kp = kart_properties_manager->getKart(std::string("minkowski"));
         if (NetworkConfig::get()->isNetworking() && official_kart)
         {
             const KartProperties* official_kp = OfficialKarts::getKartByIdent(

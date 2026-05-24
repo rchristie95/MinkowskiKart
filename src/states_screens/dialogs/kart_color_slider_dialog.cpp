@@ -96,9 +96,9 @@ void KartColorSliderDialog::beforeAddingWidgets()
         kart_properties_manager->getKart(UserConfigParams::m_default_kart);
     if (props == NULL)
     {
-        Log::warn("KartColorSliderDialog", "Unknown kart %s, fallback to tux",
+        Log::warn("KartColorSliderDialog", "Unknown kart %s, fallback to minkowski",
             UserConfigParams::m_default_kart.c_str());
-        props = kart_properties_manager->getKart(std::string("tux"));
+        props = kart_properties_manager->getKart(std::string("minkowski"));
     }
     const KartModel& kart_model = props->getMasterKartModel();
 

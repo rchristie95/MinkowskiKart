@@ -4,7 +4,7 @@
       model-file="noether.spm"
       icon-file="noether_icon.png"
       minimap-icon-file="noether_icon.png"
-      type="light"
+      type="heavy"
       width="0.611"
       height="0.858"
       length="1.608"

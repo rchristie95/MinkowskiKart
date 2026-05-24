@@ -319,10 +319,15 @@ bool KartPropertiesManager::loadKart(const std::string &dir)
         return false;
     }
 
+    std::vector<std::string> groups=kart_properties->getGroups();
+    if (std::find(groups.begin(), groups.end(), "standard") != groups.end())
+    {
+        delete kart_properties;
+        return false;
+    }
+
     m_karts_properties.push_back(kart_properties);
     m_kart_available.push_back(true);
-
-    std::vector<std::string> groups=kart_properties->getGroups();
 
     for(unsigned int g=0; g<groups.size(); g++)
     {

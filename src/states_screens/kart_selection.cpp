@@ -825,7 +825,7 @@ void KartSelectionScreen::updateKartStats(uint8_t widget_id,
     if (kp && kp->isAddon() && nc->isNetworking() && nc->useTuxHitboxAddon() &&
         nc->getServerCapabilities().find(
         "real_addon_karts") == nc->getServerCapabilities().end())
-        kp = kart_properties_manager->getKart("tux");
+        kp = kart_properties_manager->getKart("minkowski");
     if (kp != NULL)
     {
         w->setValues(kp, m_kart_widgets[widget_id].getHandicap());

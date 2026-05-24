@@ -4211,9 +4211,9 @@ void ServerLobby::setPlayerKarts(const NetworkString& ns, STKPeer* peer) const
             }
             else
             {
-                const KartProperties* tux_kp =
-                    kart_properties_manager->getKart("tux");
-                kart_data = KartData(tux_kp);
+                const KartProperties* minkowski_kp =
+                    kart_properties_manager->getKart("minkowski");
+                kart_data = KartData(minkowski_kp);
                 kart_data.m_kart_type = type;
             }
             player->setKartData(kart_data);

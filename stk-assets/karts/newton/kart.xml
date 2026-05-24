@@ -4,7 +4,7 @@
       model-file="newton.spm"
       icon-file="newton_icon.png"
       minimap-icon-file="newton_icon.png"
-      type="medium"
+      type="light"
       width="0.77"
       height="0.949"
       length="1.345"
