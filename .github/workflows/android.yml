@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y make ninja-build glslang-tools python3-mako
+          sudo apt-get install -y make ninja-build glslang-tools python3-mako imagemagick pngquant vorbis-tools
           pip install "meson==1.4.0" --break-system-packages
 
       - name: Install Android NDK 23.1.7779620
@@ -151,9 +151,15 @@ jobs:
           cd android
           chmod +x *.sh gradlew
           
-          # 1. Package assets (disable resizing/compression for build speed and dependency simplification)
-          export DECREASE_QUALITY=0
-          export CONVERT_TO_JPG=0
+          # 1. Package assets. Distributable builds must remain below the Play
+          # base-module compressed download limit; debug builds favor speed.
+          if [[ "$BUILD_TYPE" == "debug" ]]; then
+            export DECREASE_QUALITY=0
+            export CONVERT_TO_JPG=0
+          else
+            export DECREASE_QUALITY=1
+            export CONVERT_TO_JPG=1
+          fi
           export ASSETS_PATHS="../data ../stk-assets"
           ./generate_assets.sh
           
@@ -172,6 +178,23 @@ jobs:
           AAPT=$(find "$ANDROID_SDK_ROOT/build-tools" -name aapt -type f | sort -V | tail -1)
           "$AAPT" dump badging "$APK" | grep -q "package: name='${{ env.android_package_name }}'"
           "$AAPT" dump badging "$APK" | grep -q "versionCode='${{ env.android_version_code }}'"
+          if [[ "${{ env.android_apk_variant }}" == "release" ]]; then
+            AAB=$(ls android/build/outputs/bundle/release/*.aab | head -1)
+            BASE_COMPRESSED_BYTES=$(python3 - "$AAB" <<'PY'
+          import sys
+          import zipfile
+
+          with zipfile.ZipFile(sys.argv[1]) as bundle:
+              print(sum(entry.compress_size for entry in bundle.infolist()
+                        if entry.filename.startswith("base/")))
+          PY
+          )
+            echo "Compressed base module size: $BASE_COMPRESSED_BYTES bytes"
+            if (( BASE_COMPRESSED_BYTES > 500000000 )); then
+              echo "Android base module exceeds the Google Play 500 MB compressed download limit."
+              exit 1
+            fi
+          fi
           unzip -l "$APK" | grep -q 'assets/data/gui/screens/options/options_relativity.stkgui'
           unzip -l "$APK" | grep -q 'assets/data/shaders/header.txt'
           unzip -l "$APK" | grep -q 'assets/files.txt'
