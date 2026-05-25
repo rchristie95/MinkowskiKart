@@ -18,8 +18,6 @@
                         I18N="Tab in help menu" text="Powerups"/>
                 <icon-button id="page4" width="128" height="128" icon="gui/icons/calabi_yau_translucent_128.png"
                         I18N="Tab in help menu" text="Hazards"/>
-                <icon-button id="page5" width="128" height="128" icon="gui/icons/story_mode_book.png"
-                        I18N="Tab in help menu" text="Story Mode"/>
                 <icon-button id="page6" width="128" height="128" icon="gui/icons/mass.png"
                         I18N="Tab in help menu" text="Kart classes"/>
                 <icon-button id="page7" width="128" height="128" icon="gui/icons/options_input.png"
