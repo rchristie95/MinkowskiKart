@@ -163,7 +163,7 @@ void EasterEggScreen::beforeAddingWidget()
     {
         if (groups[n] == "minkowski") continue;
         if (groups[n] == "standard") // Fix capitalization (#4622)
-            tabs->addTextChild( _("MK") , groups[n]);
+            tabs->addTextChild( _("STK") , groups[n]);
         else // Try to translate group names
             tabs->addTextChild( _(groups[n].c_str()) , groups[n]);
     } // for n<group_amount
