@@ -1,0 +1,3 @@
+# Never commit the actual keystore binary to git
+*.keystore
+*.jks
