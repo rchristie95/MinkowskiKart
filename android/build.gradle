@@ -86,6 +86,8 @@ android
             storePassword storepass
             keyAlias alias
             keyPassword keypass
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
 
