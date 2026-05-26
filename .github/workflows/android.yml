@@ -160,15 +160,10 @@ jobs:
           cd android
           chmod +x *.sh gradlew
           
-          # 1. Package assets. Distributable builds must remain below the Play
-          # base-module compressed download limit; debug builds favor speed.
-          if [[ "$BUILD_TYPE" == "debug" ]]; then
-            export DECREASE_QUALITY=0
-            export CONVERT_TO_JPG=0
-          else
-            export DECREASE_QUALITY=1
-            export CONVERT_TO_JPG=1
-          fi
+          # 1. Package assets. Workflow APKs are intended for device testing,
+          # so debug builds use the same compact assets as distributable builds.
+          export DECREASE_QUALITY=1
+          export CONVERT_TO_JPG=1
           export ASSETS_PATHS="../data ../stk-assets"
           ./generate_assets.sh
           
