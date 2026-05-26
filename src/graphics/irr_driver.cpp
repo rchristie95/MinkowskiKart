@@ -1210,7 +1210,7 @@ void IrrDriver::commonInit()
     attachment_manager->loadModels();
     file_manager->popTextureSearchPath();
 
-    GUIEngine::addLoadingIcon(irr_driver->getTexture(FileManager::GUI_ICON, "banana.png"));
+    GUIEngine::addLoadingIcon(irr_driver->getTexture(FileManager::GUI_ICON, "compactification-icon.png"));
 
     kart_properties_manager->loadAllKarts();
     kart_properties_manager->onDemandLoadKartTextures(
