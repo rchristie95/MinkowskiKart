@@ -2276,15 +2276,14 @@ def write_scene_xml(track_dir):
         (7.23, 5.4), (7.63, -5.4), (9.53, -5.2),
         (10.33, 5.4), (10.93, -5.4), (12.28, -5.2)
     ]
-    item_drop_attrs = 'drop="true" drop-nearest-surface="true"'
     for u, lateral in item_boxes:
-        lines.append(f'  <item {fmt_xyz_attrs(item_position(u, lateral, 1.3))} {item_drop_attrs}/>')
+        lines.append(f'  <item {fmt_xyz_attrs(item_position(u, lateral, 1.3))} drop="true"/>')
     for u, lateral in small_nitro:
-        lines.append(f'  <small-nitro {fmt_xyz_attrs(item_position(u, lateral, 1.3))} {item_drop_attrs}/>')
+        lines.append(f'  <small-nitro {fmt_xyz_attrs(item_position(u, lateral, 1.3))} drop="true"/>')
     for u, lateral in big_nitro:
-        lines.append(f'  <big-nitro {fmt_xyz_attrs(item_position(u, lateral, 1.3))} {item_drop_attrs}/>')
+        lines.append(f'  <big-nitro {fmt_xyz_attrs(item_position(u, lateral, 1.3))} drop="true"/>')
     for u, lateral in compactifications:
-        lines.append(f'  <banana {fmt_xyz_attrs(item_position(u, lateral, 1.15))} {item_drop_attrs}/>')
+        lines.append(f'  <banana {fmt_xyz_attrs(item_position(u, lateral, 1.15))} drop="true"/>')
     lines.append("</scene>")
     (track_dir / "scene.xml").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
