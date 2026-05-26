@@ -2880,6 +2880,8 @@ void Track::itemCommand(const XMLNode *node)
     node->getXYZ(&xyz);
     bool drop=true;
     node->get("drop", &drop);
+    bool drop_nearest_surface = false;
+    node->get("drop-nearest-surface", &drop_nearest_surface);
 
     // Some modes (e.g. time trial) don't have any bonus boxes
     if(type==Item::ITEM_BONUS_BOX &&
@@ -2914,25 +2916,53 @@ void Track::itemCommand(const XMLNode *node)
 
     if (drop)
     {
-        const Material *m;
-        // If raycast is used, increase the start position slightly
-        // in case that the point is too close to the actual surface
-        // (e.g. floating point errors can cause a problem here).
-        loc += quad_normal * 0.1f;
+        auto cast_item_drop_ray = [&](const Vec3& direction,
+                                      Vec3 *candidate_point,
+                                      Vec3 *candidate_normal) -> bool
+        {
+            const Material *candidate_material = NULL;
+            // Start slightly away from the target surface in case the
+            // authored point is already almost on it.
+            const Vec3 from = loc - direction * 0.1f;
+            const Vec3 to = from + direction * 10000.0f;
+            const bool track_hit = m_track_mesh->castRay(
+                from, to, candidate_point, &candidate_material,
+                candidate_normal);
+            const bool object_hit = m_track_object_manager->castRay(
+                from, to, candidate_point, &candidate_material,
+                candidate_normal, /*interpolate*/false);
+            return track_hit || object_hit;
+        };
 
-#ifndef DEBUG
-        m_track_mesh->castRay(loc, loc + (-10000 * quad_normal), &hit_point,
-            &m, &normal);
-        m_track_object_manager->castRay(loc,
-            loc + (-10000 * quad_normal), &hit_point, &m, &normal,
-            /*interpolate*/false);
-#else
-        bool drop_success = m_track_mesh->castRay(loc, loc +
-            (-10000 * quad_normal), &hit_point, &m, &normal);
-        bool over_driveable = m_track_object_manager->castRay(loc,
-            loc + (-10000 * quad_normal), &hit_point, &m, &normal,
-            /*interpolate*/false);
-        if (!drop_success && !over_driveable)
+        Vec3 candidate_point;
+        Vec3 candidate_normal;
+        bool drop_success = cast_item_drop_ray(
+            -1.0f * quad_normal, &candidate_point, &candidate_normal);
+        if (drop_success)
+        {
+            hit_point = candidate_point;
+            normal = candidate_normal;
+        }
+
+        if (drop_nearest_surface)
+        {
+            Vec3 opposite_point;
+            Vec3 opposite_normal;
+            const bool opposite_hit = cast_item_drop_ray(
+                quad_normal, &opposite_point, &opposite_normal);
+            if (opposite_hit &&
+                (!drop_success ||
+                 (opposite_point - loc).length2() <
+                 (hit_point - loc).length2()))
+            {
+                hit_point = opposite_point;
+                normal = opposite_normal;
+            }
+            drop_success = drop_success || opposite_hit;
+        }
+
+#ifdef DEBUG
+        if (!drop_success)
         {
             Log::warn("Track",
                       "Item at position (%f,%f,%f) can not be dropped",

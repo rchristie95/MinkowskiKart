@@ -112,27 +112,27 @@
   <start position="18" x="77.579" y="0.506" z="1.567" h="-1.15"/>
   <start position="19" x="81.978" y="0.550" z="1.640" h="-1.15"/>
   <start position="20" x="86.377" y="0.594" z="1.714" h="-1.15"/>
-  <item x="30.118" y="-0.366" z="73.160" drop="true"/>
-  <item x="35.438" y="-2.546" z="-75.696" drop="true"/>
-  <item x="77.722" y="-0.692" z="34.435" drop="true"/>
-  <item x="32.566" y="0.362" z="78.389" drop="true"/>
-  <item x="-38.747" y="1.629" z="75.110" drop="true"/>
-  <item x="-82.826" y="2.714" z="10.366" drop="true"/>
-  <item x="-40.319" y="2.901" z="-71.189" drop="true"/>
-  <item x="-37.187" y="-1.518" z="-75.854" drop="true"/>
-  <item x="33.869" y="2.548" z="-72.944" drop="true"/>
-  <item x="40.309" y="-0.268" z="-74.817" drop="true"/>
-  <small-nitro x="1.727" y="2.188" z="82.358" drop="true"/>
-  <small-nitro x="55.745" y="-0.446" z="63.071" drop="true"/>
-  <small-nitro x="-75.531" y="1.469" z="35.985" drop="true"/>
-  <small-nitro x="2.823" y="2.186" z="-81.560" drop="true"/>
-  <small-nitro x="72.266" y="0.776" z="-42.979" drop="true"/>
-  <big-nitro x="-30.507" y="-0.731" z="77.271" drop="true"/>
-  <banana x="16.839" y="-2.477" z="75.204" drop="true"/>
-  <banana x="45.441" y="-3.485" z="63.049" drop="true"/>
-  <banana x="19.275" y="2.469" z="84.774" drop="true"/>
-  <banana x="-82.412" y="5.253" z="-8.740" drop="true"/>
-  <banana x="-52.761" y="-4.354" z="-67.146" drop="true"/>
-  <banana x="-5.147" y="4.727" z="-78.980" drop="true"/>
-  <banana x="73.892" y="1.880" z="-21.718" drop="true"/>
+  <item x="30.118" y="-0.366" z="73.160" drop="true" drop-nearest-surface="true"/>
+  <item x="35.438" y="-2.546" z="-75.696" drop="true" drop-nearest-surface="true"/>
+  <item x="77.722" y="-0.692" z="34.435" drop="true" drop-nearest-surface="true"/>
+  <item x="32.566" y="0.362" z="78.389" drop="true" drop-nearest-surface="true"/>
+  <item x="-38.747" y="1.629" z="75.110" drop="true" drop-nearest-surface="true"/>
+  <item x="-82.826" y="2.714" z="10.366" drop="true" drop-nearest-surface="true"/>
+  <item x="-40.319" y="2.901" z="-71.189" drop="true" drop-nearest-surface="true"/>
+  <item x="-37.187" y="-1.518" z="-75.854" drop="true" drop-nearest-surface="true"/>
+  <item x="33.869" y="2.548" z="-72.944" drop="true" drop-nearest-surface="true"/>
+  <item x="40.309" y="-0.268" z="-74.817" drop="true" drop-nearest-surface="true"/>
+  <small-nitro x="1.727" y="2.188" z="82.358" drop="true" drop-nearest-surface="true"/>
+  <small-nitro x="55.745" y="-0.446" z="63.071" drop="true" drop-nearest-surface="true"/>
+  <small-nitro x="-75.531" y="1.469" z="35.985" drop="true" drop-nearest-surface="true"/>
+  <small-nitro x="2.823" y="2.186" z="-81.560" drop="true" drop-nearest-surface="true"/>
+  <small-nitro x="72.266" y="0.776" z="-42.979" drop="true" drop-nearest-surface="true"/>
+  <big-nitro x="-30.507" y="-0.731" z="77.271" drop="true" drop-nearest-surface="true"/>
+  <banana x="16.839" y="-2.477" z="75.204" drop="true" drop-nearest-surface="true"/>
+  <banana x="45.441" y="-3.485" z="63.049" drop="true" drop-nearest-surface="true"/>
+  <banana x="19.275" y="2.469" z="84.774" drop="true" drop-nearest-surface="true"/>
+  <banana x="-82.412" y="5.253" z="-8.740" drop="true" drop-nearest-surface="true"/>
+  <banana x="-52.761" y="-4.354" z="-67.146" drop="true" drop-nearest-surface="true"/>
+  <banana x="-5.147" y="4.727" z="-78.980" drop="true" drop-nearest-surface="true"/>
+  <banana x="73.892" y="1.880" z="-21.718" drop="true" drop-nearest-surface="true"/>
 </scene>
