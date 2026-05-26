@@ -158,8 +158,9 @@ if [ ! -d "$SDK_PATH" ]; then
     exit
 fi
 
-# Check if we have key for signing in release build
-if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
+# Check any supplied signing key. CI supplies one for debug APKs as well, so
+# repeated downloaded debug builds can update the installed application.
+if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ] || [ -n "$STK_KEYSTORE" ]; then
     if [ -z "$STK_KEYSTORE" ]; then
         echo "Error: STK_KEYSTORE variable is empty."
         exit
@@ -184,10 +185,10 @@ if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
         STK_KEYPASS="$STK_STOREPASS"
     fi
 else
-    STK_KEYSTORE="empty"
-    STK_STOREPASS="empty"
-    STK_KEYPASS="empty"
-    STK_ALIAS="empty"
+    STK_KEYSTORE=""
+    STK_STOREPASS=""
+    STK_KEYPASS=""
+    STK_ALIAS=""
 fi
 
 # Find newest build-tools version
