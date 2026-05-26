@@ -102,6 +102,12 @@ android
             minifyEnabled false
             shrinkResources false
             multiDexEnabled true
+            // CI supplies the stable signing key so downloaded debug APKs can
+            // update one another. Local builds keep Gradle's debug signing.
+            if (project.findProperty('keystore')?.toString())
+            {
+                signingConfig signingConfigs.release
+            }
             externalNativeBuild
             {
                 ndkBuild

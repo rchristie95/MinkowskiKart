@@ -132,22 +132,23 @@ jobs:
           fi
           export PROJECT_CODE="$GITHUB_RUN_NUMBER"
 
-          if [[ "$BUILD_TYPE" != "debug" ]]; then
-            if [[ -z "$ANDROID_UPLOAD_KEYSTORE_BASE64" ||
-                  -z "$ANDROID_UPLOAD_STORE_PASSWORD" ||
-                  -z "$ANDROID_UPLOAD_KEY_ALIAS" ||
-                  -z "$ANDROID_UPLOAD_KEY_PASSWORD" ]]; then
-              echo "Signed Android distributions require ANDROID_UPLOAD_KEYSTORE_BASE64,"
-              echo "ANDROID_UPLOAD_STORE_PASSWORD, ANDROID_UPLOAD_KEY_ALIAS, and"
-              echo "ANDROID_UPLOAD_KEY_PASSWORD repository secrets."
-              exit 1
-            fi
-            export STK_KEYSTORE="$RUNNER_TEMP/minkowskikart-upload.jks"
-            printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$STK_KEYSTORE"
-            export STK_STOREPASS="$ANDROID_UPLOAD_STORE_PASSWORD"
-            export STK_KEYPASS="$ANDROID_UPLOAD_KEY_PASSWORD"
-            export STK_ALIAS="$ANDROID_UPLOAD_KEY_ALIAS"
+          # Use one stable signing identity for all CI APKs. Debug APKs retain
+          # their separate application ID but must be installable over earlier
+          # CI debug builds.
+          if [[ -z "$ANDROID_UPLOAD_KEYSTORE_BASE64" ||
+                -z "$ANDROID_UPLOAD_STORE_PASSWORD" ||
+                -z "$ANDROID_UPLOAD_KEY_ALIAS" ||
+                -z "$ANDROID_UPLOAD_KEY_PASSWORD" ]]; then
+            echo "Android workflow builds require ANDROID_UPLOAD_KEYSTORE_BASE64,"
+            echo "ANDROID_UPLOAD_STORE_PASSWORD, ANDROID_UPLOAD_KEY_ALIAS, and"
+            echo "ANDROID_UPLOAD_KEY_PASSWORD repository secrets."
+            exit 1
           fi
+          export STK_KEYSTORE="$RUNNER_TEMP/minkowskikart-upload.jks"
+          printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$STK_KEYSTORE"
+          export STK_STOREPASS="$ANDROID_UPLOAD_STORE_PASSWORD"
+          export STK_KEYPASS="$ANDROID_UPLOAD_KEY_PASSWORD"
+          export STK_ALIAS="$ANDROID_UPLOAD_KEY_ALIAS"
 
           echo "android_package_name=$ANDROID_PACKAGE_NAME" >> "$GITHUB_ENV"
           echo "android_channel=$ANDROID_CHANNEL" >> "$GITHUB_ENV"
