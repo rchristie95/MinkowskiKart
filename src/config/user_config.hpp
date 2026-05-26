@@ -867,14 +867,16 @@ namespace UserConfigParams
         "Last 5 IP addresses that user entered",
         {{ "server-address", "address", "last-connection" }}, {}));
 
-    // The owned IPv4-only STUN name can also be used to detect a NAT64
-    // gateway when the service is deployed.
+    // Keep the upstream STK STUN pool for public address discovery. This
+    // service is independent from the custom gameplay wire protocol.
     PARAM_PREFIX StringToUIntUserConfigParam m_stun_servers_v4
         PARAM_DEFAULT(StringToUIntUserConfigParam("ipv4-stun-servers",
         "The stun servers that will be used to know the public address "
         "(ipv4 only) with port", {{ "stun-server", "address", "ping" }},
             {
-                 { "stun4.minkowskikart.example:3478", 0u }
+                 { "stunv4.linuxreviews.org:3478", 0u },
+                 { "stunv4.7.supertuxkart.net:3478", 0u },
+                 { "stunv4.8.supertuxkart.net:3478", 0u }
              }
          ));
 
@@ -883,7 +885,9 @@ namespace UserConfigParams
         "The stun servers that will be used to know the public address "
         "(including ipv6) with port", {{ "stun-server", "address", "ping" }},
             {
-                 { "stun.minkowskikart.example:3478", 0u }
+                 { "stun.linuxreviews.org:3478", 0u },
+                 { "stun.supertuxkart.net:3478", 0u },
+                 { "stun.stunprotocol.org:3478", 0u }
              }
          ));
 

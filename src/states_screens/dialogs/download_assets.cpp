@@ -100,7 +100,7 @@ DownloadAssets::DownloadAssets()
         m_progress->setVisible(false);
 
     IconButtonWidget* icon = getWidget<IconButtonWidget>("icon");
-    icon->setImage(file_manager->getAsset(FileManager::GUI_ICON, "logo.png"),
+    icon->setImage(file_manager->getAsset(FileManager::GUI_ICON, "logo_mk.png"),
         IconButtonWidget::ICON_PATH_TYPE_ABSOLUTE);
 
     core::stringw unit =

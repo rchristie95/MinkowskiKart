@@ -723,9 +723,8 @@ void STKHost::setPublicAddress(short family)
         }
         else
         {
-            // Erase from user config in stun, if it's provide by SRV records
-            // from MK then it will be re-added next time, and MK team will
-            // remove it if it stops working
+            // Erase failed STUN entries from user config. An entry provided
+            // by the configured SRV pool is re-added on the next lookup.
             stun_map.erase(untried_server.back().first);
             untried_server.pop_back();
         }

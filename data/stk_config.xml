@@ -32,9 +32,11 @@
 
   <!-- Addon and news related settings
             url : The server used for addon.
-            allow-news-redirects : If true we allow all the server urls to be redirected by the addons news.xml file-->
+            allow-news-redirects : If true we allow all the server urls to be redirected by the addons news.xml file.
+            The STK catalog is compatible content, but its news response must
+            not redirect this fork's separate multiplayer API. -->
   <AddonServer
-    url="https://online.minkowskikart.example/assets"
+    url="https://online.supertuxkart.net/dl/xml"
     allow-news-redirects="false"
   />
 
@@ -197,8 +199,8 @@
 
   <!-- STK will use dns query of the SRV records with these domains to get the list of
        stun servers to use for IPv4 and IPv6. -->
-  <stun ipv4="_stunv4._udp.minkowskikart.example"
-        ipv6="_stunv6._udp.minkowskikart.example"/>
+  <stun ipv4="_stunv4._udp.supertuxkart.net"
+        ipv6="_stunv6._udp.supertuxkart.net"/>
 
   <!-- Skidmark data: maximum number of skid marks, and
        time for skidmarks to fade out. Maximum number will over

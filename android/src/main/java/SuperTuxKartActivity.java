@@ -240,7 +240,7 @@ public class SuperTuxKartActivity extends SDLActivity
             Bitmap scaled = Bitmap.createBitmap(w, h, conf);
 
             Canvas canvas = new Canvas(scaled);
-            istr = getAssets().open("data/gui/icons/logo.png");
+            istr = getAssets().open("data/gui/icons/logo_mk.png");
             Bitmap logo = BitmapFactory.decodeStream(istr);
             Rect src = new Rect(0, 0, logo.getWidth(), logo.getHeight());
             // STK logo is a square

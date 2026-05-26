@@ -19,7 +19,7 @@
                         text="Enable splitscreen or player handicaps" text_align="center"/>
                     <checkbox id="enable-splitscreen" align="center"/>
                 </div>
-                <icon id="logo" align="center" proportion="1" width="100%" icon="gui/icons/logo.png"/>
+                <icon id="logo" align="center" proportion="1" width="100%" icon="gui/icons/logo_mk.png"/>
             </div>
         </box>
 

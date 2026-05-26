@@ -158,7 +158,7 @@ void LayoutManager::readCoords(Widget* self)
 
     if (self->m_properties[PROP_ICON].size() > 0)
     {
-        // PROP_ICON includes paths (e.g. gui/icons/logo.png)
+        // PROP_ICON includes paths (e.g. gui/icons/logo_mk.png)
         ITexture* texture = irr_driver->getTexture(
             GUIEngine::getSkin()->getThemedIcon(self->m_properties[PROP_ICON]));
 

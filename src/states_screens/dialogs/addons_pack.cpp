@@ -124,7 +124,7 @@ AddonsPack::AddonsPack(const std::string& url) : ModalDialog(0.8f, 0.8f)
         StringUtils::utf8ToWide(url));
 
     IconButtonWidget* icon = getWidget<IconButtonWidget>("icon");
-    icon->setImage(file_manager->getAsset(FileManager::GUI_ICON, "logo.png"),
+    icon->setImage(file_manager->getAsset(FileManager::GUI_ICON, "logo_mk.png"),
         IconButtonWidget::ICON_PATH_TYPE_ABSOLUTE);
 
     m_progress = getWidget<ProgressBarWidget>("progress");
