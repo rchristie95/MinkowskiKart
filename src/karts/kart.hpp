@@ -97,6 +97,9 @@ protected:
         Currently used for finish time computation */
     std::vector<float> m_previous_xyz_times;
 
+    /** Physics transform from the tick before item collection is checked. */
+    btTransform m_previous_physics_transform;
+
     float m_time_previous_counter;
 
     /** Is time flying activated */
@@ -537,6 +540,9 @@ public:
     // ----------------------------------------------------------------------------------------
     /** Returns a more recent different previous position */
     virtual const Vec3& getRecentPreviousXYZ() const OVERRIDE;
+    // ----------------------------------------------------------------------------------------
+    virtual const btTransform& getPreviousPhysicsTransform() const OVERRIDE
+            { return m_previous_physics_transform; }
     // ----------------------------------------------------------------------------------------
     /** Returns the time at which the recent previous position occured */
     virtual const float getRecentPreviousXYZTime() const OVERRIDE

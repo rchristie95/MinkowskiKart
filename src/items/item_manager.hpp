@@ -46,9 +46,28 @@ class STKPeer;
 class ItemManager : public NoCopy
 {
     // Some static data and functions to initialise it:
+public:
+    /** Primitive used for authoritative physical pickup collection. */
+    enum PickupTriggerShape
+    {
+        PTS_NONE,
+        PTS_BOX,
+        PTS_CYLINDER_Y,
+        PTS_SPHERE
+    };
+
 private:
     /** Stores the glow color for all items. */
     static std::vector<video::SColorf> m_glow_color;
+
+    /** Physical trigger primitive configured for each item model. */
+    static std::vector<PickupTriggerShape> m_pickup_trigger_shape;
+
+    /** Trigger centre in the item's authored local coordinate frame. */
+    static std::vector<Vec3> m_pickup_trigger_center;
+
+    /** Half extents, or radius in X for a sphere, of each trigger. */
+    static std::vector<Vec3> m_pickup_trigger_half_extents;
 
     /** Disable item collection (for debugging purposes). */
     static bool m_disable_item_collection;
@@ -97,6 +116,15 @@ public:
     /** Returns the glow color for an item. */
     static video::SColorf& getGlowColor(ItemState::ItemType type)
                                       { return m_glow_color[type]; }
+    // ------------------------------------------------------------------------
+    static PickupTriggerShape getPickupTriggerShape(ItemState::ItemType type)
+                                      { return m_pickup_trigger_shape[type]; }
+    // ------------------------------------------------------------------------
+    static const Vec3& getPickupTriggerCenter(ItemState::ItemType type)
+                                      { return m_pickup_trigger_center[type]; }
+    // ------------------------------------------------------------------------
+    static const Vec3& getPickupTriggerHalfExtents(ItemState::ItemType type)
+                                      { return m_pickup_trigger_half_extents[type]; }
 
     // ========================================================================
 protected:

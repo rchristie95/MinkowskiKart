@@ -2899,9 +2899,21 @@ void Track::itemCommand(const XMLNode *node)
     // Test if the item lies on a 3d node, if so adjust the normal
     // Also do a raycast if drop item is given
     Vec3 normal(0, 1, 0);
+    bool has_surface_normal = node->get("surface-normal", &normal) != 0;
+    if (has_surface_normal)
+    {
+        if (normal.length2() > btScalar(1.0e-8f))
+            normal.normalize();
+        else
+        {
+            Log::warn("Track", "Ignoring zero surface-normal on an item.");
+            normal = Vec3(0, 1, 0);
+            has_surface_normal = false;
+        }
+    }
     Vec3 quad_normal = normal;
     Vec3 hit_point = loc;
-    if (Graph::get())
+    if (Graph::get() && !has_surface_normal)
     {
         int road_sector = Graph::UNKNOWN_SECTOR;
         Graph::get()->findRoadSector(xyz, &road_sector);

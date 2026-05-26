@@ -155,6 +155,7 @@ Kart::Kart (const std::string& ident, unsigned int world_kart_id,
 
     // Set position and heading:
     m_reset_transform         = init_transform;
+    m_previous_physics_transform = init_transform;
     m_last_factor_engine_sound = 0.0f;
 
     m_kart_model->setKart(this);
@@ -445,6 +446,7 @@ void Kart::reset()
     }
 
     setTrans(m_reset_transform);
+    m_previous_physics_transform = m_reset_transform;
 
     applyEngineForce (0.0f);
 
@@ -1430,6 +1432,9 @@ void Kart::update(int ticks)
             m_time_previous_counter -= stk_config->ticks2Time(1);
         }
     }
+
+    // Retain the prior authoritative transform for swept item collection.
+    m_previous_physics_transform = getTrans();
 
     // Update the position and other data taken from the physics (or
     // an animation which calls setXYZ(), which also updates the kart

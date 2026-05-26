@@ -107,11 +107,9 @@ private:
     /** The position of this ItemState. */
     Vec3 m_xyz;
 
-    /** The original rotation of the item. While this is technically a visual
-     *  only value (atm, it could be used for collision detection), it is
-     *  required to make sure a client can display items with the right normal
-     *  (in case that a client would get a different (or no) normal from a
-     *  raycast).
+    /** The authored physical rotation of the item. It places both the model
+     *  and its pickup trigger outward from a non-horizontal surface and is
+     *  networked so every peer uses the same transform.
      */
     btQuaternion m_original_rotation;
 
@@ -172,22 +170,6 @@ public:
         Log::fatal("ItemState", "hitKart() called for ItemState.");
         return false;
     }   // hitKart
-
-    // -----------------------------------------------------------------------
-    /** Tests this item as if its collision frame were at a supplied position
-     *  and normal. Used by relativistic visual/collision reconciliation
-     *  without changing the authoritative item state. */
-    virtual bool hitKartAtItemPosition(const Vec3 &xyz,
-                                       const AbstractKart *kart,
-                                       const Vec3 &item_xyz,
-                                       const Vec3 &item_normal) const
-    {
-        (void)xyz;
-        (void)kart;
-        (void)item_xyz;
-        (void)item_normal;
-        return false;
-    }   // hitKartAtItemPosition
 
     // -----------------------------------------------------------------------
     virtual int getGraphNode() const
@@ -439,10 +421,8 @@ public:
      */
     virtual bool hitKart(const Vec3 &xyz, const AbstractKart *kart=NULL) const
         OVERRIDE;
-    virtual bool hitKartAtItemPosition(const Vec3 &xyz,
-                                       const AbstractKart *kart,
-                                       const Vec3 &item_xyz,
-                                       const Vec3 &item_normal) const OVERRIDE;
+    /** Tests the live physical kart chassis against this item's trigger. */
+    bool hitKartPhysically(const AbstractKart *kart) const;
     // ------------------------------------------------------------------------
     bool rotating() const               { return getType() != ITEM_WARP_BUBBLE; }
     float getHitDistanceSquared() const { return m_distance_2; }
