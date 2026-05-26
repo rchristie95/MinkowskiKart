@@ -321,6 +321,14 @@ void loadServerLobbyFromConfig()
         m_server_difficulty = RaceManager::DIFFICULTY_LAST;
     if (m_server_mode > 8)
         m_server_mode = 3;
+    if (m_relativity_normal_c_light < 15)
+        m_relativity_normal_c_light = 15;
+    else if (m_relativity_normal_c_light > 1000)
+        m_relativity_normal_c_light = 1000;
+    if (m_relativity_max_beta < 0.10f)
+        m_relativity_max_beta = 0.10f;
+    else if (m_relativity_max_beta > 0.99f)
+        m_relativity_max_beta = 0.99f;
 
     if (m_official_karts_threshold > 1.0f)
         m_official_karts_threshold = 1.0f;

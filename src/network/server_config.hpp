@@ -112,6 +112,16 @@ namespace ServerConfig
         "Difficulty in server, 0 is beginner, 1 is intermediate, 2 is expert "
         "and 3 is supertux (the most difficult)."));
 
+    SERVER_CFG_PREFIX IntServerConfigParam m_relativity_normal_c_light
+        SERVER_CFG_DEFAULT(IntServerConfigParam(35, "relativity-normal-c-light",
+        "Authoritative online baseline speed of light. Values are clamped "
+        "to the supported range of 15 through 1000."));
+
+    SERVER_CFG_PREFIX FloatServerConfigParam m_relativity_max_beta
+        SERVER_CFG_DEFAULT(FloatServerConfigParam(0.98f, "relativity-max-beta",
+        "Authoritative maximum kart speed expressed as a fraction of c. "
+        "Values are clamped to the supported range of 0.10 through 0.99."));
+
     SERVER_CFG_PREFIX IntServerConfigParam m_gp_track_count
         SERVER_CFG_DEFAULT(IntServerConfigParam(3, "gp-track-count",
         "Number of grand prix tracks per game (If grand prix enabled)."));
@@ -451,7 +461,7 @@ namespace ServerConfig
 
     // ========================================================================
     /** Server version, will be advanced if there are protocol changes. */
-    static const uint32_t m_server_version = 6;
+    static const uint32_t m_server_version = 7;
     // ========================================================================
     /** Server database version, will be advanced if there are protocol
      *  changes. */

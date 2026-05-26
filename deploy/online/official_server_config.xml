@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<server-config version="7">
+    <server-name value="Official Fallback Server" />
+    <server-port value="2759" />
+    <server-mode value="3" />
+    <server-difficulty value="1" />
+    <relativity-normal-c-light value="35" />
+    <relativity-max-beta value="0.98" />
+    <wan-server value="true" />
+    <server-max-players value="8" />
+    <validating-player value="true" />
+    <firewalled-server value="false" />
+    <owner-less value="true" />
+    <ranked value="false" />
+    <live-spectate value="true" />
+</server-config>

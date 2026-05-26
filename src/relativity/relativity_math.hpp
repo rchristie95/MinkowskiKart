@@ -49,6 +49,11 @@ bool isPowerupCLightActive();
 float getConfiguredNormalCLight();
 float getConfiguredPowerupCLight();
 float getCurrentCLight();
+void  setNetworkRules(float normal_c_light, float max_beta,
+                      float powerup_multiplier = 10.0f);
+void  clearNetworkRules();
+bool  hasNetworkRules();
+float getPhysicsCLightForKart(const AbstractKart* kart);
 float getMinimumAdjustableCLight();
 float getMaximumAdjustableCLight();
 float getCLightSliderFraction(float c_light);
@@ -66,6 +71,7 @@ bool scaleCurrentCLight(float factor,
                         float* applied_c_light = 0);
 float getConfiguredMaxBeta();
 float getMaxCoordinateSpeed();
+float getMaxCoordinateSpeedForKart(const AbstractKart* kart);
 
 double betaForSpeed(double speed, double c_light);
 double gammaForSpeed(double speed, double c_light);

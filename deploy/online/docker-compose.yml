@@ -1,0 +1,88 @@
+services:
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    environment:
+      MK_ONLINE_DOMAIN: ${MK_ONLINE_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ../../services/online-api
+    restart: unless-stopped
+    environment:
+      MK_DATABASE_URL: postgresql+psycopg://minkowski:${POSTGRES_PASSWORD}@postgres/minkowski
+      MK_REDIS_URL: redis://redis:6379/0
+      MK_ALLOWED_GAME_VERSION: "7"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: minkowski
+      POSTGRES_USER: minkowski
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minkowski -d minkowski"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  stun:
+    image: coturn/coturn:4.6.3
+    restart: unless-stopped
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+
+  official-server:
+    build:
+      context: ../..
+      dockerfile: deploy/online/Dockerfile.game-server
+    restart: unless-stopped
+    environment:
+      MK_OFFICIAL_USERNAME: ${MK_OFFICIAL_USERNAME}
+      MK_OFFICIAL_PASSWORD: ${MK_OFFICIAL_PASSWORD}
+    ports:
+      - "2759:2759/udp"
+    volumes:
+      - ./official_server_config.xml:/config/server_config.xml:ro
+    depends_on:
+      - api
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  redis_data:

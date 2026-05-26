@@ -94,6 +94,8 @@ void OnlineProfileBase::init()
 
     if (m_profile_tabs)
     {
+        m_friends_tab->setVisible(false);
+        m_achievements_tab->setVisible(false);
         if (!m_visiting_profile || !m_visiting_profile->isCurrentUser())
             m_settings_tab->setVisible(false);
         else
@@ -102,7 +104,6 @@ void OnlineProfileBase::init()
         // If not logged in, don't show profile or friends
         if (!m_visiting_profile)
         {
-            m_friends_tab->setVisible(false);
             m_profile_tabs->setVisible(false);
         }
     }   // if m_profile_tabhs
@@ -139,7 +140,7 @@ bool OnlineProfileBase::onEscapePressed()
     //return to your profile if it's another profile
     ProfileManager::get()->setVisiting(PlayerManager::getCurrentOnlineId());
     StateManager::get()->replaceTopMostScreen(
-                                  TabOnlineProfileAchievements::getInstance());
+                                  OnlineProfileSettings::getInstance());
     return false;
 }   // onEscapePressed
 

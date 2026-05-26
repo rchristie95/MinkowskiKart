@@ -64,6 +64,11 @@ double g_clight_ramp_start_time = 0.0;
 static int   g_clight_cache_tick  = -1;
 static float g_clight_cache_value = DEFAULT_NORMAL_C_LIGHT;
 
+bool  g_network_rules_active = false;
+float g_network_normal_c_light = DEFAULT_NORMAL_C_LIGHT;
+float g_network_max_beta = 0.98f;
+float g_network_powerup_multiplier = 10.0f;
+
 bool isFiniteVector(const btVector3& v)
 {
     return std::isfinite((double)v.x()) &&
@@ -199,6 +204,8 @@ float clampFiniteCLight(float c_light, float fallback)
 
 float getConfiguredNormalCLightValue()
 {
+    if (g_network_rules_active)
+        return g_network_normal_c_light;
     return clampFiniteCLight(
         (float)UserConfigParams::m_relativity_normal_c_light,
         DEFAULT_NORMAL_C_LIGHT);
@@ -207,7 +214,7 @@ float getConfiguredNormalCLightValue()
 float getConfiguredPowerupCLightValue()
 {
     // Warp-bubble c_light is always 10× the normal c_light; not user-adjustable.
-    return 10.0f * getConfiguredNormalCLightValue();
+    return g_network_powerup_multiplier * getConfiguredNormalCLightValue();
 }   // getConfiguredPowerupCLightValue
 
 void getAdjustableCLightBounds(float* min_c_light,
@@ -278,6 +285,56 @@ float getConfiguredPowerupCLight()
 {
     return getConfiguredPowerupCLightValue();
 }
+
+// ----------------------------------------------------------------------------
+void setNetworkRules(float normal_c_light, float max_beta,
+                     float powerup_multiplier)
+{
+    g_network_normal_c_light = clampFiniteCLight(normal_c_light,
+        DEFAULT_NORMAL_C_LIGHT);
+    if (!std::isfinite((double)max_beta))
+        max_beta = 0.98f;
+    g_network_max_beta = std::max(0.10f, std::min(0.99f, max_beta));
+    if (!std::isfinite((double)powerup_multiplier) ||
+        powerup_multiplier <= 0.0f)
+    {
+        powerup_multiplier = 10.0f;
+    }
+    g_network_powerup_multiplier = powerup_multiplier;
+    g_network_rules_active = true;
+    resetCurrentCLight();
+}   // setNetworkRules
+
+// ----------------------------------------------------------------------------
+void clearNetworkRules()
+{
+    g_network_rules_active = false;
+    g_network_normal_c_light = DEFAULT_NORMAL_C_LIGHT;
+    g_network_max_beta = 0.98f;
+    g_network_powerup_multiplier = 10.0f;
+    resetCurrentCLight();
+}   // clearNetworkRules
+
+// ----------------------------------------------------------------------------
+bool hasNetworkRules()
+{
+    return g_network_rules_active;
+}   // hasNetworkRules
+
+// ----------------------------------------------------------------------------
+float getPhysicsCLightForKart(const AbstractKart* kart)
+{
+    if (kart)
+    {
+        const float target_c_light = kart->getCLightTarget();
+        if (std::isfinite((double)target_c_light) &&
+            target_c_light > (float)MIN_C_LIGHT)
+        {
+            return target_c_light;
+        }
+    }
+    return getConfiguredNormalCLightValue();
+}   // getPhysicsCLightForKart
 
 ApparentSurfaceHit::ApparentSurfaceHit()
     : m_hit(false),
@@ -485,6 +542,8 @@ bool scaleCurrentCLight(float factor,
 // ----------------------------------------------------------------------------
 float getConfiguredMaxBeta()
 {
+    if (g_network_rules_active)
+        return g_network_max_beta;
     const float beta = (float)UserConfigParams::m_relativity_max_beta;
     if (!std::isfinite((double)beta) || beta <= 0.0f)
         return 0.95f;
@@ -498,6 +557,12 @@ float getMaxCoordinateSpeed()
 {
     return getCurrentCLight() * getConfiguredMaxBeta();
 }   // getMaxCoordinateSpeed
+
+// ----------------------------------------------------------------------------
+float getMaxCoordinateSpeedForKart(const AbstractKart* kart)
+{
+    return getPhysicsCLightForKart(kart) * getConfiguredMaxBeta();
+}   // getMaxCoordinateSpeedForKart
 
 // ----------------------------------------------------------------------------
 double betaForSpeed(double speed, double c_light)

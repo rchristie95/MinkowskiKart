@@ -1285,7 +1285,6 @@ void World::update(int ticks)
     if (Relativity::isEnabled())
     {
         PROFILER_PUSH_CPU_MARKER("World::update (relativity clamp)", 0x60, 0x60, 0x7F);
-        const float max_coordinate_speed = Relativity::getMaxCoordinateSpeed();
         for (int i = 0; i < kart_amount; ++i)
         {
             btRigidBody *body = m_karts[i]->getBody();
@@ -1294,7 +1293,8 @@ void World::update(int ticks)
 
             bool was_clamped = false;
             const btVector3 velocity = Relativity::clampVelocityToC(
-                body->getLinearVelocity(), max_coordinate_speed,
+                body->getLinearVelocity(),
+                Relativity::getMaxCoordinateSpeedForKart(m_karts[i].get()),
                 &was_clamped);
             if (was_clamped)
             {

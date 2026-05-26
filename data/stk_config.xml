@@ -11,7 +11,7 @@
 
   <!-- Minimum and maximum server versions that be be read by this binary.
        Older versions will be ignored. -->
-  <server-version min="6" max="6"/>
+  <server-version min="7" max="7"/>
 
   <!-- Maximum number of karts to be used at the same time. This limit
        can easily be increased, but some tracks might not have valid start
@@ -20,13 +20,13 @@
 
   <!-- Everything related to hardware configuration.
             url : The server used for reporting statistics to. -->
-  <HardwareReportServer url="https://stats.supertuxkart.net" />
+  <HardwareReportServer url="https://online.minkowskikart.example/telemetry" />
 
   <!-- Everything related to online play.
             url: The server used for online multiplayer.
             server-version : Version of the server API to use. -->
   <OnlineServer
-    url="https://online.supertuxkart.net/api/"
+    url="https://online.minkowskikart.example/api/"
     server-version="2"
   />
 
@@ -34,8 +34,8 @@
             url : The server used for addon.
             allow-news-redirects : If true we allow all the server urls to be redirected by the addons news.xml file-->
   <AddonServer
-    url="https://online.supertuxkart.net/dl/xml"
-    allow-news-redirects="true"
+    url="https://online.minkowskikart.example/assets"
+    allow-news-redirects="false"
   />
 
   <!-- Scores are the number of points given when the race ends. -->
@@ -192,13 +192,13 @@
   <!-- Special urls -->
   <urls stk-website="https://supertuxkart.net/Main_Page"
 		donate="https://supertuxkart.net/Donate"
-        password-reset="https://online.supertuxkart.net/password-reset.php"
+        password-reset="https://online.minkowskikart.example/account-help"
         assets-download="https://github.com/supertuxkart/stk-assets-mobile/releases/download/"/>
 
   <!-- STK will use dns query of the SRV records with these domains to get the list of
        stun servers to use for IPv4 and IPv6. -->
-  <stun ipv4="_stunv4._udp.supertuxkart.net"
-        ipv6="_stunv6._udp.supertuxkart.net"/>
+  <stun ipv4="_stunv4._udp.minkowskikart.example"
+        ipv6="_stunv6._udp.minkowskikart.example"/>
 
   <!-- Skidmark data: maximum number of skid marks, and
        time for skidmarks to fade out. Maximum number will over
@@ -588,6 +588,7 @@
       <capabilities name="real_addon_karts"/>
       <capabilities name="aes_gcm_128bit_tag"/>
       <capabilities name="command_messages"/>
+      <capabilities name="minkowski_rules_v1"/>
   </network-capabilities>
 
   <!-- List of replay files that may be used for benchmarking

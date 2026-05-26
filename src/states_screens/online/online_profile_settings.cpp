@@ -65,6 +65,8 @@ void OnlineProfileSettings::loadedFromFile()
 void OnlineProfileSettings::init()
 {
     OnlineProfileBase::init();
+    m_change_email_button->setVisible(false);
+    m_change_email_button->setActive(false);
     m_profile_tabs->select( m_settings_tab->m_properties[PROP_ID], PLAYER_ID_GAME_MASTER );
     m_settings_tab->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 }   // init

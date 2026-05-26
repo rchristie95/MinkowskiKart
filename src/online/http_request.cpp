@@ -142,7 +142,15 @@ namespace Online
      */
     bool HTTPRequest::isAllowedToAdd() const
     {
-        return Request::isAllowedToAdd() && m_url.substr(0, 5) == "http:";
+        const bool secure_url = m_url.compare(0, 8, "https://") == 0;
+        const bool local_ipv4 =
+            m_url.compare(0, 17, "http://127.0.0.1") == 0 &&
+            (m_url.size() == 17 || m_url[17] == ':' || m_url[17] == '/');
+        const bool local_hostname =
+            m_url.compare(0, 16, "http://localhost") == 0 &&
+            (m_url.size() == 16 || m_url[16] == ':' || m_url[16] == '/');
+        return Request::isAllowedToAdd() &&
+            (secure_url || local_ipv4 || local_hostname);
     }   // isAllowedToAdd
 
     // ------------------------------------------------------------------------

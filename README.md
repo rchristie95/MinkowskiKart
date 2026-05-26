@@ -6,6 +6,9 @@ kept intact, but every item in the original STK item system is replaced with a
 spacetime-themed counterpart. Screen effects, debuffs, and HUD icons are all
 redesigned to match.
 
+Owned online multiplayer deployment and invitation setup are documented in
+[doc/ONLINE_INFRASTRUCTURE.md](doc/ONLINE_INFRASTRUCTURE.md).
+
 ## What Changed From SuperTuxKart
 
 The item system is the main departure from stock STK. Each original item has

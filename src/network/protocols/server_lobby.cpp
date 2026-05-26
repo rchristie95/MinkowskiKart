@@ -53,6 +53,7 @@
 #include "online/request_manager.hpp"
 #include "online/xml_request.hpp"
 #include "race/race_manager.hpp"
+#include "relativity/relativity_math.hpp"
 #include "tracks/check_manager.hpp"
 #include "tracks/track.hpp"
 #include "tracks/track_manager.hpp"
@@ -145,6 +146,8 @@ public:
  */
 ServerLobby::ServerLobby() : LobbyProtocol()
 {
+    Relativity::setNetworkRules((float)ServerConfig::m_relativity_normal_c_light,
+        (float)ServerConfig::m_relativity_max_beta, 10.0f);
     m_client_server_host_id.store(0);
     m_lobby_players.store(0);
     m_current_ai_count.store(0);
@@ -2664,6 +2667,19 @@ void ServerLobby::connectionRequested(Event* event)
         caps.insert(cap);
     }
     event->getPeer()->setClientCapabilities(caps);
+    if (caps.find("minkowski_rules_v1") == caps.end())
+    {
+        NetworkString *message = getNetworkString(m_type, 2);
+        message->setSynchronous(true);
+        message->addUInt8(LE_CONNECTION_REFUSED)
+            .addUInt8(RR_INCOMPATIBLE_DATA);
+        peer->sendPacket(message, true/*reliable*/, false/*encrypted*/);
+        peer->reset();
+        delete message;
+        Log::verbose("ServerLobby",
+            "Player refused: missing Minkowski rules capability");
+        return;
+    }
     if (!handleAssets(data, event->getPeer()))
         return;
 

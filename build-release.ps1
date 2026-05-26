@@ -99,6 +99,11 @@ if (-not $SdkPath) {
     $defaultSdk = Join-Path $RepoRoot "android\android-sdk"
     if (Test-Path $defaultSdk) { $SdkPath = $defaultSdk }
 }
+# Common Android Studio installation location
+if (-not $SdkPath -or -not (Test-Path $SdkPath)) {
+    $localSdk = "$env:LOCALAPPDATA\Android\Sdk"
+    if (Test-Path $localSdk) { $SdkPath = $localSdk }
+}
 if (-not $SdkPath -or -not (Test-Path $SdkPath)) {
     Write-Error @"
 Android SDK not found. Set the ANDROID_SDK_ROOT environment variable, or
@@ -108,6 +113,18 @@ install Android Studio and ensure ANDROID_HOME is set.
 }
 $SdkPosix = To-PosixPath $SdkPath
 Write-Host "Android SDK: $SdkPath" -ForegroundColor Cyan
+
+# ── 3b. Detect installed NDK version ─────────────────────────────────────────
+$NdkRoot = Join-Path $SdkPath "ndk"
+$InstalledNdk = Get-ChildItem $NdkRoot -ErrorAction SilentlyContinue |
+    Sort-Object Name -Descending |
+    Select-Object -First 1 -ExpandProperty Name
+
+if (-not $InstalledNdk) {
+    Write-Error "No NDK found under $NdkRoot. Install an NDK via Android Studio (SDK Manager → SDK Tools → NDK)."
+    exit 1
+}
+Write-Host "Using NDK: $InstalledNdk" -ForegroundColor Cyan
 
 # ── 4. Build ──────────────────────────────────────────────────────────────────
 Write-Host ""
@@ -126,9 +143,14 @@ $env:STK_STOREPASS    = "minkowski2024!"
 $env:STK_ALIAS        = "minkowskikart"
 $env:STK_KEYPASS      = "minkowski2024!"
 $env:SDK_PATH         = $SdkPosix
+$env:STK_NDK_VERSION  = $InstalledNdk
+# NDK_PATH is the *parent* dir; make.sh appends /<version> to it
+$env:NDK_PATH         = (To-PosixPath (Join-Path $SdkPath "ndk"))
 
-# Run make.sh inside bash
-& $BashExe --login -c "chmod +x '$MakeScriptPosix' && '$MakeScriptPosix'"
+# Run make.sh inside bash — must cd into android/ first; make.sh uses relative
+# paths (./gradlew, banner.png) that are relative to the android/ directory.
+$AndroidDirPosix = To-PosixPath (Join-Path $RepoRoot "android")
+& $BashExe --login -c "cd '$AndroidDirPosix' && chmod +x '$MakeScriptPosix' && '$MakeScriptPosix'"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed with exit code $LASTEXITCODE"

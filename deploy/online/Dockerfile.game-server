@@ -1,0 +1,27 @@
+FROM debian:bookworm AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake libbluetooth-dev libcurl4-gnutls-dev \
+    libfreetype6-dev libharfbuzz-dev libjpeg-dev libogg-dev \
+    libopenal-dev libpng-dev libsdl2-dev libvorbis-dev pkg-config \
+    zlib1g-dev && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /source
+COPY . .
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSERVER_ONLY=ON \
+    -DCHECK_ASSETS=OFF -DBUILD_RECORDER=OFF -DNO_SHADERC=ON \
+    -DCMAKE_INSTALL_PREFIX=/opt/minkowskikart && \
+    cmake --build build --parallel 2 && \
+    cmake --install build
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcurl3-gnutls libfreetype6 libharfbuzz0b libjpeg62-turbo \
+    libogg0 libpng16-16 libsdl2-2.0-0 libvorbisfile3 zlib1g \
+    ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /opt/minkowskikart /opt/minkowskikart
+COPY deploy/online/game-server-entrypoint.sh /usr/local/bin/game-server-entrypoint
+RUN chmod +x /usr/local/bin/game-server-entrypoint
+
+EXPOSE 2759/udp
+ENTRYPOINT ["/usr/local/bin/game-server-entrypoint"]

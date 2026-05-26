@@ -30,6 +30,7 @@
 #include "network/stk_ipv6.hpp"
 #include "network/stun_detection.hpp"
 #include "online/xml_request.hpp"
+#include "relativity/relativity_math.hpp"
 #include "states_screens/main_menu_screen.hpp"
 #include "states_screens/online/networking_lobby.hpp"
 #include "states_screens/online/online_lan.hpp"
@@ -180,6 +181,7 @@ void NetworkConfig::unsetNetworking()
     clearServerCapabilities();
     m_network_type = NETWORK_NONE;
     ServerConfig::m_private_server_password = "";
+    Relativity::clearNetworkRules();
 }   // unsetNetworking
 
 // ----------------------------------------------------------------------------

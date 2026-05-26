@@ -11,6 +11,11 @@ on:
   pull_request: {}
   workflow_dispatch:
     inputs:
+      build_release_artifact:
+        description: 'Build a signed release APK/AAB as workflow artifacts without updating a GitHub release'
+        type: boolean
+        required: false
+        default: false
       production_release_tag:
         description: 'Existing release tag to replace with a signed production Android build (for example, 2.0)'
         required: false
@@ -95,15 +100,19 @@ jobs:
           export STK_TARGET_ANDROID_SDK=35
           export STK_NDK_VERSION="23.1.7779620"
           export COMPILE_ARCH="aarch64"
-          if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" ]]; then
+          if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" || "${{ github.event.inputs.build_release_artifact }}" == "true" ]]; then
             export BUILD_TYPE="release"
             if [[ "$GITHUB_REF" == refs/tags/* ]]; then
               export PROJECT_VERSION="${GITHUB_REF#refs/tags/}"
-            else
+              ANDROID_CHANNEL="Production"
+            elif [[ -n "${{ github.event.inputs.production_release_tag }}" ]]; then
               export PROJECT_VERSION="${{ github.event.inputs.production_release_tag }}"
+              ANDROID_CHANNEL="Production"
+            else
+              export PROJECT_VERSION="release-test-${GITHUB_RUN_NUMBER}"
+              ANDROID_CHANNEL="Release-Test"
             fi
             ANDROID_PACKAGE_NAME="com.rchristie95.minkowskikart"
-            ANDROID_CHANNEL="Production"
             ANDROID_APK_VARIANT="release"
             ANDROID_GRADLE_VARIANT="Release"
           elif [[ "$GITHUB_REF" == refs/heads/main || "$GITHUB_REF" == refs/heads/master ]]; then

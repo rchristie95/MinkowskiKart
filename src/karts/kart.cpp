@@ -1924,7 +1924,7 @@ void Kart::updateRelativisticState(int ticks)
         ? (double)stk_config->ticks2Time(ticks)
         : 0.0;
         
-    const float c_light = Relativity::getCurrentCLight();
+    const float c_light = Relativity::getPhysicsCLightForKart(this);
 
     Relativity::updateState(&m_relativistic_state, getVelocity(), m_speed, dt,
                             c_light);

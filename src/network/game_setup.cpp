@@ -161,6 +161,9 @@ void GameSetup::addServerInfo(NetworkString* ns)
     ns->encodeString16(m_message_of_today);
     ns->addUInt8((uint8_t)ServerConfig::m_server_configurable);
     ns->addUInt8(ServerConfig::m_live_players? 1 : 0);
+    ns->addFloat((float)ServerConfig::m_relativity_normal_c_light);
+    ns->addFloat((float)ServerConfig::m_relativity_max_beta);
+    ns->addFloat(10.0f);
 }   // addServerInfo
 
 //-----------------------------------------------------------------------------

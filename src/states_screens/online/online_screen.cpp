@@ -45,7 +45,7 @@
 #include "states_screens/main_menu_screen.hpp"
 #include "states_screens/online/networking_lobby.hpp"
 #include "states_screens/online/online_lan.hpp"
-#include "states_screens/online/online_profile_achievements.hpp"
+#include "states_screens/online/online_profile_settings.hpp"
 #include "states_screens/online/online_profile_servers.hpp"
 #include "states_screens/state_manager.hpp"
 #include "states_screens/options/user_screen.hpp"
@@ -218,7 +218,7 @@ void OnlineScreen::onUpdate(float delta)
     {
         m_online->setActive(true);
         m_online->setLabel(m_online_string);
-        m_user_id->setText(player->getLastOnlineName() + "@stk");
+        m_user_id->setText(player->getLastOnlineName() + "@mk");
     }
     else if (PlayerManager::getCurrentOnlineState() == PlayerProfile::OS_SIGNED_OUT)
     {
@@ -332,7 +332,7 @@ void OnlineScreen::eventCallback(Widget* widget, const std::string& name,
         if (PlayerManager::getCurrentOnlineId())
         {
             ProfileManager::get()->setVisiting(PlayerManager::getCurrentOnlineId());
-            TabOnlineProfileAchievements::getInstance()->push();
+            OnlineProfileSettings::getInstance()->push();
         }
         else
         {

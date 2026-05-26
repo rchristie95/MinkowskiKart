@@ -58,6 +58,7 @@
 #include "network/stk_host.hpp"
 #include "network/stk_peer.hpp"
 #include "race/grand_prix_manager.hpp"
+#include "relativity/relativity_math.hpp"
 #include "replay/replay_play.hpp"
 #include "online/online_profile.hpp"
 #include "online/xml_request.hpp"
@@ -826,6 +827,15 @@ void ClientLobby::handleServerInfo(Event* event)
         NetworkingLobby::getInstance()->toggleServerConfigButton(server_config);
     m_server_live_joinable = data.getUInt8() == 1;
     NetworkConfig::get()->setTuxHitboxAddon(m_server_live_joinable);
+    if (data.size() < 12)
+    {
+        Log::warn("ClientLobby", "Server omitted Minkowski rules data.");
+        return;
+    }
+    const float normal_c_light = data.getFloat();
+    const float max_beta = data.getFloat();
+    const float powerup_multiplier = data.getFloat();
+    Relativity::setNetworkRules(normal_c_light, max_beta, powerup_multiplier);
 }   // handleServerInfo
 
 //-----------------------------------------------------------------------------

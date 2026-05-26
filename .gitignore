@@ -51,6 +51,11 @@ Thumbs.db
 # Python cache files
 __pycache__/
 *.pyc
+/services/online-api/.venv/
+/services/online-api/*.db
+/services/online-api/*.egg-info/
+/services/online-api/.pytest_cache/
+/deploy/online/.env
 
 # Distribution tools (not needed for dev)
 tools/windows_installer/
