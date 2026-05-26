@@ -441,22 +441,22 @@ echo "    <background android:drawable=\"@android:color/black\" />"    >> "$ADAP
 echo "    <foreground android:drawable=\"@drawable/icon_fg\" />"       >> "$ADAPTIVE_ICON_FILE"
 echo "</adaptive-icon>"                                                >> "$ADAPTIVE_ICON_FILE"
 
-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+sed -i "s/^package .*;$/package $PACKAGE_NAME;/" \
        "$DIRNAME/src/main/java/STKEditText.java"
 
-sed -i "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKInputConnection;/g" \
+sed -i "s/^import .*\.STKInputConnection;$/import $PACKAGE_NAME.STKInputConnection;/" \
        "$DIRNAME/src/main/java/STKEditText.java"
 
-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+sed -i "s/^package .*;$/package $PACKAGE_NAME;/" \
        "$DIRNAME/src/main/java/STKInputConnection.java"
 
-sed -i "s/import org.supertuxkart.*.STKEditText;/import $PACKAGE_NAME.STKEditText;/g" \
+sed -i "s/^import .*\.STKEditText;$/import $PACKAGE_NAME.STKEditText;/" \
        "$DIRNAME/src/main/java/STKInputConnection.java"
 
-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+sed -i "s/^package .*;$/package $PACKAGE_NAME;/" \
        "$DIRNAME/src/main/java/SuperTuxKartActivity.java"
 
-sed -i "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKEditText;/g" \
+sed -i "s/^import .*\.STKEditText;$/import $PACKAGE_NAME.STKEditText;/" \
        "$DIRNAME/src/main/java/SuperTuxKartActivity.java"
 
 cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/HIDDevice.java" \
