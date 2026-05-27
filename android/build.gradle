@@ -83,10 +83,13 @@ android
     {
         release
         {
-            storeFile file(keystore)
-            storePassword storepass
-            keyAlias alias
-            keyPassword keypass
+            if (project.findProperty('keystore')?.toString())
+            {
+                storeFile file(keystore)
+                storePassword storepass
+                keyAlias alias
+                keyPassword keypass
+            }
             v1SigningEnabled true
             v2SigningEnabled true
         }

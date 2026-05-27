@@ -1,6 +1,6 @@
-package com.rchristie95.minkowskikart;
+package org.supertuxkart.stk_dbg;
 
-import com.rchristie95.minkowskikart.STKEditText;
+import org.supertuxkart.stk_dbg.STKEditText;
 import org.libsdl.app.SDLActivity;
 import org.libsdl.app.SDL;
 

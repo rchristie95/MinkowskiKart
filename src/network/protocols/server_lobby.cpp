@@ -2659,14 +2659,15 @@ void ServerLobby::connectionRequested(Event* event)
     event->getPeer()->setUserVersion(user_version);
 
     unsigned list_caps = data.getUInt16();
+    Log::info("ServerLobby", "Server received caps size: %d", list_caps);
     std::set<std::string> caps;
     for (unsigned i = 0; i < list_caps; i++)
     {
         std::string cap;
         data.decodeString(&cap);
+        Log::info("ServerLobby", "Server received cap: %s", cap.c_str());
         caps.insert(cap);
     }
-    event->getPeer()->setClientCapabilities(caps);
     if (caps.find("minkowski_rules_v1") == caps.end())
     {
         NetworkString *message = getNetworkString(m_type, 2);
@@ -2680,6 +2681,7 @@ void ServerLobby::connectionRequested(Event* event)
             "Player refused: missing Minkowski rules capability");
         return;
     }
+    event->getPeer()->setClientCapabilities(caps);
     if (!handleAssets(data, event->getPeer()))
         return;
 
