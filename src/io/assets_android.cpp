@@ -230,6 +230,33 @@ void AssetsAndroid::init()
                 break;
             }
         }
+
+        if (!needs_extract_data)
+        {
+            SDL_RWops* config_asset = SDL_RWFromFile("data/stk_config.xml", "rb");
+            if (config_asset != NULL)
+            {
+                int64_t packaged_size = SDL_RWsize(config_asset);
+                SDL_RWclose(config_asset);
+
+                std::string extracted_config = m_stk_dir + "/data/stk_config.xml";
+                int64_t extracted_size = -1;
+                SDL_RWops* ext_file = SDL_RWFromFile(extracted_config.c_str(), "rb");
+                if (ext_file != NULL)
+                {
+                    extracted_size = SDL_RWsize(ext_file);
+                    SDL_RWclose(ext_file);
+                }
+
+                if (packaged_size != extracted_size)
+                {
+                    needs_extract_data = true;
+                    Log::warn("AssetsAndroid",
+                        "stk_config.xml size mismatch (packaged: %lld, extracted: %lld). "
+                        "Force extracting assets...", (long long)packaged_size, (long long)extracted_size);
+                }
+            }
+        }
     }
 
     if (!m_file_manager->checkAndCreateDirectoryP(m_stk_dir + "/home"))
