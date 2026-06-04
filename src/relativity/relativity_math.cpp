@@ -20,6 +20,9 @@
 
 #include "config/stk_config.hpp"
 #include "config/user_config.hpp"
+#ifndef SERVER_ONLY
+#include "graphics/central_settings.hpp"
+#endif
 #include "guiengine/engine.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/kart_properties.hpp"
@@ -275,6 +278,53 @@ ActiveCLightTarget getActiveLocalPlayerCLightTarget()
 namespace Relativity
 {
 
+UserConfigParams::RelativityTrackClippingMode getConfiguredTrackClippingMode()
+{
+    const int configured = UserConfigParams::m_relativity_track_clipping_mode;
+    if (configured == (int)UserConfigParams::RelativityTrackClippingMode::
+            ENHANCED_DYNAMIC_SUBDIVISION)
+    {
+        return UserConfigParams::RelativityTrackClippingMode::
+            ENHANCED_DYNAMIC_SUBDIVISION;
+    }
+    return UserConfigParams::RelativityTrackClippingMode::
+        CHEAP_HEIGHT_CORRECTION;
+}   // getConfiguredTrackClippingMode
+
+// ----------------------------------------------------------------------------
+bool supportsEnhancedTrackClipping()
+{
+#ifndef SERVER_ONLY
+    return CVS && CVS->supportsTessellation();
+#else
+    return false;
+#endif
+}   // supportsEnhancedTrackClipping
+
+// ----------------------------------------------------------------------------
+UserConfigParams::RelativityTrackClippingMode getEffectiveTrackClippingMode()
+{
+    if (getConfiguredTrackClippingMode() ==
+            UserConfigParams::RelativityTrackClippingMode::
+                ENHANCED_DYNAMIC_SUBDIVISION &&
+        supportsEnhancedTrackClipping())
+    {
+        return UserConfigParams::RelativityTrackClippingMode::
+            ENHANCED_DYNAMIC_SUBDIVISION;
+    }
+    return UserConfigParams::RelativityTrackClippingMode::
+        CHEAP_HEIGHT_CORRECTION;
+}   // getEffectiveTrackClippingMode
+
+// ----------------------------------------------------------------------------
+bool usesEnhancedTrackClipping()
+{
+    return getEffectiveTrackClippingMode() ==
+        UserConfigParams::RelativityTrackClippingMode::
+            ENHANCED_DYNAMIC_SUBDIVISION;
+}   // usesEnhancedTrackClipping
+
+// ----------------------------------------------------------------------------
 float getConfiguredNormalCLight()
 {
     return getConfiguredNormalCLightValue();
@@ -870,6 +920,30 @@ void unitTesting()
     do { if (!(cond)) Log::fatal("Relativity::unitTesting", \
                                  "Test failed: %s (line %d)", #cond, __LINE__); \
     } while(0)
+
+    {
+        const int original_mode =
+            UserConfigParams::m_relativity_track_clipping_mode;
+
+        UserConfigParams::m_relativity_track_clipping_mode = -1;
+        MK_CHECK(getConfiguredTrackClippingMode() ==
+            UserConfigParams::RelativityTrackClippingMode::
+                CHEAP_HEIGHT_CORRECTION);
+        MK_CHECK(getEffectiveTrackClippingMode() ==
+            UserConfigParams::RelativityTrackClippingMode::
+                CHEAP_HEIGHT_CORRECTION);
+
+        UserConfigParams::m_relativity_track_clipping_mode =
+            (int)UserConfigParams::RelativityTrackClippingMode::
+                ENHANCED_DYNAMIC_SUBDIVISION;
+        MK_CHECK(getConfiguredTrackClippingMode() ==
+            UserConfigParams::RelativityTrackClippingMode::
+                ENHANCED_DYNAMIC_SUBDIVISION);
+        MK_CHECK(usesEnhancedTrackClipping() ==
+            supportsEnhancedTrackClipping());
+
+        UserConfigParams::m_relativity_track_clipping_mode = original_mode;
+    }
 
     const double c_light = 80.0;
     const double gamma_06c = gammaForSpeed(0.6 * c_light, c_light);

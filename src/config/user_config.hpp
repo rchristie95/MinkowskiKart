@@ -396,6 +396,11 @@ enum MultitouchControls
  */
 namespace UserConfigParams
 {
+    enum class RelativityTrackClippingMode : int
+    {
+        CHEAP_HEIGHT_CORRECTION = 0,
+        ENHANCED_DYNAMIC_SUBDIVISION = 1
+    };
 
     // ---- Audio
     PARAM_PREFIX GroupUserConfigParam        m_audio_group
@@ -1375,6 +1380,13 @@ namespace UserConfigParams
             PARAM_DEFAULT( FloatUserConfigParam(0.98f, "max_beta",
                                                &m_relativity_group,
                                                "Maximum kart speed as a fraction of c (0.1-0.99)") );
+
+    PARAM_PREFIX IntUserConfigParam        m_relativity_track_clipping_mode
+            PARAM_DEFAULT( IntUserConfigParam(
+                (int)RelativityTrackClippingMode::CHEAP_HEIGHT_CORRECTION,
+                "track_clipping_mode", &m_relativity_group,
+                "Track clipping mitigation: 0 height correction, "
+                "1 dynamic subdivision") );
 
     // ---- User management
 

@@ -24,18 +24,24 @@ out vec3 tc_velocity[];
 
 #stk_include "utils/relativity_visual.vert"
 
+const float NEAR_EDGE_CUTOFF = 0.5;
+const float FAR_EDGE_CUTOFF = 2.0;
+const float CUTOFF_FALLOFF_DISTANCE = 50.0;
+
 float getTessLevel(vec3 pA, vec3 pB) {
     float edge_l = length(pB - pA);
     vec3 mid = (pA + pB) * 0.5;
     float dist = length(mid - u_relativity_observer_pos.xyz);
     float beta = length(u_relativity_beta.xyz);
-    
-    if (edge_l < 2.0) return 1.0;
-    
+
+    float distance_falloff = smoothstep(
+        0.0, CUTOFF_FALLOFF_DISTANCE, dist);
+    float edge_cutoff = mix(
+        NEAR_EDGE_CUTOFF, FAR_EDGE_CUTOFF, distance_falloff);
+    if (edge_l <= edge_cutoff) return 1.0;
+
     float level = clamp(edge_l / 5.0, 1.0, 8.0);
-    if (dist < 50.0) {
-        level *= mix(2.0, 1.0, clamp(dist / 50.0, 0.0, 1.0));
-    }
+    level *= mix(2.0, 1.0, distance_falloff);
     if (beta > 0.5) {
         level *= (1.0 + beta);
     }

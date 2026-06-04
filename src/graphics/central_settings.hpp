@@ -87,6 +87,7 @@ public:
     // Are all required extensions available for feature support
     bool supportsComputeShadersFiltering() const;
     bool supportsHardwareSkinning() const;
+    bool supportsTessellation() const;
     bool supportsTextureCompression() const;
 
     // "Macro" around feature support and user config

@@ -3474,7 +3474,8 @@ void Kart::updateGraphics(float dt)
     
     float height_correction = 0.0f;
 #ifndef SERVER_ONLY
-    if (Relativity::isEnabled() && Camera::getActiveCamera() && CVS->isGLSL())
+    if (Relativity::isEnabled() && !Relativity::usesEnhancedTrackClipping() &&
+        Camera::getActiveCamera() && CVS->isGLSL())
     {
         btVector3 p_phys = m_terrain_info->getHitPoint();
         if ((p_phys - getXYZ()).length() != Track::NOHIT)

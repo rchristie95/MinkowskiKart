@@ -470,6 +470,15 @@ bool CentralVideoSettings::supportsTextureCompression() const
     return isEXTTextureCompressionS3TCUsable();
 }
 
+bool CentralVideoSettings::supportsTessellation() const
+{
+#if defined(USE_GLES2)
+    return isGLSL() && getGLSLVersion() >= 320;
+#else
+    return isGLSL() && getGLSLVersion() >= 400;
+#endif
+}
+
 bool CentralVideoSettings::isShadowEnabled() const
 {
     return UserConfigParams::m_shadows_resolution > 0;

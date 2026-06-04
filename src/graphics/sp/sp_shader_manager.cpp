@@ -24,6 +24,7 @@
 #include "graphics/sp/sp_texture.hpp"
 #include "graphics/sp/sp_texture_manager.hpp"
 #include "graphics/sp/sp_uniform_assigner.hpp"
+#include "relativity/relativity_math.hpp"
 #include "tracks/track.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/log.hpp"
@@ -417,11 +418,7 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
 
             bool use_tessellation = !pi[0].m_tess_control_shader.empty() &&
                                    !pi[0].m_tess_evaluation_shader.empty() &&
-#ifndef USE_GLES2
-                                   CVS->getGLSLVersion() >= 400;
-#else
-                                   CVS->getGLSLVersion() >= 320;
-#endif
+                                   Relativity::usesEnhancedTrackClipping();
 
             if (use_tessellation)
             {
@@ -476,11 +473,7 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
             bool use_shadow_tessellation =
                 !pi[1].m_tess_control_shader.empty() &&
                 !pi[1].m_tess_evaluation_shader.empty() &&
-#ifndef USE_GLES2
-                CVS->getGLSLVersion() >= 400;
-#else
-                CVS->getGLSLVersion() >= 320;
-#endif
+                Relativity::usesEnhancedTrackClipping();
             if (use_shadow_tessellation)
             {
                 shader->addShaderFile(pi[1].m_tess_control_shader,

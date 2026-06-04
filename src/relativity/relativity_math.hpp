@@ -24,6 +24,11 @@
 class AbstractKart;
 class Material;
 
+namespace UserConfigParams
+{
+enum class RelativityTrackClippingMode : int;
+}
+
 namespace Relativity
 {
 
@@ -45,6 +50,10 @@ struct ApparentSurfaceHit
 bool isEnabled();
 bool shouldUseFirstPersonObserverCamera();
 bool isPowerupCLightActive();
+UserConfigParams::RelativityTrackClippingMode getConfiguredTrackClippingMode();
+UserConfigParams::RelativityTrackClippingMode getEffectiveTrackClippingMode();
+bool supportsEnhancedTrackClipping();
+bool usesEnhancedTrackClipping();
 
 float getConfiguredNormalCLight();
 float getConfiguredPowerupCLight();

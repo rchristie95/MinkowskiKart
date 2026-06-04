@@ -760,6 +760,18 @@ bool UserConfig::loadConfig()
             RELATIVITY_DEFAULTS_VERSION;
         save_migrated_config = true;
     }
+    const int track_clipping_mode =
+        UserConfigParams::m_relativity_track_clipping_mode;
+    if (track_clipping_mode != (int)UserConfigParams::
+            RelativityTrackClippingMode::CHEAP_HEIGHT_CORRECTION &&
+        track_clipping_mode != (int)UserConfigParams::
+            RelativityTrackClippingMode::ENHANCED_DYNAMIC_SUBDIVISION)
+    {
+        UserConfigParams::m_relativity_track_clipping_mode =
+            (int)UserConfigParams::RelativityTrackClippingMode::
+                CHEAP_HEIGHT_CORRECTION;
+        save_migrated_config = true;
+    }
 
 
     // ---- Read Saved GP's
