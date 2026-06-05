@@ -821,6 +821,7 @@
       let height = 0;
       let fontSize = 14;
       let columns = [];
+      const speedScale = 0.5;
 
       const resize = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -855,7 +856,7 @@
           ctx.fillText(column.phrase, column.x, column.y);
           ctx.fillStyle = "rgba(57, 255, 136, 0.24)";
           ctx.fillText(column.phrase, column.x, column.y - 24);
-          column.y += column.speed * fontSize;
+          column.y += column.speed * fontSize * speedScale;
 
           if (column.y > height + 90) {
             column.y = -Math.random() * height * 0.45;
