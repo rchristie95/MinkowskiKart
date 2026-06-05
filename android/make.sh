@@ -507,6 +507,7 @@ export ANDROID_HOME="$SDK_PATH"
           -Ppackage_name="$PACKAGE_NAME"                 \
           -Pversion_name="$PROJECT_VERSION"              \
           -Pversion_code="$PROJECT_CODE"                 \
+          -Papp_dir_name="$APP_DIR_NAME"                 \
           $GRADLE_BUILD_TYPE
 
 check_error
@@ -526,6 +527,7 @@ if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
           -Ppackage_name="$PACKAGE_NAME"                 \
           -Pversion_name="$PROJECT_VERSION"              \
           -Pversion_code="$PROJECT_CODE"                 \
+          -Papp_dir_name="$APP_DIR_NAME"                 \
           "bundleRelease"
 fi
 

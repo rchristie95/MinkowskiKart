@@ -60,7 +60,11 @@ android
             ndkBuild
             {
                 def app_platform = "APP_PLATFORM=android-${min_sdk_version}"
-                arguments app_platform, 'APP_STL=c++_static', cpu_core
+                def pkgName = project.getProperty('package_name')
+                def pkgClass = pkgName.replace('.', '/')
+                def appDirName = project.findProperty('app_dir_name') ?: (pkgName.endsWith('.stk_dbg') ? 'supertuxkart-dbg' : (pkgName.endsWith('.stk_beta') ? 'supertuxkart-beta' : 'supertuxkart'))
+                def projVersion = project.getProperty('version_name')
+                arguments app_platform, 'APP_STL=c++_static', cpu_core, "PACKAGE_NAME=${pkgName}", "PACKAGE_CLASS_NAME=${pkgClass}", "APP_DIR_NAME=${appDirName}", "PROJECT_VERSION=${projVersion}"
                 if (project.getProperty('compile_arch') == 'all')
                 {
                     abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
