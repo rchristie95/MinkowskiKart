@@ -819,9 +819,9 @@
 
       let width = 0;
       let height = 0;
-      let fontSize = 14;
+      let fontSize = 42;
       let columns = [];
-      const speedScale = 0.5;
+      const speedScale = 0.15;
 
       const resize = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -832,18 +832,18 @@
         canvas.style.width = width + "px";
         canvas.style.height = height + "px";
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        fontSize = width < 700 ? 12 : 14;
-        const count = Math.max(18, Math.floor(width / (fontSize * 1.65)));
+        fontSize = width < 700 ? 28 : 42;
+        const count = Math.max(8, Math.floor(width / (fontSize * 2.2)));
         columns = Array.from({ length: count }, (_, index) => ({
-          x: index * fontSize * 1.65,
+          x: index * fontSize * 2.2,
           y: Math.random() * -height,
-          speed: 0.75 + Math.random() * 1.8,
+          speed: 0.5 + Math.random() * 1.2,
           phrase: equations[Math.floor(Math.random() * equations.length)]
         }));
       };
 
       const draw = () => {
-        ctx.fillStyle = "rgba(0, 4, 0, 0.12)";
+        ctx.fillStyle = "rgba(0, 4, 0, 0.6)";
         ctx.fillRect(0, 0, width, height);
         ctx.font = `${fontSize}px Cascadia Mono, Consolas, monospace`;
 
@@ -852,10 +852,9 @@
             column.phrase = equations[Math.floor(Math.random() * equations.length)];
           }
 
-          ctx.fillStyle = "rgba(213, 255, 106, 0.72)";
+          ctx.fillStyle = "rgba(213, 255, 106, 1.0)";
           ctx.fillText(column.phrase, column.x, column.y);
-          ctx.fillStyle = "rgba(57, 255, 136, 0.24)";
-          ctx.fillText(column.phrase, column.x, column.y - 24);
+          
           column.y += column.speed * fontSize * speedScale;
 
           if (column.y > height + 90) {

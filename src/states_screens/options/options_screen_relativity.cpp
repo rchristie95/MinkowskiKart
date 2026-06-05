@@ -21,7 +21,6 @@
 #include "states_screens/options/options_screen_relativity.hpp"
 
 #include "config/stk_config.hpp"
-#include "graphics/irr_driver.hpp"
 #include "relativity/relativity_math.hpp"
 #include "utils/log.hpp"
 
@@ -87,18 +86,10 @@ static int indexToCLight(int index)
     return C_LIGHT_MIN + index * C_LIGHT_STEP;
 }
 
-static int trackClippingModeToIndex(
-    UserConfigParams::RelativityTrackClippingMode mode)
-{
-    return mode == UserConfigParams::RelativityTrackClippingMode::
-        ENHANCED_DYNAMIC_SUBDIVISION ? 1 : 0;
-}
-
 // -----------------------------------------------------------------------------
 
 OptionsScreenRelativity::OptionsScreenRelativity()
-    : Screen("options/options_relativity.stkgui"),
-      m_previous_track_clipping_mode(0)
+    : Screen("options/options_relativity.stkgui")
 {
 }   // OptionsScreenRelativity
 
@@ -147,86 +138,13 @@ void OptionsScreenRelativity::init()
     beta_w->setValue(maxBetaToIndex(
         (float)UserConfigParams::m_relativity_max_beta));
 
-    SpinnerWidget* clipping_w =
-        getWidget<SpinnerWidget>("track_clipping_mode");
-    if (clipping_w == NULL)
-    {
-        Log::error("OptionsScreenRelativity",
-            "Missing track_clipping_mode widget in options_relativity.stkgui.");
-        return;
-    }
-    clipping_w->clearLabels();
-    clipping_w->addLabel(core::stringw(
-        _("Cheap (lite subdivision + height correction)")));
-    clipping_w->addLabel(core::stringw(
-        _("Enhanced (strong subdivision)")));
-    m_previous_track_clipping_mode = trackClippingModeToIndex(
-        Relativity::getConfiguredTrackClippingMode());
-    clipping_w->setValue(m_previous_track_clipping_mode);
-
-    const bool in_game =
-        StateManager::get()->getGameState() == GUIEngine::INGAME_MENU;
-    if (!Relativity::supportsEnhancedTrackClipping())
-    {
-        clipping_w->setActive(false);
-        clipping_w->setTooltip(_("Track subdivision requires OpenGL 4.0 "
-            "or OpenGL ES 3.2. Cheap height correction will be used "
-            "without GPU subdivision."));
-    }
-    else
-    {
-        clipping_w->setActive(!in_game);
-        OptionsCommon::updatePauseTooltip(clipping_w, in_game);
-    }
-    updateTrackClippingDescription();
-
     Relativity::getCurrentCLight();
 }   // init
 
 // -----------------------------------------------------------------------------
 
-void OptionsScreenRelativity::updateTrackClippingDescription()
-{
-    LabelWidget* description =
-        getWidget<LabelWidget>("track_clipping_description");
-    if (description == NULL)
-        return;
-
-    if (Relativity::getConfiguredTrackClippingMode() ==
-        UserConfigParams::RelativityTrackClippingMode::
-            ENHANCED_DYNAMIC_SUBDIVISION)
-    {
-        if (Relativity::supportsEnhancedTrackClipping())
-        {
-            description->setText(_("Dynamically subdivides warped meshes for "
-                "a more realistic surface using a stronger near-kart cutoff. "
-                "Higher GPU cost; height correction is disabled."), false);
-        }
-        else
-        {
-            description->setText(_("Enhanced is selected but unavailable on "
-                "this device. Cheap height correction will be used without "
-                "GPU subdivision."), false);
-        }
-    }
-    else
-    {
-        description->setText(_("Uses lite dynamic subdivision when available "
-            "and adjusts kart height to reduce track clipping."), false);
-    }
-}   // updateTrackClippingDescription
-
-// -----------------------------------------------------------------------------
-
 void OptionsScreenRelativity::tearDown()
 {
-    const int current_track_clipping_mode = trackClippingModeToIndex(
-        Relativity::getConfiguredTrackClippingMode());
-    if (m_previous_track_clipping_mode != current_track_clipping_mode &&
-        Relativity::supportsEnhancedTrackClipping())
-    {
-        irr_driver->sameRestart();
-    }
     Screen::tearDown();
     user_config->saveConfig();
 }   // tearDown
@@ -260,18 +178,6 @@ void OptionsScreenRelativity::eventCallback(Widget* widget,
         SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
         assert(w != NULL);
         UserConfigParams::m_relativity_max_beta = indexToMaxBeta(w->getValue());
-    }
-    else if (name == "track_clipping_mode")
-    {
-        SpinnerWidget* w = dynamic_cast<SpinnerWidget*>(widget);
-        assert(w != NULL);
-        UserConfigParams::m_relativity_track_clipping_mode =
-            w->getValue() == 1
-                ? (int)UserConfigParams::RelativityTrackClippingMode::
-                    ENHANCED_DYNAMIC_SUBDIVISION
-                : (int)UserConfigParams::RelativityTrackClippingMode::
-                    CHEAP_HEIGHT_CORRECTION;
-        updateTrackClippingDescription();
     }
 }   // eventCallback
 

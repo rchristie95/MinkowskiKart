@@ -28,10 +28,7 @@ namespace GUIEngine { class Widget; }
 class OptionsScreenRelativity : public GUIEngine::Screen,
                                 public GUIEngine::ScreenSingleton<OptionsScreenRelativity>
 {
-    int m_previous_track_clipping_mode;
-
     OptionsScreenRelativity();
-    void updateTrackClippingDescription();
 
 public:
     friend class GUIEngine::ScreenSingleton<OptionsScreenRelativity>;
