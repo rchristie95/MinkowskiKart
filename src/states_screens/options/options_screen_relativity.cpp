@@ -156,8 +156,10 @@ void OptionsScreenRelativity::init()
         return;
     }
     clipping_w->clearLabels();
-    clipping_w->addLabel(core::stringw(_("Cheap (height correction)")));
-    clipping_w->addLabel(core::stringw(_("Enhanced (dynamic subdivision)")));
+    clipping_w->addLabel(core::stringw(
+        _("Cheap (lite subdivision + height correction)")));
+    clipping_w->addLabel(core::stringw(
+        _("Enhanced (strong subdivision)")));
     m_previous_track_clipping_mode = trackClippingModeToIndex(
         Relativity::getConfiguredTrackClippingMode());
     clipping_w->setValue(m_previous_track_clipping_mode);
@@ -167,8 +169,9 @@ void OptionsScreenRelativity::init()
     if (!Relativity::supportsEnhancedTrackClipping())
     {
         clipping_w->setActive(false);
-        clipping_w->setTooltip(_("Dynamic subdivision requires OpenGL 4.0 "
-            "or OpenGL ES 3.2. Cheap height correction will be used."));
+        clipping_w->setTooltip(_("Track subdivision requires OpenGL 4.0 "
+            "or OpenGL ES 3.2. Cheap height correction will be used "
+            "without GPU subdivision."));
     }
     else
     {
@@ -196,19 +199,20 @@ void OptionsScreenRelativity::updateTrackClippingDescription()
         if (Relativity::supportsEnhancedTrackClipping())
         {
             description->setText(_("Dynamically subdivides warped meshes for "
-                "a more realistic surface. Higher GPU cost; height correction "
-                "is disabled."), false);
+                "a more realistic surface using a stronger near-kart cutoff. "
+                "Higher GPU cost; height correction is disabled."), false);
         }
         else
         {
             description->setText(_("Enhanced is selected but unavailable on "
-                "this device. Cheap height correction will be used."), false);
+                "this device. Cheap height correction will be used without "
+                "GPU subdivision."), false);
         }
     }
     else
     {
-        description->setText(_("Uses existing mesh detail and adjusts kart "
-            "height to reduce track clipping."), false);
+        description->setText(_("Uses lite dynamic subdivision when available "
+            "and adjusts kart height to reduce track clipping."), false);
     }
 }   // updateTrackClippingDescription
 

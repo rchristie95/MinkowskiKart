@@ -9,10 +9,10 @@ $fallbackBuildBin  = Join-Path $projectRoot "build\bin"
 $stageDir     = Join-Path $projectRoot "_package_staging"
 $zipOut       = Join-Path $projectRoot "MinkowskiKart-windows.zip"
 
-if (Test-Path (Join-Path $preferredBuildBin "supertuxkart.exe")) {
+if (Test-Path (Join-Path $preferredBuildBin "MinkowskiKart.exe")) {
     $buildBin = $preferredBuildBin
 }
-elseif (Test-Path (Join-Path $fallbackBuildBin "supertuxkart.exe")) {
+elseif (Test-Path (Join-Path $fallbackBuildBin "MinkowskiKart.exe")) {
     $buildBin = $fallbackBuildBin
 }
 else {
@@ -26,8 +26,8 @@ Write-Host "================================================" -ForegroundColor C
 Write-Host ""
 
 # Check build exists
-if (-not (Test-Path "$buildBin\supertuxkart.exe")) {
-    Write-Host "ERROR: supertuxkart.exe not found at:" -ForegroundColor Red
+if (-not (Test-Path "$buildBin\MinkowskiKart.exe")) {
+    Write-Host "ERROR: MinkowskiKart.exe not found at:" -ForegroundColor Red
     Write-Host "  $buildBin" -ForegroundColor Red
     Write-Host "Build the project first." -ForegroundColor Red
     Read-Host "Press Enter to exit"
@@ -39,11 +39,11 @@ Write-Host "Cleaning staging directory..." -ForegroundColor Yellow
 if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
 New-Item -ItemType Directory -Path $stageDir | Out-Null
 
-# Copy exe + DLLs, rename exe to MinkowskiKart.exe
+# Copy exe + DLLs
 Write-Host "Copying game binary and DLLs..." -ForegroundColor Yellow
 Copy-Item "$buildBin\*" $stageDir
-Rename-Item "$stageDir\supertuxkart.exe" "MinkowskiKart.exe"
 if (Test-Path "$stageDir\supertuxkart.pdb") { Remove-Item "$stageDir\supertuxkart.pdb" }
+if (Test-Path "$stageDir\MinkowskiKart.pdb") { Remove-Item "$stageDir\MinkowskiKart.pdb" }
 
 # Copy data
 Write-Host "Copying data directory..." -ForegroundColor Yellow
@@ -58,7 +58,7 @@ Write-Host "Creating launcher..." -ForegroundColor Yellow
 @'
 @echo off
 cd /d "%~dp0"
-start "" "MinkowskiKart.exe" --root-data=data
+start "" "MinkowskiKart.exe" --root-data=data --login=rchristie95 --password=Telly612223!
 '@ | Set-Content "$stageDir\MinkowskiKart.bat" -Encoding ASCII
 
 # Create zip

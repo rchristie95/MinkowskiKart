@@ -23,6 +23,7 @@
 #include "guiengine/screen.hpp"
 #include "guiengine/widget.hpp"
 #include "guiengine/widgets/ribbon_widget.hpp"
+#include "guiengine/widgets/icon_button_widget.hpp"
 #include "network/network_config.hpp"
 #include "network/stk_host.hpp"
 #include "network/server_config.hpp"
@@ -52,6 +53,17 @@ OnlineProfileServers::OnlineProfileServers() : GUIEngine::Screen("online/profile
 
 void OnlineProfileServers::init()
 {
+    // White labels so they read against the dark background image.
+    const video::SColor white(255, 255, 255, 255);
+    static const char* const BTNS_WITH_WHITE_LABELS[] = {
+        "find_wan_server", "create_wan_server", "quick_wan_play"
+    };
+    for (const char* id : BTNS_WITH_WHITE_LABELS)
+    {
+        IconButtonWidget* btn = getWidget<IconButtonWidget>(id);
+        if (btn) btn->setLabelColor(white);
+    }
+
     if (!PlayerManager::getCurrentOnlineId())
     {
         getWidget("back")->setFocusForPlayer(PLAYER_ID_GAME_MASTER);

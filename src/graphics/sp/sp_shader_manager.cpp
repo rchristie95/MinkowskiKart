@@ -415,10 +415,16 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
             {
                 pou->addAssignerFunction(p.first, p.second);
             }
+            pou->addAssignerFunction("u_relativity_track_clipping_mode",
+                [](SPUniformAssigner* ua)
+                {
+                    ua->setValue(Relativity::usesEnhancedTrackClipping() ?
+                        1 : 0);
+                });
 
             bool use_tessellation = !pi[0].m_tess_control_shader.empty() &&
                                    !pi[0].m_tess_evaluation_shader.empty() &&
-                                   Relativity::usesEnhancedTrackClipping();
+                                   Relativity::supportsTrackClippingSubdivision();
 
             if (use_tessellation)
             {
@@ -473,7 +479,7 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
             bool use_shadow_tessellation =
                 !pi[1].m_tess_control_shader.empty() &&
                 !pi[1].m_tess_evaluation_shader.empty() &&
-                Relativity::usesEnhancedTrackClipping();
+                Relativity::supportsTrackClippingSubdivision();
             if (use_shadow_tessellation)
             {
                 shader->addShaderFile(pi[1].m_tess_control_shader,

@@ -20,9 +20,12 @@
 #include "io/file_manager.hpp"
 #include "utils/log.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
+#include <vector>
 
 #ifdef ANDROID
 #include <SDL_system.h>
@@ -231,29 +234,73 @@ void AssetsAndroid::init()
             }
         }
 
-        if (!needs_extract_data)
-        {
-            SDL_RWops* config_asset = SDL_RWFromFile("data/stk_config.xml", "rb");
-            if (config_asset != NULL)
+        auto packagedAssetDiffersFromExtracted =
+            [&](const std::string& asset_path)->bool
             {
-                int64_t packaged_size = SDL_RWsize(config_asset);
-                SDL_RWclose(config_asset);
+                SDL_RWops* packaged = SDL_RWFromFile(asset_path.c_str(), "rb");
+                if (packaged == NULL)
+                    return false;
 
-                std::string extracted_config = m_stk_dir + "/data/stk_config.xml";
-                int64_t extracted_size = -1;
-                SDL_RWops* ext_file = SDL_RWFromFile(extracted_config.c_str(), "rb");
-                if (ext_file != NULL)
+                const std::string extracted_path = m_stk_dir + "/" +
+                    asset_path;
+                SDL_RWops* extracted =
+                    SDL_RWFromFile(extracted_path.c_str(), "rb");
+                if (extracted == NULL)
                 {
-                    extracted_size = SDL_RWsize(ext_file);
-                    SDL_RWclose(ext_file);
+                    SDL_RWclose(packaged);
+                    return true;
                 }
 
-                if (packaged_size != extracted_size)
+                const int64_t packaged_size = SDL_RWsize(packaged);
+                const int64_t extracted_size = SDL_RWsize(extracted);
+                bool differs = packaged_size != extracted_size;
+
+                if (!differs && packaged_size >= 0)
+                {
+                    std::vector<char> packaged_buffer(4096);
+                    std::vector<char> extracted_buffer(4096);
+                    int64_t remaining = packaged_size;
+                    while (remaining > 0)
+                    {
+                        const size_t chunk = (size_t)std::min<int64_t>(
+                            remaining, (int64_t)packaged_buffer.size());
+                        const size_t packaged_read = SDL_RWread(packaged,
+                            packaged_buffer.data(), 1, chunk);
+                        const size_t extracted_read = SDL_RWread(extracted,
+                            extracted_buffer.data(), 1, chunk);
+                        if (packaged_read != chunk ||
+                            extracted_read != chunk ||
+                            memcmp(packaged_buffer.data(),
+                                   extracted_buffer.data(), chunk) != 0)
+                        {
+                            differs = true;
+                            break;
+                        }
+                        remaining -= (int64_t)chunk;
+                    }
+                }
+
+                SDL_RWclose(packaged);
+                SDL_RWclose(extracted);
+                return differs;
+            };
+
+        if (!needs_extract_data)
+        {
+            const std::vector<std::string> freshness_files =
+            {
+                "data/stk_config.xml",
+                "data/shaders/sp_tess.tesc"
+            };
+            for (const std::string& freshness_file : freshness_files)
+            {
+                if (packagedAssetDiffersFromExtracted(freshness_file))
                 {
                     needs_extract_data = true;
                     Log::warn("AssetsAndroid",
-                        "stk_config.xml size mismatch (packaged: %lld, extracted: %lld). "
-                        "Force extracting assets...", (long long)packaged_size, (long long)extracted_size);
+                        "%s differs between packaged and extracted data. "
+                        "Force extracting assets...", freshness_file.c_str());
+                    break;
                 }
             }
         }

@@ -292,13 +292,19 @@ UserConfigParams::RelativityTrackClippingMode getConfiguredTrackClippingMode()
 }   // getConfiguredTrackClippingMode
 
 // ----------------------------------------------------------------------------
-bool supportsEnhancedTrackClipping()
+bool supportsTrackClippingSubdivision()
 {
 #ifndef SERVER_ONLY
     return CVS && CVS->supportsTessellation();
 #else
     return false;
 #endif
+}   // supportsTrackClippingSubdivision
+
+// ----------------------------------------------------------------------------
+bool supportsEnhancedTrackClipping()
+{
+    return supportsTrackClippingSubdivision();
 }   // supportsEnhancedTrackClipping
 
 // ----------------------------------------------------------------------------

@@ -52,6 +52,7 @@ bool shouldUseFirstPersonObserverCamera();
 bool isPowerupCLightActive();
 UserConfigParams::RelativityTrackClippingMode getConfiguredTrackClippingMode();
 UserConfigParams::RelativityTrackClippingMode getEffectiveTrackClippingMode();
+bool supportsTrackClippingSubdivision();
 bool supportsEnhancedTrackClipping();
 bool usesEnhancedTrackClipping();
 

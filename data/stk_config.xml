@@ -20,13 +20,13 @@
 
   <!-- Everything related to hardware configuration.
             url : The server used for reporting statistics to. -->
-  <HardwareReportServer url="https://online.minkowskikart.example/telemetry" />
+  <HardwareReportServer url="https://online.robsonchristie.com/telemetry" />
 
   <!-- Everything related to online play.
             url: The server used for online multiplayer.
             server-version : Version of the server API to use. -->
   <OnlineServer
-    url="http://127.0.0.1:8000/api/"
+    url="https://online.robsonchristie.com/api/"
     server-version="2"
   />
 
@@ -194,7 +194,7 @@
   <!-- Special urls -->
   <urls stk-website="https://supertuxkart.net/Main_Page"
 		donate="https://supertuxkart.net/Donate"
-        password-reset="https://online.minkowskikart.example/account-help"
+        password-reset="https://online.robsonchristie.com/account-help"
         assets-download="https://github.com/supertuxkart/stk-assets-mobile/releases/download/"/>
 
   <!-- STK will use dns query of the SRV records with these domains to get the list of

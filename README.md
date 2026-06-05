@@ -147,20 +147,22 @@ rebalanced for Minkowski Kart behavior:
 The Relativity options menu provides two local rendering modes for reducing
 kart/track clipping:
 
-- **Cheap (height correction)** is the default. It renders the authored mesh
-  without GPU tessellation and adjusts the kart's visual height against the
-  physical track surface. This is the lower-cost option.
-- **Enhanced (dynamic subdivision)** enables the existing tessellation shader
-  path for solid and normal-mapped meshes, including applicable shadow passes,
-  and disables kart height correction. Near the kart, edges longer than
-  `0.5 m` are eligible for subdivision. That minimum cutoff rises smoothly to
-  `2.0 m` over `50 m`, reducing distant GPU work. The base tessellation level
-  is capped at `8`, with distance and high-beta boosts followed by a final cap
-  of `16`.
+- **Cheap (lite subdivision + height correction)** is the default. On
+  tessellation-capable hardware it uses the main-branch-style lite GPU
+  subdivision path, then adjusts the kart's visual height against the physical
+  track surface. This is the lower-cost option.
+- **Enhanced (strong subdivision)** uses the same tessellation shader path for
+  solid and normal-mapped meshes, including applicable shadow passes, but with
+  a stronger near-kart cutoff and no kart height correction. Near the kart,
+  edges longer than `0.5 m` are eligible for subdivision. That cutoff rises
+  smoothly to `2.0 m` over `50 m`, reducing distant GPU work. Both modes cap
+  base tessellation at `8`, with distance and high-beta boosts followed by a
+  final cap of `16`.
 
 Enhanced mode requires desktop GLSL 4.00+ or GLSL ES 3.20+. On unsupported
-hardware, its preference is preserved but the renderer falls back to Cheap.
-This option is local only and does not affect physics or network synchronization.
+hardware, its preference is preserved but the renderer falls back to Cheap
+height correction without GPU subdivision. This option is local only and does
+not affect physics or network synchronization.
 
 ## Building The Project (Windows)
 
