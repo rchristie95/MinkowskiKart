@@ -3,6 +3,12 @@
     reverse_proxy api:8000
 }
 
+{$MK_PERSONAL_DOMAIN} {
+    encode zstd gzip
+    root * /srv/robsonchristie
+    file_server
+}
+
 {$MK_SITE_DOMAIN} {
     encode zstd gzip
     root * /srv/minkowskikart

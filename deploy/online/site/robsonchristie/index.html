@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Robson Christie - theoretical and computational physicist working on open quantum systems, cosmology, quantum gravity, and scientific software.">
+  <title>Robson Christie</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b12;
+      --bg-soft: #111827;
+      --card: rgba(17, 24, 39, 0.74);
+      --card-strong: rgba(24, 35, 55, 0.9);
+      --text: #f8fafc;
+      --muted: #b9c4d6;
+      --quiet: #7f8ca3;
+      --line: rgba(148, 163, 184, 0.2);
+      --cyan: #72e6ff;
+      --violet: #bca7ff;
+      --gold: #ffd27a;
+      --green: #8affc1;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 8%, rgba(114, 230, 255, 0.22), transparent 34rem),
+        radial-gradient(circle at 78% 0%, rgba(188, 167, 255, 0.18), transparent 31rem),
+        radial-gradient(circle at 50% 75%, rgba(255, 210, 122, 0.12), transparent 34rem),
+        linear-gradient(135deg, #070912 0%, #0c1220 44%, #0a0d16 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--cyan);
+    }
+
+    .shell {
+      width: min(1160px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.13);
+      background: rgba(9, 11, 18, 0.74);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 72px;
+      gap: 22px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid rgba(114, 230, 255, 0.36);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(114, 230, 255, 0.19), rgba(188, 167, 255, 0.19));
+      box-shadow: 0 0 34px rgba(114, 230, 255, 0.16);
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px 16px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
+      align-items: center;
+      gap: 56px;
+      padding: 88px 0 70px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 18px;
+      color: var(--cyan);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan));
+    }
+
+    h1 {
+      max-width: 820px;
+      margin: 0;
+      font-size: clamp(3.2rem, 8vw, 6.9rem);
+      line-height: 0.88;
+      letter-spacing: -0.08em;
+    }
+
+    h1 span {
+      display: block;
+      color: transparent;
+      background: linear-gradient(90deg, var(--cyan), var(--violet) 46%, var(--gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .lede {
+      max-width: 720px;
+      margin: 28px 0 0;
+      color: #dce6f7;
+      font-size: clamp(1.08rem, 1.55vw, 1.34rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 13px;
+      margin: 32px 0 0;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.64);
+      color: var(--text);
+      font-weight: 800;
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      border-color: rgba(114, 230, 255, 0.55);
+      background: rgba(30, 41, 59, 0.82);
+      color: var(--text);
+    }
+
+    .button.primary {
+      border-color: transparent;
+      background: linear-gradient(135deg, #63ddff, #a890ff 54%, #ffd27a);
+      color: #08111e;
+    }
+
+    .portrait-card {
+      position: relative;
+      padding: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 34px;
+      background:
+        linear-gradient(135deg, rgba(114, 230, 255, 0.2), rgba(188, 167, 255, 0.14)),
+        rgba(15, 23, 42, 0.58);
+      box-shadow: var(--shadow);
+    }
+
+    .portrait-card::after {
+      position: absolute;
+      right: -10px;
+      bottom: 18px;
+      width: 44%;
+      height: 44%;
+      content: "";
+      border-radius: 999px;
+      background: rgba(255, 210, 122, 0.15);
+      filter: blur(28px);
+      z-index: -1;
+    }
+
+    .portrait {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 26px;
+      filter: saturate(1.04) contrast(1.03);
+    }
+
+    .portrait-note {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      margin-top: 7px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 20px rgba(138, 255, 193, 0.6);
+    }
+
+    section {
+      padding: 64px 0;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(260px, 1fr);
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1;
+      letter-spacing: -0.055em;
+    }
+
+    .section-head p,
+    .muted {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--card);
+      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(16px);
+    }
+
+    .card.pad {
+      padding: 26px;
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 1.12rem;
+      line-height: 1.22;
+      letter-spacing: -0.02em;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .tagline {
+      display: inline-flex;
+      margin-bottom: 16px;
+      padding: 6px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(114, 230, 255, 0.08);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 14px;
+    }
+
+    .role {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 20px;
+      padding: 22px;
+    }
+
+    .date {
+      color: var(--gold);
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    .role strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1.02rem;
+    }
+
+    .paper-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .paper {
+      display: grid;
+      gap: 10px;
+      padding: 22px;
+    }
+
+    .paper-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .paper-title h3 {
+      margin: 0;
+      max-width: 820px;
+      font-size: 1.08rem;
+    }
+
+    .paper-title span {
+      color: var(--quiet);
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .paper p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .paper-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+      color: #dce6f7;
+      background: rgba(15, 23, 42, 0.46);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .pill:hover {
+      border-color: rgba(114, 230, 255, 0.5);
+      color: var(--cyan);
+    }
+
+    .project {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: center;
+      padding: 30px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 82% 28%, rgba(255, 210, 122, 0.16), transparent 18rem),
+        radial-gradient(circle at 20% 60%, rgba(114, 230, 255, 0.14), transparent 22rem),
+        var(--card-strong);
+    }
+
+    .big-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 54px;
+      padding: 0 20px;
+      border-radius: 18px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .footer {
+      padding: 52px 0 76px;
+      color: var(--quiet);
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 24px;
+    }
+
+    @media (max-width: 860px) {
+      .hero,
+      .section-head,
+      .grid.three,
+      .grid.two,
+      .project {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 56px;
+      }
+
+      .portrait-card {
+        max-width: 420px;
+      }
+
+      .role {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100% - 24px, 1160px);
+      }
+
+      .nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px 0;
+      }
+
+      .links {
+        justify-content: flex-start;
+      }
+
+      section {
+        padding: 48px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="shell nav" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="Robson Christie homepage">
+        <span class="brand-mark">RC</span>
+        <span>Robson Christie</span>
+      </a>
+      <div class="links">
+        <a href="#research">Research</a>
+        <a href="#publications">Publications</a>
+        <a href="#cv">CV</a>
+        <a href="https://github.com/rchristie95">GitHub</a>
+        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">LinkedIn</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="shell hero">
+      <div>
+        <p class="eyebrow">Theoretical and computational physics</p>
+        <h1>Open quantum systems <span>in curved places.</span></h1>
+        <p class="lede">
+          I work on Lindblad dynamics, stochastic unravellings, decoherence theory,
+          quantum fields in gravitational settings, and reproducible numerical tools
+          that turn abstract quantum dynamics into testable calculations.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="assets/Robson-Christie-CV.pdf">Download CV</a>
+          <a class="button" href="mailto:robson.christie1995@gmail.com">robson.christie1995@gmail.com</a>
+          <a class="button" href="https://scholar.google.com/citations?user=a5gRu_gAAAAJ&amp;hl=en&amp;oi=ao">Google Scholar</a>
+        </div>
+      </div>
+
+      <aside class="portrait-card" aria-label="Portrait and status">
+        <img class="portrait" src="assets/robson-christie.png" alt="Portrait of Robson Christie">
+        <div class="portrait-note">
+          <span class="dot" aria-hidden="true"></span>
+          <p>Research Fellow at the University of Portsmouth, 2024-2026. Building open-system models for cosmology, quantum simulation, and high-energy astrophysical environments.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section id="research" class="shell">
+      <div class="section-head">
+        <h2>Research Shape</h2>
+        <p>My work sits where quantum theory becomes noisy, numerical, and observable: environments, measurement records, rare events, and the early universe.</p>
+      </div>
+      <div class="grid three">
+        <article class="card pad">
+          <span class="tagline">Open systems</span>
+          <h3>Lindblad dynamics and stochastic trajectories</h3>
+          <p>Analytical and numerical methods for Gaussian states, stochastic Schrodinger dynamics, quantum jumps, decoherence, and transition rates.</p>
+        </article>
+        <article class="card pad">
+          <span class="tagline">Cosmology</span>
+          <h3>Quantum fields under gravitational coarse-graining</h3>
+          <p>Lattice and stochastic-inflation calculations studying non-adiabatic excitation, environmental monitoring, tunnelling, and metastability.</p>
+        </article>
+        <article class="card pad">
+          <span class="tagline">Tools</span>
+          <h3>Reproducible computation and simulation</h3>
+          <p>Python, Matlab, Mathematica, QuTiP, Qiskit, HPC workflows, and research software for turning formal models into verifiable results.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="cv" class="shell">
+      <div class="section-head">
+        <h2>CV At A Glance</h2>
+        <p>Recent roles, skills, and a short path through the physics.</p>
+      </div>
+      <div class="timeline">
+        <article class="card role">
+          <div class="date">2024 - 2026</div>
+          <div>
+            <strong>Research Fellow, University of Portsmouth</strong>
+            <p>Open quantum systems across quantum simulation and early-universe cosmology, including IBM quantum hardware protocols and lattice simulations of inflationary fields.</p>
+          </div>
+        </article>
+        <article class="card role">
+          <div class="date">2023 - 2024</div>
+          <div>
+            <strong>EPSRC Research Associate, Imperial College London</strong>
+            <p>Theory and algorithms for quantum rare-event simulation, stochastic trajectory formulations, transition-rate estimators, and maintainable research software.</p>
+          </div>
+        </article>
+        <article class="card role">
+          <div class="date">2018 - 2023</div>
+          <div>
+            <strong>PhD Mathematics, Imperial College London</strong>
+            <p>Gaussian dynamics in the Lindblad equation and its stochastic unravellings, supervised by Dr Eva Maria Graefe.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="publications" class="shell">
+      <div class="section-head">
+        <h2>Publications And Preprints</h2>
+        <p>Short summaries from my CV, with direct links to papers, preprints, and project pages.</p>
+      </div>
+
+      <div class="paper-list">
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum Stochastic Inflation</h3>
+            <span>in preparation</span>
+          </div>
+          <p>Formulates stochastic inflation in an open-quantum-system framework, deriving GKLS dynamics for coarse-grained scalar field variables and recovering classical stochastic-inflation Fokker-Planck dynamics in the light-field regime.</p>
+          <div class="paper-links">
+            <span class="pill">Manuscript in preparation</span>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Non-Equilibrium Dynamics of the Time-Dependent Excitonic Coupling in Fluorescent Protein Dimers</h3>
+            <span>2026</span>
+          </div>
+          <p>Combines transition-density coupling calculations with stochastic quantum simulations to quantify strong near-field excitonic coupling in dimeric Venus fluorescent protein.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2605.00027">arXiv:2605.00027</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Cosmic Lockdown: When Decoherence Saves the Universe from Tunneling</h3>
+            <span>2025</span>
+          </div>
+          <p>Lattice simulations show how non-adiabatic dynamics can populate false vacua, while decoherence sourced by heavy modes suppresses later tunnelling and stabilises metastable states.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2512.14204">arXiv:2512.14204</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Transition Path and Interface Sampling of Stochastic Schrodinger Dynamics</h3>
+            <span>2025</span>
+          </div>
+          <p>Extends path and interface sampling to quantum trajectories, enabling efficient transition-rate estimation and revealing low-temperature non-Arrhenius behaviour linked to measurement backaction.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2411.00490">arXiv:2411.00490</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum Simulation of Dynamical Transition Rates in Open Quantum Systems</h3>
+            <span>2024</span>
+          </div>
+          <p>Develops a quantum-simulation protocol for estimating open-system transition rates without full Lindblad evolution, decomposing rates into independently measurable contributions and validating on IBM quantum hardware.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2412.17229">arXiv:2412.17229</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>The Sound of Decoherence</h3>
+            <span>2024</span>
+          </div>
+          <p>Maps density-matrix structure into sound so listeners can track tunnelling, thermalisation, decoherence, and recoherence through perceptual features.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2412.17045">arXiv:2412.17045</a>
+            <a class="pill" href="https://sonification.design/#Decoherence">Sonification project</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum Tunnelling and Thermally Driven Transitions in a Double Well Potential at Finite Temperature</h3>
+            <span>2024</span>
+          </div>
+          <p>Maps the thermal-to-quantum tunnelling crossover in a dissipative double well and introduces a Lindblad Brownian-motion model that removes the zero-temperature singularity.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://doi.org/10.1088/1751-8121/ad4b7b">Journal DOI</a>
+            <a class="pill" href="https://arxiv.org/abs/2312.12101">arXiv:2312.12101</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum-jump vs stochastic Schrodinger dynamics for Gaussian states with quadratic Hamiltonians and linear Lindbladians</h3>
+            <span>2022</span>
+          </div>
+          <p>Compares continuous and jump unravellings of Lindblad dynamics, deriving closed-form Gaussian evolution for continuous trajectories and a Gaussian Hagedorn-wavepacket scheme for jump trajectories.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://doi.org/10.1088/1751-8121/ac9d73">Journal DOI</a>
+            <a class="pill" href="https://arxiv.org/abs/2203.11530">arXiv:2203.11530</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell">
+      <article class="card project">
+        <div>
+          <span class="tagline">Personal project</span>
+          <h2>Minkowski Kart</h2>
+          <p class="muted">A relativistic racing-game fork of SuperTuxKart, blending OpenRelativity-inspired visual effects with C++ gameplay logic for black holes, time dilation, cosmic strings, Lorentz grids, and other spacetime-flavoured power-ups.</p>
+        </div>
+        <a class="big-link" href="https://github.com/rchristie95/MinkowskiKart">View on GitHub</a>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell footer-inner">
+      <span>Robson Christie</span>
+      <span>
+        <a href="mailto:robson.christie1995@gmail.com">Email</a> /
+        <a href="https://github.com/rchristie95">GitHub</a> /
+        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">LinkedIn</a> /
+        <a href="assets/Robson-Christie-CV.pdf">CV</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>
