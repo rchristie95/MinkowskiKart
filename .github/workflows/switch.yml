@@ -80,6 +80,7 @@ jobs:
           echo "${{ env.release_pre }}"
       - name: Verify configuration defaults
         if: ${{ env.SWITCH_SUPPORTED == 'true' }}
+        shell: bash
         run: |
           set -euo pipefail
           if grep -Eq '<relativity([[:space:]>])' stk-code/data/stk_config.xml; then
