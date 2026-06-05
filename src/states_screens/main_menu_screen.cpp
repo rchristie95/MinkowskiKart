@@ -423,10 +423,6 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
 #if DEBUG_MENU_ITEM
     if (selection == "test_gpwin")
     {
-        StoryModeStatus* sms = PlayerManager::getCurrentPlayer()->getStoryModeStatus();
-        sms->unlockFeature(const_cast<ChallengeStatus*>(sms->getChallengeStatus("gp1")),
-            RaceManager::DIFFICULTY_HARD);
-
         StateManager::get()->enterGameState();
         RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
         RaceManager::get()->setNumKarts(0);
@@ -462,10 +458,6 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
     }
     else if (selection == "test_unlocked" || selection == "test_unlocked2")
     {
-        StoryModeStatus* sms = PlayerManager::getCurrentPlayer()->getStoryModeStatus();
-        sms->unlockFeature(const_cast<ChallengeStatus*>(sms->getChallengeStatus("gp1")),
-            RaceManager::DIFFICULTY_HARD);
-
         StateManager::get()->enterGameState();
         RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
         RaceManager::get()->setNumKarts(0);

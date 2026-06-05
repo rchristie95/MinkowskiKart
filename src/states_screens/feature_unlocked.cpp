@@ -69,6 +69,9 @@ const float ANIM_TO = 7.0f;
 const int GIFT_EXIT_FROM = (int)ANIM_TO;
 const int GIFT_EXIT_TO = GIFT_EXIT_FROM + 7;
 
+const int CHALLENGE_POINTS[] = { 6, 7, 8, 10 };
+const int GP_FACTOR = 3;
+
 // ============================================================================
 
 #if 0

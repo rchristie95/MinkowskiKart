@@ -77,7 +77,6 @@ PlayerProfile::PlayerProfile(const XMLNode* node)
     m_last_online_name    = "";
     m_last_was_online     = false;
     m_remember_password   = false;
-    m_story_mode_status   = NULL;
     m_achievements_status = NULL;
     m_favorite_track_status = NULL;
     m_favorite_kart_status = NULL;
@@ -105,9 +104,9 @@ PlayerProfile::PlayerProfile(const XMLNode* node)
 //------------------------------------------------------------------------------
 PlayerProfile::~PlayerProfile()
 {
-    if (m_story_mode_status)
+    for (auto it = m_challenges_state.begin(); it != m_challenges_state.end(); ++it)
     {
-        delete m_story_mode_status;
+        delete it->second;
     }
     if (m_achievements_status)
     {
@@ -133,9 +132,17 @@ PlayerProfile::~PlayerProfile()
  */
 void PlayerProfile::loadRemainingData(const XMLNode *node)
 {
-    assert(m_story_mode_status == NULL);
+    assert(m_challenges_state.empty());
     const XMLNode *xml_story_mode = node->getNode("story-mode");
-    m_story_mode_status = unlock_manager->createStoryModeStatus(xml_story_mode);
+    const auto &all_challenges = unlock_manager->getAllChallenges();
+    for (auto i = all_challenges.begin(); i != all_challenges.end(); ++i)
+    {
+        ChallengeData* cd = i->second;
+        ChallengeStatus *challenge_status = new ChallengeStatus(cd);
+        if (xml_story_mode)
+            challenge_status->load(xml_story_mode);
+        m_challenges_state[cd->getChallengeId()] = challenge_status;
+    }
 
     assert(m_achievements_status == NULL);
     const XMLNode *xml_achievements = node->getNode("achievements");
@@ -161,7 +168,13 @@ void PlayerProfile::loadRemainingData(const XMLNode *node)
  */
 void PlayerProfile::initRemainingData()
 {
-    m_story_mode_status = unlock_manager->createStoryModeStatus();
+    const auto &all_challenges = unlock_manager->getAllChallenges();
+    for (auto i = all_challenges.begin(); i != all_challenges.end(); ++i)
+    {
+        ChallengeData* cd = i->second;
+        ChallengeStatus *challenge_status = new ChallengeStatus(cd);
+        m_challenges_state[cd->getChallengeId()] = challenge_status;
+    }
     m_achievements_status =
         AchievementsManager::get()->createAchievementsStatus();
     m_favorite_track_status = new FavoriteStatus(NULL, "track");
@@ -253,8 +266,15 @@ void PlayerProfile::save(UTFWriter &out)
         if (player != NULL && (getName() == player->getName()))
             is_current_player = true;
 
-        if (m_story_mode_status)
-            m_story_mode_status->save(out, is_current_player);
+        if (!m_challenges_state.empty())
+        {
+            out << "      <story-mode>\n";
+            for (auto i = m_challenges_state.begin(); i != m_challenges_state.end(); ++i)
+            {
+                i->second->save(out);
+            }
+            out << "      </story-mode>\n";
+        }
 
         if (m_achievements_status)
             m_achievements_status->save(out);
@@ -310,7 +330,6 @@ void PlayerProfile::incrementUseFrequency()
 *  challenges. */
 void PlayerProfile::raceFinished()
 {
-    m_story_mode_status->raceFinished();
     m_achievements_status->onRaceEnd();
 }   // raceFinished
 
