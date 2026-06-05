@@ -837,7 +837,7 @@
         "H = \\hbar \\omega (a^\\dagger a + \\frac{1}{2})",
         "\\dot{\\Sigma} = A \\Sigma + \\Sigma A^T + D",
         "\\dot{q} = \\mathbf{J} \\nabla_q H",
-        "P(x, t) = \\int dx_0 P(x, t | x_0, 0) P(x_0, 0)",
+        "P(x, t) = \\int dx_0 P(x, t | x_0, 0) P(x0, 0)",
         "F = -k_B T \\log Z",
         "Z = \\text{Tr}(e^{-\\beta H})",
         "\\beta = \\frac{1}{k_B T}",
@@ -860,24 +860,34 @@
       const speedScale = 0.15;
       const imageCache = new Map();
 
-      const renderToImage = (tex) => {
-        if (imageCache.has(tex)) return imageCache.get(tex);
-        
-        const svgElement = MathJax.tex2svg(tex).querySelector('svg');
-        svgElement.setAttribute("fill", "#d5ff6a");
-        const svgString = new XMLSerializer().serializeToString(svgElement);
-        const url = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgString)));
-        
-        const img = new Image();
-        const data = { img, loaded: false, w: 0, h: 0 };
-        img.onload = () => {
-          data.loaded = true;
-          data.w = img.width;
-          data.h = img.height;
-        };
-        img.src = url;
-        imageCache.set(tex, data);
-        return data;
+      const prepareImage = (tex) => {
+        return new Promise((resolve) => {
+          try {
+            const container = MathJax.tex2svg(tex);
+            const svgElement = container.querySelector('svg');
+            if (!svgElement) {
+              resolve(null);
+              return;
+            }
+            // Ensure color is green
+            svgElement.setAttribute("fill", "#d5ff6a");
+            svgElement.style.color = "#d5ff6a";
+            
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const blob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            
+            const img = new Image();
+            img.onload = () => {
+              imageCache.set(tex, { img, w: img.width, h: img.height });
+              resolve(true);
+            };
+            img.onerror = () => resolve(null);
+            img.src = url;
+          } catch (e) {
+            resolve(null);
+          }
+        });
       };
 
       const resize = () => {
@@ -890,9 +900,10 @@
         canvas.style.height = height + "px";
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         fontSize = width < 700 ? 28 : 42;
-        const count = Math.max(8, Math.floor(width / (fontSize * 2.5)));
+        
+        const count = Math.max(8, Math.floor(width / (fontSize * 2.8)));
         columns = Array.from({ length: count }, (_, index) => ({
-          x: index * fontSize * 2.5,
+          x: index * fontSize * 2.8,
           y: Math.random() * -height,
           speed: 0.5 + Math.random() * 1.2,
           phrase: equations[Math.floor(Math.random() * equations.length)]
@@ -904,19 +915,19 @@
         ctx.fillRect(0, 0, width, height);
 
         for (const column of columns) {
-          const imgData = renderToImage(column.phrase);
-          if (imgData.loaded) {
-            const scale = fontSize / imgData.h;
-            const drawW = imgData.w * scale;
-            const drawH = imgData.h * scale;
+          const data = imageCache.get(column.phrase);
+          if (data) {
+            const scale = fontSize / data.h;
+            const drawW = data.w * scale;
+            const drawH = data.h * scale;
 
             // Main text
             ctx.globalAlpha = 1.0;
-            ctx.drawImage(imgData.img, column.x, column.y, drawW, drawH);
+            ctx.drawImage(data.img, column.x, column.y, drawW, drawH);
 
             // Subtle ghosting
             ctx.globalAlpha = 0.15;
-            ctx.drawImage(imgData.img, column.x, column.y - (fontSize * 0.8), drawW, drawH);
+            ctx.drawImage(data.img, column.x, column.y - (fontSize * 0.8), drawW, drawH);
             ctx.globalAlpha = 1.0;
           }
 
@@ -938,6 +949,10 @@
           return;
         }
         await MathJax.startup.promise;
+        
+        // Pre-render all equations
+        await Promise.all(equations.map(prepareImage));
+        
         window.addEventListener("resize", resize);
         resize();
         draw();
