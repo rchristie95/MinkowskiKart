@@ -25,6 +25,7 @@
 #include "guiengine/CGUISpriteBank.hpp"
 #include "guiengine/message_queue.hpp"
 #include "guiengine/widgets/button_widget.hpp"
+#include "guiengine/widgets/icon_button_widget.hpp"
 #include "guiengine/widgets/check_box_widget.hpp"
 #include "guiengine/widgets/label_widget.hpp"
 #include "guiengine/widgets/list_widget.hpp"
@@ -115,6 +116,17 @@ void OnlineScreen::beforeAddingWidget()
 void OnlineScreen::init()
 {
     Screen::init();
+
+    // White labels so they read against the dark background image.
+    const video::SColor white(255, 255, 255, 255);
+    static const char* const BTNS_WITH_WHITE_LABELS[] = {
+        "lan", "wan", "enter-address", "online"
+    };
+    for (const char* id : BTNS_WITH_WHITE_LABELS)
+    {
+        IconButtonWidget* btn = getWidget<IconButtonWidget>(id);
+        if (btn) btn->setLabelColor(white);
+    }
 
     m_online = getWidget<IconButtonWidget>("online");
     assert(m_online);

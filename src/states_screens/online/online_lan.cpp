@@ -19,6 +19,7 @@
 
 #include "guiengine/screen.hpp"
 #include "guiengine/widgets/ribbon_widget.hpp"
+#include "guiengine/widgets/icon_button_widget.hpp"
 #include "network/network_config.hpp"
 #include "states_screens/state_manager.hpp"
 #include "states_screens/online/create_server_screen.hpp"
@@ -46,6 +47,17 @@ OnlineLanScreen::OnlineLanScreen() : GUIEngine::Screen("online/lan.stkgui")
 
 void OnlineLanScreen::init()
 {
+    // White labels so they read against the dark background image.
+    const video::SColor white(255, 255, 255, 255);
+    static const char* const BTNS_WITH_WHITE_LABELS[] = {
+        "find_lan_server", "create_lan_server"
+    };
+    for (const char* id : BTNS_WITH_WHITE_LABELS)
+    {
+        IconButtonWidget* btn = getWidget<IconButtonWidget>(id);
+        if (btn) btn->setLabelColor(white);
+    }
+
     RibbonWidget* ribbon = getWidget<RibbonWidget>("lan");
     assert(ribbon != NULL);
     ribbon->select("find_lan_server", PLAYER_ID_GAME_MASTER);
