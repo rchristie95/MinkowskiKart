@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Robson Christie - theoretical and computational physicist working on open quantum systems, quantum simulation, cosmology, and scientific software.">
   <title>Robson Christie // Open Quantum Systems</title>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
   <style>
     :root {
       color-scheme: dark;
@@ -795,61 +796,61 @@
 
       const ctx = canvas.getContext("2d");
       const equations = [
-        "i hbar d|psi>/dt = H|psi>",
-        "d rho/dt = -i[H,rho]/hbar + D[rho]",
-        "D[rho] = sum_k (L_k rho L_k^dag - 1/2{L_k^dag L_k, rho})",
-        "d|psi> = -iH|psi>dt + sum_k(L_k - <L_k>)|psi>dW_k",
-        "Gamma = lim t^-1 log P(t)",
-        "H = p^2/2m + V(x)",
-        "[x, p] = i hbar",
-        "S[x] = integral L(x, x_dot) dt",
-        "P[x(t)] prop exp(-S[x]/hbar)",
-        "dX_t = b(X_t, t)dt + sigma(X_t, t)dW_t",
-        "dP/dt = -grad(mu P) + D grad^2 P",
-        "H^2 = (8 pi G / 3) rho",
-        "d phi = pi / a^3 dt + (H / 2 pi) dW",
-        "d pi = -a^3 V'(phi) dt",
-        "n_s - 1 = 2 eta - 6 epsilon",
-        "epsilon = 1/2 M_pl^2 (V'/V)^2",
-        "eta = M_pl^2 (V''/V)",
-        "Tr(rho) = 1",
-        "Tr(rho^2) <= 1",
-        "S_vN = -Tr(rho log rho)",
-        "rho_A = Tr_B(rho_AB)",
-        "J_ij = (mu_i . mu_j)/r^3 - 3(mu_i . r)(mu_j . r)/r^5",
-        "k = A exp(-E_a / k_B T)",
-        "sigma_x sigma_p >= hbar / 2",
-        "Delta E Delta t >= hbar / 2",
-        "U(t, t0) = T exp(-i/hbar integral H dt)",
-        "gamma = 1 / sqrt(1 - v^2/c^2)",
-        "x' = gamma(x - vt)",
-        "t' = gamma(t - vx/c^2)",
-        "E = mc^2 gamma",
-        "p = mv gamma",
-        "ds^2 = -dt^2 + a(t)^2 (dr^2 + r^2 dOmega^2)",
-        "R_mu_nu - 1/2 R g_mu_nu = 8 pi G T_mu_nu",
-        "V(phi) = 1/4 lambda (phi^2 - v^2)^2",
-        "dot_rho = L rho",
-        "C(t) = <A(t)B(0)>",
-        "chi(omega) = integral exp(i omega t) C(t) dt",
-        "[a, a^dag] = 1",
-        "H = hbar omega (a^dag a + 1/2)",
-        "Sigma_dot = A Sigma + Sigma A^T + D",
-        "q_dot = J grad_q H",
-        "P(x, t) = integral dx0 P(x, t | x0, 0) P(x0, 0)",
-        "F = -k_B T log Z",
-        "Z = Tr(exp(-beta H))",
-        "beta = 1 / k_B T",
-        "dS >= dQ / T",
-        "del^2 phi - del_t^2 phi = m^2 phi",
-        "G_ij = <phi_i phi_j> - <phi_i><phi_j>",
-        "L = R - 1/2 (del phi)^2 - V(phi)",
-        "|psi(t)> = sum_n c_n(t) |n>",
-        "W(p, q) = 1/pi hbar integral exp(-2ipy/hbar) <q-y|rho|q+y> dy",
-        "P_jump = <psi|L^dag L|psi> dt",
-        "d|psi> = (L/sqrt(<L^dag L>) - 1)|psi>",
-        "|psi>_w = exp(-1/2 (x-u)^T Sigma^-1 (x-u))",
-        "r_s = 2GM/c^2"
+        "i\\hbar\\frac{d|\\psi\\rangle}{dt} = \\hat{H}|\\psi\\rangle",
+        "\\frac{d\\rho}{dt} = -\\frac{i}{\\hbar}[H,\\rho] + \\mathcal{D}[\\rho]",
+        "\\mathcal{D}[\\rho] = \\sum_k \\left(L_k \\rho L_k^\\dagger - \\frac{1}{2}\\{L_k^\\dagger L_k, \\rho\\}\\right)",
+        "d|\\psi\\rangle = -iH|\\psi\\rangle dt + \\sum_k(L_k - \\langle L_k \\rangle)|\\psi\\rangle dW_k",
+        "\\Gamma = \\lim_{t \\to \\infty} \\frac{1}{t} \\log P(t)",
+        "H = \\frac{p^2}{2m} + V(x)",
+        "[x, p] = i\\hbar",
+        "S[x] = \\int L(x, \\dot{x}) dt",
+        "P[x(t)] \\propto \\exp\\left(-\\frac{S[x]}{\\hbar}\\right)",
+        "dX_t = b(X_t, t)dt + \\sigma(X_t, t)dW_t",
+        "\\frac{\\partial P}{\\partial t} = -\\nabla \\cdot (\\mu P) + D \\nabla^2 P",
+        "H^2 = \\frac{8 \\pi G}{3} \\rho",
+        "d\\phi = \\frac{\\pi}{a^3} dt + \\frac{H}{2\\pi} dW",
+        "d\\pi = -a^3 V'(\\phi) dt",
+        "n_s - 1 = 2\\eta - 6\\epsilon",
+        "\\epsilon = \\frac{1}{2} M_{pl}^2 \\left(\\frac{V'}{V}\\right)^2",
+        "\\eta = M_{pl}^2 \\frac{V''}{V}",
+        "\\text{Tr}(\\rho) = 1",
+        "\\text{Tr}(\\rho^2) \\le 1",
+        "S_{vN} = -\\text{Tr}(\\rho \\log \\rho)",
+        "\\rho_A = \\text{Tr}_B(\\rho_{AB})",
+        "J_{ij} = \\frac{\\mu_i \\cdot \\mu_j}{r^3} - \\frac{3(\\mu_i \\cdot \\mathbf{r})(\\mu_j \\cdot \\mathbf{r})}{r^5}",
+        "k = A \\exp\\left(-\\frac{E_a}{k_B T}\\right)",
+        "\\sigma_x \\sigma_p \\ge \\frac{\\hbar}{2}",
+        "\\Delta E \\Delta t \\ge \\frac{\\hbar}{2}",
+        "U(t, t_0) = \\mathcal{T} \\exp\\left(-\\frac{i}{\\hbar} \\int H dt\\right)",
+        "\\gamma = \\frac{1}{\\sqrt{1 - v^2/c^2}}",
+        "x' = \\gamma(x - vt)",
+        "t' = \\gamma\\left(t - \\frac{vx}{c^2}\\right)",
+        "E = m c^2 \\gamma",
+        "p = m v \\gamma",
+        "ds^2 = -dt^2 + a(t)^2 (dr^2 + r^2 d\\Omega^2)",
+        "R_{\\mu\\nu} - \\frac{1}{2} R g_{\\mu\\nu} = 8 \\pi G T_{\\mu\\nu}",
+        "V(\\phi) = \\frac{1}{4} \\lambda (\\phi^2 - v^2)^2",
+        "\\dot{\\rho} = \\mathcal{L} \\rho",
+        "C(t) = \\langle A(t)B(0) \\rangle",
+        "\\chi(\\omega) = \\int e^{i \\omega t} C(t) dt",
+        "[a, a^\\dagger] = 1",
+        "H = \\hbar \\omega (a^\\dagger a + \\frac{1}{2})",
+        "\\dot{\\Sigma} = A \\Sigma + \\Sigma A^T + D",
+        "\\dot{q} = \\mathbf{J} \\nabla_q H",
+        "P(x, t) = \\int dx_0 P(x, t | x_0, 0) P(x_0, 0)",
+        "F = -k_B T \\log Z",
+        "Z = \\text{Tr}(e^{-\\beta H})",
+        "\\beta = \\frac{1}{k_B T}",
+        "dS \\ge \\frac{dQ}{T}",
+        "\\nabla^2 \\phi - \\partial_t^2 \\phi = m^2 \\phi",
+        "G_{ij} = \\langle \\phi_i \\phi_j \\rangle - \\langle \\phi_i \\rangle \\langle \\phi_j \\rangle",
+        "\\mathcal{L} = R - \\frac{1}{2} (\\nabla \\phi)^2 - V(\\phi)",
+        "|\\psi(t)\\rangle = \\sum_n c_n(t) |n\\rangle",
+        "W(p, q) = \\frac{1}{\\pi\\hbar} \\int e^{-2ipy/\\hbar} \\langle q-y|\\rho|q+y \\rangle dy",
+        "P_{jump} = \\langle\\psi|L^\\dagger L|\\psi\\rangle dt",
+        "d|\\psi\\rangle = \\left(\\frac{L}{\\sqrt{\\langle L^\\dagger L \\rangle}} - 1\\right)|\\psi\\rangle",
+        "|\\psi\\rangle_w = \\exp\\left(-\\frac{1}{2} (x-u)^T \\Sigma^{-1} (x-u)\\right)",
+        "r_s = \\frac{2GM}{c^2}"
       ];
 
       let width = 0;
@@ -857,6 +858,27 @@
       let fontSize = 42;
       let columns = [];
       const speedScale = 0.15;
+      const imageCache = new Map();
+
+      const renderToImage = (tex) => {
+        if (imageCache.has(tex)) return imageCache.get(tex);
+        
+        const svgElement = MathJax.tex2svg(tex).querySelector('svg');
+        svgElement.setAttribute("fill", "#d5ff6a");
+        const svgString = new XMLSerializer().serializeToString(svgElement);
+        const url = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgString)));
+        
+        const img = new Image();
+        const data = { img, loaded: false, w: 0, h: 0 };
+        img.onload = () => {
+          data.loaded = true;
+          data.w = img.width;
+          data.h = img.height;
+        };
+        img.src = url;
+        imageCache.set(tex, data);
+        return data;
+      };
 
       const resize = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -868,9 +890,9 @@
         canvas.style.height = height + "px";
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         fontSize = width < 700 ? 28 : 42;
-        const count = Math.max(8, Math.floor(width / (fontSize * 2.2)));
+        const count = Math.max(8, Math.floor(width / (fontSize * 2.5)));
         columns = Array.from({ length: count }, (_, index) => ({
-          x: index * fontSize * 2.2,
+          x: index * fontSize * 2.5,
           y: Math.random() * -height,
           speed: 0.5 + Math.random() * 1.2,
           phrase: equations[Math.floor(Math.random() * equations.length)]
@@ -880,18 +902,27 @@
       const draw = () => {
         ctx.fillStyle = "rgba(0, 4, 0, 0.45)";
         ctx.fillRect(0, 0, width, height);
-        ctx.font = `${fontSize}px Cascadia Mono, Consolas, monospace`;
 
         for (const column of columns) {
-          ctx.fillStyle = "rgba(213, 255, 106, 1.0)";
-          ctx.fillText(column.phrase, column.x, column.y);
+          const imgData = renderToImage(column.phrase);
+          if (imgData.loaded) {
+            const scale = fontSize / imgData.h;
+            const drawW = imgData.w * scale;
+            const drawH = imgData.h * scale;
 
-          ctx.fillStyle = "rgba(57, 255, 136, 0.15)";
-          ctx.fillText(column.phrase, column.x, column.y - (fontSize * 0.8));
-          
+            // Main text
+            ctx.globalAlpha = 1.0;
+            ctx.drawImage(imgData.img, column.x, column.y, drawW, drawH);
+
+            // Subtle ghosting
+            ctx.globalAlpha = 0.15;
+            ctx.drawImage(imgData.img, column.x, column.y - (fontSize * 0.8), drawW, drawH);
+            ctx.globalAlpha = 1.0;
+          }
+
           column.y += column.speed * fontSize * speedScale;
 
-          if (column.y > height + 200) {
+          if (column.y > height + 250) {
             column.y = -Math.random() * height * 0.45;
             column.speed = 0.5 + Math.random() * 1.2;
             column.phrase = equations[Math.floor(Math.random() * equations.length)];
@@ -901,9 +932,18 @@
         requestAnimationFrame(draw);
       };
 
-      window.addEventListener("resize", resize);
-      resize();
-      draw();
+      const init = async () => {
+        if (!window.MathJax || !window.MathJax.tex2svg) {
+          setTimeout(init, 100);
+          return;
+        }
+        await MathJax.startup.promise;
+        window.addEventListener("resize", resize);
+        resize();
+        draw();
+      };
+
+      init();
     })();
   </script>
 </body>
