@@ -5,6 +5,7 @@ services:
     environment:
       MK_ONLINE_DOMAIN: ${MK_ONLINE_DOMAIN}
       MK_PERSONAL_DOMAIN: ${MK_PERSONAL_DOMAIN}
+      MK_PERSONAL_WWW_DOMAIN: ${MK_PERSONAL_WWW_DOMAIN}
       MK_SITE_DOMAIN: ${MK_SITE_DOMAIN}
     ports:
       - "80:80"
