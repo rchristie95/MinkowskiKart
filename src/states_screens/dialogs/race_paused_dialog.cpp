@@ -21,7 +21,6 @@
 
 #include "audio/music_manager.hpp"
 #include "audio/sfx_manager.hpp"
-#include "challenges/story_mode_timer.hpp"
 #include "config/user_config.hpp"
 #include "graphics/irr_driver.hpp"
 #include "guiengine/emoji_keyboard.hpp"
@@ -354,10 +353,6 @@ GUIEngine::EventPropagation
             else
             {
                 StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
-
-                // Pause story mode timer when quitting story mode
-                if (from_overworld)
-                    story_mode_timer->pauseTimer(/*loading screen*/ false);
 
                 if (RaceManager::get()->raceWasStartedFromOverworld())
                 {

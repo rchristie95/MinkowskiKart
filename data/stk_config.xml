@@ -26,7 +26,7 @@
             url: The server used for online multiplayer.
             server-version : Version of the server API to use. -->
   <OnlineServer
-    url="https://online.minkowskikart.example/api/"
+    url="http://127.0.0.1:8000/api/"
     server-version="2"
   />
 

@@ -1,14 +1,18 @@
 FROM debian:bookworm AS builder
 
+ARG MK_ONLINE_DOMAIN
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential cmake libbluetooth-dev libcurl4-gnutls-dev \
     libfreetype6-dev libharfbuzz-dev libjpeg-dev libogg-dev \
-    libopenal-dev libpng-dev libsdl2-dev libvorbis-dev pkg-config \
-    zlib1g-dev && rm -rf /var/lib/apt/lists/*
+    libopenal-dev libpng-dev libsdl2-dev libsqlite3-dev libssl-dev \
+    libvorbis-dev pkg-config zlib1g-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /source
 COPY . .
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSERVER_ONLY=ON \
+RUN test -n "${MK_ONLINE_DOMAIN}" && \
+    sed -i -E "/<OnlineServer/,/\\/>/ s#url=\"[^\"]+\"#url=\"https://${MK_ONLINE_DOMAIN}/api/\"#" data/stk_config.xml && \
+    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSERVER_ONLY=ON \
     -DCHECK_ASSETS=OFF -DBUILD_RECORDER=OFF -DNO_SHADERC=ON \
     -DCMAKE_INSTALL_PREFIX=/opt/minkowskikart && \
     cmake --build build --parallel 2 && \
@@ -16,12 +20,26 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSERVER_ONLY=ON \
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl \
     libcurl3-gnutls libfreetype6 libharfbuzz0b libjpeg62-turbo \
-    libogg0 libpng16-16 libsdl2-2.0-0 libvorbisfile3 zlib1g \
-    ca-certificates && rm -rf /var/lib/apt/lists/*
+    libogg0 libpng16-16 libsdl2-2.0-0 libsqlite3-0 libssl3 \
+    libvorbisfile3 zlib1g && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /opt/minkowskikart /opt/minkowskikart
+COPY --from=builder /source/stk-assets/ /opt/minkowskikart/share/supertuxkart/data/
+RUN set -eux; \
+    cd /opt/minkowskikart/share/supertuxkart/data/models; \
+    cp -n swatter.spm Swatter.spm; \
+    cp -n swatter_nolok.spm Swatter_nolok.spm; \
+    cp -n swatter_anim.spm Swatter_anim.spm; \
+    cd /opt/minkowskikart/share/supertuxkart/data/gui/icons; \
+    cp -n swatter-icon.png Swatter-icon.png
 COPY deploy/online/game-server-entrypoint.sh /usr/local/bin/game-server-entrypoint
-RUN chmod +x /usr/local/bin/game-server-entrypoint
+RUN chmod +x /usr/local/bin/game-server-entrypoint && \
+    useradd --system --create-home --home-dir /var/lib/minkowskikart minkowski && \
+    chown -R minkowski:minkowski /var/lib/minkowskikart
+
+ENV HOME=/var/lib/minkowskikart
+USER minkowski
 
 EXPOSE 2759/udp
 ENTRYPOINT ["/usr/local/bin/game-server-entrypoint"]

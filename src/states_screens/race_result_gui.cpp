@@ -24,7 +24,6 @@
 #include "audio/sfx_manager.hpp"
 #include "audio/sfx_base.hpp"
 #include "challenges/challenge_status.hpp"
-#include "challenges/story_mode_timer.hpp"
 #include "challenges/unlock_manager.hpp"
 #include "config/player_manager.hpp"
 #include "config/stk_config.hpp"
@@ -480,14 +479,6 @@ void RaceResultGUI::eventCallback(GUIEngine::Widget* widget,
                     if (unlocked[n]->getChallengeId() == "fortmagma")
                     {
                         gameCompleted = true;
-                        story_mode_timer->stopTimer();
-                        player->setFinished();
-                        player->setStoryModeTimer(story_mode_timer->getStoryModeTime());
-                        if (story_mode_timer->speedrunIsFinished())
-                        {
-                            player->setSpeedrunTimer(story_mode_timer->getSpeedrunTime());
-                            player->setSpeedrunFinished();
-                        }
                         break;
                     }
                 }

@@ -203,7 +203,6 @@ extern "C" {
 #include "addons/news_manager.hpp"
 #include "audio/music_manager.hpp"
 #include "audio/sfx_manager.hpp"
-#include "challenges/story_mode_timer.hpp"
 #include "challenges/unlock_manager.hpp"
 #include "config/hardware_stats.hpp"
 #include "config/player_manager.hpp"
@@ -2368,9 +2367,6 @@ int main(int argc, char *argv[])
 
         if (!GUIEngine::isNoGraphics())
             profiler.init();
-        // Create the story mode timer with empty setting first, it will
-        // be reset later after story mode status and player manager is loaded
-        story_mode_timer = new StoryModeTimer();
         initRest();
 
 #ifdef ENABLE_WIIUSE
@@ -2601,11 +2597,6 @@ int main(int argc, char *argv[])
             StateManager::get()->enterGameState();
         }
 
-        // Reset the story mode timer before going in the main loop
-        // as it needs to be able to run continuously
-        // Now the story mode status and player manager is loaded
-        story_mode_timer->reset();
-
         // Replay a race
         // =============
         if(history->replayHistory())
@@ -2802,7 +2793,6 @@ static void cleanSuperTuxKart()
     GUIEngine::cleanUp();
     GUIEngine::clearScreenCache();
     if(font_manager)            delete font_manager;
-    if(story_mode_timer)        delete story_mode_timer;
 
     // Now finish shutting down objects which a separate thread. The
     // RequestManager has been signaled to shut down as early as possible,

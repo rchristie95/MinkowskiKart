@@ -300,6 +300,40 @@ public class SuperTuxKartActivity extends SDLActivity
         return getContext().getApplicationInfo().nativeLibraryDir + "/libmain.so";
     }
     // ------------------------------------------------------------------------
+    @Override
+    protected String[] getArguments()
+    {
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("args"))
+        {
+            String argsStr = intent.getStringExtra("args");
+            if (argsStr != null && !argsStr.trim().isEmpty())
+            {
+                java.util.List<String> list = new java.util.ArrayList<String>();
+                boolean inQuotes = false;
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < argsStr.length(); i++) {
+                    char c = argsStr.charAt(i);
+                    if (c == '\"') {
+                        inQuotes = !inQuotes;
+                    } else if (c == ' ' && !inQuotes) {
+                        if (sb.length() > 0) {
+                            list.add(sb.toString());
+                            sb.setLength(0);
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                }
+                if (sb.length() > 0) {
+                    list.add(sb.toString());
+                }
+                return list.toArray(new String[0]);
+            }
+        }
+        return super.getArguments();
+    }
+    // ------------------------------------------------------------------------
     public void showKeyboard(final int type, final int y)
     {
         final Context context = this;

@@ -56,7 +56,10 @@ def test_invite_auth_host_listing_and_rendezvous(tmp_path):
         server_id = created.find("./server/server-info").attrib["id"]
 
         listing = parse(client.post("/api/v2/server/get-all/"))
-        assert listing.find("./servers/server/server-info").attrib["name"] == "Test Room"
+        server_info = listing.find("./servers/server/server-info")
+        assert server_info.attrib["name"] == "Test Room"
+        assert server_info.attrib["ip"] == "1234"
+        assert server_info.attrib["port"] == "2759"
         assert listing.find("./servers/server/players") is not None
 
         joined = parse(client.post("/api/v2/server/join-server-key/", data={

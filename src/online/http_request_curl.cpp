@@ -89,6 +89,36 @@ int curlProgressDownload(void *clientp,
 }   // progressDownload
 
 // ----------------------------------------------------------------------------
+/** Callback function from curl: detailed verbose/debug info.
+ */
+int curlDebugCallback(CURL *handle, curl_infotype type,
+                      char *data, size_t size,
+                      void *userptr)
+{
+    std::string text(data, size);
+    while (!text.empty() && (text.back() == '\n' || text.back() == '\r'))
+    {
+        text.pop_back();
+    }
+    if (text.empty())
+        return 0;
+
+    if (type == CURLINFO_TEXT)
+    {
+        Log::info("libcurl", "* %s", text.c_str());
+    }
+    else if (type == CURLINFO_HEADER_IN)
+    {
+        Log::info("libcurl", "< %s", text.c_str());
+    }
+    else if (type == CURLINFO_HEADER_OUT)
+    {
+        Log::info("libcurl", "> %s", text.c_str());
+    }
+    return 0;
+}   // curlDebugCallback
+
+// ----------------------------------------------------------------------------
 /** Callback from curl. This stores the data received by curl in the
  *  buffer of this request.
  *  \param content Pointer to the data received by curl.
@@ -125,7 +155,8 @@ void Online::HTTPRequest::operation()
     curl_easy_setopt(curl_session, CURLOPT_LOW_SPEED_LIMIT, 10);
     curl_easy_setopt(curl_session, CURLOPT_LOW_SPEED_TIME, 20);
     curl_easy_setopt(curl_session, CURLOPT_NOSIGNAL, 1);
-    //curl_easy_setopt(curl_session, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl_session, CURLOPT_DEBUGFUNCTION, &curlDebugCallback);
+    curl_easy_setopt(curl_session, CURLOPT_VERBOSE, 1L);
 
     // https, load certificate info
     const std::string& ci = file_manager->getCertBundleLocation();
@@ -142,8 +173,8 @@ void Online::HTTPRequest::operation()
     http_header = curl_slist_append(http_header, host.c_str());
     assert(http_header != NULL);
     curl_easy_setopt(curl_session, CURLOPT_HTTPHEADER, http_header);
-    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYHOST, 0L);
 
     FILE *fout = NULL;
     if (m_filename.size() > 0)
