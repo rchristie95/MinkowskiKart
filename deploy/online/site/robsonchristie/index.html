@@ -3,24 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Robson Christie - theoretical and computational physicist working on open quantum systems, cosmology, quantum gravity, and scientific software.">
-  <title>Robson Christie</title>
+  <meta name="description" content="Robson Christie - theoretical and computational physicist working on open quantum systems, quantum simulation, cosmology, and scientific software.">
+  <title>Robson Christie // Open Quantum Systems</title>
   <style>
     :root {
       color-scheme: dark;
-      --bg: #090b12;
-      --bg-soft: #111827;
-      --card: rgba(17, 24, 39, 0.74);
-      --card-strong: rgba(24, 35, 55, 0.9);
-      --text: #f8fafc;
-      --muted: #b9c4d6;
-      --quiet: #7f8ca3;
-      --line: rgba(148, 163, 184, 0.2);
-      --cyan: #72e6ff;
-      --violet: #bca7ff;
-      --gold: #ffd27a;
-      --green: #8affc1;
-      --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+      --bg: #000600;
+      --panel: rgba(0, 17, 5, 0.86);
+      --panel-strong: rgba(0, 24, 7, 0.94);
+      --green: #39ff88;
+      --green-soft: #10c25b;
+      --green-dim: #78dba4;
+      --text: #d9ffe7;
+      --muted: #8ac79d;
+      --quiet: #5a8c69;
+      --line: rgba(57, 255, 136, 0.26);
+      --line-strong: rgba(57, 255, 136, 0.52);
+      --black: #020402;
+      --warning: #d5ff6a;
+      --shadow: 0 0 60px rgba(57, 255, 136, 0.11);
+      --mono: "Cascadia Mono", "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
 
     * {
@@ -34,23 +36,62 @@
     body {
       margin: 0;
       min-height: 100vh;
+      overflow-x: hidden;
       background:
-        radial-gradient(circle at 18% 8%, rgba(114, 230, 255, 0.22), transparent 34rem),
-        radial-gradient(circle at 78% 0%, rgba(188, 167, 255, 0.18), transparent 31rem),
-        radial-gradient(circle at 50% 75%, rgba(255, 210, 122, 0.12), transparent 34rem),
-        linear-gradient(135deg, #070912 0%, #0c1220 44%, #0a0d16 100%);
+        radial-gradient(circle at 18% 10%, rgba(57, 255, 136, 0.12), transparent 32rem),
+        radial-gradient(circle at 85% 5%, rgba(11, 159, 78, 0.12), transparent 28rem),
+        linear-gradient(180deg, #000 0%, var(--bg) 54%, #000 100%);
       color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.6;
+      font-family: var(--mono);
+      line-height: 1.65;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      content: "";
+      background-image:
+        linear-gradient(rgba(57, 255, 136, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57, 255, 136, 0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 88%);
+    }
+
+    body::after {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      content: "";
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(57, 255, 136, 0.035),
+        rgba(57, 255, 136, 0.035) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      mix-blend-mode: screen;
+      opacity: 0.28;
+    }
+
+    #equation-rain {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      width: 100%;
+      height: 100%;
+      opacity: 0.55;
     }
 
     a {
-      color: inherit;
+      color: var(--green);
       text-decoration: none;
     }
 
     a:hover {
-      color: var(--cyan);
+      color: var(--warning);
+      text-shadow: 0 0 12px rgba(213, 255, 106, 0.46);
     }
 
     .shell {
@@ -61,202 +102,235 @@
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 5;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.13);
-      background: rgba(9, 11, 18, 0.74);
-      backdrop-filter: blur(18px);
+      z-index: 4;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 5, 1, 0.82);
+      backdrop-filter: blur(12px);
     }
 
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 72px;
-      gap: 22px;
+      min-height: 70px;
+      gap: 20px;
     }
 
     .brand {
       display: inline-flex;
       align-items: center;
       gap: 12px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
+      color: var(--text);
+      font-weight: 700;
     }
 
     .brand-mark {
       display: grid;
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       place-items: center;
-      border: 1px solid rgba(114, 230, 255, 0.36);
-      border-radius: 14px;
-      background: linear-gradient(135deg, rgba(114, 230, 255, 0.19), rgba(188, 167, 255, 0.19));
-      box-shadow: 0 0 34px rgba(114, 230, 255, 0.16);
+      border: 1px solid var(--line-strong);
+      background: #000;
+      color: var(--green);
+      box-shadow: inset 0 0 18px rgba(57, 255, 136, 0.16), 0 0 24px rgba(57, 255, 136, 0.11);
     }
 
     .links {
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
-      gap: 10px 16px;
+      gap: 10px 18px;
       color: var(--muted);
-      font-size: 0.94rem;
+      font-size: 0.91rem;
+    }
+
+    .links a::before,
+    .footer a::before {
+      content: "./";
+      color: var(--quiet);
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
     }
 
     .hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
+      grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
       align-items: center;
-      gap: 56px;
-      padding: 88px 0 70px;
+      gap: 44px;
+      padding: 84px 0 58px;
     }
 
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
+    .prompt {
       margin: 0 0 18px;
-      color: var(--cyan);
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
+      color: var(--green);
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
     }
 
-    .eyebrow::before {
-      content: "";
-      width: 34px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--cyan));
+    .prompt span {
+      color: var(--muted);
     }
 
     h1 {
-      max-width: 820px;
+      max-width: 860px;
       margin: 0;
-      font-size: clamp(3.2rem, 8vw, 6.9rem);
-      line-height: 0.88;
-      letter-spacing: -0.08em;
+      color: var(--green);
+      font-size: clamp(2.8rem, 7vw, 6.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(57, 255, 136, 0.25);
     }
 
-    h1 span {
-      display: block;
-      color: transparent;
-      background: linear-gradient(90deg, var(--cyan), var(--violet) 46%, var(--gold));
-      -webkit-background-clip: text;
-      background-clip: text;
+    .cursor {
+      display: inline-block;
+      width: 0.42em;
+      height: 0.82em;
+      margin-left: 0.08em;
+      background: var(--green);
+      box-shadow: 0 0 18px rgba(57, 255, 136, 0.72);
+      animation: blink 1s steps(2, start) infinite;
+      vertical-align: -0.08em;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
     }
 
     .lede {
       max-width: 720px;
       margin: 28px 0 0;
-      color: #dce6f7;
-      font-size: clamp(1.08rem, 1.55vw, 1.34rem);
+      color: var(--text);
+      font-size: clamp(1rem, 1.45vw, 1.18rem);
+    }
+
+    .terminal-line {
+      margin: 22px 0 0;
+      padding: 14px 16px;
+      border-left: 3px solid var(--green);
+      background: rgba(0, 0, 0, 0.54);
+      color: var(--muted);
     }
 
     .hero-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 13px;
-      margin: 32px 0 0;
+      gap: 12px;
+      margin: 30px 0 0;
     }
 
     .button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 46px;
-      padding: 0 18px;
-      border: 1px solid rgba(148, 163, 184, 0.24);
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.64);
-      color: var(--text);
-      font-weight: 800;
-      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
-      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+      min-height: 44px;
+      padding: 0 15px;
+      border: 1px solid var(--line-strong);
+      background: rgba(0, 0, 0, 0.62);
+      color: var(--green);
+      font-weight: 700;
+      box-shadow: inset 0 0 18px rgba(57, 255, 136, 0.08);
+      transition: background 160ms ease, box-shadow 160ms ease, color 160ms ease;
     }
 
     .button:hover {
-      transform: translateY(-2px);
-      border-color: rgba(114, 230, 255, 0.55);
-      background: rgba(30, 41, 59, 0.82);
-      color: var(--text);
+      background: rgba(57, 255, 136, 0.1);
+      box-shadow: inset 0 0 22px rgba(57, 255, 136, 0.15), 0 0 20px rgba(57, 255, 136, 0.16);
+      color: var(--warning);
     }
 
     .button.primary {
-      border-color: transparent;
-      background: linear-gradient(135deg, #63ddff, #a890ff 54%, #ffd27a);
-      color: #08111e;
+      background: var(--green);
+      color: #001405;
+      text-shadow: none;
     }
 
-    .portrait-card {
-      position: relative;
-      padding: 18px;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 34px;
-      background:
-        linear-gradient(135deg, rgba(114, 230, 255, 0.2), rgba(188, 167, 255, 0.14)),
-        rgba(15, 23, 42, 0.58);
-      box-shadow: var(--shadow);
+    .button.primary:hover {
+      background: var(--warning);
+      color: #001405;
     }
 
-    .portrait-card::after {
-      position: absolute;
-      right: -10px;
-      bottom: 18px;
-      width: 44%;
-      height: 44%;
-      content: "";
-      border-radius: 999px;
-      background: rgba(255, 210, 122, 0.15);
-      filter: blur(28px);
-      z-index: -1;
+    .terminal-window {
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      box-shadow: var(--shadow), inset 0 0 80px rgba(57, 255, 136, 0.04);
+    }
+
+    .window-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 40px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.62);
+      color: var(--quiet);
+      font-size: 0.82rem;
+    }
+
+    .traffic {
+      display: flex;
+      gap: 7px;
+    }
+
+    .traffic i {
+      width: 9px;
+      height: 9px;
+      border: 1px solid var(--green-soft);
+      background: rgba(57, 255, 136, 0.16);
+    }
+
+    .portrait-frame {
+      padding: 14px;
     }
 
     .portrait {
       display: block;
       width: 100%;
-      aspect-ratio: 1;
+      aspect-ratio: 4 / 5;
       object-fit: cover;
-      border-radius: 26px;
-      filter: saturate(1.04) contrast(1.03);
+      object-position: center 62%;
+      border: 1px solid rgba(57, 255, 136, 0.36);
+      filter: contrast(1.06) saturate(0.78) hue-rotate(38deg);
     }
 
-    .portrait-note {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 12px;
-      align-items: start;
-      margin-top: 16px;
+    .photo-caption {
+      margin: 14px 0 0;
       color: var(--muted);
-      font-size: 0.94rem;
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      margin-top: 7px;
-      border-radius: 999px;
-      background: var(--green);
-      box-shadow: 0 0 20px rgba(138, 255, 193, 0.6);
+      font-size: 0.9rem;
     }
 
     section {
-      padding: 64px 0;
+      padding: 54px 0;
     }
 
     .section-head {
       display: grid;
       grid-template-columns: minmax(0, 0.72fr) minmax(260px, 1fr);
-      gap: 28px;
+      gap: 26px;
       align-items: end;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
 
     h2 {
       margin: 0;
-      font-size: clamp(2rem, 4vw, 3.4rem);
+      color: var(--green);
+      font-size: clamp(1.8rem, 4vw, 3.1rem);
       line-height: 1;
-      letter-spacing: -0.055em;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    h2::before {
+      content: "$ ";
+      color: var(--quiet);
+      font-size: 0.72em;
     }
 
     .section-head p,
@@ -267,34 +341,28 @@
 
     .grid {
       display: grid;
-      gap: 18px;
+      gap: 16px;
     }
 
     .grid.three {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .grid.two {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .card {
       border: 1px solid var(--line);
-      border-radius: 28px;
-      background: var(--card);
-      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.18);
-      backdrop-filter: blur(16px);
+      background: var(--panel);
+      box-shadow: inset 0 0 60px rgba(57, 255, 136, 0.03);
     }
 
     .card.pad {
-      padding: 26px;
+      padding: 22px;
     }
 
     .card h3 {
-      margin: 0 0 12px;
-      font-size: 1.12rem;
-      line-height: 1.22;
-      letter-spacing: -0.02em;
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 1.02rem;
+      line-height: 1.3;
     }
 
     .card p {
@@ -304,51 +372,49 @@
 
     .tagline {
       display: inline-flex;
-      margin-bottom: 16px;
-      padding: 6px 10px;
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      border-radius: 999px;
-      color: var(--cyan);
-      background: rgba(114, 230, 255, 0.08);
+      margin-bottom: 14px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      color: var(--green);
+      background: rgba(0, 0, 0, 0.48);
       font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
+      font-weight: 700;
       text-transform: uppercase;
     }
 
     .timeline {
       display: grid;
-      gap: 14px;
+      gap: 12px;
     }
 
     .role {
       display: grid;
-      grid-template-columns: 150px 1fr;
-      gap: 20px;
-      padding: 22px;
+      grid-template-columns: 145px 1fr;
+      gap: 18px;
+      padding: 20px;
     }
 
     .date {
-      color: var(--gold);
-      font-size: 0.92rem;
-      font-weight: 800;
+      color: var(--warning);
+      font-size: 0.9rem;
+      font-weight: 700;
     }
 
     .role strong {
       display: block;
       margin-bottom: 6px;
-      font-size: 1.02rem;
+      color: var(--text);
     }
 
     .paper-list {
       display: grid;
-      gap: 14px;
+      gap: 12px;
     }
 
     .paper {
       display: grid;
       gap: 10px;
-      padding: 22px;
+      padding: 20px;
     }
 
     .paper-title {
@@ -362,13 +428,14 @@
     .paper-title h3 {
       margin: 0;
       max-width: 820px;
-      font-size: 1.08rem;
+      color: var(--text);
+      font-size: 1rem;
     }
 
     .paper-title span {
-      color: var(--quiet);
-      font-size: 0.9rem;
-      font-weight: 800;
+      color: var(--warning);
+      font-size: 0.86rem;
+      font-weight: 700;
     }
 
     .paper p {
@@ -385,49 +452,43 @@
     .pill {
       display: inline-flex;
       align-items: center;
-      min-height: 32px;
-      padding: 0 12px;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 999px;
-      color: #dce6f7;
-      background: rgba(15, 23, 42, 0.46);
-      font-size: 0.86rem;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.5);
+      color: var(--green);
+      font-size: 0.84rem;
       font-weight: 700;
-    }
-
-    .pill:hover {
-      border-color: rgba(114, 230, 255, 0.5);
-      color: var(--cyan);
     }
 
     .project {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 24px;
+      gap: 22px;
       align-items: center;
-      padding: 30px;
-      overflow: hidden;
+      padding: 28px;
       background:
-        radial-gradient(circle at 82% 28%, rgba(255, 210, 122, 0.16), transparent 18rem),
-        radial-gradient(circle at 20% 60%, rgba(114, 230, 255, 0.14), transparent 22rem),
-        var(--card-strong);
+        linear-gradient(90deg, rgba(57, 255, 136, 0.08), transparent 55%),
+        var(--panel-strong);
     }
 
     .big-link {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 54px;
-      padding: 0 20px;
-      border-radius: 18px;
-      background: #f8fafc;
-      color: #0f172a;
-      font-weight: 900;
+      min-height: 50px;
+      padding: 0 18px;
+      border: 1px solid var(--line-strong);
+      background: var(--green);
+      color: #001405;
+      font-weight: 800;
       white-space: nowrap;
     }
 
     .footer {
-      padding: 52px 0 76px;
+      position: relative;
+      z-index: 2;
+      padding: 48px 0 70px;
       color: var(--quiet);
     }
 
@@ -438,24 +499,33 @@
       align-items: center;
       justify-content: space-between;
       border-top: 1px solid var(--line);
-      padding-top: 24px;
+      padding-top: 22px;
     }
 
-    @media (max-width: 860px) {
+    @media (prefers-reduced-motion: reduce) {
+      .cursor {
+        animation: none;
+      }
+
+      #equation-rain {
+        display: none;
+      }
+    }
+
+    @media (max-width: 880px) {
       .hero,
       .section-head,
       .grid.three,
-      .grid.two,
       .project {
         grid-template-columns: 1fr;
       }
 
       .hero {
-        padding-top: 56px;
+        padding-top: 54px;
       }
 
-      .portrait-card {
-        max-width: 420px;
+      .terminal-window {
+        max-width: 440px;
       }
 
       .role {
@@ -479,24 +549,26 @@
       }
 
       section {
-        padding: 48px 0;
+        padding: 42px 0;
       }
     }
   </style>
 </head>
 <body>
+  <canvas id="equation-rain" aria-hidden="true"></canvas>
+
   <header class="topbar">
     <nav class="shell nav" aria-label="Main navigation">
       <a class="brand" href="#top" aria-label="Robson Christie homepage">
         <span class="brand-mark">RC</span>
-        <span>Robson Christie</span>
+        <span>robson_christie</span>
       </a>
       <div class="links">
-        <a href="#research">Research</a>
-        <a href="#publications">Publications</a>
-        <a href="#cv">CV</a>
-        <a href="https://github.com/rchristie95">GitHub</a>
-        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">LinkedIn</a>
+        <a href="#research">research</a>
+        <a href="#publications">papers</a>
+        <a href="#cv">cv</a>
+        <a href="https://github.com/rchristie95">github</a>
+        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">linkedin</a>
       </div>
     </nav>
   </header>
@@ -504,71 +576,79 @@
   <main id="top">
     <section class="shell hero">
       <div>
-        <p class="eyebrow">Theoretical and computational physics</p>
-        <h1>Open quantum systems <span>in curved places.</span></h1>
+        <p class="prompt"><span>robson@open-systems:~$</span> cat research_statement.txt</p>
+        <h1>Open Quantum Systems, Universal Applications<span class="cursor" aria-hidden="true"></span></h1>
         <p class="lede">
-          I work on Lindblad dynamics, stochastic unravellings, decoherence theory,
-          quantum fields in gravitational settings, and reproducible numerical tools
-          that turn abstract quantum dynamics into testable calculations.
+          I study quantum systems that interact with their environment. My work uses
+          Lindblad dynamics, stochastic trajectories, decoherence theory, and numerical
+          simulation across cosmology, quantum simulation, chemical physics, and quantum fields.
+        </p>
+        <p class="terminal-line">
+          methods: GKLS/Lindblad equations | stochastic Schrodinger dynamics | quantum jumps | lattice simulation | Qiskit | QuTiP
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="assets/Robson-Christie-CV.pdf">Download CV</a>
-          <a class="button" href="mailto:robson.christie1995@gmail.com">robson.christie1995@gmail.com</a>
-          <a class="button" href="https://scholar.google.com/citations?user=a5gRu_gAAAAJ&amp;hl=en&amp;oi=ao">Google Scholar</a>
+          <a class="button primary" href="assets/Robson-Christie-CV.pdf">download_cv.pdf</a>
+          <a class="button" href="mailto:robson.christie1995@gmail.com">email</a>
+          <a class="button" href="https://scholar.google.com/citations?user=a5gRu_gAAAAJ&amp;hl=en&amp;oi=ao">google_scholar</a>
         </div>
       </div>
 
-      <aside class="portrait-card" aria-label="Portrait and status">
-        <img class="portrait" src="assets/robson-christie.png" alt="Portrait of Robson Christie">
-        <div class="portrait-note">
-          <span class="dot" aria-hidden="true"></span>
-          <p>Research Fellow at the University of Portsmouth, 2024-2026. Building open-system models for cosmology, quantum simulation, and high-energy astrophysical environments.</p>
+      <aside class="terminal-window" aria-label="Portrait and profile">
+        <div class="window-bar">
+          <span>profile.jpg</span>
+          <span class="traffic" aria-hidden="true"><i></i><i></i><i></i></span>
+        </div>
+        <div class="portrait-frame">
+          <img class="portrait" src="assets/robson-christie-terminal.jpg" alt="Portrait of Robson Christie">
+          <p class="photo-caption">
+            theoretical / computational physics // open systems // reproducible simulation
+          </p>
         </div>
       </aside>
     </section>
 
     <section id="research" class="shell">
       <div class="section-head">
-        <h2>Research Shape</h2>
-        <p>My work sits where quantum theory becomes noisy, numerical, and observable: environments, measurement records, rare events, and the early universe.</p>
+        <h2>research.log</h2>
+        <p>Direct problems, formal models, and simulations that can be checked.</p>
       </div>
       <div class="grid three">
         <article class="card pad">
-          <span class="tagline">Open systems</span>
-          <h3>Lindblad dynamics and stochastic trajectories</h3>
-          <p>Analytical and numerical methods for Gaussian states, stochastic Schrodinger dynamics, quantum jumps, decoherence, and transition rates.</p>
+          <span class="tagline">methods</span>
+          <h3>Open-system dynamics</h3>
+          <p>Gaussian states, Lindblad master equations, stochastic unravellings, quantum jumps, and transition-rate estimators.</p>
         </article>
         <article class="card pad">
-          <span class="tagline">Cosmology</span>
-          <h3>Quantum fields under gravitational coarse-graining</h3>
-          <p>Lattice and stochastic-inflation calculations studying non-adiabatic excitation, environmental monitoring, tunnelling, and metastability.</p>
+          <span class="tagline">applications</span>
+          <h3>Cosmology and quantum fields</h3>
+          <p>Coarse-graining, decoherence, tunnelling, non-adiabatic excitation, metastable states, and stochastic inflation.</p>
         </article>
         <article class="card pad">
-          <span class="tagline">Tools</span>
-          <h3>Reproducible computation and simulation</h3>
-          <p>Python, Matlab, Mathematica, QuTiP, Qiskit, HPC workflows, and research software for turning formal models into verifiable results.</p>
+          <span class="tagline">computation</span>
+          <h3>Scientific software</h3>
+          <p>Python, Matlab, Mathematica, Qiskit, QuTiP, HPC workflows, and code used to reproduce calculations.</p>
         </article>
       </div>
     </section>
 
     <section id="cv" class="shell">
       <div class="section-head">
-        <h2>CV At A Glance</h2>
-        <p>Recent roles, skills, and a short path through the physics.</p>
+        <h2>cv.txt</h2>
+        <p>Roles, training, and research focus.</p>
       </div>
       <div class="timeline">
         <article class="card role">
           <div class="date">2024 - 2026</div>
           <div>
             <strong>Research Fellow, University of Portsmouth</strong>
-            <p>Open quantum systems across quantum simulation and early-universe cosmology, including IBM quantum hardware protocols and lattice simulations of inflationary fields.</p>
+            <p>Open quantum systems for quantum simulation and early-universe cosmology. Work included IBM quantum-hardware protocols and lattice simulations of inflationary field dynamics.</p>
           </div>
         </article>
         <article class="card role">
           <div class="date">2023 - 2024</div>
           <div>
             <strong>EPSRC Research Associate, Imperial College London</strong>
-            <p>Theory and algorithms for quantum rare-event simulation, stochastic trajectory formulations, transition-rate estimators, and maintainable research software.</p>
+            <p>Rare-event algorithms for stochastic quantum trajectories, with practical estimators for transition rates and path probabilities.</p>
           </div>
         </article>
         <article class="card role">
@@ -583,8 +663,8 @@
 
     <section id="publications" class="shell">
       <div class="section-head">
-        <h2>Publications And Preprints</h2>
-        <p>Short summaries from my CV, with direct links to papers, preprints, and project pages.</p>
+        <h2>papers</h2>
+        <p>Selected publications and preprints. Links go to arXiv, journal pages, or project pages.</p>
       </div>
 
       <div class="paper-list">
@@ -593,9 +673,9 @@
             <h3>Quantum Stochastic Inflation</h3>
             <span>in preparation</span>
           </div>
-          <p>Formulates stochastic inflation in an open-quantum-system framework, deriving GKLS dynamics for coarse-grained scalar field variables and recovering classical stochastic-inflation Fokker-Planck dynamics in the light-field regime.</p>
+          <p>Open-quantum-system formulation of stochastic inflation, deriving GKLS dynamics for coarse-grained scalar-field variables and recovering the classical Fokker-Planck limit.</p>
           <div class="paper-links">
-            <span class="pill">Manuscript in preparation</span>
+            <span class="pill">manuscript_in_preparation</span>
           </div>
         </article>
 
@@ -604,9 +684,9 @@
             <h3>Non-Equilibrium Dynamics of the Time-Dependent Excitonic Coupling in Fluorescent Protein Dimers</h3>
             <span>2026</span>
           </div>
-          <p>Combines transition-density coupling calculations with stochastic quantum simulations to quantify strong near-field excitonic coupling in dimeric Venus fluorescent protein.</p>
+          <p>Transition-density coupling plus stochastic quantum simulation for near-field excitonic coupling in dimeric Venus fluorescent protein.</p>
           <div class="paper-links">
-            <a class="pill" href="https://arxiv.org/abs/2605.00027">arXiv:2605.00027</a>
+            <a class="pill" href="https://arxiv.org/abs/2605.00027">arxiv:2605.00027</a>
           </div>
         </article>
 
@@ -615,9 +695,9 @@
             <h3>Cosmic Lockdown: When Decoherence Saves the Universe from Tunneling</h3>
             <span>2025</span>
           </div>
-          <p>Lattice simulations show how non-adiabatic dynamics can populate false vacua, while decoherence sourced by heavy modes suppresses later tunnelling and stabilises metastable states.</p>
+          <p>Lattice simulations of false-vacuum population and decoherence-driven suppression of later tunnelling.</p>
           <div class="paper-links">
-            <a class="pill" href="https://arxiv.org/abs/2512.14204">arXiv:2512.14204</a>
+            <a class="pill" href="https://arxiv.org/abs/2512.14204">arxiv:2512.14204</a>
           </div>
         </article>
 
@@ -626,9 +706,9 @@
             <h3>Transition Path and Interface Sampling of Stochastic Schrodinger Dynamics</h3>
             <span>2025</span>
           </div>
-          <p>Extends path and interface sampling to quantum trajectories, enabling efficient transition-rate estimation and revealing low-temperature non-Arrhenius behaviour linked to measurement backaction.</p>
+          <p>Path and interface sampling for quantum trajectories, including transition-rate estimation and low-temperature non-Arrhenius behaviour.</p>
           <div class="paper-links">
-            <a class="pill" href="https://arxiv.org/abs/2411.00490">arXiv:2411.00490</a>
+            <a class="pill" href="https://arxiv.org/abs/2411.00490">arxiv:2411.00490</a>
           </div>
         </article>
 
@@ -637,9 +717,9 @@
             <h3>Quantum Simulation of Dynamical Transition Rates in Open Quantum Systems</h3>
             <span>2024</span>
           </div>
-          <p>Develops a quantum-simulation protocol for estimating open-system transition rates without full Lindblad evolution, decomposing rates into independently measurable contributions and validating on IBM quantum hardware.</p>
+          <p>Quantum-simulation protocol for transition rates without full Lindblad evolution, tested on IBM quantum hardware.</p>
           <div class="paper-links">
-            <a class="pill" href="https://arxiv.org/abs/2412.17229">arXiv:2412.17229</a>
+            <a class="pill" href="https://arxiv.org/abs/2412.17229">arxiv:2412.17229</a>
           </div>
         </article>
 
@@ -648,10 +728,10 @@
             <h3>The Sound of Decoherence</h3>
             <span>2024</span>
           </div>
-          <p>Maps density-matrix structure into sound so listeners can track tunnelling, thermalisation, decoherence, and recoherence through perceptual features.</p>
+          <p>Audio mapping of density-matrix structure for tunnelling, thermalisation, decoherence, and recoherence.</p>
           <div class="paper-links">
-            <a class="pill" href="https://arxiv.org/abs/2412.17045">arXiv:2412.17045</a>
-            <a class="pill" href="https://sonification.design/#Decoherence">Sonification project</a>
+            <a class="pill" href="https://arxiv.org/abs/2412.17045">arxiv:2412.17045</a>
+            <a class="pill" href="https://sonification.design/#Decoherence">sonification_project</a>
           </div>
         </article>
 
@@ -660,10 +740,10 @@
             <h3>Quantum Tunnelling and Thermally Driven Transitions in a Double Well Potential at Finite Temperature</h3>
             <span>2024</span>
           </div>
-          <p>Maps the thermal-to-quantum tunnelling crossover in a dissipative double well and introduces a Lindblad Brownian-motion model that removes the zero-temperature singularity.</p>
+          <p>Thermal-to-quantum tunnelling crossover in a dissipative double well, using a Lindblad Brownian-motion model.</p>
           <div class="paper-links">
-            <a class="pill" href="https://doi.org/10.1088/1751-8121/ad4b7b">Journal DOI</a>
-            <a class="pill" href="https://arxiv.org/abs/2312.12101">arXiv:2312.12101</a>
+            <a class="pill" href="https://doi.org/10.1088/1751-8121/ad4b7b">doi</a>
+            <a class="pill" href="https://arxiv.org/abs/2312.12101">arxiv:2312.12101</a>
           </div>
         </article>
 
@@ -672,10 +752,10 @@
             <h3>Quantum-jump vs stochastic Schrodinger dynamics for Gaussian states with quadratic Hamiltonians and linear Lindbladians</h3>
             <span>2022</span>
           </div>
-          <p>Compares continuous and jump unravellings of Lindblad dynamics, deriving closed-form Gaussian evolution for continuous trajectories and a Gaussian Hagedorn-wavepacket scheme for jump trajectories.</p>
+          <p>Comparison of continuous and jump unravellings, with closed-form Gaussian evolution and a Hagedorn-wavepacket scheme.</p>
           <div class="paper-links">
-            <a class="pill" href="https://doi.org/10.1088/1751-8121/ac9d73">Journal DOI</a>
-            <a class="pill" href="https://arxiv.org/abs/2203.11530">arXiv:2203.11530</a>
+            <a class="pill" href="https://doi.org/10.1088/1751-8121/ac9d73">doi</a>
+            <a class="pill" href="https://arxiv.org/abs/2203.11530">arxiv:2203.11530</a>
           </div>
         </article>
       </div>
@@ -684,25 +764,113 @@
     <section class="shell">
       <article class="card project">
         <div>
-          <span class="tagline">Personal project</span>
-          <h2>Minkowski Kart</h2>
-          <p class="muted">A relativistic racing-game fork of SuperTuxKart, blending OpenRelativity-inspired visual effects with C++ gameplay logic for black holes, time dilation, cosmic strings, Lorentz grids, and other spacetime-flavoured power-ups.</p>
+          <span class="tagline">side_project</span>
+          <h2>minkowski_kart</h2>
+          <p class="muted">A SuperTuxKart fork for relativistic racing mechanics: black holes, time dilation, cosmic strings, Lorentz-grid frame shifts, and other spacetime-inspired systems.</p>
         </div>
-        <a class="big-link" href="https://github.com/rchristie95/MinkowskiKart">View on GitHub</a>
+        <a class="big-link" href="https://github.com/rchristie95/MinkowskiKart">github_repo</a>
       </article>
     </section>
   </main>
 
   <footer class="footer">
     <div class="shell footer-inner">
-      <span>Robson Christie</span>
+      <span>robson_christie // robson.christie1995@gmail.com</span>
       <span>
-        <a href="mailto:robson.christie1995@gmail.com">Email</a> /
-        <a href="https://github.com/rchristie95">GitHub</a> /
-        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">LinkedIn</a> /
-        <a href="assets/Robson-Christie-CV.pdf">CV</a>
+        <a href="mailto:robson.christie1995@gmail.com">email</a> /
+        <a href="https://github.com/rchristie95">github</a> /
+        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">linkedin</a> /
+        <a href="assets/Robson-Christie-CV.pdf">cv</a>
       </span>
     </div>
   </footer>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("equation-rain");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!canvas || reduceMotion) return;
+
+      const ctx = canvas.getContext("2d");
+      const equations = [
+        "i hbar d|psi>/dt = H|psi>",
+        "d rho/dt = -i[H,rho]/hbar + D[rho]",
+        "D[rho] = L rho L^dag - 1/2{L^dag L,rho}",
+        "Tr(rho) = 1",
+        "rho_A = Tr_B rho_AB",
+        "H|n> = E_n|n>",
+        "[x,p] = i hbar",
+        "U(t) = exp(-iHt/hbar)",
+        "S = integral L dt",
+        "<A> = Tr(rho A)",
+        "dW_t^2 = dt",
+        "d|psi> = -iH|psi>dt + L|psi>dW",
+        "Gamma = lim t^-1 log P[path]",
+        "P[x(t)] ~ exp(-S[x]/hbar)",
+        "n_k = |beta_k|^2",
+        "delta phi_k'' + omega_k^2 phi_k = 0",
+        "H^2 = rho/(3 M_pl^2)",
+        "N = ln a",
+        "Fokker Planck: dP/dt = -d(mu P) + D d^2P",
+        "S_vN = -Tr rho log rho",
+        "C(t) = <A(t)A(0)>",
+        "K rho = -i[H,rho] + sum_k D_k[rho]"
+      ];
+
+      let width = 0;
+      let height = 0;
+      let fontSize = 14;
+      let columns = [];
+
+      const resize = () => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        fontSize = width < 700 ? 12 : 14;
+        const count = Math.max(18, Math.floor(width / (fontSize * 1.65)));
+        columns = Array.from({ length: count }, (_, index) => ({
+          x: index * fontSize * 1.65,
+          y: Math.random() * -height,
+          speed: 0.75 + Math.random() * 1.8,
+          phrase: equations[Math.floor(Math.random() * equations.length)]
+        }));
+      };
+
+      const draw = () => {
+        ctx.fillStyle = "rgba(0, 4, 0, 0.12)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.font = `${fontSize}px Cascadia Mono, Consolas, monospace`;
+
+        for (const column of columns) {
+          if (Math.random() < 0.035) {
+            column.phrase = equations[Math.floor(Math.random() * equations.length)];
+          }
+
+          ctx.fillStyle = "rgba(213, 255, 106, 0.72)";
+          ctx.fillText(column.phrase, column.x, column.y);
+          ctx.fillStyle = "rgba(57, 255, 136, 0.24)";
+          ctx.fillText(column.phrase, column.x, column.y - 24);
+          column.y += column.speed * fontSize;
+
+          if (column.y > height + 90) {
+            column.y = -Math.random() * height * 0.45;
+            column.speed = 0.75 + Math.random() * 1.8;
+            column.phrase = equations[Math.floor(Math.random() * equations.length)];
+          }
+        }
+
+        requestAnimationFrame(draw);
+      };
+
+      window.addEventListener("resize", resize);
+      resize();
+      draw();
+    })();
+  </script>
 </body>
 </html>
