@@ -18,7 +18,6 @@
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "items/item.hpp"
-#include "race/race_manager.hpp"
 
 #include "SColor.h"
 #include "graphics/irr_driver.hpp"
@@ -32,6 +31,7 @@
 #include "modes/world.hpp"
 #include "network/network_string.hpp"
 #include "network/rewind_manager.hpp"
+#include "physics/physics.hpp"
 #include "tracks/arena_graph.hpp"
 #include "tracks/drive_graph.hpp"
 #include "tracks/drive_node.hpp"
@@ -42,6 +42,11 @@
 #include <IMeshSceneNode.h>
 #include <ISceneManager.h>
 
+#include "BulletCollision/CollisionDispatch/btCollisionWorld.h"
+#include "BulletCollision/CollisionShapes/btBoxShape.h"
+#include "BulletCollision/CollisionShapes/btCylinderShape.h"
+#include "BulletCollision/CollisionShapes/btSphereShape.h"
+
 const float ICON_SIZE = 0.7f;
 const int SPARK_AMOUNT = 10;
 const float SPARK_SIZE = 0.4f;
@@ -49,32 +54,104 @@ const float SPARK_SPEED_H = 1.0f;
 
 namespace
 {
-core::vector3df getItemVisualOffset(Item::ItemType type)
-{
-    if (type == Item::ITEM_COMPACTIFICATION)
-        return core::vector3df(0.0f, 0.5f, 0.0f);
-    return core::vector3df(0.0f, 0.0f, 0.0f);
-}
+const btScalar MAX_PHYSICAL_PICKUP_SWEEP_DISTANCE2 = btScalar(25.0f);
 
-bool hitKartInItemFrame(const Item& item, const Vec3& xyz,
-                        const AbstractKart* kart, const Vec3& item_xyz,
-                        const btQuaternion& item_rotation,
-                        const Vec3& item_normal)
+/** Lightweight point test used by AI path forecasting only. */
+bool hitPredictedKartPoint(const Item& item, const Vec3& xyz,
+                           const AbstractKart* kart)
 {
     if (item.getPreviousOwner() == kart && item.getDeactivatedTicks() > 0)
         return false;
 
-    if (kart && RaceManager::get()->getTrackName() == "mobius_track")
-    {
-        if (kart->getNormal().dot(item_normal) < 0.0f)
-            return false;
-    }
-
-    Vec3 lc = quatRotate(item_rotation.inverse(), xyz - item_xyz);
-    // Don't be too strict if the kart is a bit above the item.
+    Vec3 lc = quatRotate(item.getOriginalRotation().inverse(),
+                         xyz - item.getXYZ());
     lc.setY(lc.getY() / 2.0f);
     return lc.length2() < item.getHitDistanceSquared();
-}   // hitKartInItemFrame
+}   // hitPredictedKartPoint
+
+class PickupContactResult : public btCollisionWorld::ContactResultCallback
+{
+public:
+    bool m_hit;
+
+    PickupContactResult() : m_hit(false) {}
+
+    virtual btScalar addSingleResult(btManifoldPoint& cp,
+                                     const btCollisionObject*, int, int,
+                                     const btCollisionObject*, int, int)
+    {
+        if (cp.getDistance() <= btScalar(0.0f))
+            m_hit = true;
+        return btScalar(0.0f);
+    }
+};   // PickupContactResult
+
+class KartOnlySweepResult : public btCollisionWorld::ClosestConvexResultCallback
+{
+private:
+    const btCollisionObject* m_kart_body;
+
+public:
+    KartOnlySweepResult(const btCollisionObject* kart_body,
+                        const btVector3& from, const btVector3& to)
+        : btCollisionWorld::ClosestConvexResultCallback(from, to),
+          m_kart_body(kart_body)
+    {
+    }
+
+    virtual bool needsCollision(btBroadphaseProxy* proxy0) const
+    {
+        return proxy0 && proxy0->m_clientObject == m_kart_body;
+    }
+};   // KartOnlySweepResult
+
+btTransform getPickupTriggerTransform(const Item& item, const Vec3& center)
+{
+    btTransform transform;
+    transform.setIdentity();
+    transform.setRotation(item.getOriginalRotation());
+    transform.setOrigin(item.getXYZ() +
+        quatRotate(item.getOriginalRotation(), center));
+    return transform;
+}   // getPickupTriggerTransform
+
+bool triggerHitsKart(const Item& item, const AbstractKart* kart,
+                     btConvexShape* shape, const Vec3& center)
+{
+    if (!kart || !kart->getBody())
+        return false;
+
+    const btTransform trigger_transform =
+        getPickupTriggerTransform(item, center);
+    btCollisionObject trigger;
+    trigger.setCollisionShape(shape);
+    trigger.setWorldTransform(trigger_transform);
+
+    PickupContactResult overlap;
+    Physics::get()->getPhysicsWorld()->contactPairTest(
+        kart->getBody(), &trigger, overlap);
+    if (overlap.m_hit)
+        return true;
+
+    const btVector3 kart_delta = kart->getTrans().getOrigin() -
+        kart->getPreviousPhysicsTransform().getOrigin();
+    const btScalar movement2 = kart_delta.length2();
+    if (movement2 <= btScalar(1.0e-8f) ||
+        movement2 > MAX_PHYSICAL_PICKUP_SWEEP_DISTANCE2)
+    {
+        return false;
+    }
+
+    // Move the item in the opposite relative frame to sweep a stationary
+    // current kart body through the authoritative physical pickup volume.
+    btTransform from = trigger_transform;
+    from.setOrigin(from.getOrigin() + kart_delta);
+    KartOnlySweepResult sweep(kart->getBody(), from.getOrigin(),
+                              trigger_transform.getOrigin());
+    Physics::get()->getPhysicsWorld()->convexSweepTest(
+        shape, from, trigger_transform, sweep);
+    return sweep.hasHit();
+}   // triggerHitsKart
 }
 
 #ifndef SERVER_ONLY
@@ -323,7 +400,7 @@ Item::Item(ItemType type, const Vec3& xyz, const Vec3& normal,
     m_node->setName(debug_name.c_str());
 #endif
     m_node->setAutomaticCulling(scene::EAC_FRUSTUM_BOX);
-    m_node->setPosition(xyz.toIrrVector() + getItemVisualOffset(getType()));
+    m_node->setPosition(xyz.toIrrVector());
     Vec3 hpr;
     hpr.setHPR(getOriginalRotation());
     m_node->setRotation(hpr.toIrrHPR());
@@ -563,7 +640,7 @@ void Item::updateGraphics(float dt)
                        getOriginalType() == ITEM_NONE && !isUsedUp());
 
     m_node->setVisible(is_visible);
-    m_node->setPosition(getXYZ().toIrrVector() + getItemVisualOffset(getType()));
+    m_node->setPosition(getXYZ().toIrrVector());
 
     if (!m_was_available_previously && isAvailable())
     {
@@ -674,18 +751,44 @@ void Item::updateGraphics(float dt)
 // ----------------------------------------------------------------------------
 bool Item::hitKart(const Vec3 &xyz, const AbstractKart *kart) const
 {
-    return hitKartInItemFrame(*this, xyz, kart, getXYZ(),
-                              getOriginalRotation(), getNormal());
+    return hitPredictedKartPoint(*this, xyz, kart);
 }   // hitKart
 
 // ----------------------------------------------------------------------------
-bool Item::hitKartAtItemPosition(const Vec3 &xyz, const AbstractKart *kart,
-                                 const Vec3 &item_xyz,
-                                 const Vec3 &item_normal) const
+bool Item::hitKartPhysically(const AbstractKart *kart) const
 {
-    const Vec3 normal = item_normal.length2() > btScalar(1.0e-8f)
-        ? Vec3(item_normal.normalized()) : getNormal();
-    return hitKartInItemFrame(*this, xyz, kart, item_xyz,
-                              shortestArcQuat(Vec3(0, 1, 0), normal),
-                              normal);
-}   // hitKartAtItemPosition
+    if (getPreviousOwner() == kart && getDeactivatedTicks() > 0)
+        return false;
+
+    const ItemManager::PickupTriggerShape trigger_shape =
+        ItemManager::getPickupTriggerShape(getType());
+    const Vec3& center = ItemManager::getPickupTriggerCenter(getType());
+    const Vec3& half_extents =
+        ItemManager::getPickupTriggerHalfExtents(getType());
+
+    switch (trigger_shape)
+    {
+    case ItemManager::PTS_BOX:
+    {
+        btBoxShape shape(half_extents);
+        // Do not invisibly extend the trigger through the track surface.
+        shape.setMargin(btScalar(0.0f));
+        return triggerHitsKart(*this, kart, &shape, center);
+    }
+    case ItemManager::PTS_CYLINDER_Y:
+    {
+        btCylinderShape shape(half_extents);
+        // Do not invisibly extend the trigger through the track surface.
+        shape.setMargin(btScalar(0.0f));
+        return triggerHitsKart(*this, kart, &shape, center);
+    }
+    case ItemManager::PTS_SPHERE:
+    {
+        btSphereShape shape(half_extents.getX());
+        return triggerHitsKart(*this, kart, &shape, center);
+    }
+    case ItemManager::PTS_NONE:
+    default:
+        return hitPredictedKartPoint(*this, kart->getXYZ(), kart);
+    }
+}   // hitKartPhysically

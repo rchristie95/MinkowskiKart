@@ -11,6 +11,10 @@
     <validating-player value="true" />
     <firewalled-server value="false" />
     <owner-less value="true" />
+    <min-start-game-players value="1" />
+    <start-game-counter value="15" />
+    <track-voting value="false" />
+    <voting-timeout value="15" />
     <ranked value="false" />
     <live-spectate value="true" />
 </server-config>

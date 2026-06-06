@@ -1,6 +1,6 @@
-package com.rchristie95.minkowskikart;
+package org.supertuxkart.stk_dbg;
 
-import com.rchristie95.minkowskikart.STKEditText;
+import org.supertuxkart.stk_dbg.STKEditText;
 import org.libsdl.app.SDLActivity;
 import org.libsdl.app.SDL;
 
@@ -298,6 +298,40 @@ public class SuperTuxKartActivity extends SDLActivity
     protected String getMainSharedObject()
     {
         return getContext().getApplicationInfo().nativeLibraryDir + "/libmain.so";
+    }
+    // ------------------------------------------------------------------------
+    @Override
+    protected String[] getArguments()
+    {
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("args"))
+        {
+            String argsStr = intent.getStringExtra("args");
+            if (argsStr != null && !argsStr.trim().isEmpty())
+            {
+                java.util.List<String> list = new java.util.ArrayList<String>();
+                boolean inQuotes = false;
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < argsStr.length(); i++) {
+                    char c = argsStr.charAt(i);
+                    if (c == '\"') {
+                        inQuotes = !inQuotes;
+                    } else if (c == ' ' && !inQuotes) {
+                        if (sb.length() > 0) {
+                            list.add(sb.toString());
+                            sb.setLength(0);
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                }
+                if (sb.length() > 0) {
+                    list.add(sb.toString());
+                }
+                return list.toArray(new String[0]);
+            }
+        }
+        return super.getArguments();
     }
     // ------------------------------------------------------------------------
     public void showKeyboard(final int type, final int y)

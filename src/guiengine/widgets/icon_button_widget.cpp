@@ -156,6 +156,11 @@ void IconButtonWidget::add()
 
         setLabelFont();
 
+        if (m_properties[PROP_ID] == "start")
+        {
+            m_label->setOverrideColor(video::SColor(255, 255, 255, 255));
+        }
+
         m_label->setTextRestrainedInside(false);
     }
 

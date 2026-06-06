@@ -4,16 +4,21 @@ services:
     restart: unless-stopped
     environment:
       MK_ONLINE_DOMAIN: ${MK_ONLINE_DOMAIN}
+      MK_PERSONAL_DOMAIN: ${MK_PERSONAL_DOMAIN}
+      MK_PERSONAL_WWW_DOMAIN: ${MK_PERSONAL_WWW_DOMAIN}
+      MK_SITE_DOMAIN: ${MK_SITE_DOMAIN}
     ports:
       - "80:80"
       - "443:443"
-      - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./site/robsonchristie:/srv/robsonchristie:ro
+      - ./site/minkowskikart:/srv/minkowskikart:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
   api:
     build:
@@ -28,6 +33,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   postgres:
     image: postgres:16-alpine
@@ -58,6 +72,7 @@ services:
 
   stun:
     image: coturn/coturn:4.6.3
+    profiles: ["owned-stun"]
     restart: unless-stopped
     command: ["-c", "/etc/coturn/turnserver.conf"]
     ports:
@@ -70,19 +85,30 @@ services:
     build:
       context: ../..
       dockerfile: deploy/online/Dockerfile.game-server
+      args:
+        MK_ONLINE_DOMAIN: ${MK_ONLINE_DOMAIN}
     restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
     environment:
+      MK_ONLINE_DOMAIN: ${MK_ONLINE_DOMAIN}
       MK_OFFICIAL_USERNAME: ${MK_OFFICIAL_USERNAME}
       MK_OFFICIAL_PASSWORD: ${MK_OFFICIAL_PASSWORD}
+      MK_OFFICIAL_TRACK: ${MK_OFFICIAL_TRACK:-mobius_track}
+      MK_OFFICIAL_BOTS: ${MK_OFFICIAL_BOTS:-3}
+      MK_OFFICIAL_MIN_PLAYERS: ${MK_OFFICIAL_MIN_PLAYERS:-1}
     ports:
       - "2759:2759/udp"
     volumes:
       - ./official_server_config.xml:/config/server_config.xml:ro
+      - official_server_data:/var/lib/minkowskikart
     depends_on:
-      - api
+      caddy:
+        condition: service_started
 
 volumes:
   caddy_data:
   caddy_config:
   postgres_data:
   redis_data:
+  official_server_data:

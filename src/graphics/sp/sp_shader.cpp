@@ -123,6 +123,7 @@ void SPShader::linkShaderFiles(RenderPass rp)
         }
         glDeleteProgram(m_program[rp]);
         m_program[rp] = 0;
+        m_has_tessellation[rp] = false;
     }
 #endif
 }   // linkShaderFiles
@@ -318,9 +319,10 @@ SPUniformAssigner* SPShader::getUniformAssigner(const std::string& name,
 // ----------------------------------------------------------------------------
 void SPShader::unload()
 {
-#ifndef SERVER_ONLY
     for (unsigned rp = RP_1ST; rp < RP_COUNT; rp++)
     {
+        m_has_tessellation[rp] = false;
+#ifndef SERVER_ONLY
         if (m_program[rp] != 0)
         {
             glDeleteProgram(m_program[rp]);
@@ -336,7 +338,9 @@ void SPShader::unload()
         m_samplers[rp].clear();
         m_use_function[rp] = nullptr;
         m_unuse_function[rp] = nullptr;
+#endif
     }
+#ifndef SERVER_ONLY
     m_shader_files.clear();
 #endif
 }   // unload

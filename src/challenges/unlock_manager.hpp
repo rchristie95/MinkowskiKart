@@ -22,7 +22,6 @@
 #include <map>
 
 #include "challenges/challenge_data.hpp"
-#include "challenges/story_mode_status.hpp"
 
 #include "utils/no_copy.hpp"
 #include "utils/ptr_vector.hpp"
@@ -31,6 +30,7 @@
 
 class XMLNode;
 class SFXBase;
+class ChallengeStatus;
 
 /**
   * \brief main class to handle locking/challenges
@@ -71,8 +71,7 @@ public:
     bool       unlockByPoints(int points, ChallengeStatus* unlock_list);
     bool       unlockSpecial(ChallengeStatus* unlock_list, int max_req_in_lower_diff);
 
-    StoryModeStatus *createStoryModeStatus(const XMLNode *node=NULL);
-
+    const AllChallengesType& getAllChallenges() const { return m_all_challenges; }
 };   // UnlockManager
 
 extern UnlockManager* unlock_manager;

@@ -19,7 +19,6 @@
 #include "config/player_manager.hpp"
 
 #include "achievements/achievements_manager.hpp"
-#include "challenges/story_mode_timer.hpp"
 #include "config/player_profile.hpp"
 #include "config/user_config.hpp"
 #include "io/file_manager.hpp"
@@ -484,6 +483,4 @@ void PlayerManager::setCurrentPlayer(PlayerProfile *player)
         m_current_player->computeActive();
     }
 
-    if (player_has_changed)
-        story_mode_timer->playerHasChanged();
 }   // setCurrentPlayer

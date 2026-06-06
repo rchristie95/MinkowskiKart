@@ -32,8 +32,6 @@
 #include "network/network_config.hpp"
 #include "network/race_event_manager.hpp"
 #include "physics/triangle_mesh.hpp"
-#include "relativity/observer_snapshot.hpp"
-#include "relativity/relativity_math.hpp"
 #include "tracks/arena_graph.hpp"
 #include "tracks/arena_node.hpp"
 #include "tracks/track.hpp"
@@ -53,63 +51,13 @@ std::vector<scene::IMesh *>  ItemManager::m_item_mesh;
 std::vector<scene::IMesh *>  ItemManager::m_item_lowres_mesh;
 std::vector<video::SColorf>  ItemManager::m_glow_color;
 std::vector<std::string>     ItemManager::m_icon;
+std::vector<ItemManager::PickupTriggerShape>
+                              ItemManager::m_pickup_trigger_shape;
+std::vector<Vec3>             ItemManager::m_pickup_trigger_center;
+std::vector<Vec3>             ItemManager::m_pickup_trigger_half_extents;
 bool                         ItemManager::m_disable_item_collection = false;
 std::mt19937                 ItemManager::m_random_engine;
 uint32_t                     ItemManager::m_random_seed = 0;
-
-namespace
-{
-
-const btScalar APPARENT_ITEM_SWEEP_RADIUS2 = btScalar(25.0f);
-
-Vec3 closestPointOnSegment(const Vec3& from, const Vec3& to,
-                           const Vec3& point)
-{
-    const btVector3 segment = to - from;
-    const btScalar length2 = segment.length2();
-    if (length2 <= btScalar(1.0e-8f))
-        return to;
-
-    btScalar t = (point - from).dot(segment) / length2;
-    if (t < btScalar(0.0f))
-        t = btScalar(0.0f);
-    else if (t > btScalar(1.0f))
-        t = btScalar(1.0f);
-    return Vec3(from + segment * t);
-}   // closestPointOnSegment
-
-bool apparentRelativisticItemHit(const ItemState* item,
-                                 const AbstractKart* kart,
-                                 const Vec3& kart_xyz,
-                                 const Vec3& previous_kart_xyz,
-                                 const Relativity::ObserverVisualState& state)
-{
-    if (!item || !kart || !state.m_valid)
-        return false;
-
-    const Vec3 item_xyz = item->getXYZ();
-    const Vec3 item_normal = item->getNormal();
-    const Vec3 apparent_xyz = Vec3(Relativity::applyVisualPosition(
-        item_xyz, state, btVector3(0.0f, 0.0f, 0.0f)));
-    const Vec3 apparent_normal = Vec3(Relativity::applyVisualNormal(
-        item_xyz, item_normal, state));
-
-    if (item->hitKartAtItemPosition(kart_xyz, kart,
-                                    apparent_xyz, apparent_normal))
-        return true;
-
-    const btScalar sweep_length2 = (kart_xyz - previous_kart_xyz).length2();
-    if (sweep_length2 <= btScalar(1.0e-6f) ||
-        sweep_length2 > APPARENT_ITEM_SWEEP_RADIUS2)
-        return false;
-
-    const Vec3 swept_xyz =
-        closestPointOnSegment(previous_kart_xyz, kart_xyz, apparent_xyz);
-    return item->hitKartAtItemPosition(swept_xyz, kart,
-                                       apparent_xyz, apparent_normal);
-}   // apparentRelativisticItemHit
-
-}   // namespace
 
 //-----------------------------------------------------------------------------
 /** Loads the default item meshes (high- and low-resolution).
@@ -120,10 +68,19 @@ void ItemManager::loadDefaultItemMeshes()
     m_item_lowres_mesh.clear();
     m_glow_color.clear();
     m_icon.clear();
+    m_pickup_trigger_shape.clear();
+    m_pickup_trigger_center.clear();
+    m_pickup_trigger_half_extents.clear();
     m_item_mesh.resize(ItemState::ITEM_LAST-ItemState::ITEM_FIRST+1, NULL);
     m_glow_color.resize(ItemState::ITEM_LAST-ItemState::ITEM_FIRST+1,
                         video::SColorf(255.0f, 255.0f, 255.0f) );
     m_icon.resize(ItemState::ITEM_LAST-ItemState::ITEM_FIRST+1, "");
+    m_pickup_trigger_shape.resize(ItemState::ITEM_LAST-ItemState::ITEM_FIRST+1,
+                                  PTS_NONE);
+    m_pickup_trigger_center.resize(ItemState::ITEM_LAST-ItemState::ITEM_FIRST+1,
+                                   Vec3(0.0f));
+    m_pickup_trigger_half_extents.resize(
+        ItemState::ITEM_LAST-ItemState::ITEM_FIRST+1, Vec3(0.0f));
 
     m_item_lowres_mesh.resize(ItemState::ITEM_LAST-ItemState::ITEM_FIRST+1, NULL);
 
@@ -162,6 +119,33 @@ void ItemManager::loadDefaultItemMeshes()
         mesh->grab();
         m_item_mesh[i]            = mesh;
         node->get("glow", &(m_glow_color[i]));
+
+        std::string pickup_shape;
+        node->get("pickup-shape", &pickup_shape);
+        if (pickup_shape == "box")
+            m_pickup_trigger_shape[i] = PTS_BOX;
+        else if (pickup_shape == "cylinder-y")
+            m_pickup_trigger_shape[i] = PTS_CYLINDER_Y;
+        else if (pickup_shape == "sphere")
+            m_pickup_trigger_shape[i] = PTS_SPHERE;
+        else if (!pickup_shape.empty())
+            Log::fatal("[ItemManager]", "Unknown pickup shape '%s' for '%s'.",
+                       pickup_shape.c_str(), name.c_str());
+
+        if (m_pickup_trigger_shape[i] != PTS_NONE)
+        {
+            if (!node->get("pickup-center", &m_pickup_trigger_center[i]) ||
+                !node->get("pickup-half-extents",
+                           &m_pickup_trigger_half_extents[i]) ||
+                m_pickup_trigger_half_extents[i].getX() <= 0.0f ||
+                m_pickup_trigger_half_extents[i].getY() <= 0.0f ||
+                m_pickup_trigger_half_extents[i].getZ() <= 0.0f)
+            {
+                Log::fatal("[ItemManager]",
+                           "Item '%s' has an invalid physical pickup trigger.",
+                           name.c_str());
+            }
+        }
 
         std::string lowres_model_filename;
         node->get("lowmodel", &lowres_model_filename);
@@ -473,12 +457,6 @@ void  ItemManager::checkItemHit(AbstractKart* kart)
     if ( dynamic_cast<SpareTireAI*>(kart->getController()) ) return;
 
     const Vec3 kart_xyz = kart->getXYZ();
-    const Vec3 previous_kart_xyz = kart->getRecentPreviousXYZ();
-    Relativity::ObserverVisualState observer_state;
-    if (Relativity::isEnabled())
-    {
-        observer_state = Relativity::buildObserverVisualState(kart, kart_xyz);
-    }
 
     for(AllItemTypes::iterator i =m_all_items.begin();
                                i!=m_all_items.end();  i++)
@@ -495,11 +473,9 @@ void  ItemManager::checkItemHit(AbstractKart* kart)
         }
 
 
-        // To allow inlining and avoid including kart.hpp in item.hpp,
-        // we pass the kart and the position separately.
-        if((*i)->hitKart(kart_xyz, kart) ||
-           apparentRelativisticItemHit(*i, kart, kart_xyz,
-                                       previous_kart_xyz, observer_state))
+        Item* item = dynamic_cast<Item*>(*i);
+        if ((item && item->hitKartPhysically(kart)) ||
+            (!item && (*i)->hitKart(kart_xyz, kart)))
         {
             collectedItem(*i, kart);
         }   // if hit

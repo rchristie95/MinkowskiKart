@@ -1,6 +1,6 @@
-package com.rchristie95.minkowskikart;
+package org.supertuxkart.stk_dbg;
 
-import com.rchristie95.minkowskikart.STKEditText;
+import org.supertuxkart.stk_dbg.STKEditText;
 
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;

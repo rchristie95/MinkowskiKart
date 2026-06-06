@@ -23,7 +23,6 @@
 #include "audio/sfx_manager.hpp"
 #include "challenges/challenge_data.hpp"
 #include "challenges/challenge_status.hpp"
-#include "challenges/story_mode_status.hpp"
 #include "config/player_manager.hpp"
 #include "config/player_profile.hpp"
 #include "config/user_config.hpp"
@@ -202,30 +201,7 @@ const ChallengeData* UnlockManager::getChallengeData(const std::string& id)
     return it->second;
 }   // getChallengeData
 
-//-----------------------------------------------------------------------------
-/** Creates a game slot. It initialises the game slot's status with the
- *  information in the xml node (if given), basically restoring the saved
- *  states for a player.
- *  \param node The XML game-slots node with all data for a player.
- */
-StoryModeStatus* UnlockManager::createStoryModeStatus(const XMLNode *node)
-{
 
-    StoryModeStatus *status = new StoryModeStatus(node);
-
-    for(AllChallengesType::iterator i = m_all_challenges.begin();
-                                    i!=m_all_challenges.end();  i++)
-    {
-        ChallengeData* cd = i->second;
-        ChallengeStatus *challenge_status = new ChallengeStatus(cd);
-        if(node)
-            challenge_status->load(node);
-        status->addStatus(challenge_status);
-    }
-
-    status->computeActive(/* first call*/ true);
-    return status;
-}   // createStoryModeStatus
 
 //-----------------------------------------------------------------------------
 void UnlockManager::playLockSound() const

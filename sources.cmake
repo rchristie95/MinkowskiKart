@@ -1,6 +1,6 @@
 # Modify this file to change the last-modified date when you add/remove a file.
 # This will then trigger a new cmake run automatically.
-# Stage 3 observer snapshot sources added. relativistic_vfx added. asteroid rename added. anti_karticle added. HelpScreen8 and Information rename added.
+# Stage 3 observer snapshot sources added. relativistic_vfx added. asteroid rename added. anti_karticle added. HelpScreen8 and Information rename added. Story mode removed.
 file(GLOB_RECURSE STK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.hpp")
 file(GLOB_RECURSE STK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.cpp")
 file(GLOB_RECURSE STK_SHADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "data/shaders/*")

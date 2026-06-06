@@ -28,7 +28,8 @@ apply plugin: 'com.android.application'
 
 android
 {
-    // Setting the namespace via a source AndroidManifest.xml's package attribute is deprecated.
+    // SDL resolves the activity class from the installable package name, so
+    // Java sources and generated resources must use the selected variant id.
     namespace project.getProperty('package_name')
     // buildToolsVersion is no longer needed https://developer.android.com/studio/releases/gradle-plugin.html#behavior_changes_1
     // Quote:
@@ -59,7 +60,11 @@ android
             ndkBuild
             {
                 def app_platform = "APP_PLATFORM=android-${min_sdk_version}"
-                arguments app_platform, 'APP_STL=c++_static', cpu_core
+                def pkgName = project.getProperty('package_name')
+                def pkgClass = pkgName.replace('.', '/')
+                def appDirName = project.findProperty('app_dir_name') ?: (pkgName.endsWith('.stk_dbg') ? 'supertuxkart-dbg' : (pkgName.endsWith('.stk_beta') ? 'supertuxkart-beta' : 'supertuxkart'))
+                def projVersion = project.getProperty('version_name')
+                arguments app_platform, 'APP_STL=c++_static', cpu_core, "PACKAGE_NAME=${pkgName}", "PACKAGE_CLASS_NAME=${pkgClass}", "APP_DIR_NAME=${appDirName}", "PROJECT_VERSION=${projVersion}"
                 if (project.getProperty('compile_arch') == 'all')
                 {
                     abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
@@ -82,10 +87,13 @@ android
     {
         release
         {
-            storeFile file(keystore)
-            storePassword storepass
-            keyAlias alias
-            keyPassword keypass
+            if (project.findProperty('keystore')?.toString())
+            {
+                storeFile file(keystore)
+                storePassword storepass
+                keyAlias alias
+                keyPassword keypass
+            }
             v1SigningEnabled true
             v2SigningEnabled true
         }
@@ -100,6 +108,12 @@ android
             minifyEnabled false
             shrinkResources false
             multiDexEnabled true
+            // CI supplies the stable signing key so downloaded debug APKs can
+            // update one another. Local builds keep Gradle's debug signing.
+            if (project.findProperty('keystore')?.toString())
+            {
+                signingConfig signingConfigs.release
+            }
             externalNativeBuild
             {
                 ndkBuild

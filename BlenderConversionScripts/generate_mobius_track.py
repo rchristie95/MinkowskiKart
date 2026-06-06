@@ -2113,6 +2113,13 @@ def item_position(u, lateral, lift=1.2):
     return vadd(p, vmul(n, lift))
 
 
+def surface_item_attrs(u, lateral):
+    return (
+        f'{fmt_xyz_attrs(mobius_point(u, lateral))} '
+        f'surface-normal="{fmt_vec(mobius_normal(u, lateral))}" drop="false"'
+    )
+
+
 def start_position(row, col):
     u = START_U - START_GRID_U_OFFSET - row * START_GRID_U_SPACING
     lateral = START_GRID_LATERALS[col]
@@ -2277,13 +2284,13 @@ def write_scene_xml(track_dir):
         (10.33, 5.4), (10.93, -5.4), (12.28, -5.2)
     ]
     for u, lateral in item_boxes:
-        lines.append(f'  <item {fmt_xyz_attrs(item_position(u, lateral, 1.3))} drop="true"/>')
+        lines.append(f'  <item {surface_item_attrs(u, lateral)}/>')
     for u, lateral in small_nitro:
-        lines.append(f'  <small-nitro {fmt_xyz_attrs(item_position(u, lateral, 1.3))} drop="true"/>')
+        lines.append(f'  <small-nitro {surface_item_attrs(u, lateral)}/>')
     for u, lateral in big_nitro:
-        lines.append(f'  <big-nitro {fmt_xyz_attrs(item_position(u, lateral, 1.3))} drop="true"/>')
+        lines.append(f'  <big-nitro {surface_item_attrs(u, lateral)}/>')
     for u, lateral in compactifications:
-        lines.append(f'  <banana {fmt_xyz_attrs(item_position(u, lateral, 1.15))} drop="true"/>')
+        lines.append(f'  <banana {surface_item_attrs(u, lateral)}/>')
     lines.append("</scene>")
     (track_dir / "scene.xml").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

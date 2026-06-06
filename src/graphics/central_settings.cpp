@@ -252,7 +252,6 @@ void CentralVideoSettings::init()
             hasInstancedArrays = true;
             Log::info("GLDriver", "ARB Instanced Arrays Present");
         }
-
         // Check all extensions required by SP
         m_supports_sp = isARBInstancedArraysUsable() &&
             isARBVertexType2101010RevUsable() && isARBSamplerObjectsUsable() &&

@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Robson Christie - theoretical and computational physicist working on open quantum systems, quantum simulation, cosmology, and scientific software.">
+  <title>Robson Christie // Open Quantum Systems</title>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #000600;
+      --panel: rgba(0, 17, 5, 0.86);
+      --panel-strong: rgba(0, 24, 7, 0.94);
+      --green: #39ff88;
+      --green-soft: #10c25b;
+      --green-dim: #78dba4;
+      --text: #d9ffe7;
+      --muted: #8ac79d;
+      --quiet: #5a8c69;
+      --line: rgba(57, 255, 136, 0.26);
+      --line-strong: rgba(57, 255, 136, 0.52);
+      --black: #020402;
+      --warning: #d5ff6a;
+      --shadow: 0 0 60px rgba(57, 255, 136, 0.11);
+      --mono: "Cascadia Mono", "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(57, 255, 136, 0.12), transparent 32rem),
+        radial-gradient(circle at 85% 5%, rgba(11, 159, 78, 0.12), transparent 28rem),
+        linear-gradient(180deg, #000 0%, var(--bg) 54%, #000 100%);
+      color: var(--text);
+      font-family: var(--mono);
+      line-height: 1.65;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      content: "";
+      background-image:
+        linear-gradient(rgba(57, 255, 136, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57, 255, 136, 0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 88%);
+    }
+
+    body::after {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      content: "";
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(57, 255, 136, 0.035),
+        rgba(57, 255, 136, 0.035) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      mix-blend-mode: screen;
+      opacity: 0.28;
+    }
+
+    #equation-rain {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      width: 100%;
+      height: 100%;
+      opacity: 0.55;
+    }
+
+    a {
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--warning);
+      text-shadow: 0 0 12px rgba(213, 255, 106, 0.46);
+    }
+
+    .shell {
+      width: min(1160px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 5, 1, 0.82);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 70px;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      border: 1px solid var(--line-strong);
+      background: #000;
+      color: var(--green);
+      box-shadow: inset 0 0 18px rgba(57, 255, 136, 0.16), 0 0 24px rgba(57, 255, 136, 0.11);
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px 18px;
+      color: var(--muted);
+      font-size: 0.91rem;
+    }
+
+    .links a::before,
+    .footer a::before {
+      content: "./";
+      color: var(--quiet);
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+      align-items: center;
+      gap: 44px;
+      padding: 84px 0 58px;
+    }
+
+    .prompt {
+      margin: 0 0 18px;
+      color: var(--green);
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+    }
+
+    .prompt span {
+      color: var(--muted);
+    }
+
+    h1 {
+      max-width: 860px;
+      margin: 0;
+      color: var(--green);
+      font-size: clamp(2.8rem, 7vw, 6.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(57, 255, 136, 0.25);
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 0.42em;
+      height: 0.82em;
+      margin-left: 0.08em;
+      background: var(--green);
+      box-shadow: 0 0 18px rgba(57, 255, 136, 0.72);
+      animation: blink 1s steps(2, start) infinite;
+      vertical-align: -0.08em;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .lede {
+      max-width: 720px;
+      margin: 28px 0 0;
+      color: var(--text);
+      font-size: clamp(1rem, 1.45vw, 1.18rem);
+    }
+
+    .terminal-line {
+      margin: 22px 0 0;
+      padding: 14px 16px;
+      border-left: 3px solid var(--green);
+      background: rgba(0, 0, 0, 0.54);
+      color: var(--muted);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 30px 0 0;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 15px;
+      border: 1px solid var(--line-strong);
+      background: rgba(0, 0, 0, 0.62);
+      color: var(--green);
+      font-weight: 700;
+      box-shadow: inset 0 0 18px rgba(57, 255, 136, 0.08);
+      transition: background 160ms ease, box-shadow 160ms ease, color 160ms ease;
+    }
+
+    .button:hover {
+      background: rgba(57, 255, 136, 0.1);
+      box-shadow: inset 0 0 22px rgba(57, 255, 136, 0.15), 0 0 20px rgba(57, 255, 136, 0.16);
+      color: var(--warning);
+    }
+
+    .button.primary {
+      background: var(--green);
+      color: #001405;
+      text-shadow: none;
+    }
+
+    .button.primary:hover {
+      background: var(--warning);
+      color: #001405;
+    }
+
+    .terminal-window {
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      box-shadow: var(--shadow), inset 0 0 80px rgba(57, 255, 136, 0.04);
+    }
+
+    .window-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 40px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.62);
+      color: var(--quiet);
+      font-size: 0.82rem;
+    }
+
+    .traffic {
+      display: flex;
+      gap: 7px;
+    }
+
+    .traffic i {
+      width: 9px;
+      height: 9px;
+      border: 1px solid var(--green-soft);
+      background: rgba(57, 255, 136, 0.16);
+    }
+
+    .portrait-frame {
+      padding: 14px;
+    }
+
+    .portrait {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      object-position: center 62%;
+      border: 1px solid rgba(57, 255, 136, 0.36);
+      filter: contrast(1.06) saturate(0.78) hue-rotate(38deg);
+    }
+
+    .photo-caption {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    section {
+      padding: 54px 0;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(260px, 1fr);
+      gap: 26px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: clamp(1.8rem, 4vw, 3.1rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    h2::before {
+      content: "$ ";
+      color: var(--quiet);
+      font-size: 0.72em;
+    }
+
+    .section-head p,
+    .muted {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: inset 0 0 60px rgba(57, 255, 136, 0.03);
+    }
+
+    .card.pad {
+      padding: 22px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 1.02rem;
+      line-height: 1.3;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .tagline {
+      display: inline-flex;
+      margin-bottom: 14px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      color: var(--green);
+      background: rgba(0, 0, 0, 0.48);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .role {
+      display: grid;
+      grid-template-columns: 145px 1fr;
+      gap: 18px;
+      padding: 20px;
+    }
+
+    .date {
+      color: var(--warning);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .role strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .paper-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .paper {
+      display: grid;
+      gap: 10px;
+      padding: 20px;
+    }
+
+    .paper-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .paper-title h3 {
+      margin: 0;
+      max-width: 820px;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .paper-title span {
+      color: var(--warning);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .paper p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .paper-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.5);
+      color: var(--green);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .project {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: center;
+      padding: 28px;
+      background:
+        linear-gradient(90deg, rgba(57, 255, 136, 0.08), transparent 55%),
+        var(--panel-strong);
+    }
+
+    .big-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 0 18px;
+      border: 1px solid var(--line-strong);
+      background: var(--green);
+      color: #001405;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .footer {
+      position: relative;
+      z-index: 2;
+      padding: 48px 0 70px;
+      color: var(--quiet);
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 22px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cursor {
+        animation: none;
+      }
+
+      #equation-rain {
+        display: none;
+      }
+    }
+
+    @media (max-width: 880px) {
+      .hero,
+      .section-head,
+      .grid.three,
+      .project {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 54px;
+      }
+
+      .terminal-window {
+        max-width: 440px;
+      }
+
+      .role {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100% - 24px, 1160px);
+      }
+
+      .nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px 0;
+      }
+
+      .links {
+        justify-content: flex-start;
+      }
+
+      section {
+        padding: 42px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="equation-rain" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <nav class="shell nav" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="Robson Christie homepage">
+        <span class="brand-mark">RC</span>
+        <span>robson_christie</span>
+      </a>
+      <div class="links">
+        <a href="#research">research</a>
+        <a href="#publications">papers</a>
+        <a href="#cv">cv</a>
+        <a href="https://www.youtube.com/@OpenQuantumSonification">youtube</a>
+        <a href="https://github.com/rchristie95">github</a>
+        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">linkedin</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="shell hero">
+      <div>
+        <p class="prompt"><span>robson@open-systems:~$</span> cat research_statement.txt</p>
+        <h1>Open Quantum Systems, Universal Applications<span class="cursor" aria-hidden="true"></span></h1>
+        <p class="lede">
+          I study quantum systems that interact with their environment. My work uses
+          Lindblad dynamics, stochastic trajectories, decoherence theory, and numerical
+          simulation across cosmology, quantum simulation, chemical physics, and quantum fields.
+        </p>
+        <p class="terminal-line">
+          methods: GKLS/Lindblad equations | stochastic Schrodinger dynamics | quantum jumps | lattice simulation | Qiskit | QuTiP
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="assets/Robson-Christie-CV.pdf">download_cv.pdf</a>
+          <a class="button" href="mailto:robson.christie1995@gmail.com">email</a>
+          <a class="button" href="https://scholar.google.com/citations?user=a5gRu_gAAAAJ&amp;hl=en&amp;oi=ao">google_scholar</a>
+        </div>
+      </div>
+
+      <aside class="terminal-window" aria-label="Portrait and profile">
+        <div class="window-bar">
+          <span>profile.jpg</span>
+          <span class="traffic" aria-hidden="true"><i></i><i></i><i></i></span>
+        </div>
+        <div class="portrait-frame">
+          <img class="portrait" src="assets/robson-christie-terminal.jpg" alt="Portrait of Robson Christie">
+          <p class="photo-caption">
+            theoretical / computational physics // open systems // reproducible simulation
+          </p>
+        </div>
+      </aside>
+    </section>
+
+    <section id="research" class="shell">
+      <div class="section-head">
+        <h2>research.log</h2>
+        <p>Direct problems, formal models, and simulations that can be checked.</p>
+      </div>
+      <div class="grid three">
+        <article class="card pad">
+          <span class="tagline">methods</span>
+          <h3>Open-system dynamics</h3>
+          <p>Gaussian states, Lindblad master equations, stochastic unravellings, quantum jumps, and transition-rate estimators.</p>
+        </article>
+        <article class="card pad">
+          <span class="tagline">applications</span>
+          <h3>Cosmology and quantum fields</h3>
+          <p>Coarse-graining, decoherence, tunnelling, non-adiabatic excitation, metastable states, and stochastic inflation.</p>
+        </article>
+        <article class="card pad">
+          <span class="tagline">computation</span>
+          <h3>Scientific software</h3>
+          <p>Python, Matlab, Mathematica, Qiskit, QuTiP, HPC workflows, and code used to reproduce calculations.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="cv" class="shell">
+      <div class="section-head">
+        <h2>cv.txt</h2>
+        <p>Roles, training, and research focus.</p>
+      </div>
+      <div class="timeline">
+        <article class="card role">
+          <div class="date">2024 - 2026</div>
+          <div>
+            <strong>Research Fellow, University of Portsmouth</strong>
+            <p>Open quantum systems for quantum simulation and early-universe cosmology. Work included IBM quantum-hardware protocols and lattice simulations of inflationary field dynamics.</p>
+          </div>
+        </article>
+        <article class="card role">
+          <div class="date">2023 - 2024</div>
+          <div>
+            <strong>EPSRC Research Associate, Imperial College London</strong>
+            <p>Rare-event algorithms for stochastic quantum trajectories, with practical estimators for transition rates and path probabilities.</p>
+          </div>
+        </article>
+        <article class="card role">
+          <div class="date">2018 - 2023</div>
+          <div>
+            <strong>PhD Mathematics, Imperial College London</strong>
+            <p>Gaussian dynamics in the Lindblad equation and its stochastic unravellings, supervised by Dr Eva Maria Graefe.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="publications" class="shell">
+      <div class="section-head">
+        <h2>papers</h2>
+        <p>Selected publications and preprints. Links go to arXiv, journal pages, or project pages.</p>
+      </div>
+
+      <div class="paper-list">
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum Stochastic Inflation</h3>
+            <span>in preparation</span>
+          </div>
+          <p>Open-quantum-system formulation of stochastic inflation, deriving GKLS dynamics for coarse-grained scalar-field variables and recovering the classical Fokker-Planck limit.</p>
+          <div class="paper-links">
+            <span class="pill">manuscript_in_preparation</span>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Non-Equilibrium Dynamics of the Time-Dependent Excitonic Coupling in Fluorescent Protein Dimers</h3>
+            <span>2026</span>
+          </div>
+          <p>Transition-density coupling plus stochastic quantum simulation for near-field excitonic coupling in dimeric Venus fluorescent protein.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2605.00027">arxiv:2605.00027</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Cosmic Lockdown: When Decoherence Saves the Universe from Tunneling</h3>
+            <span>2025</span>
+          </div>
+          <p>Lattice simulations of false-vacuum population and decoherence-driven suppression of later tunnelling.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2512.14204">arxiv:2512.14204</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Transition Path and Interface Sampling of Stochastic Schrodinger Dynamics</h3>
+            <span>2025</span>
+          </div>
+          <p>Path and interface sampling for quantum trajectories, including transition-rate estimation and low-temperature non-Arrhenius behaviour.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2411.00490">arxiv:2411.00490</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum Simulation of Dynamical Transition Rates in Open Quantum Systems</h3>
+            <span>2024</span>
+          </div>
+          <p>Quantum-simulation protocol for transition rates without full Lindblad evolution, tested on IBM quantum hardware.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2412.17229">arxiv:2412.17229</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>The Sound of Decoherence</h3>
+            <span>2024</span>
+          </div>
+          <p>Audio mapping of density-matrix structure for tunnelling, thermalisation, decoherence, and recoherence.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://arxiv.org/abs/2412.17045">arxiv:2412.17045</a>
+            <a class="pill" href="https://sonification.design/#Decoherence">sonification_project</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum Tunnelling and Thermally Driven Transitions in a Double Well Potential at Finite Temperature</h3>
+            <span>2024</span>
+          </div>
+          <p>Thermal-to-quantum tunnelling crossover in a dissipative double well, using a Lindblad Brownian-motion model.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://doi.org/10.1088/1751-8121/ad4b7b">doi</a>
+            <a class="pill" href="https://arxiv.org/abs/2312.12101">arxiv:2312.12101</a>
+          </div>
+        </article>
+
+        <article class="card paper">
+          <div class="paper-title">
+            <h3>Quantum-jump vs stochastic Schrodinger dynamics for Gaussian states with quadratic Hamiltonians and linear Lindbladians</h3>
+            <span>2022</span>
+          </div>
+          <p>Comparison of continuous and jump unravellings, with closed-form Gaussian evolution and a Hagedorn-wavepacket scheme.</p>
+          <div class="paper-links">
+            <a class="pill" href="https://doi.org/10.1088/1751-8121/ac9d73">doi</a>
+            <a class="pill" href="https://arxiv.org/abs/2203.11530">arxiv:2203.11530</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell">
+      <article class="card project">
+        <div>
+          <span class="tagline">side_project</span>
+          <h2>minkowski_kart</h2>
+          <p class="muted">A SuperTuxKart fork for relativistic racing mechanics: black holes, time dilation, cosmic strings, Lorentz-grid frame shifts, and other spacetime-inspired systems.</p>
+        </div>
+        <a class="big-link" href="https://github.com/rchristie95/MinkowskiKart">github_repo</a>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell footer-inner">
+      <span>robson_christie // robson.christie1995@gmail.com</span>
+      <span>
+        <a href="mailto:robson.christie1995@gmail.com">email</a> /
+        <a href="https://www.youtube.com/@OpenQuantumSonification">youtube</a> /
+        <a href="https://github.com/rchristie95">github</a> /
+        <a href="https://uk.linkedin.com/in/robson-christie-1403022a5">linkedin</a> /
+        <a href="assets/Robson-Christie-CV.pdf">cv</a>
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("equation-rain");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!canvas || reduceMotion) return;
+
+      const ctx = canvas.getContext("2d");
+      const equations = [
+        // 1. Quantum Stochastic Inflation (in preparation)
+        "H^2 = \\frac{V(\\phi)}{3 M_{pl}^2}",
+        "\\frac{\\partial P}{\\partial N} = \\frac{\\partial}{\\partial \\phi} \\left[ \\frac{V'}{3H^2} P + \\frac{H^3}{8\\pi^2} \\frac{\\partial P}{\\partial \\phi} \\right]",
+        "\\langle \\delta \\phi^2 \\rangle = \\frac{H^3}{4\\pi^2} t",
+        "\\mathcal{D}[\\rho] = \\sum_k (L_k \\rho L_k^\\dagger - \\frac{1}{2}\\{L_k^\\dagger L_k, \\rho\\})",
+        "\\phi_k = \\frac{H}{\\sqrt{2k^3}} (1 + ik/aH) e^{-ik/aH}",
+        "P_\\zeta(k) = \\frac{H^2}{8\\pi^2 \\epsilon M_{pl}^2}",
+        "\\epsilon = \\frac{1}{2} M_{pl}^2 (V'/V)^2",
+        "\\eta = M_{pl}^2 (V''/V)",
+        "n_s - 1 = 2\\eta - 6\\epsilon",
+        "\\Delta_{peak} = \\frac{H^2}{8\\pi^2 \\epsilon}",
+
+        // 2. Excitonic Coupling in Fluorescent Protein Dimers (2026)
+        "\\hat{H}_{site}(t) = E \\mathbb{I} + J(t) \\hat{\\sigma}_x",
+        "J(t) = \\iint \\frac{\\rho_L(\\mathbf{r}_L) \\rho_R(\\mathbf{r}_R)}{4\\pi\\varepsilon(t) |\\mathbf{r}_L - \\mathbf{r}_R|} d\\mathbf{r}_L d\\mathbf{r}_R",
+        "\\frac{1}{\\varepsilon(t)} = \\frac{1}{\\varepsilon_{eq}} + \\left(\\frac{1}{\\varepsilon_{opt}} - \\frac{1}{\\varepsilon_{eq}}\\right) e^{-t/\\tau_D}",
+        "J_{PDA} = \\frac{1}{4\\pi\\varepsilon} \\left( \\frac{\\mu_L \\cdot \\mu_R}{R^3} - \\frac{3(\\mu_L \\cdot \\mathbf{R})(\\mu_R \\cdot \\mathbf{R})}{R^5} \\right)",
+        "\\Delta E(t) = 2 |J(t)|",
+        "\\hat{L} = \\sqrt{\\frac{\\hbar \\gamma}{2}} \\hat{\\sigma}_z",
+        "d|\\psi\\rangle = [ -iH dt - \\frac{\\gamma}{8} (\\hat{\\sigma}_z - \\langle \\hat{\\sigma}_z \\rangle)^2 dt + \\frac{\\sqrt{\\gamma}}{2} (\\hat{\\sigma}_z - \\langle \\hat{\\sigma}_z \\rangle) dW ] |\\psi\\rangle",
+        "u = 2 \\text{Re}(\\rho_{12})",
+        "w = \\rho_{11} - \\rho_{22}",
+        "J = 74.38 \\text{ cm}^{-1}",
+
+        // 3. Cosmic Lockdown: Decoherence vs Tunneling (2025)
+        "P_{tunnel} \\propto e^{-S_E/\\hbar}",
+        "\\gamma_{dec} = \\Lambda x^2",
+        "\\dot{\\rho} = -i[H, \\rho] - \\Lambda [x, [x, \\rho]]",
+        "S_E = 2\\pi^2 R^3 \\sigma - \\frac{1}{2}\\pi^2 R^4 \\epsilon",
+        "\\Gamma = A e^{-B/\\hbar}",
+        "\\Psi(x, t) = \\int \\mathcal{D}x e^{iS[x]/\\hbar}",
+        "\\rho(x, y) = \\int dz \\psi(x, z) \\psi^*(y, z)",
+        "t_{dec} \\sim \\hbar / (\\gamma \\Delta x^2)",
+        "V(x) = \\lambda (x^2 - a^2)^2",
+        "\\delta \\rho \\sim e^{-\\Lambda t \\Delta x^2}",
+
+        // 4. Transition Path and Interface Sampling (2025)
+        "k_{AB} = \\Phi_0 \\prod_{i=0}^{n-1} P(\\lambda_{i+1} | \\lambda_i)",
+        "\\hat{D}(\\delta p) = e^{i \\delta p \\hat{X} / \\hbar}",
+        "P_{acc} = \\min(1, \\frac{P_{gen}(n \\to o)}{P_{gen}(o \\to n)})",
+        "w[\\Psi] = \\prod_i P(\\psi_{i+1} | \\psi_i)",
+        "\\Phi_0 = \\frac{\\sum h_A(x_0) h_{\\lambda_1}(x_t)}{\\mathcal{T}}",
+        "P(\\lambda_{i+1} | \\lambda_i) = \\frac{\\langle h_{\\lambda_{i+1}} \\rangle_{\\lambda_i}}{\\langle h_{\\lambda_i} \\rangle_{\\lambda_i}}",
+        "\\hat{H}_\\gamma = \\frac{\\hat{P}^2}{2m} + V(\\hat{X}) + \\frac{\\gamma}{2} (\\hat{X}\\hat{P} + \\hat{P}\\hat{X})",
+        "\\hat{L} = \\sqrt{\\frac{4\\gamma m k_B T}{\\hbar}} \\hat{X} + i \\sqrt{\\frac{\\gamma \\hbar}{4 m k_B T}} \\hat{P}",
+        "k = \\nu e^{-E_a/k_B T}",
+        "\\langle h_A(x_0) h_B(x_t) \\rangle",
+
+        // 5. Quantum Simulation of Transition Rates (2024)
+        "P(t) = | \\langle \\psi(0) | \\psi(t) \\rangle |^2",
+        "k = \\lim_{t \\to \\infty} \\frac{1}{t} \\ln P(t)",
+        "R_y(\\theta) = e^{-i\\theta \\sigma_y / 2}",
+        "\\text{CNOT} = |0\\rangle\\langle 0| \\otimes I + |1\\rangle\\langle 1| \\otimes \\sigma_x",
+        "\\hat{H} = \\sum \\alpha_i \\hat{O}_i",
+        "\\langle \\hat{O} \\rangle = \\text{Tr}(\\rho \\hat{O})",
+        "\\mathcal{F} = | \\langle \\psi_{target} | \\psi_{sim} \\rangle |^2",
+        "E_{ground} = \\min_{\\theta} \\langle \\psi(\\theta) | H | \\psi(\\theta) \\rangle",
+        "e^{-iHt} \\approx \\prod e^{-i h_j \\hat{O}_j \\Delta t}",
+        "\\hat{\\sigma}_x |0\\rangle = |1\\rangle",
+
+        // 6. The Sound of Decoherence (2024)
+        "f = \\nu \\Delta E / h",
+        "A \\sim | \\rho_{ij} |",
+        "S_{vN} = -\\text{Tr}(\\rho \\ln \\rho)",
+        "\\text{Tr}(\\rho^2)",
+        "\\rho(t) = \\sum p_k | \\psi_k(t) \\rangle \\langle \\psi_k(t) |",
+        "\\gamma_{T2} = 1/T_2",
+        "I(\\omega) \\propto | \\int e^{i\\omega t} \\langle \\mu(t) \\mu(0) \\rangle dt |^2",
+        "\\text{SNR} = P_{signal} / P_{noise}",
+        "\\Delta \\omega \\sim 1/\\Delta t",
+        "P(k) = \\sum a_n \\cos(n \\theta)",
+
+        // 7. Quantum Tunnelling at Finite Temperature (2024)
+        "T_c = \\frac{\\hbar \\omega_b}{2\\pi k_B}",
+        "k(T) = \\frac{\\omega_a}{2\\pi} e^{-\\beta V_b}",
+        "\\omega_b = \\sqrt{|V''(x_b)|/m}",
+        "J(\\omega) = \\eta \\omega e^{-\\omega/\\omega_c}",
+        "k_{TST} = \\frac{k_B T}{h} \\frac{Q^\\ddagger}{Q}",
+        "Q(T) = \\text{Tr}(e^{-\\beta H})",
+        "\\beta = \\frac{1}{k_B T}",
+        "V(x) = c_4 x^4 - c_2 x^2",
+        "\\text{Im} F \\propto e^{-\\beta V_b}",
+        "\\eta_{eff} = \\gamma m",
+
+        // 8. Quantum-jump vs SSE for Gaussian states (2022)
+        "d|\\psi\\rangle = [-i H_{eff} dt + \\sum_k (L_k - \\langle L_k \\rangle) d\\xi_k] |\\psi\\rangle",
+        "\\gamma_k = \\langle \\psi | L_k^\\dagger L_k | \\psi \\rangle",
+        "\\phi_n(z, \\Sigma) = P_n(z, \\Sigma) \\exp(-\\frac{i}{2}(x-q)^T(\\Sigma+i\\Omega)^{-1}(x-q))",
+        "\\dot{\\Sigma} = \\Omega \\mathcal{H} \\Omega + \\Omega \\mathcal{M} + \\mathcal{M}^T \\Omega - \\Omega \\Sigma^{-1} \\Omega",
+        "L_k = \\mathbf{l}_k^T \\hat{z} + c_k",
+        "|\\psi\\rangle \\to \\frac{L_k |\\psi\\rangle}{\\|L_k |\\psi\\rangle\\|}",
+        "\\Omega = \\begin{pmatrix} 0 & I \\\\ -I & 0 \\end{pmatrix}",
+        "H = \\frac{1}{2} \\hat{z}^T \\mathcal{H} \\hat{z} + \\hat{z}^T \\mathbf{h}",
+        "d\\langle \\hat{z} \\rangle = \\Omega (\\mathcal{H} \\langle \\hat{z} \\rangle + \\mathbf{h}) dt",
+        "\\dot{A} = -A(2\\Sigma)A"
+      ];
+
+      let width = 0;
+      let height = 0;
+      let fontSize = 42;
+      let columns = [];
+      const speedScale = 0.15;
+      const imageCache = new Map();
+
+      const prepareImage = (tex) => {
+        return new Promise((resolve) => {
+          try {
+            const container = MathJax.tex2svg(tex);
+            const svgElement = container.querySelector('svg');
+            if (!svgElement) {
+              resolve(null);
+              return;
+            }
+            // Ensure color is green
+            svgElement.setAttribute("fill", "#d5ff6a");
+            svgElement.style.color = "#d5ff6a";
+            
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const blob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            
+            const img = new Image();
+            img.onload = () => {
+              imageCache.set(tex, { img, w: img.width, h: img.height });
+              resolve(true);
+            };
+            img.onerror = () => resolve(null);
+            img.src = url;
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      };
+
+      const resize = () => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        fontSize = width < 700 ? 28 : 42;
+        
+        const count = Math.max(8, Math.floor(width / (fontSize * 2.8)));
+        columns = Array.from({ length: count }, (_, index) => ({
+          x: index * fontSize * 2.8,
+          y: Math.random() * -height,
+          speed: 0.5 + Math.random() * 1.2,
+          phrase: equations[Math.floor(Math.random() * equations.length)]
+        }));
+      };
+
+      const draw = () => {
+        ctx.fillStyle = "rgba(0, 4, 0, 0.45)";
+        ctx.fillRect(0, 0, width, height);
+
+        for (const column of columns) {
+          const data = imageCache.get(column.phrase);
+          if (data) {
+            const scale = fontSize / data.h;
+            const drawW = data.w * scale;
+            const drawH = data.h * scale;
+
+            // Main text
+            ctx.globalAlpha = 1.0;
+            ctx.drawImage(data.img, column.x, column.y, drawW, drawH);
+
+            // Subtle ghosting
+            ctx.globalAlpha = 0.15;
+            ctx.drawImage(data.img, column.x, column.y - (fontSize * 0.8), drawW, drawH);
+            ctx.globalAlpha = 1.0;
+          }
+
+          column.y += column.speed * fontSize * speedScale;
+
+          if (column.y > height + 250) {
+            column.y = -Math.random() * height * 0.45;
+            column.speed = 0.5 + Math.random() * 1.2;
+            column.phrase = equations[Math.floor(Math.random() * equations.length)];
+          }
+        }
+
+        requestAnimationFrame(draw);
+      };
+
+      const init = async () => {
+        if (!window.MathJax || !window.MathJax.tex2svg) {
+          setTimeout(init, 100);
+          return;
+        }
+        await MathJax.startup.promise;
+        
+        // Pre-render all equations
+        await Promise.all(equations.map(prepareImage));
+        
+        window.addEventListener("resize", resize);
+        resize();
+        draw();
+      };
+
+      init();
+    })();
+  </script>
+</body>
+</html>

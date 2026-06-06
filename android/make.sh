@@ -158,8 +158,9 @@ if [ ! -d "$SDK_PATH" ]; then
     exit
 fi
 
-# Check if we have key for signing in release build
-if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
+# Check any supplied signing key. CI supplies one for debug APKs as well, so
+# repeated downloaded debug builds can update the installed application.
+if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ] || [ -n "$STK_KEYSTORE" ]; then
     if [ -z "$STK_KEYSTORE" ]; then
         echo "Error: STK_KEYSTORE variable is empty."
         exit
@@ -184,10 +185,10 @@ if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
         STK_KEYPASS="$STK_STOREPASS"
     fi
 else
-    STK_KEYSTORE="empty"
-    STK_STOREPASS="empty"
-    STK_KEYPASS="empty"
-    STK_ALIAS="empty"
+    STK_KEYSTORE=""
+    STK_STOREPASS=""
+    STK_KEYPASS=""
+    STK_ALIAS=""
 fi
 
 # Find newest build-tools version
@@ -440,22 +441,22 @@ echo "    <background android:drawable=\"@android:color/black\" />"    >> "$ADAP
 echo "    <foreground android:drawable=\"@drawable/icon_fg\" />"       >> "$ADAPTIVE_ICON_FILE"
 echo "</adaptive-icon>"                                                >> "$ADAPTIVE_ICON_FILE"
 
-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+sed -i "s/^package .*;$/package $PACKAGE_NAME;/" \
        "$DIRNAME/src/main/java/STKEditText.java"
 
-sed -i "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKInputConnection;/g" \
+sed -i "s/^import .*\.STKInputConnection;$/import $PACKAGE_NAME.STKInputConnection;/" \
        "$DIRNAME/src/main/java/STKEditText.java"
 
-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+sed -i "s/^package .*;$/package $PACKAGE_NAME;/" \
        "$DIRNAME/src/main/java/STKInputConnection.java"
 
-sed -i "s/import org.supertuxkart.*.STKEditText;/import $PACKAGE_NAME.STKEditText;/g" \
+sed -i "s/^import .*\.STKEditText;$/import $PACKAGE_NAME.STKEditText;/" \
        "$DIRNAME/src/main/java/STKInputConnection.java"
 
-sed -i "s/package org.supertuxkart.*/package $PACKAGE_NAME;/g" \
+sed -i "s/^package .*;$/package $PACKAGE_NAME;/" \
        "$DIRNAME/src/main/java/SuperTuxKartActivity.java"
 
-sed -i "s/import org.supertuxkart.*/import $PACKAGE_NAME.STKEditText;/g" \
+sed -i "s/^import .*\.STKEditText;$/import $PACKAGE_NAME.STKEditText;/" \
        "$DIRNAME/src/main/java/SuperTuxKartActivity.java"
 
 cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/HIDDevice.java" \
@@ -506,6 +507,7 @@ export ANDROID_HOME="$SDK_PATH"
           -Ppackage_name="$PACKAGE_NAME"                 \
           -Pversion_name="$PROJECT_VERSION"              \
           -Pversion_code="$PROJECT_CODE"                 \
+          -Papp_dir_name="$APP_DIR_NAME"                 \
           $GRADLE_BUILD_TYPE
 
 check_error
@@ -525,6 +527,7 @@ if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
           -Ppackage_name="$PACKAGE_NAME"                 \
           -Pversion_name="$PROJECT_VERSION"              \
           -Pversion_code="$PROJECT_CODE"                 \
+          -Papp_dir_name="$APP_DIR_NAME"                 \
           "bundleRelease"
 fi
 

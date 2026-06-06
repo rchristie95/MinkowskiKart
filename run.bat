@@ -10,7 +10,7 @@ set "PATH=%BIN_DIR%;%PATH%"
 
 echo Starting SuperTuxKart...
 cd /d "%BIN_DIR%"
-.\MinkowskiKart.exe %*
+.\MinkowskiKart.exe --login=rchristie95 --password=Telly612223! %*
 
 if %ERRORLEVEL% neq 0 (
     echo.

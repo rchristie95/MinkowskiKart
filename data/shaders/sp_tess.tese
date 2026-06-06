@@ -10,6 +10,7 @@ in vec4 tc_world_position[];
 in vec3 tc_world_normal[];
 in float tc_hue_change[];
 in vec3 tc_velocity[];
+in float tc_disable_relativity_visual[];
 
 out vec3 tangent;
 out vec3 bitangent;
@@ -66,10 +67,13 @@ void main()
     float h2 = gl_TessCoord.z * tc_hue_change[2];
     float h = h0 + h1 + h2;
 
-    vec3 vel = tc_velocity[0]; // Velocity should be the same for all vertices of an instance
+    // Velocity and disable flag should be the same for all vertices of an instance.
+    vec3 vel = tc_velocity[0];
+    float disable_relativity_visual = tc_disable_relativity_visual[0];
 
     // Apply warping here!
-    float relativity_fade = getRelativisticVisualFade(p, vel);
+    float relativity_fade = getRelativisticVisualFade(p, vel,
+        disable_relativity_visual);
     vec4 v_world_position = applyRelativisticContraction(vec4(p, 1.0),
         relativity_fade);
     vec3 v_world_normal = applyRelativisticNormalTransform(n, relativity_fade);

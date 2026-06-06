@@ -141,7 +141,15 @@ private:
 
     void     defaultInit();
     btScalar rayCast(btWheelInfo& wheel, const btVector3& ray);
+    bool     getWarpedTrackRaycast(const btVector3& source,
+                                   const btVector3& target,
+                                   btScalar ray_length,
+                                   btScalar max_depth,
+                                   btVector3* contact_point,
+                                   btVector3* contact_normal,
+                                   btScalar* depth) const;
     btVector3 computeRawSupportNormal() const;
+    void     projectVelocityOntoTrackTangent();
     bool     updateMobiusSurfaceCache() const;
     void     updateStableSupportNormal(btScalar step);
     void     updateWheelTransformsWS(btWheelInfo& wheel,

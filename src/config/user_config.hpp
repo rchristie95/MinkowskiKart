@@ -396,6 +396,15 @@ enum MultitouchControls
  */
 namespace UserConfigParams
 {
+    enum class RelativityTrackClippingMode : int
+    {
+        DYNAMIC_TESSELLATION = 0,
+        HEIGHT_CORRECTION = 1,
+        TESSELLATION_AND_HEIGHT_CORRECTION = 2,
+        DISABLED = 3,
+        TANGENT_VELOCITY_PROJECTION = 4,
+        WARPED_COLLISION_PHYSICS = 5
+    };
 
     // ---- Audio
     PARAM_PREFIX GroupUserConfigParam        m_audio_group
@@ -655,12 +664,7 @@ namespace UserConfigParams
     PARAM_PREFIX BoolUserConfigParam        m_display_fps
             PARAM_DEFAULT(  BoolUserConfigParam(false, "show_fps",
                             &m_video_group, "Display frame per seconds") );
-    PARAM_PREFIX BoolUserConfigParam        m_display_story_mode_timer
-            PARAM_DEFAULT(  BoolUserConfigParam(true, "show_story_mode_timer",
-                            &m_video_group, "Display the story mode timer") );
-    PARAM_PREFIX BoolUserConfigParam        m_speedrun_mode
-            PARAM_DEFAULT(  BoolUserConfigParam(false, "show_speedrun_timer",
-                            &m_video_group, "Display the speedrun timer") );
+
     PARAM_PREFIX IntUserConfigParam         m_max_fps
             PARAM_DEFAULT(  IntUserConfigParam(120, "max_fps",
                        &m_video_group, "Maximum fps, should be at least 60") );
@@ -1375,6 +1379,13 @@ namespace UserConfigParams
             PARAM_DEFAULT( FloatUserConfigParam(0.98f, "max_beta",
                                                &m_relativity_group,
                                                "Maximum kart speed as a fraction of c (0.1-0.99)") );
+
+    PARAM_PREFIX IntUserConfigParam        m_relativity_track_clipping_mode
+            PARAM_DEFAULT( IntUserConfigParam(
+                (int)RelativityTrackClippingMode::
+                    WARPED_COLLISION_PHYSICS,
+                "track_clipping_mode", &m_relativity_group,
+                "Anti-clipping mode: locked to 5 warped collision physics") );
 
     // ---- User management
 

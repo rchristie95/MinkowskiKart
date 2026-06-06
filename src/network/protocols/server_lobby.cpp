@@ -860,7 +860,18 @@ void ServerLobby::asynchronousUpdate()
         if (STKHost::get()->getPublicAddress().isUnset() &&
             STKHost::get()->getPublicIPv6Address().empty())
         {
-            m_state = ERROR_LEAVE;
+            if (!ServerConfig::m_firewalled_server)
+            {
+                Log::warn("ServerLobby", "STUN address discovery failed. Using localhost fallback as firewall-less server.");
+                const_cast<SocketAddress&>(STKHost::get()->getPublicAddress()).setIP(0x7F000001); // 127.0.0.1
+                const_cast<SocketAddress&>(STKHost::get()->getPublicAddress()).setPort(ServerConfig::m_server_port);
+                STKHost::get()->startListening();
+                m_state = REGISTER_SELF_ADDRESS;
+            }
+            else
+            {
+                m_state = ERROR_LEAVE;
+            }
         }
         else
         {
@@ -2659,14 +2670,15 @@ void ServerLobby::connectionRequested(Event* event)
     event->getPeer()->setUserVersion(user_version);
 
     unsigned list_caps = data.getUInt16();
+    Log::info("ServerLobby", "Server received caps size: %d", list_caps);
     std::set<std::string> caps;
     for (unsigned i = 0; i < list_caps; i++)
     {
         std::string cap;
         data.decodeString(&cap);
+        Log::info("ServerLobby", "Server received cap: %s", cap.c_str());
         caps.insert(cap);
     }
-    event->getPeer()->setClientCapabilities(caps);
     if (caps.find("minkowski_rules_v1") == caps.end())
     {
         NetworkString *message = getNetworkString(m_type, 2);
@@ -2680,6 +2692,7 @@ void ServerLobby::connectionRequested(Event* event)
             "Player refused: missing Minkowski rules capability");
         return;
     }
+    event->getPeer()->setClientCapabilities(caps);
     if (!handleAssets(data, event->getPeer()))
         return;
 
@@ -3065,7 +3078,11 @@ void ServerLobby::updatePlayerList(bool update_when_reset_server)
         auto profile_name = profile->getName();
 
         // get OS information
-        auto version_os = StringUtils::extractVersionOS(profile->getPeer()->getUserVersion());
+        std::string user_version = "";
+        auto peer_ptr = profile->getPeer();
+        if (peer_ptr)
+            user_version = peer_ptr->getUserVersion();
+        auto version_os = StringUtils::extractVersionOS(user_version);
         std::string os_type_str = version_os.second;
         // if mobile OS
         if (os_type_str == "iOS" || os_type_str == "Android")

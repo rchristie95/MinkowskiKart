@@ -20,9 +20,12 @@
 #include "io/file_manager.hpp"
 #include "utils/log.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
+#include <vector>
 
 #ifdef ANDROID
 #include <SDL_system.h>
@@ -228,6 +231,77 @@ void AssetsAndroid::init()
                     "Extracted data is missing %s. Force extracting assets...",
                     required_file.c_str());
                 break;
+            }
+        }
+
+        auto packagedAssetDiffersFromExtracted =
+            [&](const std::string& asset_path)->bool
+            {
+                SDL_RWops* packaged = SDL_RWFromFile(asset_path.c_str(), "rb");
+                if (packaged == NULL)
+                    return false;
+
+                const std::string extracted_path = m_stk_dir + "/" +
+                    asset_path;
+                SDL_RWops* extracted =
+                    SDL_RWFromFile(extracted_path.c_str(), "rb");
+                if (extracted == NULL)
+                {
+                    SDL_RWclose(packaged);
+                    return true;
+                }
+
+                const int64_t packaged_size = SDL_RWsize(packaged);
+                const int64_t extracted_size = SDL_RWsize(extracted);
+                bool differs = packaged_size != extracted_size;
+
+                if (!differs && packaged_size >= 0)
+                {
+                    std::vector<char> packaged_buffer(4096);
+                    std::vector<char> extracted_buffer(4096);
+                    int64_t remaining = packaged_size;
+                    while (remaining > 0)
+                    {
+                        const size_t chunk = (size_t)std::min<int64_t>(
+                            remaining, (int64_t)packaged_buffer.size());
+                        const size_t packaged_read = SDL_RWread(packaged,
+                            packaged_buffer.data(), 1, chunk);
+                        const size_t extracted_read = SDL_RWread(extracted,
+                            extracted_buffer.data(), 1, chunk);
+                        if (packaged_read != chunk ||
+                            extracted_read != chunk ||
+                            memcmp(packaged_buffer.data(),
+                                   extracted_buffer.data(), chunk) != 0)
+                        {
+                            differs = true;
+                            break;
+                        }
+                        remaining -= (int64_t)chunk;
+                    }
+                }
+
+                SDL_RWclose(packaged);
+                SDL_RWclose(extracted);
+                return differs;
+            };
+
+        if (!needs_extract_data)
+        {
+            const std::vector<std::string> freshness_files =
+            {
+                "data/stk_config.xml",
+                "data/shaders/sp_tess.tesc"
+            };
+            for (const std::string& freshness_file : freshness_files)
+            {
+                if (packagedAssetDiffersFromExtracted(freshness_file))
+                {
+                    needs_extract_data = true;
+                    Log::warn("AssetsAndroid",
+                        "%s differs between packaged and extracted data. "
+                        "Force extracting assets...", freshness_file.c_str());
+                    break;
+                }
             }
         }
     }

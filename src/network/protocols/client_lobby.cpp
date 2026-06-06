@@ -419,8 +419,12 @@ void ClientLobby::update(int ticks)
         ns->addUInt8(LE_CONNECTION_REQUESTED)
             .addUInt32(ServerConfig::m_server_version).encodeString(ua)
             .addUInt16((uint16_t)stk_config->m_network_capabilities.size());
+        Log::info("ClientLobby", "Client capabilities size: %d", (int)stk_config->m_network_capabilities.size());
         for (const std::string& cap : stk_config->m_network_capabilities)
+        {
+            Log::info("ClientLobby", "Client capability: %s", cap.c_str());
             ns->encodeString(cap);
+        }
 
         getKartsTracksNetworkString(ns);
         assert(!NetworkConfig::get()->isAddingNetworkPlayers());

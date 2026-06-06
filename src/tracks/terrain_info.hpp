@@ -50,6 +50,10 @@ public:
 
     bool     getSurfaceInfo(const Vec3 &from, Vec3 *position,
                             const Material **m);
+    bool     getZipperSurfaceInfo(const Vec3 &from, const Vec3 &to,
+                                  Vec3 *position,
+                                  const Material **material,
+                                  Vec3 *normal=NULL) const;
     virtual void update(const btMatrix3x3 &rotation, const Vec3 &from);
     virtual void update(const Vec3 &from);
     virtual void update(const Vec3 &from, const Vec3 &towards);

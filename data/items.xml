@@ -1,15 +1,31 @@
 <?xml version="1.0"?>
 <items>
-  <bonus-box   model="gift-box.spm"        lowmodel="gift-box-low.spm"        glow="31 202 253"/>
-  <compactification model="calabi-yau.spm" lowmodel="calabi-yau-low.spm" glow="197 152 37"/>
-  <super-position model="gift-box.spm"     lowmodel="gift-box-low.spm"        glow="186 170 255"/>
-  <nitro-big   model="nitrotank-big.spm"   lowmodel="nitrotank-big-low.spm"   glow="0 70 158"/>
-  <nitro-small model="nitrotank-small.spm" lowmodel="nitrotank-small-low.spm" glow="0 70 158"/>
+  <bonus-box   model="gift-box.spm"        lowmodel="gift-box-low.spm"        glow="31 202 253"
+               pickup-shape="box" pickup-center="0 0.581529 0"
+               pickup-half-extents="0.449320 0.492853 0.449320"/>
+  <compactification model="calabi-yau.spm" lowmodel="calabi-yau-low.spm" glow="197 152 37"
+               pickup-shape="cylinder-y" pickup-center="0 0 0"
+               pickup-half-extents="1.171420 0.865264 1.171420"/>
+  <super-position model="gift-box.spm"     lowmodel="gift-box-low.spm"        glow="186 170 255"
+               pickup-shape="box" pickup-center="0 0.581529 0"
+               pickup-half-extents="0.449320 0.492853 0.449320"/>
+  <nitro-big   model="nitrotank-big.spm"   lowmodel="nitrotank-big-low.spm"   glow="0 70 158"
+               pickup-shape="cylinder-y" pickup-center="0 0.797489 0.037960"
+               pickup-half-extents="0.696998 0.696998 0.696998"/>
+  <nitro-small model="nitrotank-small.spm" lowmodel="nitrotank-small-low.spm" glow="0 70 158"
+               pickup-shape="cylinder-y" pickup-center="0 0.445412 0.038842"
+               pickup-half-extents="0.359517 0.359517 0.359517"/>
   <!-- While a bubble gum technically 
        isn't an item, it is internally 
        handled as one, so list it here    -->
-  <warp-bubble       model="bubblegum.spm"       lowmodel="bubblegum-low.spm"       glow="246 150 209"/>
-  <warp-bubble-nolok model="bubblegum-nolok.spm" lowmodel="bubblegum-nolok-low.spm" glow="20 190 0"/>
-  <easter-egg  model="easter_egg.spm" glow="0 60 120" />
+  <warp-bubble       model="bubblegum.spm"       lowmodel="bubblegum-low.spm"       glow="246 150 209"
+               pickup-shape="cylinder-y" pickup-center="-0.006168 0.159822 -0.060597"
+               pickup-half-extents="1.194300 0.159822 1.194300"/>
+  <warp-bubble-nolok model="bubblegum-nolok.spm" lowmodel="bubblegum-nolok-low.spm" glow="20 190 0"
+               pickup-shape="cylinder-y" pickup-center="-0.006168 0.258835 -0.060597"
+               pickup-half-extents="1.194300 0.258835 1.194300"/>
+  <easter-egg  model="easter_egg.spm" glow="0 60 120"
+               pickup-shape="cylinder-y" pickup-center="0 0.846613 0.016227"
+               pickup-half-extents="0.500000 0.675000 0.500000"/>
 </items>
 

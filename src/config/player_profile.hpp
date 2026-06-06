@@ -19,7 +19,8 @@
 #ifndef HEADER_PLAYER_PROFILE_HPP
 #define HEADER_PLAYER_PROFILE_HPP
 
-#include "challenges/story_mode_status.hpp"
+#include "challenges/challenge_status.hpp"
+#include <map>
 #include "config/favorite_status.hpp"
 #include "network/remote_kart_info.hpp"
 #include "utils/leak_check.hpp"
@@ -110,7 +111,8 @@ private:
     float m_default_kart_color;
 
     /** The complete challenge state. */
-    StoryModeStatus *m_story_mode_status;
+    std::map<std::string, ChallengeStatus*> m_challenges_state;
+    std::string m_current_challenge_id;
 
     /** The complete achievement data. */
     AchievementsStatus *m_achievements_status;
@@ -206,85 +208,108 @@ public:
     }   // isLocked
     // ----------------------------------------------------------------------------------------
     /** Returns all active challenges. */
-    void computeActive() { m_story_mode_status->computeActive(); }
+    void computeActive() { }
     // ----------------------------------------------------------------------------------------
     /** Returns the list of recently completed challenges. */
     std::vector<const ChallengeData*> getRecentlyCompletedChallenges()
     {
-        return m_story_mode_status->getRecentlyCompletedChallenges();
+        return std::vector<const ChallengeData*>();
     }   // getRecently Completed Challenges
     // ----------------------------------------------------------------------------------------
     /** Sets the currently active challenge. */
     void setCurrentChallenge(const std::string &name)
     {
-        m_story_mode_status->setCurrentChallenge(name);
+        m_current_challenge_id = name;
     }   // setCurrentChallenge
     // ----------------------------------------------------------------------------------------
     /** Callback when a GP is finished (to test if a challenge was
      *  fulfilled). */
-    void grandPrixFinished() { m_story_mode_status->grandPrixFinished(); }
+    void grandPrixFinished() { }
     // ----------------------------------------------------------------------------------------
-    unsigned int getNumCompletedChallenges() const { return m_story_mode_status->getNumCompletedChallenges(); }
-    // ----------------------------------------------------------------------------------------
-    unsigned int getPoints() const { return m_story_mode_status->getPoints(); }
-    // ----------------------------------------------------------------------------------------
-    unsigned int getPointsBefore() const { return m_story_mode_status->getPointsBefore(); }
-    // ----------------------------------------------------------------------------------------
-    unsigned int getNextUnlockPoints() const { return m_story_mode_status->getNextUnlockPoints(); }
-    // ----------------------------------------------------------------------------------------
-    void setFirstTime(bool b) { m_story_mode_status->setFirstTime(b); }
-    // ----------------------------------------------------------------------------------------
-    bool isFirstTime() const { return m_story_mode_status->isFirstTime(); }
-    // ----------------------------------------------------------------------------------------
-    void setFinished() { m_story_mode_status->setFinished(); }
-    // ----------------------------------------------------------------------------------------
-    bool isFinished() const { return m_story_mode_status->isFinished(); }
-    // ----------------------------------------------------------------------------------------
-    void setSpeedrunFinished() { m_story_mode_status->setSpeedrunFinished(); }
-    // ----------------------------------------------------------------------------------------
-    bool isSpeedrunFinished() { return m_story_mode_status->isSpeedrunFinished(); }
-    // ----------------------------------------------------------------------------------------
-    void setStoryModeTimer(int ms)  {  m_story_mode_status->setStoryModeTimer(ms); }
-    // ----------------------------------------------------------------------------------------
-    int getStoryModeTimer()  {  return m_story_mode_status->getStoryModeTimer(); }
-    // ----------------------------------------------------------------------------------------
-    void setSpeedrunTimer(int ms)  {  m_story_mode_status->setSpeedrunTimer(ms); }
-    // ----------------------------------------------------------------------------------------
-    int getSpeedrunTimer()  {  return m_story_mode_status->getSpeedrunTimer(); }
-    // ----------------------------------------------------------------------------------------
-    void clearUnlocked()
+    unsigned int getNumCompletedChallenges() const
     {
-        m_story_mode_status->clearUnlocked();
+        unsigned int count = 0;
+        for (auto it = m_challenges_state.begin(); it != m_challenges_state.end(); ++it)
+        {
+            if (!it->second->isUnlockList() && it->second->isSolvedAtAnyDifficulty())
+                count++;
+        }
+        return count;
     }
+    // ----------------------------------------------------------------------------------------
+    unsigned int getPoints() const { return 0; }
+    // ----------------------------------------------------------------------------------------
+    unsigned int getPointsBefore() const { return 0; }
+    // ----------------------------------------------------------------------------------------
+    unsigned int getNextUnlockPoints() const { return 0; }
+    // ----------------------------------------------------------------------------------------
+    void setFirstTime(bool b) { }
+    // ----------------------------------------------------------------------------------------
+    bool isFirstTime() const { return false; }
+    // ----------------------------------------------------------------------------------------
+    void setFinished() { }
+    // ----------------------------------------------------------------------------------------
+    bool isFinished() const { return false; }
+    // ----------------------------------------------------------------------------------------
+    void setSpeedrunFinished() { }
+    // ----------------------------------------------------------------------------------------
+    bool isSpeedrunFinished() { return false; }
+    // ----------------------------------------------------------------------------------------
+    void setStoryModeTimer(int ms)  { }
+    // ----------------------------------------------------------------------------------------
+    int getStoryModeTimer()  {  return 0; }
+    // ----------------------------------------------------------------------------------------
+    void setSpeedrunTimer(int ms)  { }
+    // ----------------------------------------------------------------------------------------
+    int getSpeedrunTimer()  {  return 0; }
+    // ----------------------------------------------------------------------------------------
+    void clearUnlocked() {}
     // ----------------------------------------------------------------------------------------
     /** Returns the current challenge for this player. */
     const ChallengeStatus* getCurrentChallengeStatus() const
     {
-        return m_story_mode_status->getCurrentChallengeStatus();
+        if (m_current_challenge_id.empty()) return NULL;
+        auto it = m_challenges_state.find(m_current_challenge_id);
+        if (it != m_challenges_state.end()) return it->second;
+        return NULL;
     }   // getCurrentChallengeStatus
     // ----------------------------------------------------------------------------------------
     const ChallengeStatus* getChallengeStatus(const std::string &id)
     {
-        return m_story_mode_status->getChallengeStatus(id);
+        auto it = m_challenges_state.find(id);
+        if (it != m_challenges_state.end()) return it->second;
+        return NULL;
     }   // getChallengeStatus
     // ----------------------------------------------------------------------------------------
     unsigned int getNumEasyTrophies() const
     {
-        return m_story_mode_status->getNumEasyTrophies();
+        unsigned int count = 0;
+        for (auto it = m_challenges_state.begin(); it != m_challenges_state.end(); ++it)
+            if (!it->second->isUnlockList() && it->second->isSolved(RaceManager::DIFFICULTY_EASY)) count++;
+        return count;
     }   // getNumEasyTrophies
     // ----------------------------------------------------------------------------------------
     unsigned int getNumMediumTrophies() const
     {
-        return m_story_mode_status->getNumMediumTrophies();
+        unsigned int count = 0;
+        for (auto it = m_challenges_state.begin(); it != m_challenges_state.end(); ++it)
+            if (!it->second->isUnlockList() && it->second->isSolved(RaceManager::DIFFICULTY_MEDIUM)) count++;
+        return count;
     }   // getNumEasyTrophies
     // -----------------------------------------------------------------------
     unsigned int getNumHardTrophies() const
     {
-        return m_story_mode_status->getNumHardTrophies();
+        unsigned int count = 0;
+        for (auto it = m_challenges_state.begin(); it != m_challenges_state.end(); ++it)
+            if (!it->second->isUnlockList() && it->second->isSolved(RaceManager::DIFFICULTY_HARD)) count++;
+        return count;
     }   // getNumHardTrophies
     unsigned int getNumBestTrophies() const
     {
-        return m_story_mode_status->getNumBestTrophies();
+        unsigned int count = 0;
+        for (auto it = m_challenges_state.begin(); it != m_challenges_state.end(); ++it)
+            if (!it->second->isUnlockList() && it->second->isSolved(RaceManager::DIFFICULTY_BEST)) count++;
+        return count;
     }   // getNumBestTrophies
     // ----------------------------------------------------------------------------------------
     AchievementsStatus* getAchievementsStatus()
@@ -294,8 +319,6 @@ public:
     // ----------------------------------------------------------------------------------------
     /** Returns true if a session was saved for this player. */
     bool hasSavedSession() const { return m_saved_session;  }
-    // ----------------------------------------------------------------------------------------
-    StoryModeStatus* getStoryModeStatus() { return m_story_mode_status; }
     // ----------------------------------------------------------------------------------------
     FavoriteStatus* getFavoriteTrackStatus() { return m_favorite_track_status; }
     // ----------------------------------------------------------------------------------------
