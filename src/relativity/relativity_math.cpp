@@ -105,6 +105,32 @@ btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
     return v / btSqrt(length2);
 }   // normalizedOrDefault
 
+btVector3 applyVisualContraction(
+    const btVector3& world_position,
+    const Relativity::ObserverVisualState& observer_state)
+{
+    if (!observer_state.m_valid || !isFiniteVector(world_position) ||
+        !isFiniteVector(observer_state.m_beta_vector) ||
+        observer_state.m_gamma <= 1.0f)
+    {
+        return world_position;
+    }
+
+    const btScalar beta2 = observer_state.m_beta_vector.length2();
+    if (beta2 <= btScalar(1.0e-6f))
+        return world_position;
+
+    const btVector3 relative =
+        world_position - observer_state.m_observer_position;
+    const btVector3 beta_direction =
+        observer_state.m_beta_vector / btSqrt(beta2);
+    const btVector3 parallel =
+        beta_direction * relative.dot(beta_direction);
+    const btVector3 perpendicular = relative - parallel;
+    return observer_state.m_observer_position + perpendicular +
+        parallel * observer_state.m_inverse_gamma;
+}   // applyVisualContraction
+
 btVector3 worldDirectionToObserverDirection(const btVector3& world_direction,
                                             const btVector3& beta_vector,
                                             float gamma)
@@ -366,6 +392,85 @@ bool isPowerupCLightActive()
 
     return getActiveLocalPlayerCLightTarget().m_active;
 }   // isPowerupCLightActive
+
+// ----------------------------------------------------------------------------
+UserConfigParams::RelativityTrackClippingMode getTrackClippingMode()
+{
+    const int mode = UserConfigParams::m_relativity_track_clipping_mode;
+    if (mode == (int)UserConfigParams::RelativityTrackClippingMode::
+            DYNAMIC_TESSELLATION)
+    {
+        return UserConfigParams::RelativityTrackClippingMode::
+            DYNAMIC_TESSELLATION;
+    }
+    if (mode == (int)UserConfigParams::RelativityTrackClippingMode::
+            HEIGHT_CORRECTION)
+    {
+        return UserConfigParams::RelativityTrackClippingMode::
+            HEIGHT_CORRECTION;
+    }
+    if (mode == (int)UserConfigParams::RelativityTrackClippingMode::
+            TANGENT_VELOCITY_PROJECTION)
+    {
+        return UserConfigParams::RelativityTrackClippingMode::
+            TANGENT_VELOCITY_PROJECTION;
+    }
+    if (mode == (int)UserConfigParams::RelativityTrackClippingMode::
+            WARPED_COLLISION_PHYSICS)
+    {
+        return UserConfigParams::RelativityTrackClippingMode::
+            WARPED_COLLISION_PHYSICS;
+    }
+    if (mode == (int)UserConfigParams::RelativityTrackClippingMode::
+            DISABLED)
+    {
+        return UserConfigParams::RelativityTrackClippingMode::DISABLED;
+    }
+    return UserConfigParams::RelativityTrackClippingMode::
+        WARPED_COLLISION_PHYSICS;
+}   // getTrackClippingMode
+
+// ----------------------------------------------------------------------------
+bool useDynamicTrackTessellation()
+{
+    const UserConfigParams::RelativityTrackClippingMode mode =
+        getTrackClippingMode();
+    return mode == UserConfigParams::RelativityTrackClippingMode::
+            DYNAMIC_TESSELLATION ||
+        mode == UserConfigParams::RelativityTrackClippingMode::
+            WARPED_COLLISION_PHYSICS ||
+        mode == UserConfigParams::RelativityTrackClippingMode::
+            TESSELLATION_AND_HEIGHT_CORRECTION;
+}   // useDynamicTrackTessellation
+
+// ----------------------------------------------------------------------------
+bool useTrackHeightCorrection()
+{
+    const UserConfigParams::RelativityTrackClippingMode mode =
+        getTrackClippingMode();
+    return mode == UserConfigParams::RelativityTrackClippingMode::
+            HEIGHT_CORRECTION ||
+        mode == UserConfigParams::RelativityTrackClippingMode::
+            TESSELLATION_AND_HEIGHT_CORRECTION;
+}   // useTrackHeightCorrection
+
+// ----------------------------------------------------------------------------
+bool useTrackTangentVelocityProjection()
+{
+    const UserConfigParams::RelativityTrackClippingMode mode =
+        getTrackClippingMode();
+    return mode == UserConfigParams::RelativityTrackClippingMode::
+        TANGENT_VELOCITY_PROJECTION;
+}   // useTrackTangentVelocityProjection
+
+// ----------------------------------------------------------------------------
+bool useWarpedTrackCollisionPhysics()
+{
+    const UserConfigParams::RelativityTrackClippingMode mode =
+        getTrackClippingMode();
+    return mode == UserConfigParams::RelativityTrackClippingMode::
+        WARPED_COLLISION_PHYSICS;
+}   // useWarpedTrackCollisionPhysics
 
 // ----------------------------------------------------------------------------
 // Compute the ramped c_light value without any caching or side effects.
@@ -721,7 +826,10 @@ btVector3 applyVisualPosition(const btVector3& world_position,
         return world_position;
     }
 
-    btVector3 relative = world_position - observer_state.m_observer_position;
+    const btVector3 contracted_position =
+        applyVisualContraction(world_position, observer_state);
+    btVector3 relative =
+        contracted_position - observer_state.m_observer_position;
     if (relative.length2() <= btScalar(1.0e-6f))
         return observer_state.m_observer_position;
 
@@ -920,7 +1028,7 @@ void unitTesting()
     test_observer.m_c_light = (float)c_light;
     const btVector3 warped = applyVisualPosition(
         btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f));
-    MK_CHECK(warped.x() > 5.0f);
+    MK_CHECK(warped.x() > 4.0f && warped.x() < 5.0f);
 
     MK_CHECK(std::fabs(betaForSpeed(0.0, c_light)) < 0.000001);
     MK_CHECK(std::fabs(betaForSpeed(0.6 * c_light, c_light) - 0.6) < 0.000001);

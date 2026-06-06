@@ -115,6 +115,24 @@ bool isFiniteVector(const core::vector3df& v)
            std::isfinite((double)v.Z);
 }   // isFiniteVector
 
+bool isItemPickupNode(const scene::ISceneNode* node)
+{
+    const scene::ISceneNode* current = node;
+    while (current)
+    {
+        const std::string name = current->getName();
+        if (name == "item" ||
+            name.rfind("item_", 0) == 0 ||
+            name.rfind("item_lo_", 0) == 0 ||
+            name.rfind("item:", 0) == 0)
+        {
+            return true;
+        }
+        current = current->getParent();
+    }
+    return false;
+}   // isItemPickupNode
+
 core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
                                      const core::vector3df& position)
 {
@@ -125,6 +143,12 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
     // frame; their Bezier-driven position deltas are visual-only and must not
     // be fed into the relativistic shader as real velocities.
     if (g_animated_track_nodes.count(node))
+        return core::vector3df(0.0f, 0.0f, 0.0f);
+
+    // Item pickups rotate, respawn-scale, and swap LODs as gameplay markers,
+    // not as physical moving bodies. Keep their shader velocity anchored to
+    // the track so those presentation transforms do not produce lateral drift.
+    if (isItemPickupNode(node))
         return core::vector3df(0.0f, 0.0f, 0.0f);
 
     RelativityMotionState& state = g_relativity_motion_states[node];
@@ -216,6 +240,8 @@ bool shouldDisableRelativityVisualsForNode(const scene::ISceneNode* node)
     {
         return false;
     }
+    if (Relativity::useWarpedTrackCollisionPhysics())
+        return false;
 
     Camera* camera = Camera::getCamera(sp_cur_player);
     AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;

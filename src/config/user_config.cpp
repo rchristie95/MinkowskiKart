@@ -760,20 +760,15 @@ bool UserConfig::loadConfig()
             RELATIVITY_DEFAULTS_VERSION;
         save_migrated_config = true;
     }
-    const int track_clipping_mode =
-        UserConfigParams::m_relativity_track_clipping_mode;
-    if (track_clipping_mode != (int)UserConfigParams::
-            RelativityTrackClippingMode::CHEAP_HEIGHT_CORRECTION &&
-        track_clipping_mode != (int)UserConfigParams::
-            RelativityTrackClippingMode::ENHANCED_DYNAMIC_SUBDIVISION)
+    if (UserConfigParams::m_relativity_track_clipping_mode !=
+        (int)UserConfigParams::RelativityTrackClippingMode::
+            WARPED_COLLISION_PHYSICS)
     {
         UserConfigParams::m_relativity_track_clipping_mode =
             (int)UserConfigParams::RelativityTrackClippingMode::
-                CHEAP_HEIGHT_CORRECTION;
+                WARPED_COLLISION_PHYSICS;
         save_migrated_config = true;
     }
-
-
     // ---- Read Saved GP's
     UserConfigParams::m_saved_grand_prix_list.clearAndDeleteAll();
     std::vector<XMLNode*> saved_gps;

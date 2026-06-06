@@ -199,6 +199,35 @@ bool TerrainInfo::getSurfaceInfo(const Vec3 &from, Vec3 *position,
 }   // getSurfaceInfo
 
 // -----------------------------------------------------------------------------
+/** Checks the special gfx-effect mesh for a nearby zipper surface. This is used
+ *  as an item-style trigger for driveable zipper pads that are rendered as
+ *  ghost texture geometry rather than part of the physics mesh.
+ */
+bool TerrainInfo::getZipperSurfaceInfo(const Vec3 &from, const Vec3 &to,
+                                       Vec3 *position,
+                                       const Material **material,
+                                       Vec3 *normal) const
+{
+    const TriangleMesh &tm = Track::getCurrentTrack()->getGFXEffectMesh();
+    Vec3 hit_normal;
+    if (!normal)
+        normal = &hit_normal;
+
+    const Material *hit_material = NULL;
+    if (!tm.castRay(from, to, position, &hit_material, normal,
+                   /*interpolate*/true))
+    {
+        if (material)
+            *material = NULL;
+        return false;
+    }
+
+    if (material)
+        *material = hit_material;
+    return hit_material && hit_material->isZipper();
+}   // getZipperSurfaceInfo
+
+// -----------------------------------------------------------------------------
 /** Returns the pitch of the terrain depending on the heading
 */
 float TerrainInfo::getTerrainPitch(float heading) const {

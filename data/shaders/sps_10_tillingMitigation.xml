@@ -1,6 +1,7 @@
 <spshader>
     <shader-info name="tillingMitigation" fallback-shader="solid" use-tangents="Y"/>
     <first-pass vertex-shader="sp_pass.vert"
+        tess-control-shader="sp_tess.tesc" tess-evaluation-shader="sp_tess.tese"
         fragment-shader="sp_tilling_mitigation.frag">
     </first-pass>
     <shadow-pass vertex-shader="sp_shadow.vert"

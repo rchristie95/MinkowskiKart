@@ -21,6 +21,7 @@
 #include "states_screens/options/options_screen_relativity.hpp"
 
 #include "config/stk_config.hpp"
+#include "config/user_config.hpp"
 #include "relativity/relativity_math.hpp"
 #include "utils/log.hpp"
 
@@ -85,8 +86,6 @@ static int indexToCLight(int index)
 {
     return C_LIGHT_MIN + index * C_LIGHT_STEP;
 }
-
-// -----------------------------------------------------------------------------
 
 OptionsScreenRelativity::OptionsScreenRelativity()
     : Screen("options/options_relativity.stkgui")

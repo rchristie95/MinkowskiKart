@@ -35,6 +35,7 @@ out vec4 v_world_position;
 out vec3 v_world_normal;
 out float v_hue_change;
 out vec3 v_velocity;
+out float v_disable_relativity_visual;
 
 void main()
 {
@@ -56,6 +57,7 @@ void main()
     v_color = i_color.zyxw;
     v_hue_change = float(i_misc_data.y) * 0.01;
     v_velocity = i_velocity;
+    v_disable_relativity_visual = i_scale.w;
     
     // We don't set gl_Position here as it will be set by the Tessellation Evaluation shader
     gl_Position = v_world_position;

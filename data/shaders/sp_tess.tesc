@@ -10,6 +10,7 @@ in vec4 v_world_position[];
 in vec3 v_world_normal[];
 in float v_hue_change[];
 in vec3 v_velocity[];
+in float v_disable_relativity_visual[];
 
 out vec3 tc_tangent[];
 out vec3 tc_bitangent[];
@@ -21,42 +22,47 @@ out vec4 tc_world_position[];
 out vec3 tc_world_normal[];
 out float tc_hue_change[];
 out vec3 tc_velocity[];
+out float tc_disable_relativity_visual[];
 
 #stk_include "utils/relativity_visual.vert"
 
-uniform int u_relativity_track_clipping_mode;
+const float TARGET_EDGE_LENGTH_NEAR = 0.25;
+const float FULL_TESSELLATION_RADIUS = 10.0;
+const float FALLOFF_END_RADIUS = 50.0;
+const float MAX_TESS_LEVEL = 64.0;
 
-const int TRACK_CLIPPING_CHEAP = 0;
-const int TRACK_CLIPPING_ENHANCED = 1;
-const float NEAR_EDGE_CUTOFF = 0.5;
-const float FAR_EDGE_CUTOFF = 2.0;
-const float CUTOFF_FALLOFF_DISTANCE = 50.0;
+float getDistanceToEdge(vec3 point, vec3 pA, vec3 pB)
+{
+    vec3 edge = pB - pA;
+    float edge_l2 = dot(edge, edge);
+    if (edge_l2 <= 1e-8)
+    {
+        return length(point - pA);
+    }
 
-float getTessLevel(vec3 pA, vec3 pB) {
+    float t = clamp(dot(point - pA, edge) / edge_l2, 0.0, 1.0);
+    return length(point - (pA + edge * t));
+}
+
+float getTessLevel(vec3 pA, vec3 pB)
+{
     float edge_l = length(pB - pA);
-    vec3 mid = (pA + pB) * 0.5;
-    float dist = length(mid - u_relativity_observer_pos.xyz);
-    float beta = length(u_relativity_beta.xyz);
+    float near_level = ceil(edge_l / TARGET_EDGE_LENGTH_NEAR);
+    float dist = getDistanceToEdge(u_relativity_bubble.xyz, pA, pB);
 
-    float level = clamp(edge_l / 5.0, 1.0, 8.0);
-    if (u_relativity_track_clipping_mode == TRACK_CLIPPING_ENHANCED) {
-        float distance_falloff = smoothstep(
-            0.0, CUTOFF_FALLOFF_DISTANCE, dist);
-        float edge_cutoff = mix(
-            NEAR_EDGE_CUTOFF, FAR_EDGE_CUTOFF, distance_falloff);
-        if (edge_l <= edge_cutoff) return 1.0;
-        level *= mix(2.0, 1.0, distance_falloff);
-    } else {
-        if (edge_l < FAR_EDGE_CUTOFF) return 1.0;
-        if (dist < CUTOFF_FALLOFF_DISTANCE) {
-            level *= mix(2.0, 1.0,
-                clamp(dist / CUTOFF_FALLOFF_DISTANCE, 0.0, 1.0));
-        }
+    if (dist <= FULL_TESSELLATION_RADIUS)
+    {
+        return clamp(near_level, 1.0, MAX_TESS_LEVEL);
     }
-    if (beta > 0.5) {
-        level *= (1.0 + beta);
+    if (dist >= FALLOFF_END_RADIUS)
+    {
+        return 1.0;
     }
-    return clamp(level, 1.0, 16.0);
+
+    float falloff = smoothstep(
+        FULL_TESSELLATION_RADIUS, FALLOFF_END_RADIUS, dist);
+    float level = mix(near_level, 1.0, falloff);
+    return clamp(level, 1.0, MAX_TESS_LEVEL);
 }
 
 void main()
@@ -71,6 +77,8 @@ void main()
     tc_world_normal[gl_InvocationID] = v_world_normal[gl_InvocationID];
     tc_hue_change[gl_InvocationID] = v_hue_change[gl_InvocationID];
     tc_velocity[gl_InvocationID] = v_velocity[gl_InvocationID];
+    tc_disable_relativity_visual[gl_InvocationID] =
+        v_disable_relativity_visual[gl_InvocationID];
 
     if (gl_InvocationID == 0)
     {
@@ -78,9 +86,13 @@ void main()
         vec3 p1 = v_world_position[1].xyz;
         vec3 p2 = v_world_position[2].xyz;
 
-        gl_TessLevelOuter[0] = getTessLevel(p1, p2);
-        gl_TessLevelOuter[1] = getTessLevel(p2, p0);
-        gl_TessLevelOuter[2] = getTessLevel(p0, p1);
-        gl_TessLevelInner[0] = (gl_TessLevelOuter[0] + gl_TessLevelOuter[1] + gl_TessLevelOuter[2]) / 3.0;
+        float level0 = getTessLevel(p1, p2);
+        float level1 = getTessLevel(p2, p0);
+        float level2 = getTessLevel(p0, p1);
+
+        gl_TessLevelOuter[0] = level0;
+        gl_TessLevelOuter[1] = level1;
+        gl_TessLevelOuter[2] = level2;
+        gl_TessLevelInner[0] = max(max(level0, level1), level2);
     }
 }

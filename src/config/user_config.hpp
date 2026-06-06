@@ -398,8 +398,12 @@ namespace UserConfigParams
 {
     enum class RelativityTrackClippingMode : int
     {
-        CHEAP_HEIGHT_CORRECTION = 0,
-        ENHANCED_DYNAMIC_SUBDIVISION = 1
+        DYNAMIC_TESSELLATION = 0,
+        HEIGHT_CORRECTION = 1,
+        TESSELLATION_AND_HEIGHT_CORRECTION = 2,
+        DISABLED = 3,
+        TANGENT_VELOCITY_PROJECTION = 4,
+        WARPED_COLLISION_PHYSICS = 5
     };
 
     // ---- Audio
@@ -1378,10 +1382,10 @@ namespace UserConfigParams
 
     PARAM_PREFIX IntUserConfigParam        m_relativity_track_clipping_mode
             PARAM_DEFAULT( IntUserConfigParam(
-                (int)RelativityTrackClippingMode::CHEAP_HEIGHT_CORRECTION,
+                (int)RelativityTrackClippingMode::
+                    WARPED_COLLISION_PHYSICS,
                 "track_clipping_mode", &m_relativity_group,
-                "Track clipping mitigation: 0 height correction, "
-                "1 dynamic subdivision") );
+                "Anti-clipping mode: locked to 5 warped collision physics") );
 
     // ---- User management
 

@@ -24,6 +24,7 @@
 #include "graphics/sp/sp_texture.hpp"
 #include "graphics/sp/sp_texture_manager.hpp"
 #include "graphics/sp/sp_uniform_assigner.hpp"
+#include "relativity/relativity_math.hpp"
 #include "tracks/track.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/log.hpp"
@@ -34,6 +35,62 @@
 namespace SP
 {
 SPShaderManager* SPShaderManager::m_spsm = NULL;
+
+#ifndef SERVER_ONLY
+namespace
+{
+
+bool supportsSPTessellation()
+{
+    if (!CVS || !CVS->isGLSL())
+        return false;
+#ifdef USE_GLES2
+    return CVS->getGLSLVersion() >= 320;
+#else
+    return CVS->getGLSLVersion() >= 400;
+#endif
+}   // supportsSPTessellation
+
+bool passRequestsTessellation(const SPShaderManager::PassInfo& pi)
+{
+    return !pi.m_tess_vertex_shader.empty() &&
+           !pi.m_tess_control_shader.empty() &&
+           !pi.m_tess_evaluation_shader.empty();
+}   // passRequestsTessellation
+
+bool shouldUseTessellation(const SPShaderManager::PassInfo& pi, bool skinned)
+{
+    // The shared tessellation vertex shader is for rigid SP meshes. Skinned
+    // shader variants need their skinning vertex shader and cannot use it.
+    if (skinned || !Relativity::useDynamicTrackTessellation() ||
+        !passRequestsTessellation(pi))
+    {
+        return false;
+    }
+    if (!supportsSPTessellation())
+    {
+        static bool warned = false;
+        if (!warned)
+        {
+            warned = true;
+            Log::warn("SPShaderManager",
+                "Dynamic tessellation requested, but this renderer does not "
+                "report tessellation shader support.");
+        }
+        return false;
+    }
+    static bool logged_enabled = false;
+    if (!logged_enabled)
+    {
+        logged_enabled = true;
+        Log::info("SPShaderManager", "Dynamic tessellation enabled.");
+    }
+    return true;
+}   // shouldUseTessellation
+
+}   // namespace
+#endif
+
 // ----------------------------------------------------------------------------
 SPShaderManager::SPShaderManager()
 {
@@ -328,6 +385,15 @@ void SPShaderManager::loadPassInfo(const XMLNode* pass, PassInfo& pi)
     pass->get("tess-evaluation-shader", &pi.m_tess_evaluation_shader);
     pi.m_tess_evaluation_shader = getShaderFullPath(pi.m_tess_evaluation_shader);
 
+    pass->get("tess-vertex-shader", &pi.m_tess_vertex_shader);
+    if (pi.m_tess_vertex_shader.empty() &&
+        !pi.m_tess_control_shader.empty() &&
+        !pi.m_tess_evaluation_shader.empty())
+    {
+        pi.m_tess_vertex_shader = "sp_tess.vert";
+    }
+    pi.m_tess_vertex_shader = getShaderFullPath(pi.m_tess_vertex_shader);
+
     pass->get("fragment-shader", &pi.m_fragment_shader);
     pi.m_fragment_shader = getShaderFullPath(pi.m_fragment_shader);
 
@@ -415,17 +481,13 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
                 pou->addAssignerFunction(p.first, p.second);
             }
 
-            bool use_tessellation = !pi[0].m_tess_control_shader.empty() &&
-                                   !pi[0].m_tess_evaluation_shader.empty() &&
-#ifndef USE_GLES2
-                                   CVS->getGLSLVersion() >= 400;
-#else
-                                   CVS->getGLSLVersion() >= 320;
-#endif
+            const bool use_tessellation =
+                shouldUseTessellation(pi[0], skinned);
 
             if (use_tessellation)
             {
-                shader->addShaderFile("sp_tess.vert", GL_VERTEX_SHADER, RP_1ST);
+                shader->addShaderFile(pi[0].m_tess_vertex_shader,
+                    GL_VERTEX_SHADER, RP_1ST);
                 shader->addShaderFile(pi[0].m_tess_control_shader,
                     GL_TESS_CONTROL_SHADER, RP_1ST);
                 shader->addShaderFile(pi[0].m_tess_evaluation_shader,
@@ -470,23 +532,22 @@ std::shared_ptr<SPShader> SPShaderManager::buildSPShader(const ShaderInfo& si,
                     " shadow pass");
                 return;
             }
-            shader->addShaderFile(skinned ?
-                pi[1].m_skinned_mesh_shader : pi[1].m_vertex_shader,
-                GL_VERTEX_SHADER, RP_SHADOW);
-            bool use_shadow_tessellation =
-                !pi[1].m_tess_control_shader.empty() &&
-                !pi[1].m_tess_evaluation_shader.empty() &&
-#ifndef USE_GLES2
-                CVS->getGLSLVersion() >= 400;
-#else
-                CVS->getGLSLVersion() >= 320;
-#endif
+            const bool use_shadow_tessellation =
+                shouldUseTessellation(pi[1], skinned);
             if (use_shadow_tessellation)
             {
+                shader->addShaderFile(pi[1].m_tess_vertex_shader,
+                    GL_VERTEX_SHADER, RP_SHADOW);
                 shader->addShaderFile(pi[1].m_tess_control_shader,
                     GL_TESS_CONTROL_SHADER, RP_SHADOW);
                 shader->addShaderFile(pi[1].m_tess_evaluation_shader,
                     GL_TESS_EVALUATION_SHADER, RP_SHADOW);
+            }
+            else
+            {
+                shader->addShaderFile(skinned ?
+                    pi[1].m_skinned_mesh_shader : pi[1].m_vertex_shader,
+                    GL_VERTEX_SHADER, RP_SHADOW);
             }
             if (!pi[1].m_fragment_shader.empty())
             {

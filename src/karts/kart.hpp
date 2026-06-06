@@ -297,6 +297,7 @@ protected:
     void          updateSpeed();
     void          updateRelativisticState(int ticks);
     void          updateNitro(int ticks);
+    const Material* getTriggeredZipperMaterial() const;
     float         applyAirFriction (float engine_power);
     float         getActualWheelForce();
     void          playCrashSFX(const Material* m, AbstractKart *k);

@@ -31,6 +31,7 @@
 #include "modes/world.hpp"
 #include "physics/triangle_mesh.hpp"
 #include "race/race_manager.hpp"
+#include "relativity/relativity_math.hpp"
 #include "tracks/terrain_info.hpp"
 #include "tracks/track.hpp"
 
@@ -620,15 +621,20 @@ btScalar btKart::rayCast(unsigned int index, float fraction)
     wheel.m_raycastInfo.m_groundObject = 0;
 
     btScalar depth =  raylen * rayResults.m_distFraction;
+    btVector3 contact_normal = rayResults.m_hitNormalInWorld;
+    btVector3 contact_point = rayResults.m_hitPointInWorld;
+    if (object)
+    {
+        getWarpedTrackRaycast(source, target, raylen, max_susp_len,
+                              &contact_point, &contact_normal, &depth);
+    }
     if (object &&  depth < max_susp_len)
     {
-        btVector3 contact_normal = rayResults.m_hitNormalInWorld;
         contact_normal.normalize();
         btVector3 mobius_normal;
         const bool has_mobius_normal = getMobiusSupportNormal(&mobius_normal);
         if (has_mobius_normal)
             contact_normal = mobius_normal;
-        const btVector3 contact_point = rayResults.m_hitPointInWorld;
 
         wheel.m_raycastInfo.m_contactNormalWS = contact_normal;
         wheel.m_raycastInfo.m_contactNormalWS.normalize();
@@ -700,6 +706,67 @@ btScalar btKart::rayCast(unsigned int index, float fraction)
     return depth;
 
 }   // rayCast
+
+// ----------------------------------------------------------------------------
+bool btKart::getWarpedTrackRaycast(const btVector3& source,
+                                   const btVector3& target,
+                                   btScalar ray_length,
+                                   btScalar max_depth,
+                                   btVector3* contact_point,
+                                   btVector3* contact_normal,
+                                   btScalar* depth) const
+{
+    if (!m_kart || !Relativity::isEnabled() ||
+        !Relativity::useWarpedTrackCollisionPhysics() ||
+        ray_length <= btScalar(1.0e-6f) ||
+        max_depth <= btScalar(1.0e-6f) || !depth)
+    {
+        return false;
+    }
+
+    const AbstractKart* observer_kart = m_kart;
+    btVector3 observer_position = getChassisWorldTransform().getOrigin();
+#ifndef SERVER_ONLY
+    Camera* active_camera = Camera::getActiveCamera();
+    if (active_camera && active_camera->getKart() == m_kart &&
+        active_camera->getCameraSceneNode())
+    {
+        observer_kart = active_camera->getKart();
+        const core::vector3df& camera_position =
+            active_camera->getCameraSceneNode()->getPosition();
+        observer_position = btVector3(camera_position.X, camera_position.Y,
+            camera_position.Z);
+    }
+#endif
+
+    Relativity::ApparentSurfaceHit hit;
+    if (!Relativity::castApparentDriveableRay(observer_kart,
+        observer_position, source, target, &hit, true))
+    {
+        return false;
+    }
+
+    const btVector3 ray_direction =
+        normalizedOrDefault((target - source) / ray_length,
+                            btVector3(0.0f, -1.0f, 0.0f));
+    const btVector3 physical_normal = contact_normal
+        ? normalizedOrDefault(*contact_normal, -ray_direction)
+        : -ray_direction;
+
+    btVector3 warped_normal = normalizedOrDefault(
+        hit.m_apparent_normal, physical_normal);
+    if (warped_normal.dot(-ray_direction) < btScalar(0.0f))
+        warped_normal = -warped_normal;
+    if (physical_normal.dot(-ray_direction) < btScalar(0.0f))
+        warped_normal = normalizedOrDefault(
+            physical_normal.lerp(warped_normal, btScalar(0.5f)),
+            physical_normal);
+
+    if (contact_normal)
+        *contact_normal = warped_normal;
+
+    return true;
+}   // getWarpedTrackRaycast
 
 // ----------------------------------------------------------------------------
 /** Returns the contact point of a visual wheel.
@@ -822,6 +889,58 @@ btVector3 btKart::computeRawSupportNormal() const
         normal_sum = -normal_sum;
     return normal_sum;
 }   // computeRawSupportNormal
+
+// ----------------------------------------------------------------------------
+void btKart::projectVelocityOntoTrackTangent()
+{
+    if (!m_chassisBody || !Relativity::isEnabled() ||
+        (!Relativity::useTrackTangentVelocityProjection() &&
+            !Relativity::useWarpedTrackCollisionPhysics()))
+    {
+        return;
+    }
+
+    if (getNumWheels() < 4 || m_num_wheels_on_ground < 4)
+        return;
+
+    const btVector3 chassis_up = normalizedOrDefault(
+        getChassisWorldTransform().getBasis().getColumn(m_indexUpAxis),
+        btVector3(0.0f, 1.0f, 0.0f));
+    btVector3 normal_sum(0.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i < 4; i++)
+    {
+        const btWheelInfo& wheel = m_wheelInfo[i];
+        if (!wheel.m_raycastInfo.m_isInContact)
+            return;
+
+        btVector3 normal = normalizedOrDefault(
+            wheel.m_raycastInfo.m_contactNormalWS, chassis_up);
+        if (normal.dot(chassis_up) < btScalar(0.0f))
+            normal = -normal;
+        normal_sum += normal;
+    }
+
+    if (normal_sum.length2() <= btScalar(1.0e-8f))
+        return;
+
+    btVector3 surface_normal = normalizedOrDefault(normal_sum, chassis_up);
+    if (surface_normal.dot(chassis_up) < btScalar(0.0f))
+        surface_normal = -surface_normal;
+
+    const btVector3 velocity = m_chassisBody->getLinearVelocity();
+    if (!isFiniteVector(velocity) || velocity.length2() <= btScalar(1.0e-8f))
+        return;
+
+    const btScalar normal_speed = velocity.dot(surface_normal);
+    if (normal_speed >= btScalar(-0.01f))
+        return;
+
+    const btVector3 tangent_velocity =
+        velocity - surface_normal * normal_speed;
+    if (isFiniteVector(tangent_velocity))
+        m_chassisBody->setLinearVelocity(tangent_velocity);
+}   // projectVelocityOntoTrackTangent
 
 void btKart::updateStableSupportNormal(btScalar step)
 {
@@ -964,6 +1083,7 @@ void btKart::updateVehicle( btScalar step )
         iwt.setRotation(iwt.getRotation()*add_rot);
         m_ticks_additional_rotation--;
     }
+    projectVelocityOntoTrackTangent();
     adjustSpeed(m_min_speed, m_max_speed);
 }   // updateVehicle
 
@@ -1450,10 +1570,16 @@ btScalar btKart::rayCast(btWheelInfo& wheel, const btVector3& ray)
 
     if (object)
     {
-        depth = ray.length() * rayResults.m_distFraction;
+        const btScalar ray_length = ray.length();
+        depth = ray_length * rayResults.m_distFraction;
 
-        wheel.m_raycastInfo.m_contactPointWS   = rayResults.m_hitPointInWorld;
-        wheel.m_raycastInfo.m_contactNormalWS  = rayResults.m_hitNormalInWorld;
+        btVector3 contact_point = rayResults.m_hitPointInWorld;
+        btVector3 contact_normal = rayResults.m_hitNormalInWorld;
+        getWarpedTrackRaycast(source, target, ray_length, ray_length,
+                              &contact_point, &contact_normal, &depth);
+
+        wheel.m_raycastInfo.m_contactPointWS   = contact_point;
+        wheel.m_raycastInfo.m_contactNormalWS  = contact_normal;
         wheel.m_raycastInfo.m_isInContact      = true;
         wheel.m_raycastInfo.m_triangle_index   = rayResults.m_triangle_index;
     }

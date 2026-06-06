@@ -1,6 +1,7 @@
 <spshader>
     <shader-info name="roadBlending" fallback-shader="solid" use-tangents="Y"/>
     <first-pass vertex-shader="sp_pass.vert"
+        tess-control-shader="sp_tess.tesc" tess-evaluation-shader="sp_tess.tese"
         fragment-shader="sp_road_blending.frag">
         <prefilled-textures>
             <prefilled-texture name="road_masking" file="hd_roadMarking_a_mask.png" srgb="Y" sampler="trilinear"/>

@@ -1273,6 +1273,51 @@ bool Kart::isNearGround() const
 }   // isNearGround
 
 // ------------------------------------------------------------------------
+/** Returns a zipper material if the kart is inside a small trigger volume
+ *  around a ground zipper surface.
+ */
+const Material* Kart::getTriggeredZipperMaterial() const
+{
+    if (!m_terrain_info || !m_vehicle || getKartAnimation())
+        return NULL;
+
+    const float trigger_distance = 1.5f;
+    const float trigger_distance2 = trigger_distance * trigger_distance;
+    const Material *material = m_terrain_info->getMaterial();
+    if (material && material->isZipper())
+    {
+        const Vec3 delta = m_terrain_info->getOrigin() -
+                           m_terrain_info->getHitPoint();
+        if (isOnGround() || delta.length2() <= trigger_distance2)
+            return material;
+    }
+
+    const Vec3 up = getTrans().getBasis() * Vec3(0.0f, 1.0f, 0.0f);
+    Vec3 probe_points[5];
+    probe_points[0] = m_terrain_info->getOrigin();
+    for (unsigned int i = 0; i < 4; i++)
+        probe_points[i + 1] = m_vehicle->getWheelInfo(i)
+            .m_raycastInfo.m_hardPointWS;
+
+    for (unsigned int i = 0; i < 5; i++)
+    {
+        Vec3 hit_point;
+        Vec3 normal;
+        const Material *zipper_material = NULL;
+        const Vec3 probe_from = probe_points[i] + up * 0.5f;
+        const Vec3 probe_to   = probe_points[i] - up * 1.6f;
+        if (m_terrain_info->getZipperSurfaceInfo(probe_from, probe_to,
+                                                 &hit_point, &zipper_material,
+                                                 &normal))
+        {
+            return zipper_material;
+        }
+    }
+
+    return NULL;
+}   // getTriggeredZipperMaterial
+
+// ------------------------------------------------------------------------
 /** Enables a kart shield protection for a certain amount of time.
  */
 void Kart::setShieldTime(float t)
@@ -1719,7 +1764,8 @@ void Kart::update(int ticks)
 #endif
 
     PROFILER_PUSH_CPU_MARKER("Kart::Update (material)", 0x60, 0x34, 0x7F);
-    if (!material)   // kart falling off the track
+    const Material *zipper_material = getTriggeredZipperMaterial();
+    if (!material && !zipper_material)   // kart falling off the track
     {
         // let kart fall a bit before rescuing
         const Vec3 *min, *max;
@@ -1734,14 +1780,15 @@ void Kart::update(int ticks)
     }
     else
     {
-        if (!has_animation_before && material->isDriveReset() && isOnGround())
+        if (!has_animation_before && material && material->isDriveReset() &&
+            isOnGround())
         {
             RescueAnimation::create(this);
             m_last_factor_engine_sound = 0.0f;
         }
-        else if(material->isZipper()     && isOnGround())
+        else if(zipper_material)
         {
-            handleZipper(material);
+            handleZipper(zipper_material);
             showZipperFire();
         }
         else
@@ -1935,7 +1982,6 @@ void Kart::updateRelativisticState(int ticks)
                             c_light);
 }   // updateRelativisticState
 
-//-----------------------------------------------------------------------------
 void Kart::syncPostPhysicsState(int ticks)
 {
     updateSpeed();
@@ -2077,6 +2123,7 @@ void Kart::handleMaterialSFX()
         if(m_previous_terrain_sound)
         {
             m_previous_terrain_sound->deleteSFX();
+            m_previous_terrain_sound = NULL;
         }
 
         // Disable looping for the current terrain sound, and
@@ -2093,8 +2140,11 @@ void Kart::handleMaterialSFX()
                                     m_controller->isLocalPlayerController() ) )
         {
             m_terrain_sound = SFXManager::get()->createSoundSource(sound_name);
-            m_terrain_sound->play();
-            m_terrain_sound->setLoop(true);
+            if (m_terrain_sound)
+            {
+                m_terrain_sound->play();
+                m_terrain_sound->setLoop(true);
+            }
         }
         else
         {
@@ -3474,29 +3524,42 @@ void Kart::updateGraphics(float dt)
     
     float height_correction = 0.0f;
 #ifndef SERVER_ONLY
-    if (Relativity::isEnabled() && !Relativity::usesEnhancedTrackClipping() &&
-        Camera::getActiveCamera() && CVS->isGLSL())
+    Camera* active_camera = Camera::getActiveCamera();
+    if (Relativity::isEnabled() && Relativity::useTrackHeightCorrection() &&
+        !Relativity::useWarpedTrackCollisionPhysics() &&
+        m_controller && m_controller->isPlayerController() &&
+        active_camera && CVS->isGLSL())
     {
+        const float height_correction_strength = 0.75f;
         btVector3 p_phys = m_terrain_info->getHitPoint();
         if ((p_phys - getXYZ()).length() != Track::NOHIT)
         {
-            const AbstractKart* observer_kart = Camera::getActiveCamera()->getKart();
-            btVector3 observer_position = Camera::getActiveCamera()->getXYZ();
+            const AbstractKart* observer_kart = active_camera->getKart();
+            const core::vector3df& camera_position =
+                active_camera->getCameraSceneNode()->getPosition();
+            btVector3 observer_position(camera_position.X, camera_position.Y,
+                camera_position.Z);
             Relativity::ObserverVisualState observer_state =
                 Relativity::buildObserverVisualState(observer_kart, observer_position);
             if (observer_state.m_valid)
             {
-                btVector3 x_phys = getSmoothedTrans().getOrigin();
-                
-                btVector3 p_apparent = Relativity::applyVisualPosition(p_phys, observer_state, btVector3(0.0f, 0.0f, 0.0f));
-                btVector3 x_apparent = Relativity::applyVisualPosition(x_phys, observer_state, getVelocity());
-                
-                btVector3 d_road = p_apparent - p_phys;
-                btVector3 d_kart = x_apparent - x_phys;
-                btVector3 delta = d_road - d_kart;
-                
-                btVector3 up_vector = getSmoothedTrans().getBasis().getColumn(1);
-                height_correction = (float)delta.dot(up_vector);
+                btVector3 p_apparent = Relativity::applyVisualPosition(
+                    p_phys, observer_state, btVector3(0.0f, 0.0f, 0.0f));
+
+                btVector3 d_kart(0.0f, 0.0f, 0.0f);
+                if (observer_kart != this)
+                {
+                    btVector3 x_phys = getSmoothedTrans().getOrigin();
+                    btVector3 x_apparent = Relativity::applyVisualPosition(
+                        x_phys, observer_state, getVelocity());
+                    d_kart = x_apparent - x_phys;
+                }
+
+                btVector3 delta = (p_apparent - p_phys) - d_kart;
+                btVector3 up_vector =
+                    getSmoothedTrans().getBasis().getColumn(1);
+                height_correction =
+                    height_correction_strength * (float)delta.dot(up_vector);
             }
         }
     }
