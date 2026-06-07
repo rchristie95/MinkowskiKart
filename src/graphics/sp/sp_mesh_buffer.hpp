@@ -29,6 +29,7 @@
 
 #include <array>
 #include <cassert>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>

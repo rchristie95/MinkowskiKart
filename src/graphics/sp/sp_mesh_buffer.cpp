@@ -29,6 +29,7 @@
 #include "utils/log.hpp"
 #include "utils/string_utils.hpp"
 
+#include <memory>
 #include <set>
 #ifndef SERVER_ONLY
 #include <ge_main.hpp>

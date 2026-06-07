@@ -24,6 +24,8 @@
 #include "mini_glm.hpp"
 #include "utils/string_utils.hpp"
 
+#include <memory>
+
 namespace SP
 {
 // ----------------------------------------------------------------------------

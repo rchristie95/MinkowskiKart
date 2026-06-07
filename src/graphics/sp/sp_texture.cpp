@@ -34,6 +34,8 @@
 #include <IVideoDriver.h>
 #include <IWriteFile.h>
 
+#include <memory>
+
 #if !defined(SERVER_ONLY)
 #include <ge_main.hpp>
 #include <squish.h>
