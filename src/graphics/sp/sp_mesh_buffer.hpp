@@ -83,6 +83,8 @@ private:
 
     bool m_skinned;
 
+    std::shared_ptr<int> m_life_token;
+
     // ------------------------------------------------------------------------
     bool initTexture();
 
@@ -92,6 +94,7 @@ public:
 #ifdef _DEBUG
         setDebugName("SMeshBuffer");
 #endif
+        m_life_token = std::make_shared<int>(0);
         m_stk_material.resize(1, std::make_tuple(0u, 0u, nullptr));
 
         for (unsigned i = 0; i < DCT_FOR_VAO; i++)

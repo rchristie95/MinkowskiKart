@@ -62,6 +62,8 @@ private:
 
     const bool m_undo_srgb;
 
+    std::shared_ptr<int> m_life_token;
+
     // ------------------------------------------------------------------------
     void generateHQMipmap(void* in,
                           const std::vector<std::pair<core::dimension2du,

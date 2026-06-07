@@ -64,8 +64,12 @@ SPDynamicDrawCall::SPDynamicDrawCall(scene::E_PRIMITIVE_TYPE pt,
     glBufferSubData(GL_ARRAY_BUFFER, 0, SPInstancedData::getStride(),
         id.getData());
     SPTextureManager::get()->increaseGLCommandFunctionCount(1);
+    std::weak_ptr<int> life_token = m_life_token;
     SPTextureManager::get()->addGLCommandFunction
-        (std::bind(&SPDynamicDrawCall::initTextureDyDc, this));
+        ([this, life_token]()->bool {
+            if (life_token.expired()) return true;
+            return this->initTextureDyDc();
+        });
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glGenVertexArrays(1, &m_vao[0]);
@@ -164,7 +168,7 @@ bool SPDynamicDrawCall::initTextureDyDc()
     {
         for (unsigned j = 0; j < 6; j++)
         {
-            if (!m_textures[i][j]->initialized())
+            if (!m_textures[i][j] || !m_textures[i][j]->initialized())
             {
                 return false;
             }

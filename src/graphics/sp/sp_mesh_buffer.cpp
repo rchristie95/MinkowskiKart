@@ -137,7 +137,7 @@ bool SPMeshBuffer::initTexture()
     {
         for (unsigned j = 0; j < 6; j++)
         {
-            if (!m_textures[i][j]->initialized())
+            if (!m_textures[i][j] || !m_textures[i][j]->initialized())
             {
                 return false;
             }
@@ -243,8 +243,12 @@ void SPMeshBuffer::uploadGLMesh()
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
     SPTextureManager::get()->increaseGLCommandFunctionCount(1);
+    std::weak_ptr<int> life_token = m_life_token;
     SPTextureManager::get()->addGLCommandFunction
-        (std::bind(&SPMeshBuffer::initTexture, this));
+        ([this, life_token]()->bool {
+            if (life_token.expired()) return true;
+            return this->initTexture();
+        });
 
     if (m_ibo != 0)
     {

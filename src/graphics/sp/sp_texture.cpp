@@ -62,6 +62,7 @@ SPTexture::SPTexture(const std::string& path, Material* m, bool undo_srgb,
          : m_path(path), m_container_id(container_id), m_width(0), m_height(0),
            m_material(m), m_undo_srgb(undo_srgb)
 {
+    m_life_token = std::make_shared<int>(0);
 #ifndef SERVER_ONLY
     glGenTextures(1, &m_texture_name);
     createWhite(false/*private_init*/);
@@ -72,6 +73,7 @@ SPTexture::SPTexture(const std::string& path, Material* m, bool undo_srgb,
 SPTexture::SPTexture(bool white)
          : m_width(0), m_height(0), m_undo_srgb(false)
 {
+    m_life_token = std::make_shared<int>(0);
 #ifndef SERVER_ONLY
     glGenTextures(1, &m_texture_name);
     if (white)
@@ -450,9 +452,13 @@ bool SPTexture::threadedLoad(const std::string& cache_directory)
         if (cache)
         {
             SPTextureManager::get()->increaseGLCommandFunctionCount(1);
+            std::weak_ptr<int> life_token = m_life_token;
             SPTextureManager::get()->addGLCommandFunction(
-                [this, cache, sizes]()->bool
-                { return compressedTexImage2d(cache, sizes); });
+                [this, cache, sizes, life_token]()->bool
+                {
+                    if (life_token.expired()) return true;
+                    return compressedTexImage2d(cache, sizes);
+                });
             return true;
         }
     }
@@ -476,9 +482,13 @@ bool SPTexture::threadedLoad(const std::string& cache_directory)
     {
         auto r = compressTexture(image);
         SPTextureManager::get()->increaseGLCommandFunctionCount(1);
+        std::weak_ptr<int> life_token = m_life_token;
         SPTextureManager::get()->addGLCommandFunction(
-            [this, image, r]()->bool
-            { return compressedTexImage2d(image, r); });
+            [this, image, r, life_token]()->bool
+            {
+                if (life_token.expired()) return true;
+                return compressedTexImage2d(image, r);
+            });
         if (!cache_loc.empty())
         {
             SPTextureManager::get()->addThreadedFunction(
@@ -516,9 +526,13 @@ bool SPTexture::threadedLoad(const std::string& cache_directory)
                 (uint8_t*)mipmaps->lock());
         }
         SPTextureManager::get()->increaseGLCommandFunctionCount(1);
+        std::weak_ptr<int> life_token = m_life_token;
         SPTextureManager::get()->addGLCommandFunction(
-            [this, image, mipmaps]()->bool
-            { return texImage2d(image, mipmaps); });
+            [this, image, mipmaps, life_token]()->bool
+            {
+                if (life_token.expired()) return true;
+                return texImage2d(image, mipmaps);
+            });
     }
 
 #endif

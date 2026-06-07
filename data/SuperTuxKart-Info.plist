@@ -5,15 +5,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>supertuxkart</string>
+	<string>MinkowskiKart</string>
 	<key>CFBundleIconFile</key>
 	<string>supertuxkart.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>net.sourceforge.supertuxkart</string>
+	<string>com.rchristie95.minkowskikart</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>SuperTuxKart</string>
+	<string>MinkowskiKart</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
