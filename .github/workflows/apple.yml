@@ -203,7 +203,8 @@ jobs:
           cp -r ../../../../../stk-assets/. .
           cp -r ../../../../../data/. .
           mkdir -p replay
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          # Ensure the version file matches what the binary expects
+          if [[ -f supertuxkart.git ]]; then
             cp supertuxkart.git "supertuxkart.${{ env.package_tag }}"
           fi
           cd ../../../../..
@@ -233,9 +234,13 @@ jobs:
         run: |
           # Launch straight into a race; check the process is still alive after 10s
           # (meaning it got past init and into the race), then kill at 20s
-          # We use --root to point to the bundled data.
+          # Use absolute path for --root to avoid CWD issues
+          # Also set SUPERTUXKART_DATADIR as a fallback
+          STK_ROOT_DIR=$(pwd)/MinkowskiKart.app/Contents/Resources/data
+          export SUPERTUXKART_DATADIR=$(pwd)/MinkowskiKart.app/Contents/Resources
+          
           ./MinkowskiKart.app/Contents/MacOS/MinkowskiKart \
-            --root=./MinkowskiKart.app/Contents/Resources/data \
+            --root="$STK_ROOT_DIR" \
             --no-start-screen --track=sandtrack --kart=minkowski --laps=1 --numkarts=2 \
             > smoke_out.txt 2>&1 &
           SMOKE_PID=$!
@@ -268,7 +273,8 @@ jobs:
           unzip -q stk-assets-full.zip -d Payload/MinkowskiKart.app/data/
           cp -r stk-assets/. Payload/MinkowskiKart.app/data/
           cp -r data/. Payload/MinkowskiKart.app/data/
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          # Ensure the version file matches what the binary expects
+          if [[ -f Payload/MinkowskiKart.app/data/supertuxkart.git ]]; then
             cp Payload/MinkowskiKart.app/data/supertuxkart.git \
               "Payload/MinkowskiKart.app/data/supertuxkart.${{ env.package_tag }}"
           fi
