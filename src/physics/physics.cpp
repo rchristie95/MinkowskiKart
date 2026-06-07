@@ -44,6 +44,8 @@
 #include "tracks/track_object.hpp"
 #include "utils/profiler.hpp"
 #include "utils/stk_process.hpp"
+#include "relativity/relativity_math.hpp"
+#include "relativity/observer_snapshot.hpp"
 
 #include <IVideoDriver.h>
 
@@ -548,6 +550,74 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
                              btStackAlloc* stackAlloc,
                              btDispatcher* dispatcher)
 {
+    // Modify/warp contact points for warped track collision physics
+    if (Relativity::isEnabled() && Relativity::useWarpedTrackCollisionPhysics())
+    {
+        for (int i = 0; i < numManifolds; i++)
+        {
+            btPersistentManifold* contact_manifold = manifold[i];
+            const btCollisionObject* objA = static_cast<const btCollisionObject*>(contact_manifold->getBody0());
+            const btCollisionObject* objB = static_cast<const btCollisionObject*>(contact_manifold->getBody1());
+            if (!objA || !objB) continue;
+
+            const UserPointer* upA = (UserPointer*)(objA->getUserPointer());
+            const UserPointer* upB = (UserPointer*)(objB->getUserPointer());
+            if (!upA || !upB) continue;
+
+            bool a_is_kart = upA->is(UserPointer::UP_KART);
+            bool b_is_kart = upB->is(UserPointer::UP_KART);
+            bool a_is_track = upA->is(UserPointer::UP_TRACK);
+            bool b_is_track = upB->is(UserPointer::UP_TRACK);
+
+            if ((a_is_kart && b_is_track) || (b_is_kart && a_is_track))
+            {
+                AbstractKart* kart = a_is_kart ? upA->getPointerKart() : upB->getPointerKart();
+                const btVector3 kart_pos = kart->getBody()->getWorldTransform().getOrigin();
+                const Relativity::ObserverVisualState observer_state =
+                    Relativity::buildObserverVisualState(kart, kart_pos);
+
+                if (observer_state.m_valid)
+                {
+                    int num_contacts = contact_manifold->getNumContacts();
+                    for (int j = 0; j < num_contacts; j++)
+                    {
+                        btManifoldPoint& pt = contact_manifold->getContactPoint(j);
+                        btVector3 contact_pos = a_is_kart ? pt.m_positionWorldOnB : pt.m_positionWorldOnA;
+                        
+                        // Limit warping to a 3.0-meter sphere around the kart
+                        if ((contact_pos - kart_pos).length2() <= 9.0f)
+                        {
+                            if (a_is_kart) // A is kart, B is track
+                            {
+                                btVector3 warped_pos_B = Relativity::applyVisualPosition(
+                                    pt.m_positionWorldOnB, observer_state);
+                                btVector3 warped_normal = Relativity::applyVisualNormal(
+                                    pt.m_positionWorldOnB, pt.m_normalWorldOnB, observer_state);
+                                warped_normal.normalize();
+
+                                pt.m_positionWorldOnB = warped_pos_B;
+                                pt.m_normalWorldOnB = warped_normal;
+                                pt.m_distance1 = (pt.m_positionWorldOnA - pt.m_positionWorldOnB).dot(pt.m_normalWorldOnB);
+                            }
+                            else // B is kart, A is track
+                            {
+                                btVector3 warped_pos_A = Relativity::applyVisualPosition(
+                                    pt.m_positionWorldOnA, observer_state);
+                                btVector3 warped_normal = Relativity::applyVisualNormal(
+                                    pt.m_positionWorldOnA, pt.m_normalWorldOnB, observer_state);
+                                warped_normal.normalize();
+
+                                pt.m_positionWorldOnA = warped_pos_A;
+                                pt.m_normalWorldOnB = warped_normal;
+                                pt.m_distance1 = (pt.m_positionWorldOnA - pt.m_positionWorldOnB).dot(pt.m_normalWorldOnB);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     btScalar returnValue=
         btSequentialImpulseConstraintSolver::solveGroup(bodies, numBodies,
                                                         manifold, numManifolds,

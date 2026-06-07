@@ -848,24 +848,26 @@ btVector3 applyVisualPosition(const btVector3& world_position,
 }   // applyVisualPosition
 
 // ----------------------------------------------------------------------------
-btVector3 applyVisualNormal(const btVector3& world_position,
+btVector3 applyVisualNormal(const btVector3& /*world_position*/,
                             const btVector3& world_normal,
                             const ObserverVisualState& observer_state)
 {
     if (!Relativity::isEnabled() || !observer_state.m_valid ||
-        !isFiniteVector(world_position) || !isFiniteVector(world_normal))
+        !isFiniteVector(world_normal))
     {
         return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
     }
 
-    const btVector3 base = applyVisualPosition(world_position, observer_state,
-                                               btVector3(0.0f, 0.0f, 0.0f));
-    const btVector3 tip = applyVisualPosition(
-        world_position +
-            normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f)) *
-                APPARENT_NORMAL_SAMPLE_DISTANCE,
-        observer_state, btVector3(0.0f, 0.0f, 0.0f));
-    return normalizedOrDefault(tip - base, btVector3(0.0f, 1.0f, 0.0f));
+    const btVector3 beta_vector = observer_state.m_beta_vector;
+    const btScalar beta2 = beta_vector.length2();
+    if (beta2 < btScalar(1.0e-6f))
+        return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
+
+    const btVector3 beta_direction = beta_vector / btSqrt(beta2);
+    const btVector3 parallel = beta_direction * world_normal.dot(beta_direction);
+    const btVector3 perpendicular = world_normal - parallel;
+    return normalizedOrDefault(perpendicular + parallel * observer_state.m_gamma,
+                               world_normal);
 }   // applyVisualNormal
 
 // ----------------------------------------------------------------------------

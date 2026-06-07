@@ -676,24 +676,24 @@ namespace UserConfigParams
             &m_video_group, "When playing a non-square amount of players (e.g. 2),"
             " should it split horizontally (top/bottom)"));
     PARAM_PREFIX BoolUserConfigParam        m_texture_compression
-        PARAM_DEFAULT(BoolUserConfigParam(true, "enable_texture_compression",
+        PARAM_DEFAULT(BoolUserConfigParam(false, "enable_texture_compression",
         &m_video_group, "Enable Texture Compression"));
     /** This is a bit flag: bit 0: enabled (1) or disabled(0).
      *  Bit 1: setting done by default(0), or by user choice (2). This allows
      *  to e.g. disable h.d. textures on hd3000 as default, but still allow the
      *  user to enable it. */
     PARAM_PREFIX IntUserConfigParam        m_high_definition_textures
-        PARAM_DEFAULT(IntUserConfigParam(1, "enable_high_definition_textures",
+        PARAM_DEFAULT(IntUserConfigParam(3, "enable_high_definition_textures",
         &m_video_group, "Enable high definition textures. Bit flag: "
                         "bit 0 = enabled/disabled; bit 1 = set by user/set as default"));
     PARAM_PREFIX BoolUserConfigParam        m_glow
-        PARAM_DEFAULT(BoolUserConfigParam(false, "enable_glow",
+        PARAM_DEFAULT(BoolUserConfigParam(true, "enable_glow",
         &m_video_group, "Enable Glow"));
     PARAM_PREFIX BoolUserConfigParam        m_bloom
-        PARAM_DEFAULT(BoolUserConfigParam(false, "enable_bloom",
+        PARAM_DEFAULT(BoolUserConfigParam(true, "enable_bloom",
         &m_video_group, "Enable Bloom"));
     PARAM_PREFIX BoolUserConfigParam        m_light_shaft
-        PARAM_DEFAULT(BoolUserConfigParam(false, "enable_light_shaft",
+        PARAM_DEFAULT(BoolUserConfigParam(true, "enable_light_shaft",
         &m_video_group, "Enable Light Shafts"));
     PARAM_PREFIX BoolUserConfigParam        m_dynamic_lights
         PARAM_DEFAULT(BoolUserConfigParam(true, "enable_dynamic_lights",
@@ -713,10 +713,10 @@ namespace UserConfigParams
         &m_video_group, "Max texture size when high definition textures are "
                         "disabled"));
     PARAM_PREFIX BoolUserConfigParam        m_ssr
-        PARAM_DEFAULT(BoolUserConfigParam(false, "ssr",
+        PARAM_DEFAULT(BoolUserConfigParam(true, "ssr",
         &m_video_group, "Enable screen space reflection"));
     PARAM_PREFIX BoolUserConfigParam        m_hq_mipmap
-        PARAM_DEFAULT(BoolUserConfigParam(false, "hq_mipmap",
+        PARAM_DEFAULT(BoolUserConfigParam(true, "hq_mipmap",
         &m_video_group, "Generate mipmap for textures using "
                         "high quality method with SSE"));
     PARAM_PREFIX FloatUserConfigParam         m_font_size
@@ -983,13 +983,13 @@ namespace UserConfigParams
                 "Whether to display animated characters") );
 
     PARAM_PREFIX IntUserConfigParam        m_geometry_level
-            PARAM_DEFAULT(  IntUserConfigParam(2,
+            PARAM_DEFAULT(  IntUserConfigParam(5,
                             "geometry-level", &m_graphics_quality,
                 "Geometry quality 0=lowest level, no details; "
                 "5=everything is displayed") );
 
     PARAM_PREFIX IntUserConfigParam         m_anisotropic
-            PARAM_DEFAULT( IntUserConfigParam(4, "anisotropic",
+            PARAM_DEFAULT( IntUserConfigParam(16, "anisotropic",
                            &m_graphics_quality,
                            "Quality of anisotropic filtering (usual values include 2-4-8-16; 0 to disable)") );
 
@@ -1002,27 +1002,27 @@ namespace UserConfigParams
                            "motionblur_enabled", &m_graphics_quality,
                            "Whether motion blur should be enabled") );
     PARAM_PREFIX BoolUserConfigParam         m_mlaa
-            PARAM_DEFAULT( BoolUserConfigParam(false,
+            PARAM_DEFAULT( BoolUserConfigParam(true,
                            "mlaa", &m_graphics_quality,
                            "Whether MLAA anti-aliasing should be enabled") );
     PARAM_PREFIX BoolUserConfigParam          m_ssao
-            PARAM_DEFAULT(BoolUserConfigParam(false,
+            PARAM_DEFAULT(BoolUserConfigParam(true,
                            "ssao", &m_graphics_quality,
                            "Enable Screen Space Ambient Occlusion") );
     PARAM_PREFIX BoolUserConfigParam         m_light_scatter
-            PARAM_DEFAULT(BoolUserConfigParam(false,
+            PARAM_DEFAULT(BoolUserConfigParam(true,
                            "light_scatter", &m_graphics_quality,
                            "Enable light scattering shaders") );
     PARAM_PREFIX IntUserConfigParam          m_shadows_resolution
-            PARAM_DEFAULT( IntUserConfigParam(0,
+            PARAM_DEFAULT( IntUserConfigParam(2048,
                            "shadows_resolution", &m_graphics_quality,
                            "Shadow resolution (0 = disabled") );
     PARAM_PREFIX BoolUserConfigParam          m_pcss
-            PARAM_DEFAULT( BoolUserConfigParam(false,
+            PARAM_DEFAULT( BoolUserConfigParam(true,
                            "pcss", &m_graphics_quality,
                            "Enable Percentage Closer Soft Shadows") );
     PARAM_PREFIX BoolUserConfigParam          m_degraded_IBL
-        PARAM_DEFAULT(BoolUserConfigParam(true,
+        PARAM_DEFAULT(BoolUserConfigParam(false,
         "Degraded_IBL", &m_graphics_quality,
         "Disable specular IBL"));
 
