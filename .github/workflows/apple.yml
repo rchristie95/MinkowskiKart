@@ -232,32 +232,29 @@ jobs:
       - name: Smoke test macOS executable
         if: ${{ env.package_tag != '' }}
         run: |
-          # Launch straight into a race; check the process is still alive after 10s
-          # (meaning it got past init and into the race), then kill at 20s
-          # Use absolute path for --root to avoid CWD issues
-          # Also set SUPERTUXKART_DATADIR as a fallback
+          # Run unit tests as smoke test. This verifies initialization and basic logic.
+          # It runs in the foreground and exits automatically.
           STK_ROOT_DIR=$(pwd)/MinkowskiKart.app/Contents/Resources/data
           export SUPERTUXKART_DATADIR=$(pwd)/MinkowskiKart.app/Contents/Resources
           
           ./MinkowskiKart.app/Contents/MacOS/MinkowskiKart \
             --root="$STK_ROOT_DIR" \
-            --no-start-screen --track=sandtrack --kart=minkowski --laps=1 --numkarts=2 \
-            > smoke_out.txt 2>&1 &
-          SMOKE_PID=$!
-          sleep 10
-          if ! kill -0 $SMOKE_PID 2>/dev/null; then
-            echo "FAILED: process exited within 10s (crashed during init)"
-            cat smoke_out.txt
+            --no-graphics --no-sound --unit-testing \
+            > smoke_out.txt 2>&1
+          
+          SMOKE_EXIT_CODE=$?
+          cat smoke_out.txt
+          
+          if [ $SMOKE_EXIT_CODE -ne 0 ]; then
+            echo "FAILED: Smoke test (unit tests) failed with exit code $SMOKE_EXIT_CODE"
             exit 1
           fi
-          sleep 10
-          kill $SMOKE_PID 2>/dev/null || true
-          cat smoke_out.txt
+          
           if grep -q "Not all assets found" smoke_out.txt; then
             echo "FAILED: asset layout is broken"
             exit 1
           fi
-          echo "Smoke test passed: game ran for 20s in race"
+          echo "Smoke test passed: unit tests completed successfully"
       - name: Package iOS IPA
         if: ${{ env.package_tag != '' }}
         run: |

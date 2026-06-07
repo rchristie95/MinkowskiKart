@@ -1975,7 +1975,7 @@ void initRest()
 
     // Init GUI
     IrrlichtDevice* device = irr_driver->getDevice();
-    video::IVideoDriver* driver = device->getVideoDriver();
+    video::IVideoDriver* driver = device ? device->getVideoDriver() : NULL;
 
     if (UserConfigParams::m_gamepad_visualisation)
     {
@@ -1992,9 +1992,12 @@ void initRest()
     // Get into menu mode initially.
     input_manager->setMode(InputManager::MENU);
     // Input manager set first so it recieves SDL joystick event
-    GUIEngine::init(device, driver, StateManager::get());
-    GUIEngine::renderLoading(true, true, false);
-    GUIEngine::flushRenderLoading(true/*launching*/);
+    if (!GUIEngine::isNoGraphics())
+    {
+        GUIEngine::init(device, driver, StateManager::get());
+        GUIEngine::renderLoading(true, true, false);
+        GUIEngine::flushRenderLoading(true/*launching*/);
+    }
 
 #ifdef ANDROID
     JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
