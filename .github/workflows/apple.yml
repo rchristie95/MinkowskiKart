@@ -233,7 +233,7 @@ jobs:
           # Launch straight into a race; check the process is still alive after 10s
           # (meaning it got past init and into the race), then kill at 20s
           MinkowskiKart.app/Contents/MacOS/MinkowskiKart \
-            --no-start-screen --track=sandtrack --kart=tux --laps=1 --ai-num=1 \
+            --no-start-screen --track=sandtrack --kart=minkowski --laps=1 --numkarts=2 \
             > smoke_out.txt 2>&1 &
           SMOKE_PID=$!
           sleep 10
