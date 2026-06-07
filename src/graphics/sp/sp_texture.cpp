@@ -493,9 +493,11 @@ bool SPTexture::threadedLoad(const std::string& cache_directory)
             });
         if (!cache_loc.empty())
         {
+            std::weak_ptr<int> life_token = m_life_token;
             SPTextureManager::get()->addThreadedFunction(
-                [this, image, r, cache_loc]()->bool
+                [this, image, r, cache_loc, life_token]()->bool
                 {
+                    if (life_token.expired()) return true;
                     return saveCompressedTexture(image, r, cache_loc);
                 });
         }
