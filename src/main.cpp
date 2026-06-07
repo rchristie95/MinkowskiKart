@@ -1904,6 +1904,15 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
 void initUserConfig()
 {
     file_manager = new FileManager();
+
+    std::string s;
+    if(CommandLine::has("--root", &s))
+        FileManager::addRootDirs(s);
+    if (CommandLine::has("--stdout", &s))
+        FileManager::setStdoutName(s);
+    if (CommandLine::has("--stdout-dir", &s))
+        FileManager::setStdoutDir(s);
+
     user_config  = new UserConfig();     // needs file_manager
     user_config->loadConfig();
     // Some parts of the file manager needs user config (paths for models
@@ -2089,17 +2098,28 @@ void initRest()
     RaceManager::create();
     Log::info("main", "RaceManager created");
     // default settings for Quickstart
+    Log::info("main", "Setting num players");
     RaceManager::get()->setNumPlayers(1);
+    Log::info("main", "Setting num laps");
     RaceManager::get()->setNumLaps   (3);
+    Log::info("main", "Setting major mode");
     RaceManager::get()->setMajorMode (RaceManager::MAJOR_MODE_SINGLE);
+    Log::info("main", "Setting minor mode");
     RaceManager::get()->setMinorMode (RaceManager::MINOR_MODE_NORMAL_RACE);
+    Log::info("main", "Setting difficulty");
     RaceManager::get()->setDifficulty(
                  (RaceManager::Difficulty)(int)UserConfigParams::m_difficulty);
 
+    Log::info("main", "Checking last track: %s", UserConfigParams::m_last_track.c_str());
     if (!track_manager->getTrack(UserConfigParams::m_last_track))
+    {
+        Log::info("main", "Last track not found, reverting to defaults");
         UserConfigParams::m_last_track.revertToDefaults();
+    }
 
+    Log::info("main", "Setting track in RaceManager");
     RaceManager::get()->setTrack(UserConfigParams::m_last_track);
+    Log::info("main", "initRest finished");
 
 }   // initRest
 
@@ -2292,13 +2312,6 @@ int main(int argc, char *argv[])
                     StringUtils::removeExtension(base_name) + ".log");
             }
         }
-
-        if(CommandLine::has("--root", &s))
-            FileManager::addRootDirs(s);
-        if (CommandLine::has("--stdout", &s))
-            FileManager::setStdoutName(s);
-        if (CommandLine::has("--stdout-dir", &s))
-            FileManager::setStdoutDir(s);
 
 #ifndef SERVER_ONLY
         if(CommandLine::has("--no-graphics") || CommandLine::has("-l"))
