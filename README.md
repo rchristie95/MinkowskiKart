@@ -1,281 +1,89 @@
 # Minkowski Kart: Relativistic Racing
 
-Minkowski Kart is a fork of [SuperTuxKart](https://github.com/supertuxkart/stk-code)
-built around special and general relativity. The arcade kart-racing engine is
-kept intact, but every item in the original STK item system is replaced with a
-spacetime-themed counterpart. Screen effects, debuffs, and HUD icons are all
-redesigned to match.
+Minkowski Kart is a 3D arcade kart-racing game built around the principles of special and general relativity. Originally forked from [SuperTuxKart](https://github.com/supertuxkart/stk-code), it transforms the racing experience by integrating relativistic effects into every aspect of gameplay, from the item system to the visual rendering.
 
 Owned online multiplayer deployment and invitation setup are documented in
 [doc/ONLINE_INFRASTRUCTURE.md](doc/ONLINE_INFRASTRUCTURE.md).
 
-## What Changed From SuperTuxKart
+## Relativistic Item System
 
-The item system is the main departure from stock STK. Each original item has
-been swapped one-for-one with a relativistic equivalent:
+The core of Minkowski Kart is its spacetime-themed powerup system. Each item is designed to reflect relativistic concepts:
 
-| Minkowski Kart powerup | Replaces (original STK) |
+| Powerup | Effect |
 |---|---|
-| Warp Bubble | Bubblegum |
-| Asteroid | Cake |
-| Black Hole | Bowling Ball |
-| Zipper | Zipper *(unchanged)* |
-| Photon | Plunger |
-| Super Position | Switch |
-| Anti-Karticle | Swatter |
-| Wormhole | Rubber Ball |
-| Time Dilation *(attachment)* | Parachute *(attachment)* |
-| Maxwell-Boltzmann *(attachment)* | Anvil *(attachment)* |
+| **Warp Bubble** | A defensive shield that provides a short max-speed boost when fired forward. |
+| **Asteroid** | A heavy, rocky projectile that flies in a ballistic arc. |
+| **Black Hole** | A heavy homing projectile that orbits and pulls in targets. |
+| **Zipper** | A standard high-energy speed boost. |
+| **Photon** | Launches a high-speed tether on impact or triggers a Doppler-style blast. |
+| **Super Position** | A global spacetime collapse that rotates track pickups and pulses the world. |
+| **Anti-Karticle** | A mirrored clone that annihilates on contact with a pair-production flash. |
+| **Wormhole** | Spawns a linked pair of traversable spacetime portals. |
+| **Time Dilation** | A field-effect that slows down all other active karts. |
+| **Maxwell-Boltzmann** | Targets the leader with deterministic Gaussian velocity kicks. |
 
-The gameplay logic lives in `src/items/` and item weights are configured in
-[data/powerup.xml](data/powerup.xml).
+The gameplay logic lives in `src/items/` and item weights are configured in [data/powerup.xml](data/powerup.xml).
 
-## Powerup Reference
+## Visual Effects and Rendering
 
-### 1. Warp Bubble *(replaces Bubblegum)*
+Minkowski Kart features specialized visual effects to represent relativistic phenomena:
 
-A defensive shield sphere. Firing forward activates the bubble as a protective
-shell and grants a short max-speed boost. Firing backward drops a trap
-bubblegum on the track, exactly as in the original STK bubblegum backward-drop.
+- **Doppler Shifting:** Fullscreen flashes and color shifts during high-speed impacts.
+- **Spacetime Collapses:** Visual pulses and world-distortion during Super Position events.
+- **Gravitational Visuals:** Specialized rendering for Black Hole and Wormhole entities.
+- **Relativistic Apparent Position:** Calculations for world-space velocity effects.
 
-### 2. Asteroid *(replaces Cake)*
+### Track Clipping Mitigation
 
-A fast, dense lobbed projectile. Flies in a ballistic arc like the original
-cake but with a heavier, rocky appearance and no homing.
+The Relativity options menu provides two local rendering modes for reducing kart/track clipping:
 
-### 3. Black Hole *(replaces Bowling Ball)*
+- **Cheap (lite subdivision + height correction):** Uses GPU subdivision and adjusts visual height against the physical track surface.
+- **Enhanced (strong subdivision):** Uses advanced tessellation shaders for solid and normal-mapped meshes with a stronger near-kart cutoff. Edge subdivision is dynamically scaled based on distance.
 
-A slow, heavy homing projectile. Reuses the bowling ball slot and physics but
-renders as a pocket black hole. Homes in on the nearest kart ahead.
-
-### 4. Zipper *(unchanged)*
-
-The standard rocket speed boost from STK. Behaviour and timing are identical
-to the original.
-
-### 5. Photon *(replaces Plunger)*
-
-A reworked plunger. Firing forward launches a photon that creates a tether
-hit on impact. Firing backward applies the same Doppler-style fullscreen hit
-effect directly. The old black-and-white center scanner hole overlay has been
-removed from both modes.
-
-### 6. Super Position *(replaces Switch)*
-
-A global item-collapse that still rotates all track pickups, as in the original
-STK switch, but pairs it with a relativistic world-pulse VFX. Karts that are
-caught in the collapse can receive a heavy cat attachment (see Super Position
-Cat below).
-
-### 7. Anti-Karticle *(replaces Swatter)*
-
-A mirrored anti-kart clone launched from the kart. On contact it annihilates
-with a pair-production flash. Most useful as a backward-fired pressure tool;
-weights are skewed toward leaders and front-runners accordingly.
-
-### 8. Wormhole *(replaces Rubber Ball)*
-
-Spawns a linked pair of traversable spacetime portals. Any kart that drives
-into the entry portal exits from the exit portal. Both portals persist for
-20 seconds. The rubber ball model is reused for the portal projectile.
-
-### 9. Time Dilation *(replaces Parachute)*
-
-A field-effect powerup that applies a slowdown attachment to every other active
-kart. Racers ahead of the user still receive the strongest rank-scaled effect.
-The original parachute mesh is hidden but the speed-reduction and VFX remain.
-
-### 10. Maxwell-Boltzmann *(replaces Anvil)*
-
-A leader-punish that targets the kart currently in first place. It runs for
-10 seconds and delivers one deterministic Gaussian tangent-plane velocity kick
-per second (sigma 10 m/s). Each kick spawns a colored Brownian sphere that
-visibly hits and bounces off the affected kart. Weighted away from first place
-since it is pointless to hand to the leader.
-
-## Debuffs and Attachments
-
-### Time Dilation *(replaces Parachute attachment)*
-
-The primary slowdown debuff. Applied by the Time Dilation powerup and by
-direct hits from banana-style track hazards.
-
-### Maxwell-Boltzmann *(replaces Anvil attachment)*
-
-Applied to the current leader by the Maxwell-Boltzmann powerup. Lasts
-10 seconds, starts kicking after 1 second, and uses deterministic Gaussian
-tangent-plane kicks.
-
-### Photon Hit
-
-A fullscreen Doppler-style effect triggered on a successful photon impact,
-for both forward-fired and backward-fired hits. No scanner-hole overlay.
-
-### Super Position Cat
-
-When a Super Position collapse resolves as a hazard outcome, the victim
-receives a heavy cat attachment and a speed drop. This is the negative
-counterpart to the original STK negative-switch outcome.
-
-### Warp Bubble *(attachment)*
-
-A positive on-kart attachment representing the active shield. Visible in the
-HUD icon set and in the attachment system alongside the debuffs.
-
-## Item Weight Notes
-
-Weights are configured per-rank in [data/powerup.xml](data/powerup.xml) and
-rebalanced for Minkowski Kart behavior:
-
-- **Anti-Karticle** skews toward leaders and front-runners (most useful fired
-  backward at chasers).
-- **Maxwell-Boltzmann** skews toward mid-pack and tail karts (targets first
-  place, so giving it to first is wasteful).
-- Non-race modes (battle, soccer, FTL) retain closer-to-STK fallback weights.
-
-## Visual Effects
-
-- Warp-bubble shielding and bubble impacts
-- Black-hole projectile rendering
-- Photon Doppler hit fullscreen flash
-- Super Position world-pulse collapse effect
-- Time-dilation field VFX and Maxwell-Boltzmann Brownian kick spheres
-- Wormhole portal visuals
-
-## Track Clipping Mitigation
-
-The Relativity options menu provides two local rendering modes for reducing
-kart/track clipping:
-
-- **Cheap (lite subdivision + height correction)** is the default. On
-  tessellation-capable hardware it uses the main-branch-style lite GPU
-  subdivision path, then adjusts the kart's visual height against the physical
-  track surface. This is the lower-cost option.
-- **Enhanced (strong subdivision)** uses the same tessellation shader path for
-  solid and normal-mapped meshes, including applicable shadow passes, but with
-  a stronger near-kart cutoff and no kart height correction. Near the kart,
-  edges longer than `0.5 m` are eligible for subdivision. That cutoff rises
-  smoothly to `2.0 m` over `50 m`, reducing distant GPU work. Both modes cap
-  base tessellation at `8`, with distance and high-beta boosts followed by a
-  final cap of `16`.
-
-Enhanced mode requires desktop GLSL 4.00+ or GLSL ES 3.20+. On unsupported
-hardware, its preference is preserved but the renderer falls back to Cheap
-height correction without GPU subdivision. This option is local only and does
-not affect physics or network synchronization.
+Enhanced mode requires desktop GLSL 4.00+ or GLSL ES 3.20+.
 
 ## Building The Project (Windows)
 
 This project uses CMake and Ninja with the llvm-mingw toolchain.
 
-### 1. Install CMake
+### 1. Prerequisites
 
-```powershell
-winget install --id Kitware.CMake -e --accept-package-agreements --accept-source-agreements
-```
+- **CMake:** `winget install --id Kitware.CMake -e`
+- **llvm-mingw:** Download from [llvm-mingw releases](https://github.com/mstorsjo/llvm-mingw/releases) and extract to `.build-tools\llvm-mingw\`.
+- **Ninja:** Download from [Ninja releases](https://github.com/ninja-build/ninja/releases) and extract to `.build-tools\ninja\`.
+- **Dependencies:** Download Windows dependencies from the project repository and extract to the root directory.
 
-### 2. Download llvm-mingw
-
-Download the Windows x86_64 zip from the
-[llvm-mingw releases page](https://github.com/mstorsjo/llvm-mingw/releases)
-and extract it into `.build-tools\llvm-mingw\` so the layout is:
-
-```
-.build-tools\llvm-mingw\llvm-mingw-<date>-msvcrt-x86_64\bin\x86_64-w64-mingw32-clang.exe
-```
-
-`compile.bat` specifically expects the `20260407` release. Any recent release
-should work if you adjust the path in `compile.bat`.
-
-### 3. Download Ninja
-
-Download `ninja-win.zip` from the
-[Ninja releases page](https://github.com/ninja-build/ninja/releases) and
-extract `ninja.exe` into `.build-tools\ninja\`.
-
-### 4. Download the Windows dependencies
+### 2. Configure and Build
 
 ```bash
-curl -L -o deps.zip https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-win-x86_64.zip
-unzip deps.zip
-```
-
-This extracts `dependencies-win-x86_64\` into the repo root.
-
-### 5. Configure with CMake
-
-```bash
-LLVM_PREFIX=".build-tools/llvm-mingw/llvm-mingw-20260407-msvcrt-x86_64"
-NINJA=".build-tools/ninja/ninja.exe"
-
+# Configure
 cmake -S . -B build -G Ninja \
-  -DCMAKE_MAKE_PROGRAM="$NINJA" \
+  -DCMAKE_MAKE_PROGRAM=".build-tools/ninja/ninja.exe" \
   -DLLVM_ARCH=x86_64 \
-  -DLLVM_PREFIX="$LLVM_PREFIX" \
+  -DLLVM_PREFIX=".build-tools/llvm-mingw/llvm-mingw-..." \
   -DCMAKE_TOOLCHAIN_FILE="cmake/Toolchain-llvm-mingw.cmake" \
   -DCHECK_ASSETS=OFF \
-  -DUSE_DIRECTX=OFF \
   -DUSE_WIIUSE=OFF
-```
 
-`-DUSE_WIIUSE=OFF` is required on Windows with llvm-mingw because the WinHID
-headers are not bundled. `-DCHECK_ASSETS=OFF` skips the asset presence check
-at configure time.
-
-### 6. Build
-
-```bash
+# Build
 .build-tools/ninja/ninja.exe -C build -j4
 ```
 
-The executable is output to `build\bin\supertuxkart.exe`.
+The executable is output to `build\bin\MinkowskiKart.exe`.
 
-### 7. Post-build setup
-
-Copy the runtime DLLs next to the executable:
-
-```bash
-cp dependencies-win-x86_64/bin/*.dll build/bin/
-```
-
-Create the replay directory (required by the asset loader):
-
-```bash
-mkdir -p data/replay
-```
-
-### 8. Run
+### 3. Run
 
 ```bat
 run.bat
 ```
 
-This launches `build\bin\supertuxkart.exe` with `--root-data=../../data`.
-The asset loader automatically discovers `stk-assets\` from that path.
+## Credits and Attribution
 
-### Packaging
+### Project Foundation
+This project was forked from SuperTuxKart (GPLv3). We are grateful to the SuperTuxKart team for their robust racing engine.
 
-The packaging flow is driven by `package.ps1`. It prefers the current repo
-build output from `build-dev\bin` and falls back to `build\bin`, while shipping
-the current repo `data/` and `stk-assets/` content.
-
-## Credits
-
-### SuperTuxKart
-
-This project is built on the SuperTuxKart engine.
-
-- Official website: [supertuxkart.net](https://supertuxkart.net)
-- License: GPLv3
-
-### OpenRelativity
-
-Relativistic rendering and math ideas are adapted from OpenRelativity by the
-MIT Game Lab.
-
-- Original toolkit: [OpenRelativity on GitHub](https://github.com/MITGameLab/OpenRelativity)
-- License: MIT
+### Relativity Concepts
+Relativistic rendering and math ideas are adapted from **OpenRelativity** by the MIT Game Lab (MIT License).
 
 ---
-
-Developed as an educational and experimental MinkowskiKart fork.
+Developed as an experimental exploration of relativistic physics in arcade gaming.
