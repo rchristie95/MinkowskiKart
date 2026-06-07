@@ -201,6 +201,7 @@ jobs:
           cd ./macosx-arm64/MinkowskiKart.app/Contents/Resources/data
           unzip -q ../../../../../stk-assets-full.zip
           cp -r ../../../../../stk-assets/. .
+          cp -r ../../../../../data/. .
           mkdir -p replay
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             cp supertuxkart.git "supertuxkart.${{ env.package_tag }}"
