@@ -240,7 +240,8 @@ void SPMeshBuffer::uploadGLMesh()
             v_size += pitch;
         }
     }
-    glUnmapBuffer(GL_ARRAY_BUFFER);
+    if (ptr)
+        glUnmapBuffer(GL_ARRAY_BUFFER);
 
     SPTextureManager::get()->increaseGLCommandFunctionCount(1);
     SPTextureManager::get()->addGLCommandFunction

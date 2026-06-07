@@ -15,7 +15,6 @@ fi
 
 # Install deps. --needed means don't reinstall if already installed
 sudo $PACMAN -S --needed switch-dev \
-  devkitpro-pkgbuild-helpers \
   switch-curl switch-mbedtls \
   switch-freetype switch-libfribidi \
   switch-libogg switch-libvorbis \
