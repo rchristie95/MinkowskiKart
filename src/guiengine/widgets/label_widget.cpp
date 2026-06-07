@@ -237,10 +237,12 @@ void LabelWidget::resize()
 
 void LabelWidget::setColor(const irr::video::SColor& color)
 {
-    assert(m_element != NULL);
     m_color = color;
     m_has_color = true;
-    ((IGUIStaticText*)m_element)->setOverrideColor(m_color);
+    if (m_element != NULL)
+    {
+        ((IGUIStaticText*)m_element)->setOverrideColor(m_color);
+    }
 }
 // ----------------------------------------------------------------------------
 
@@ -261,9 +263,11 @@ void LabelWidget::setDefaultColor()
     {
         if(m_has_color)
         {
-            assert(m_element != NULL);
             m_has_color = false;
-            ((IGUIStaticText*)m_element)->enableOverrideColor(false);
+            if (m_element != NULL)
+            {
+                ((IGUIStaticText*)m_element)->enableOverrideColor(false);
+            }
         }
     }
 }

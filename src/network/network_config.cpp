@@ -592,7 +592,7 @@ void NetworkConfig::fillStunList(std::vector<std::pair<std::string, int> >* l,
     {
         err = 0;
         // Fallback name server
-        SocketAddress addr("8.8.8.8:53");
+        SocketAddress addr(isIPv6Socket() ? "[2001:4860:4860::8888]:53" : "8.8.8.8:53");
         memcpy(&conf->nameserver[0], addr.getSockaddr(), addr.getSocklen());
     }
 

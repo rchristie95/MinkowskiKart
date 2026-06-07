@@ -61,7 +61,7 @@ ServerInfoDialog::ServerInfoDialog(std::shared_ptr<Server> server)
     m_join_server = false;
 
     m_bookmark_icon = irr_driver->getTexture
-        (file_manager->getAsset(FileManager::GUI_ICON, "story_mode_book.png"));
+        (file_manager->getAsset(FileManager::GUI_ICON, "bookmark_icon.png"));
     m_remove_icon = irr_driver->getTexture
         (file_manager->getAsset(FileManager::GUI_ICON, "remove.png"));
 

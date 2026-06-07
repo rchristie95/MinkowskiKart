@@ -429,40 +429,81 @@ enet_socket_get_option (ENetSocket socket, ENetSocketOption option, int * value)
 int
 enet_socket_connect (ENetSocket socket, const ENetAddress * address)
 {
-    struct sockaddr_in sin;
-    int result;
+    if (isIPv6Socket() == 1)
+    {
+        struct sockaddr_in6 sin;
+        memset (& sin, 0, sizeof (struct sockaddr_in6));
 
-    memset (& sin, 0, sizeof (struct sockaddr_in));
+        sin.sin6_family = AF_INET6;
+        sin.sin6_port = ENET_HOST_TO_NET_16 (address -> port);
+        memcpy (sin.sin6_addr.s6_addr, & address -> host.p0, 16);
+        sin.sin6_scope_id = address -> host.p4;
 
-    sin.sin_family = AF_INET;
-    sin.sin_port = ENET_HOST_TO_NET_16 (address -> port);
-    sin.sin_addr.s_addr = address -> host.p0;
+        int result = connect (socket, (struct sockaddr *) & sin, sizeof (struct sockaddr_in6));
+        if (result == -1 && errno == EINPROGRESS)
+          return 0;
 
-    result = connect (socket, (struct sockaddr *) & sin, sizeof (struct sockaddr_in));
-    if (result == -1 && errno == EINPROGRESS)
-      return 0;
+        return result;
+    }
+    else
+    {
+        struct sockaddr_in sin;
+        int result;
 
-    return result;
+        memset (& sin, 0, sizeof (struct sockaddr_in));
+
+        sin.sin_family = AF_INET;
+        sin.sin_port = ENET_HOST_TO_NET_16 (address -> port);
+        sin.sin_addr.s_addr = address -> host.p0;
+
+        result = connect (socket, (struct sockaddr *) & sin, sizeof (struct sockaddr_in));
+        if (result == -1 && errno == EINPROGRESS)
+          return 0;
+
+        return result;
+    }
 }
 
 ENetSocket
 enet_socket_accept (ENetSocket socket, ENetAddress * address)
 {
     int result;
-    struct sockaddr_in sin;
-    socklen_t sinLength = sizeof (struct sockaddr_in);
-
-    result = accept (socket, 
-                     address != NULL ? (struct sockaddr *) & sin : NULL, 
-                     address != NULL ? & sinLength : NULL);
-    
-    if (result == -1)
-      return ENET_SOCKET_NULL;
-
-    if (address != NULL)
+    if (isIPv6Socket() == 1)
     {
-        address -> host.p0 = (enet_uint32) sin.sin_addr.s_addr;
-        address -> port = ENET_NET_TO_HOST_16 (sin.sin_port);
+        struct sockaddr_in6 sin;
+        socklen_t sinLength = sizeof (struct sockaddr_in6);
+
+        result = accept (socket, 
+                         address != NULL ? (struct sockaddr *) & sin : NULL, 
+                         address != NULL ? & sinLength : NULL);
+
+        if (result == -1)
+          return ENET_SOCKET_NULL;
+
+        if (address != NULL)
+        {
+            memcpy (& address -> host.p0, sin.sin6_addr.s6_addr, 16);
+            address -> host.p4 = sin.sin6_scope_id;
+            address -> port = ENET_NET_TO_HOST_16 (sin.sin6_port);
+        }
+    }
+    else
+    {
+        struct sockaddr_in sin;
+        socklen_t sinLength = sizeof (struct sockaddr_in);
+
+        result = accept (socket, 
+                         address != NULL ? (struct sockaddr *) & sin : NULL, 
+                         address != NULL ? & sinLength : NULL);
+
+        if (result == -1)
+          return ENET_SOCKET_NULL;
+
+        if (address != NULL)
+        {
+            address -> host.p0 = (enet_uint32) sin.sin_addr.s_addr;
+            address -> port = ENET_NET_TO_HOST_16 (sin.sin_port);
+        }
     }
 
     return result;

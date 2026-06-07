@@ -3,7 +3,7 @@
     <div x="1%" y="0" width="98%" layout="horizontal-row" height="9%">
         <icon-button id="back" height="100%" icon_align="left" icon="gui/icons/back.png"/>
         <spacer proportion="1" height="1"/>
-        <icon-button id="bookmark" y="5%" height="90%" icon_align="right" icon="gui/icons/story_mode_book.png"/>
+        <icon-button id="bookmark" y="5%" height="90%" icon_align="right" icon="gui/icons/bookmark_icon.png"/>
         <icon-button id="reload" y="5%" height="90%" icon_align="right" icon="gui/icons/restart.png"/>
     </div>
 

@@ -50,6 +50,8 @@ void main()
     v_tangent = rotateVector(i_rotation, i_tangent.xyz);
     v_bitangent = cross(v_world_normal, v_tangent) * i_tangent.w;
 
+    v_normal = v_world_normal;
+
     v_uv = vec2(i_uv.x + (i_texture_trans.x * i_normal.w),
         i_uv.y + (i_texture_trans.y * i_normal.w));
     v_uv_two = i_uv_two;

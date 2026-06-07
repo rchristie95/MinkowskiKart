@@ -64,6 +64,7 @@ private:
 
     GUIEngine::SpinnerWidget* m_server_type;
     GUIEngine::CheckBoxWidget* m_ipv6;
+    GUIEngine::LabelWidget* m_ipv6_text;
     GUIEngine::IconButtonWidget* m_reload_widget;
     GUIEngine::IconButtonWidget* m_bookmark_widget;
     video::ITexture* m_bookmark_icon;

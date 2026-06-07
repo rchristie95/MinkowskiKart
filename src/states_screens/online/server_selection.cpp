@@ -118,6 +118,9 @@ void ServerSelection::loadedFromFile()
 
     m_ipv6 = getWidget<GUIEngine::CheckBoxWidget>("ipv6");
     assert(m_ipv6 != NULL);
+    m_ipv6_text = getWidget<GUIEngine::LabelWidget>("ipv6_text");
+    assert(m_ipv6_text != NULL);
+    m_ipv6_text->setColor(irr::video::SColor(255, 255, 255, 255));
     m_searcher = getWidget<GUIEngine::TextBoxWidget>("searcher");
     assert(m_searcher != NULL);
     m_ipv6->setState(false);
@@ -125,7 +128,7 @@ void ServerSelection::loadedFromFile()
     m_bookmark_widget = getWidget<GUIEngine::IconButtonWidget>("bookmark");
     assert(m_bookmark_widget != NULL);
     m_bookmark_icon = irr_driver->getTexture
-        (file_manager->getAsset(FileManager::GUI_ICON, "story_mode_book.png"));
+        (file_manager->getAsset(FileManager::GUI_ICON, "bookmark_icon.png"));
     m_global_icon = irr_driver->getTexture
         (file_manager->getAsset(FileManager::GUI_ICON, "main_network.png"));
 }   // loadedFromFile
@@ -173,10 +176,10 @@ void ServerSelection::init()
     {
         m_ipv6->setState(false);
         m_ipv6->setVisible(false);
-        getWidget("ipv6_text")->setVisible(false);
+        m_ipv6_text->setVisible(false);
     }
     else
-        getWidget("ipv6_text")->setVisible(true);
+        m_ipv6_text->setVisible(true);
 
     m_current_column = 5/*distance*/;
     m_searcher->clearListeners();
