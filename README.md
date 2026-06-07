@@ -2,6 +2,51 @@
 
 Minkowski Kart is a 3D arcade kart-racing game built around the principles of special and general relativity. Originally forked from [SuperTuxKart](https://github.com/supertuxkart/stk-code), it transforms the racing experience by integrating relativistic effects into every aspect of gameplay, from the item system to the visual rendering.
 
+```mermaid
+graph TD
+    subgraph Core_Engine [Core Engine]
+        Engine[MinkowskiKart Engine]
+        Physics[Bullet Physics]
+        Input[SDL2 Input]
+    end
+
+    subgraph Relativistic_Systems [Relativistic Systems]
+        Renderer[SP Renderer]
+        Doppler[Doppler Shift VFX]
+        SpaceCollapse[Spacetime Collapse]
+        Tess[GPU Tessellation]
+    end
+
+    subgraph Spacetime_Items [Spacetime Items]
+        Items[Item System]
+        Warp[Warp Bubble]
+        BH[Black Hole]
+        Portal[Wormhole]
+        Dilation[Time Dilation]
+    end
+
+    subgraph Networking [Networking]
+        Online[Online Manager]
+        RelSync[Relativistic State Sync]
+    end
+
+    Engine --> Physics
+    Engine --> Renderer
+    Engine --> Items
+    Engine --> Online
+    
+    Renderer --> Doppler
+    Renderer --> SpaceCollapse
+    Renderer --> Tess
+    
+    Items --> Warp
+    Items --> BH
+    Items --> Portal
+    Items --> Dilation
+    
+    Online --> RelSync
+```
+
 Owned online multiplayer deployment and invitation setup are documented in
 [doc/ONLINE_INFRASTRUCTURE.md](doc/ONLINE_INFRASTRUCTURE.md).
 
