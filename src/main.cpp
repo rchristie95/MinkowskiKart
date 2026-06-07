@@ -2079,11 +2079,15 @@ void initRest()
     grand_prix_manager      = new GrandPrixManager     ();
     // Consistency check for challenges, and enable all challenges
     // that have all prerequisites fulfilled
+    Log::info("main", "Checking GP consistency finished");
     grand_prix_manager->checkConsistency();
+    Log::info("main", "Adding loading icon cup_gold.png");
     GUIEngine::addLoadingIcon( irr_driver->getTexture(FileManager::GUI_ICON,
                                                       "cup_gold.png"    ) );
 
+    Log::info("main", "Creating RaceManager");
     RaceManager::create();
+    Log::info("main", "RaceManager created");
     // default settings for Quickstart
     RaceManager::get()->setNumPlayers(1);
     RaceManager::get()->setNumLaps   (3);
