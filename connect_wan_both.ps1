@@ -6,16 +6,28 @@
 $ErrorActionPreference = "Stop"
 $RepoRoot  = $PSScriptRoot
 $ADB       = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
-$DevSerial = "48161FDJHS0DRL"
 $PackageName  = "org.supertuxkart.stk_dbg"
 $ActivityName = "$PackageName/$PackageName.SuperTuxKartActivity"
+
+# Load local credentials from .mk_local.env (gitignored — never committed)
+$EnvFile = Join-Path $RepoRoot ".mk_local.env"
+if (-not (Test-Path $EnvFile)) {
+    throw "Missing .mk_local.env — copy .mk_local.env.example and fill in your credentials."
+}
+foreach ($line in (Get-Content $EnvFile)) {
+    if ($line -match '^\s*([^#=\s]+)\s*=\s*(.+)\s*$') {
+        Set-Variable -Name $Matches[1] -Value $Matches[2] -Scope Script
+    }
+}
+
+$DevSerial    = $MK_PIXEL_SERIAL
+$AndroidPwd   = $MK_DEV_PASSWORD
 
 $VpsHost  = "play.robsonchristie.com"
 $VpsPort  = 2759
 $ServerId = 3
 
 $AndroidLogin = "android1"
-$AndroidPwd   = "minkowski2026!"
 $AndroidKart  = "curie"
 
 $SshKey = "$env:USERPROFILE\.ssh\minkowski_ovh_ed25519"

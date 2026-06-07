@@ -63,3 +63,6 @@ tools/windows_installer/
 # Platform targets not used in this fork
 # android/
 # switch/
+
+# Local developer environment file (contains credentials)
+/.mk_local.env
