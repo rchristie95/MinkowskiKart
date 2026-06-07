@@ -2392,7 +2392,9 @@ int main(int argc, char *argv[])
         // reloading to apply a new resolution.
         irr_driver->commonInit();
 
+        Log::info("main", "Loading Official Karts");
         OfficialKarts::load();
+        Log::info("main", "Official Karts loaded");
         handleXmasMode();
         handleEasterEarMode();
 

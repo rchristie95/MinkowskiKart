@@ -400,8 +400,8 @@ bool GrandPrixData::writeToFile()
  */
 bool GrandPrixData::checkConsistency(bool log_error) const
 {
-    Log::info("GrandPrixData", "Checking consistency for GP '%ls' (%s) with %d tracks\n", 
-              m_name.c_str(), m_id.c_str(), (int)m_tracks.size());
+    Log::info("GrandPrixData", "Checking consistency for GP '%s' (%s) with %d tracks\n", 
+              StringUtils::wideToUtf8(m_name).c_str(), m_id.c_str(), (int)m_tracks.size());
     for (unsigned int i = 0; i < m_tracks.size(); i++)
     {
         Log::info("GrandPrixData", "  Checking track %d: %s\n", i, m_tracks[i].c_str());
@@ -410,8 +410,9 @@ bool GrandPrixData::checkConsistency(bool log_error) const
             if (log_error)
             {
                 Log::error("GrandPrixData",
-                           "The grand prix '%ls' won't be available because "
-                           "the track '%s' does not exist!", m_name.c_str(),
+                           "The grand prix '%s' won't be available because "
+                           "the track '%s' does not exist!", 
+                           StringUtils::wideToUtf8(m_name).c_str(),
                            m_tracks[i].c_str());
             }
             return false;
