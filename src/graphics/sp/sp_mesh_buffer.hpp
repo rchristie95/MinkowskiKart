@@ -65,6 +65,8 @@ protected:
 
     unsigned m_pitch;
 
+    std::shared_ptr<int> m_life_token;
+
 private:
     std::vector<uint16_t> m_indices;
 
@@ -84,7 +86,6 @@ private:
 
     bool m_skinned;
 
-    std::shared_ptr<int> m_life_token;
 
     // ------------------------------------------------------------------------
     bool initTexture();
