@@ -5,8 +5,7 @@
 `minkowski-kart-release.keystore`
 
 **Alias:** `minkowskikart`
-**Store password:** `minkowski2024!`
-**Key password:** `minkowski2024!`
+**Passwords:** See `MK_KEYSTORE_PASS` in your local `.mk_local.env`.
 **Validity:** 10,000 days (~27 years)
 **Algorithm:** RSA 2048-bit, SHA384withRSA
 

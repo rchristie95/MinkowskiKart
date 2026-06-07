@@ -58,7 +58,8 @@ Write-Host "Creating launcher..." -ForegroundColor Yellow
 @'
 @echo off
 cd /d "%~dp0"
-start "" "MinkowskiKart.exe" --root-data=data --login=rchristie95 --password=Telly612223!
+:: Launch with data root. Login/password can be entered in the game GUI or passed as arguments.
+start "" "MinkowskiKart.exe" --root-data=data
 '@ | Set-Content "$stageDir\MinkowskiKart.bat" -Encoding ASCII
 
 # Create zip

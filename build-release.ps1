@@ -65,6 +65,18 @@ Write-Host "Using bash: $BashExe" -ForegroundColor Cyan
 
 # ── 2. Resolve paths ──────────────────────────────────────────────────────────
 $RepoRoot  = $PSScriptRoot
+
+# Load local credentials from .mk_local.env (gitignored — never committed)
+$EnvFile = Join-Path $RepoRoot ".mk_local.env"
+if (-not (Test-Path $EnvFile)) {
+    throw "Missing .mk_local.env — copy .mk_local.env.example and fill in your credentials."
+}
+foreach ($line in (Get-Content $EnvFile)) {
+    if ($line -match '^\s*([^#=\s]+)\s*=\s*(.+)\s*$') {
+        Set-Variable -Name $Matches[1] -Value $Matches[2] -Scope Script
+    }
+}
+
 $Keystore  = Join-Path $RepoRoot "store\keystore\minkowski-kart-release.keystore"
 $MakeScript = Join-Path $RepoRoot "android\make.sh"
 
@@ -139,9 +151,9 @@ $env:COMPILE_ARCH     = $Arch
 $env:PROJECT_VERSION  = $Version
 $env:PROJECT_CODE     = "$VersionCode"
 $env:STK_KEYSTORE     = $KeystorePosix
-$env:STK_STOREPASS    = "minkowski2024!"
-$env:STK_ALIAS        = "minkowskikart"
-$env:STK_KEYPASS      = "minkowski2024!"
+$env:STK_STOREPASS    = $MK_KEYSTORE_PASS
+$env:STK_ALIAS        = $MK_KEYSTORE_ALIAS
+$env:STK_KEYPASS      = $MK_KEYSTORE_PASS
 $env:SDK_PATH         = $SdkPosix
 $env:STK_NDK_VERSION  = $InstalledNdk
 # NDK_PATH is the *parent* dir; make.sh appends /<version> to it
