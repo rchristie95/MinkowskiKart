@@ -400,8 +400,11 @@ bool GrandPrixData::writeToFile()
  */
 bool GrandPrixData::checkConsistency(bool log_error) const
 {
+    Log::info("GrandPrixData", "Checking consistency for GP '%ls' (%s) with %d tracks\n", 
+              m_name.c_str(), m_id.c_str(), (int)m_tracks.size());
     for (unsigned int i = 0; i < m_tracks.size(); i++)
     {
+        Log::info("GrandPrixData", "  Checking track %d: %s\n", i, m_tracks[i].c_str());
         if (track_manager->getTrack(m_tracks[i]) == NULL)
         {
             if (log_error)
@@ -414,6 +417,7 @@ bool GrandPrixData::checkConsistency(bool log_error) const
             return false;
         }
     }
+    Log::info("GrandPrixData", "GP %s is consistent\n", m_id.c_str());
     return true;
 }   // checkConsistency
 

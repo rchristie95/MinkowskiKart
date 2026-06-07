@@ -172,14 +172,18 @@ GrandPrixData* GrandPrixManager::editGrandPrix(const std::string& s)
 // ----------------------------------------------------------------------------
 void GrandPrixManager::checkConsistency()
 {
+    Log::info("GrandPrixManager", "Checking consistency of %d GPs\n", (int)m_gp_data.size());
     for (int i = (int)m_gp_data.size() - 1; i >= 0; i--)
     {
+        Log::info("GrandPrixManager", "Checking GP %d: %s\n", i, m_gp_data[i].getId().c_str());
         if (!m_gp_data[i].checkConsistency())
         {
+            Log::info("GrandPrixManager", "GP %s is inconsistent, removing\n", m_gp_data[i].getId().c_str());
             // delete this GP, since a track is missing
             m_gp_data.erase(i);
         }
     }
+    Log::info("GrandPrixManager", "Finished checking consistency\n");
 }   // checkConsistency
 
 // ----------------------------------------------------------------------------
