@@ -1191,7 +1191,7 @@ namespace GUIEngine
         // set event receiver
         g_device->setEventReceiver(EventHandler::get());
 
-        if (loading)
+        if (loading && !isNoGraphics())
         {
             g_device->getVideoDriver()
                     ->beginScene(true, true, video::SColor(255,100,101,140));
@@ -1452,6 +1452,7 @@ namespace GUIEngine
     // -----------------------------------------------------------------------
     void renderLoading(bool clearIcons, bool launching, bool update_tips)
     {
+        if (isNoGraphics()) return;
 #ifndef SERVER_ONLY
         if (!TipsManager::get()->isEmpty() && update_tips)
         {
@@ -1578,6 +1579,7 @@ namespace GUIEngine
 
     void flushRenderLoading(bool launching)
     {
+        if (isNoGraphics()) return;
 #ifndef SERVER_ONLY
         // This will avoid no response in windows, also allow showing loading
         // icon in apple device, because apple device only update render
@@ -1610,6 +1612,7 @@ namespace GUIEngine
         if (icon != NULL)
         {
             g_loading_icons.push_back(icon);
+            if (isNoGraphics()) return;
 
             g_device->getVideoDriver()
                     ->beginScene(true, true, video::SColor(255,100,101,140));

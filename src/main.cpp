@@ -1992,7 +1992,7 @@ void initRest()
     // Get into menu mode initially.
     input_manager->setMode(InputManager::MENU);
     // Input manager set first so it recieves SDL joystick event
-    if (!GUIEngine::isNoGraphics())
+    if (device != NULL)
     {
         GUIEngine::init(device, driver, StateManager::get());
         GUIEngine::renderLoading(true, true, false);

@@ -233,23 +233,15 @@ jobs:
         if: ${{ env.package_tag != '' }}
         run: |
           # Run unit tests as smoke test. This verifies initialization and basic logic.
-          # It runs in the foreground and exits automatically.
           STK_ROOT_DIR=$(pwd)/MinkowskiKart.app/Contents/Resources/data
           export SUPERTUXKART_DATADIR=$(pwd)/MinkowskiKart.app/Contents/Resources
-          
-          ./MinkowskiKart.app/Contents/MacOS/MinkowskiKart \
-            --root="$STK_ROOT_DIR" \
-            --no-graphics --no-sound --unit-testing \
-            > smoke_out.txt 2>&1
-          
+          ./MinkowskiKart.app/Contents/MacOS/MinkowskiKart --root="$STK_ROOT_DIR" --no-graphics --no-sound --unit-testing > smoke_out.txt 2>&1
           SMOKE_EXIT_CODE=$?
           cat smoke_out.txt
-          
           if [ $SMOKE_EXIT_CODE -ne 0 ]; then
             echo "FAILED: Smoke test (unit tests) failed with exit code $SMOKE_EXIT_CODE"
             exit 1
           fi
-          
           if grep -q "Not all assets found" smoke_out.txt; then
             echo "FAILED: asset layout is broken"
             exit 1
