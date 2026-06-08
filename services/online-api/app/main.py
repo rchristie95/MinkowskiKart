@@ -208,9 +208,48 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         })
 
     @app.post("/api/v2/user/register/")
+    async def register(request: Request) -> Response:
+        import re
+        from sqlalchemy.exc import IntegrityError
+        
+        values = await get_form(request)
+        username = values.get("username", "").strip().lower()
+        password = values.get("password", "")
+        password_confirm = values.get("password_confirm", "")
+        email = values.get("email", "").strip().lower()
+        terms = values.get("terms", "")
+
+        if terms != "on":
+            return xml_response(False, "You must accept the terms and conditions.")
+        if password != password_confirm:
+            return xml_response(False, "Passwords do not match.")
+        if not (8 <= len(password) <= 60):
+            return xml_response(False, "Password must be between 8 and 60 characters.")
+        if not (3 <= len(username) <= 30):
+            return xml_response(False, "Username must be between 3 and 30 characters.")
+        if not re.match(r"^[a-z][a-z0-9._-]*$", username):
+            return xml_response(False, "Username is invalid.")
+        if "@" not in email or "." not in email:
+            return xml_response(False, "Email address is invalid.")
+
+        with session_factory() as db:
+            try:
+                user = User(
+                    username=username,
+                    email=email,
+                    password_hash=hash_password(password),
+                    active=True
+                )
+                db.add(user)
+                db.commit()
+            except IntegrityError:
+                return xml_response(False, "Username or email is already taken.")
+            
+            return xml_response(True, "Account created successfully! You can now sign in.")
+
     @app.post("/api/v2/user/recover/")
     async def invite_only(_: Request) -> Response:
-        return xml_response(False, "Accounts are invite-only; contact the operator.")
+        return xml_response(False, "Account recovery is not available.")
 
     @app.post("/api/v2/user/change-email/")
     @app.post("/api/v2/user/friend-request/")
