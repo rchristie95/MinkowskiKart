@@ -248,8 +248,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return xml_response(True, "Account created successfully! You can now sign in.")
 
     @app.post("/api/v2/user/recover/")
-    async def invite_only(_: Request) -> Response:
-        return xml_response(False, "Account recovery is not available.")
+    async def recover(request: Request) -> Response:
+        import secrets
+        values = await get_form(request)
+        username = values.get("username", "").strip().lower()
+        email = values.get("email", "").strip().lower()
+
+        with session_factory() as db:
+            user = db.scalar(select(User).where(
+                (User.username == username) & (User.email == email)
+            ))
+            if not user:
+                return xml_response(False, "No account found with that username and email.")
+            
+            new_password = secrets.token_urlsafe(8)
+            user.password_hash = hash_password(new_password)
+            db.commit()
+            
+            # We return success=False so that the C++ client displays this text immediately
+            # on the recovery screen, since we don't have an email server configured.
+            return xml_response(False, f"Password reset! Your new password is: {new_password}")
 
     @app.post("/api/v2/user/change-email/")
     @app.post("/api/v2/user/friend-request/")
