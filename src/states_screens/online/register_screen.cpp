@@ -87,8 +87,8 @@ void RegisterScreen::init()
     if (UserConfigParams::m_internet_status !=
         Online::RequestManager::IPERM_NOT_ALLOWED)
     {
-        m_account_mode = ACCOUNT_NEW_ONLINE;
-        ribbon->select("tab_new_online", PLAYER_ID_GAME_MASTER);
+        m_account_mode = ACCOUNT_EXISTING_ONLINE;
+        ribbon->select("tab_existing_online", PLAYER_ID_GAME_MASTER);
     }
     else
     {

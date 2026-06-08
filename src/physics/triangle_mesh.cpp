@@ -233,6 +233,11 @@ void TriangleMesh::removeAll()
     }
     delete m_collision_shape;
     m_collision_shape = NULL;
+
+    m_triangleIndex2Material.clear();
+    m_normals.clear();
+    m_p1p2p3.clear();
+    m_mesh = btTriangleMesh();
 }   // removeAll
 
 // -----------------------------------------------------------------------------

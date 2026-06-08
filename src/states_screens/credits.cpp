@@ -222,7 +222,7 @@ void CreditsScreen::init()
     Screen::init();
 
     GUIEngine::ButtonWidget *link = getWidget<GUIEngine::ButtonWidget>("stk-website");
-    link->setText("supertuxkart.net");
+    link->setText("online.robsonchristie.com");
     onResize(); // Ensure the icon-button is properly sized
 
     // Default to the MinkowskiKart panel — MK buttons start visible (same

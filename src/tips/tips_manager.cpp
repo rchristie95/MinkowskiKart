@@ -80,7 +80,7 @@ void TipsManager::addTipSet(const XMLNode *input)
         if(node->get("type", &text) && text == "website_info")
         {
             m_all_tip_sets[id].push_back(
-                _("You can visit %s for more information about the game.", "https://supertuxkart.net/"));
+                _("You can visit %s for more information about the game.", "https://online.robsonchristie.com/"));
             continue;
         }
 

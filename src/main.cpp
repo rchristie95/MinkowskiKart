@@ -750,7 +750,7 @@ void cmdLineHelp()
 #endif
     "\n"
     "You can visit MinkowskiKart's homepage at "
-    "https://supertuxkart.net\n\n",
+    "https://online.robsonchristie.com\n\n",
     CommandLine::getExecName().c_str()
     );
 }   // cmdLineHelp
@@ -795,7 +795,7 @@ void cmdDebugHelp()
     "       --network-item-debugging    Print item handling debug information.\n"
     "\n"
     "You can visit MinkowskiKart's homepage at "
-    "https://supertuxkart.net\n\n",
+    "https://online.robsonchristie.com\n\n",
     CommandLine::getExecName().c_str()
     );
 }   // cmdDebugHelp
@@ -2168,7 +2168,7 @@ void askForInternetPermission()
     MessageDialog *dialog =
     new MessageDialog(_("MinkowskiKart may connect to a server "
         "to download add-ons and notify you of updates.") + L"\n\n"
-        + _("Please read our privacy policy at %s.", "https://supertuxkart.net/Privacy")
+        + _("Please read our privacy policy at %s.", "https://online.robsonchristie.com/privacy")
         + L"\n\n" + _("Would you like this feature to be enabled? (To change this setting "
         "at a later time, go to options, select tab "
         "'General', and edit \"Connect to the Internet\")."),
