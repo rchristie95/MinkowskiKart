@@ -225,29 +225,22 @@ void RegisterScreen::makeEntryFieldsVisible()
     // In case of a rename, hide all other fields.
     if(m_existing_player)
     {
-        m_info_widget->setVisible(false);
+        if (m_info_widget) m_info_widget->setVisible(false);
         m_account_mode = ACCOUNT_OFFLINE;
     }
 
     bool online = m_account_mode != ACCOUNT_OFFLINE;
-    getWidget<TextBoxWidget>("username")->setVisible(online);
-    getWidget<LabelWidget  >("label_username")->setVisible(online);
-    m_password_widget->setVisible(online);
-    getWidget<LabelWidget  >("label_password")->setVisible(online);
+    if (getWidget("username")) getWidget("username")->setVisible(online);
+    if (getWidget("label_username")) getWidget("label_username")->setVisible(online);
+    if (m_password_widget) m_password_widget->setVisible(online);
+    if (getWidget("label_password")) getWidget("label_password")->setVisible(online);
 
     bool new_account = online && (m_account_mode == ACCOUNT_NEW_ONLINE);
-    getWidget<TextBoxWidget>("password_confirm")->setVisible(new_account);
-    getWidget<LabelWidget  >("label_password_confirm")->setVisible(new_account);
-    getWidget<TextBoxWidget>("email")->setVisible(new_account);
-    getWidget<TextBoxWidget>("email")->setTextBoxType(TBT_EMAIL);
-    getWidget<LabelWidget  >("label_email")->setVisible(new_account);
-    if(getWidget<TextBoxWidget>("email_confirm"))
-    {
-        getWidget<TextBoxWidget>("email_confirm")->setVisible(new_account);
-        getWidget<LabelWidget  >("label_email_confirm")->setVisible(new_account);
-    }
+    if (getWidget("password_confirm")) getWidget("password_confirm")->setVisible(new_account);
+    if (getWidget("label_password_confirm")) getWidget("label_password_confirm")->setVisible(new_account);
 
-    getWidget<ButtonWidget >("password_reset")->setVisible(LinkHelper::isSupported() && (online && !new_account));
+    if (getWidget("password_reset"))
+        getWidget("password_reset")->setVisible(LinkHelper::isSupported() && (online && !new_account));
 }   // makeEntryFieldsVisible
 
 // -----------------------------------------------------------------------------
@@ -334,15 +327,7 @@ void RegisterScreen::doRegister()
     stringw password = m_password_widget->getText().trim();
     stringw password_confirm =  getWidget<TextBoxWidget>("password_confirm")
                              ->getText().trim();
-    stringw email = getWidget<TextBoxWidget>("email")->getText().trim();
 
-    // If there is an email_confirm field, use it and check if the email
-    // address is correct. If there is no such field, set the confirm email
-    // address to email address (so the test below will be passed).
-    stringw email_confirm = getWidget<TextBoxWidget>("email_confirm")
-                          ? getWidget<TextBoxWidget>("email_confirm")->getText()
-                          : getWidget<TextBoxWidget>("email")->getText();
-    email_confirm.trim();
     m_info_widget->setErrorColor();
 
     bool namecheck = false;
@@ -365,10 +350,6 @@ void RegisterScreen::doRegister()
     {
         m_info_widget->setText(_("Online username and password must be different!"), false);
     }
-    else if (email != email_confirm)
-    {
-        m_info_widget->setText(_("Emails don't match!"), false);
-    }
     else if (namecheck)
     {
         m_info_widget->setText(_("The online username can only contain alphanumeric characters, periods, dashes and underscores!"), false);
@@ -387,17 +368,6 @@ void RegisterScreen::doRegister()
     {
         m_info_widget->setText(_("The password must be between %i and %i characters long!", 8, 30), false);
     }
-    else if (email.size() < 5 || email.size() > 254)
-    {
-        m_info_widget->setText(_("The email address must be between %i and %i characters long!", 5, 254), false);
-    }
-    else if (  email.find(L"@")== -1 || email.find(L".")== -1 ||
-              (email.findLast(L'.') - email.findLast(L'@') <= 1 ) ||
-                email.findLast(L'@')==0 || email[(email.size())-1]=='.')
-    {
-        m_info_widget->setText(_("The email address is invalid!"), false);
-    }
-   
     else
     {
         m_info_widget->setDefaultColor();
@@ -434,14 +404,12 @@ void RegisterScreen::acceptTerms()
     core::stringw username = getWidget<TextBoxWidget>("username")->getText().trim();
     core::stringw password = m_password_widget->getText().trim();
     core::stringw password_confirm= getWidget<TextBoxWidget>("password_confirm")->getText().trim();
-    core::stringw email = getWidget<TextBoxWidget>("email")->getText().trim();
 
     m_signup_request = std::make_shared<XMLRequest>();
     m_signup_request->setApiURL(API::USER_PATH, "register");
     m_signup_request->addParameter("username",         username        );
     m_signup_request->addParameter("password",         password        );
     m_signup_request->addParameter("password_confirm", password_confirm);
-    m_signup_request->addParameter("email",            email           );
     m_signup_request->addParameter("terms",            "on"            );
     m_signup_request->queue();
 }   // acceptTerms
@@ -461,9 +429,7 @@ void RegisterScreen::onUpdate(float dt)
             if(m_signup_request->isSuccess())
             {
                 new MessageDialog(
-                    _("You will receive an email with further instructions "
-                    "regarding account activation. Please be patient and be "
-                    "sure to check your spam folder."),
+                    m_signup_request->getInfo(),
                     MessageDialog::MESSAGE_DIALOG_OK, NULL, false);
                 // Set the flag that the message was shown, which will triger
                 // a pop of this menu and so a return to the main menu

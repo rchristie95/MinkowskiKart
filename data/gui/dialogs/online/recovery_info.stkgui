@@ -7,7 +7,7 @@
         <spacer height="2%" width="50"/>
 
         <label id="info" proportion="1" width="90%" align="center" text_align="center" word_wrap="true" I18N="In the recovery dialog"
-               text="You will receive an email with further instructions on how to reset your password. Please be patient and be sure to check your spam folder." />
+               text="Email delivery is currently disabled. If your username and email matched, your new password was displayed as an error message on the previous screen." />
 
         <spacer height="2%" width="50"/>
 

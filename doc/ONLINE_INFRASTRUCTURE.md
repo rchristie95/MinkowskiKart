@@ -64,6 +64,9 @@ STUN and therefore is not by itself a complete Global Networking test.
   target. The smooth local `c` transition remains a rendering effect only.
 - HTTPS is accepted for online requests; unencrypted HTTP is permitted only
   for `localhost` and `127.0.0.1` development.
+- The system is fully independent of email. Registration is immediate, and
+  password recovery displays the new password directly in the game UI after
+  validating the account details.
 - The SuperTuxKart add-on catalog and STUN pool remain enabled. Add-ons are
   compatible content downloads and STUN is protocol-independent; neither
   requires using SuperTuxKart's multiplayer directory.
@@ -78,6 +81,10 @@ STUN and therefore is not by itself a complete Global Networking test.
 Keep `AddonServer` on `https://online.supertuxkart.net/dl/xml` so community
 tracks, karts, and arenas remain visible. Keep STUN on SuperTuxKart's public
 SRV records unless owning that small operational dependency becomes important.
+
+Hardware reports (telemetry) and external links (terms, account help) are
+sinked or served by the new API to avoid leaking data to SuperTuxKart public
+servers.
 
 Do not point `OnlineServer` back at SuperTuxKart's public multiplayer API for
 distributed builds. This fork requires gameplay protocol `7` and capability

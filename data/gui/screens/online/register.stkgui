@@ -40,11 +40,13 @@
                     <textbox id="password_confirm" proportion="2" height="fit" I18N="In the registration dialog"/>
                 </div>
 
+<!--
                 <div width="100%" height="12%" layout="horizontal-row" >
                     <label   id="label_email" proportion="1" height="100%" text_align="left"
                              I18N="In the registration dialog" text="Email Address"/>
                     <textbox id="email" proportion="2" height="fit" I18N="In the registration dialog"/>
                 </div>
+-->
 <!--
                 <div width="100%" height="12%" layout="horizontal-row" >
                     <label   id="label_email_confirm" proportion="1" height="100%" text_align="left"

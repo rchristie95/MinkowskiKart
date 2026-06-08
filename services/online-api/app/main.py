@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 import xml.etree.ElementTree as ET
 
+import sqlalchemy as sa
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from sqlalchemy import select
@@ -9,7 +10,7 @@ from sqlalchemy import select
 from .config import Settings
 from .database import create_session_factory, init_schema
 from .directory import MemoryDirectory, RedisDirectory
-from .models import User, UserSession, utc_now
+from .models import AdminAudit, User, UserSession, utc_now
 from .security import (
     hash_password,
     new_session_token,
@@ -105,6 +106,138 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/terms")
+    def terms() -> Response:
+        return Response("<html><body style='font-family:sans-serif;max-width:600px;margin:40px auto;line-height:1.6'><h1>Terms and Conditions</h1><p>Relativistic racing is a privilege, not a right. Drive responsibly and respect the speed of light.</p></body></html>", media_type="text/html")
+
+    @app.get("/account-help")
+    def account_help() -> Response:
+        return Response("<html><body style='font-family:sans-serif;max-width:600px;margin:40px auto;line-height:1.6'><h1>Account Help</h1><p>If you've lost your password, use the in-game 'Recover' button. <strong>Note:</strong> Email delivery is disabled. If your details match, your new password will be displayed directly on the recovery screen.</p></body></html>", media_type="text/html")
+
+    @app.post("/telemetry")
+    async def telemetry() -> Response:
+        return Response(status_code=204)
+
+    # --- Admin Dashboard ---
+    from fastapi.responses import HTMLResponse, RedirectResponse
+    from fastapi import Form, Cookie
+
+    @app.get("/admin/login", response_class=HTMLResponse)
+    async def admin_login_get(error: str | None = None):
+        return f"""
+        <html><body style='font-family:sans-serif;max-width:400px;margin:100px auto;background:#090b15;color:#f4f7ff'>
+            <h1 style='text-align:center'>Admin Login</h1>
+            {f'<p style="color:#ff6b6b;text-align:center">{error}</p>' if error else ''}
+            <form action="/admin/login" method="post" style='display:grid;gap:10px;background:#1a1d2e;padding:20px;border-radius:8px'>
+                <label>Username (Email)</label>
+                <input type="text" name="username" style='padding:8px;border-radius:4px;border:1px solid #333;background:#090b15;color:white'>
+                <label>Password</label>
+                <input type="password" name="password" style='padding:8px;border-radius:4px;border:1px solid #333;background:#090b15;color:white'>
+                <button type="submit" style='padding:10px;background:#4a90e2;color:white;border:none;border-radius:4px;cursor:pointer;margin-top:10px'>Login</button>
+            </form>
+        </body></html>
+        """
+
+    @app.post("/admin/login")
+    async def admin_login_post(username: str = Form(...), password: str = Form(...)):
+        username = username.strip().lower()
+        with session_factory() as db:
+            user = db.scalar(select(User).where((User.username == username) | (User.email == username)))
+            if not user or not user.is_admin or not verify_password(user.password_hash, password):
+                return RedirectResponse(url="/admin/login?error=Invalid+credentials", status_code=303)
+            
+            token = new_session_token()
+            db.add(UserSession(token_hash=token_hash(token), user_id=user.id,
+                               expires_at=session_expiry(1))) # 1 day admin session
+            db.commit()
+            
+            response = RedirectResponse(url="/admin/dashboard", status_code=303)
+            response.set_cookie(key="admin_token", value=token, httponly=True, samesite="lax")
+            return response
+
+    def get_admin(admin_token: str | None, db) -> User | None:
+        if not admin_token: return None
+        session = db.get(UserSession, token_hash(admin_token))
+        if not session or session.expires_at <= utc_now(): return None
+        user = db.get(User, session.user_id)
+        return user if user and user.is_admin else None
+
+    @app.get("/admin/dashboard", response_class=HTMLResponse)
+    async def admin_dashboard(admin_token: str | None = Cookie(None)):
+        with session_factory() as db:
+            admin = get_admin(admin_token, db)
+            if not admin: return RedirectResponse(url="/admin/login", status_code=303)
+            
+            users = db.scalars(select(User).order_by(User.id)).all()
+            user_rows = ""
+            for u in users:
+                user_rows += f"""
+                <tr style='border-bottom:1px solid #333'>
+                    <td style='padding:10px'>{u.id}</td>
+                    <td style='padding:10px'>{u.username}</td>
+                    <td style='padding:10px'>{u.email}</td>
+                    <td style='padding:10px'>{'✅' if u.is_admin else '❌'}</td>
+                    <td style='padding:10px'>
+                        <form action="/admin/delete-user" method="post" style='margin:0' onsubmit="return confirm('Delete {u.username}?')">
+                            <input type="hidden" name="user_id" value="{u.id}">
+                            <button type="submit" style='color:#ff6b6b;background:none;border:none;cursor:pointer;text-decoration:underline'>Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                """
+
+            return f"""
+            <html><body style='font-family:sans-serif;max-width:1000px;margin:40px auto;background:#090b15;color:#f4f7ff'>
+                <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'>
+                    <h1>MinkowskiKart Admin</h1>
+                    <div>
+                        <span>Logged in as <b>{admin.username}</b></span> | 
+                        <a href="/admin/logout" style='color:#4a90e2'>Logout</a>
+                    </div>
+                </div>
+                <table style='width:100%;border-collapse:collapse;background:#1a1d2e;border-radius:8px;overflow:hidden'>
+                    <thead style='background:#2a2e45'>
+                        <tr>
+                            <th style='padding:15px;text-align:left'>ID</th>
+                            <th style='padding:15px;text-align:left'>Username</th>
+                            <th style='padding:15px;text-align:left'>Email</th>
+                            <th style='padding:15px;text-align:left'>Admin</th>
+                            <th style='padding:15px;text-align:left'>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>{user_rows}</tbody>
+                </table>
+            </body></html>
+            """
+
+    @app.post("/admin/delete-user")
+    async def admin_delete_user(user_id: int = Form(...), admin_token: str | None = Cookie(None)):
+        with session_factory() as db:
+            admin = get_admin(admin_token, db)
+            if not admin: return RedirectResponse(url="/admin/login", status_code=303)
+            
+            user = db.get(User, user_id)
+            if user:
+                if user.id == admin.id:
+                    return HTMLResponse("Cannot delete yourself", status_code=400)
+                db.execute(sa.delete(UserSession).where(UserSession.user_id == user.id))
+                db.delete(user)
+                db.add(AdminAudit(action="delete-user-web", target_user_id=user.id, detail=f"by {admin.username}"))
+                db.commit()
+            return RedirectResponse(url="/admin/dashboard", status_code=303)
+
+    @app.get("/admin/logout")
+    async def admin_logout(admin_token: str | None = Cookie(None)):
+        if admin_token:
+            with session_factory() as db:
+                session = db.get(UserSession, token_hash(admin_token))
+                if session:
+                    db.delete(session)
+                    db.commit()
+        response = RedirectResponse(url="/admin/login")
+        response.delete_cookie("admin_token")
+        return response
 
     @app.post("/api/v2/user/connect/")
     async def connect(request: Request) -> Response:
@@ -216,8 +349,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         username = values.get("username", "").strip().lower()
         password = values.get("password", "")
         password_confirm = values.get("password_confirm", "")
-        email = values.get("email", "").strip().lower()
-        terms = values.get("terms", "")
+        email = values.get("email", "no-email@minkowskikart.internal").strip().lower()
+        terms = values.get("terms", "on")
 
         if terms != "on":
             return xml_response(False, "You must accept the terms and conditions.")
@@ -243,9 +376,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 db.add(user)
                 db.commit()
             except IntegrityError:
-                return xml_response(False, "Username or email is already taken.")
+                return xml_response(False, "Username is already taken.")
             
-            return xml_response(True, "Account created successfully! You can now sign in.")
+            return xml_response(True, "Account created! You can now sign in with your username and password.")
 
     @app.post("/api/v2/user/recover/")
     async def recover(request: Request) -> Response:
