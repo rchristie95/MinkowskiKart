@@ -732,6 +732,11 @@ namespace UserConfigParams
     PARAM_PREFIX StringUserConfigParam         m_render_driver
         PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
+#elif defined(WIN32) && !defined(_M_ARM)
+    // Windows x86/x64: Vulkan gives lower CPU overhead than OpenGL on modern drivers.
+    PARAM_PREFIX StringUserConfigParam         m_render_driver
+        PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
+        &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #else
     PARAM_PREFIX StringUserConfigParam         m_render_driver
         PARAM_DEFAULT(  StringUserConfigParam("opengl", "render_driver",

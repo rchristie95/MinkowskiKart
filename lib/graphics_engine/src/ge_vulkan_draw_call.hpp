@@ -59,6 +59,11 @@ struct ObjectData
     int m_skinning_offset;
     int m_material_id;
     float m_texture_trans[2];
+    // Per-instance velocity (world-space) for relativistic aberration.
+    // w = disable_relativity_visual flag (1.0 = disabled, 0.0 = enabled).
+    // Defaults to zero (no velocity, relativity still applies to geometry
+    // via the observer beta stored in the camera UBO).
+    float m_velocity[4];
     // ------------------------------------------------------------------------
     void init(irr::scene::ISceneNode* node, int material_id,
               int skinning_offset, int irrlicht_material_id);

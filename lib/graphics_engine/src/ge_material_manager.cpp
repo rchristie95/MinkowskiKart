@@ -147,6 +147,10 @@ void GEMaterialManager::init()
                                     settings.m_depth_only_fragment_shader = readString(xml);
                                 else if (!strcmp(node_name, "skinning-vertex"))
                                     settings.m_skinning_vertex_shader = readString(xml);
+                                else if (!strcmp(node_name, "tess-control"))
+                                    settings.m_tesc_shader = readString(xml);
+                                else if (!strcmp(node_name, "tess-eval"))
+                                    settings.m_tese_shader = readString(xml);
                             }
                             else if (xml->getNodeType() == io::EXN_ELEMENT_END &&
                                 !strcmp(xml->getNodeName(), "shaders"))

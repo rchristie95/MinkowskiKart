@@ -11,6 +11,9 @@ struct ObjectData
     int m_skinning_offset;
     int m_material_id;
     vec2 m_texture_trans;
+    // Per-instance velocity for relativistic aberration.
+    // w = disable_relativity_visual (1.0 = disabled).
+    vec4 m_velocity;
 };
 
 layout(std140, set = 1, binding = 1) readonly buffer ObjectBuffer

@@ -15,6 +15,7 @@ GEVulkanCameraSceneNode::GEVulkanCameraSceneNode(irr::scene::ISceneNode* parent,
                                              const irr::core::vector3df& lookat)
                        : CCameraSceneNode(parent, mgr, id, position, lookat)
 {
+    memset(&m_ubo_data, 0, sizeof(m_ubo_data));
     static_cast<GEVulkanSceneManager*>(SceneManager)->addDrawCall(this);
 }   // GEVulkanCameraSceneNode
 

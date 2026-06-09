@@ -68,6 +68,7 @@
 
 #include <ge_main.hpp>
 #include <ge_render_info.hpp>
+#include <ge_vulkan_camera_scene_node.hpp>
 
 #include <IrrlichtDevice.h>
 
@@ -1526,6 +1527,16 @@ void uploadAll()
         SP_RELATIVITY_UBO_FLOAT_COUNT * sizeof(float),
         relativity_tail.data());
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // Also feed relativity data into the GE Vulkan camera UBO so that
+    // Vulkan shaders get the same relativistic parameters as SP/OpenGL.
+    if (GE::getDriver()->getDriverType() == irr::video::EDT_VULKAN)
+    {
+        auto* cam_node = dynamic_cast<GE::GEVulkanCameraSceneNode*>(
+            irr_driver->getSceneManager()->getActiveCamera());
+        if (cam_node)
+            cam_node->setRelativityData(relativity_tail.data());
+    }
 
     for (SPMeshBuffer* spmb : g_instances)
     {

@@ -19,6 +19,9 @@ struct GEMaterial
     std::string m_skinning_vertex_shader;
     std::string m_fragment_shader;
     std::string m_depth_only_fragment_shader;
+    // Optional tessellation shaders (empty = no tessellation)
+    std::string m_tesc_shader;
+    std::string m_tese_shader;
     std::function<void(uint32_t*, void**)> m_push_constants;
     // Fallback material used when PBR is disabled
     std::string m_nonpbr_fallback;

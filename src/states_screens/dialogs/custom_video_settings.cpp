@@ -125,12 +125,7 @@ void CustomVideoSettingsDialog::beforeAddingWidgets()
     rds->clearLabels();
     rds->addLabel("OpenGL");
     rds->addLabel("Vulkan");
-#ifndef WIN32
     const int rd_count = 2;
-#else
-    const int rd_count = 3;
-    rds->addLabel("DirectX9");
-#endif
     bool found = false;
     for (int i = 0; i < rd_count; i++)
     {

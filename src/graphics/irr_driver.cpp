@@ -519,6 +519,15 @@ begin:
                 "switching to Vulkan/MoltenVK automatically.");
             UserConfigParams::m_render_driver = "vulkan";
         }
+#elif defined(WIN32) && !defined(_M_ARM) && !defined(SERVER_ONLY)
+        // Migrate existing Windows installs from OpenGL to Vulkan for better
+        // CPU overhead and multi-threading on modern NVIDIA/AMD/Intel drivers.
+        if (std::string(UserConfigParams::m_render_driver) == "opengl")
+        {
+            Log::info("IrrDriver", "Windows: switching from OpenGL to Vulkan "
+                "for better performance.");
+            UserConfigParams::m_render_driver = "vulkan";
+        }
 #endif
         if (std::string(UserConfigParams::m_render_driver) == "opengl")
         {

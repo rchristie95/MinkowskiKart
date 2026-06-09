@@ -98,6 +98,7 @@ void ObjectData::init(irr::scene::ISceneNode* node, int material_id,
         node->getMaterial(irrlicht_material_id).getTextureMatrix(0);
     m_texture_trans[0] = texture_matrix[8];
     m_texture_trans[1] = texture_matrix[9];
+    m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
     auto& ri = node->getMaterial(irrlicht_material_id).getRenderInfo();
     if (ri && ri->getHue() > 0.0f)
         m_hue_change = ri->getHue();
@@ -137,6 +138,7 @@ void ObjectData::init(irr::scene::IBillboardSceneNode* node, int material_id,
     m_texture_trans[0] = 0.0f;
     m_texture_trans[1] = 0.0f;
     m_hue_change = 0.0f;
+    m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
     // Only support average of them at the moment
     irr::video::SColor top, bottom, output;
     node->getColor(top, bottom);
@@ -222,6 +224,7 @@ void ObjectData::init(const irr::scene::SParticle& particle, int material_id,
     m_texture_trans[0] = 0.0f;
     m_texture_trans[1] = 0.0f;
     m_hue_change = 0.0f;
+    m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
     if (getGEConfig()->m_pbr)
         m_custom_vertex_color = srgb255ToLinearFromSColor(particle.color).color;
     else
@@ -1048,11 +1051,34 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
     frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     frag_shader_stage_info.pName = "main";
 
-    std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages =
-    {{
+    // Use a vector so tessellation stages can be appended dynamically
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages =
+    {
         vert_shader_stage_info,
         frag_shader_stage_info
-    }};
+    };
+
+    bool has_tessellation = !settings.m_material->m_tesc_shader.empty() &&
+                            !settings.m_material->m_tese_shader.empty();
+    if (has_tessellation)
+    {
+        VkPipelineShaderStageCreateInfo tesc_stage = {};
+        tesc_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        tesc_stage.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        tesc_stage.pName = "main";
+        tesc_stage.module = GEVulkanShaderManager::getShader(
+            settings.m_material->m_tesc_shader);
+
+        VkPipelineShaderStageCreateInfo tese_stage = {};
+        tese_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        tese_stage.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        tese_stage.pName = "main";
+        tese_stage.module = GEVulkanShaderManager::getShader(
+            settings.m_material->m_tese_shader);
+
+        shader_stages.push_back(tesc_stage);
+        shader_stages.push_back(tese_stage);
+    }
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -1067,8 +1093,16 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly.topology = settings.m_topology;
+    // Tessellation requires PATCH_LIST topology; other pipelines use whatever
+    // the settings specify (usually TRIANGLE_LIST).
+    input_assembly.topology = has_tessellation ?
+        VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : settings.m_topology;
     input_assembly.primitiveRestartEnable = VK_FALSE;
+
+    VkPipelineTessellationStateCreateInfo tessellation_state = {};
+    tessellation_state.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    tessellation_state.patchControlPoints = 3; // triangular patches
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -1188,6 +1222,7 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
     pipeline_info.pStages = shader_stages.data();
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pTessellationState = has_tessellation ? &tessellation_state : NULL;
     pipeline_info.pViewportState = &viewport_state;
     pipeline_info.pRasterizationState = &rasterizer;
     pipeline_info.pMultisampleState = &multisampling;
@@ -1263,8 +1298,8 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
     specialization_info.pData = &constants;
     if (getGEConfig()->m_pbr)
     {
-        shader_stages[0].pSpecializationInfo = &specialization_info;
-        shader_stages[1].pSpecializationInfo = &specialization_info;
+        for (auto& stage : shader_stages)
+            stage.pSpecializationInfo = &specialization_info;
     }
 
     shader_stages[0].module = GEVulkanShaderManager::getShader(
@@ -1416,6 +1451,8 @@ void GEVulkanDrawCall::createVulkanData()
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     camera_layout_binding.pImmutableSamplers = NULL;
     camera_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+                                     | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT
+                                     | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
                                      | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding object_data_layout_binding = {};
@@ -2213,6 +2250,14 @@ void GEVulkanDrawCall::renderDeferredConvertColor(GEVulkanDriver* vk,
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_deferred_layouts[GVDFP_CONVERT_COLOR], 0, 1,
         vk->getRTTTexture()->getDescriptorSet(GVDFP_CONVERT_COLOR), 0, NULL);
+    // Bind camera data (set=1) so the fragment shader can read relativity
+    // parameters for Doppler colour shift.
+    int current_buffer_idx = vk->getCurrentBufferIdx();
+    std::vector<uint32_t> dynamic_offsets = getDefaultDynamicOffsets();
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_deferred_layouts[GVDFP_CONVERT_COLOR],
+        1, 1, &m_data_descriptor_sets[current_buffer_idx],
+        dynamic_offsets.size(), dynamic_offsets.data());
     vkCmdDraw(cmd, 3, 1, 0, 0);
 }   // renderDeferredConvertColor
 
