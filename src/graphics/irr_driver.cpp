@@ -509,6 +509,17 @@ begin:
 #endif
 
         video::E_DRIVER_TYPE driver_created = video::EDT_NULL;
+#if defined(__APPLE__) && !defined(SERVER_ONLY)
+        // OpenGL 4.1 is deprecated on macOS. Transparently migrate any saved
+        // "opengl" config to Vulkan/MoltenVK so existing installs are upgraded
+        // without requiring the user to touch their config file.
+        if (std::string(UserConfigParams::m_render_driver) == "opengl")
+        {
+            Log::info("IrrDriver", "macOS: OpenGL 4.1 is deprecated — "
+                "switching to Vulkan/MoltenVK automatically.");
+            UserConfigParams::m_render_driver = "vulkan";
+        }
+#endif
         if (std::string(UserConfigParams::m_render_driver) == "opengl")
         {
 #if defined(USE_GLES2)

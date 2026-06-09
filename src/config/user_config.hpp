@@ -727,6 +727,11 @@ namespace UserConfigParams
     PARAM_PREFIX StringUserConfigParam         m_render_driver
         PARAM_DEFAULT(  StringUserConfigParam("directx9", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
+#elif defined(__APPLE__)
+    // OpenGL 4.1 is deprecated on macOS since 2018; default to Vulkan/MoltenVK.
+    PARAM_PREFIX StringUserConfigParam         m_render_driver
+        PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
+        &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #else
     PARAM_PREFIX StringUserConfigParam         m_render_driver
         PARAM_DEFAULT(  StringUserConfigParam("opengl", "render_driver",
