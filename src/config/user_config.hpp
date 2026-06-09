@@ -442,7 +442,7 @@ namespace UserConfigParams
                                             "Race Setup Settings") );
 
     PARAM_PREFIX IntUserConfigParam          m_default_num_karts
-            PARAM_DEFAULT(  IntUserConfigParam(6, "numkarts",
+            PARAM_DEFAULT(  IntUserConfigParam(9, "numkarts",
                             &m_race_setup_group,
                             "Default number of karts. -1 means use all") );
     PARAM_PREFIX IntUserConfigParam          m_num_laps

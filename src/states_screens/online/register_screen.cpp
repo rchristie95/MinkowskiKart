@@ -67,37 +67,48 @@ RegisterScreen::RegisterScreen() : Screen("online/register.stkgui")
 // -----------------------------------------------------------------------------
 void RegisterScreen::init()
 {
-    if (m_existing_player)
-        getWidget("create_user")->setText(_("Rename"));
-    else
-        getWidget("create_user")->setText(_("Create User"));
+    Widget* createUser = getWidget("create_user");
+    if (createUser)
+    {
+        if (m_existing_player)
+            createUser->setText(_("Rename"));
+        else
+            createUser->setText(_("Create User"));
+    }
 
-    getWidget<TextBoxWidget>("username")->setText(L"");
+    TextBoxWidget* usernameWidget = getWidget<TextBoxWidget>("username");
+    if (usernameWidget)
+        usernameWidget->setText(L"");
+
     m_info_widget = getWidget<LabelWidget>("info");
-    assert(m_info_widget);
-    m_info_widget->setDefaultColor();
-    m_info_widget->setText(L"", false);
+    if (m_info_widget)
+    {
+        m_info_widget->setDefaultColor();
+        m_info_widget->setText(L"", false);
+    }
+
     m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget);
+
     m_password_widget = getWidget<TextBoxWidget>("password");
-    assert(m_password_widget);
 
     RibbonWidget* ribbon = getWidget<RibbonWidget>("mode_tabs");
-    assert(ribbon);
-    if (UserConfigParams::m_internet_status !=
-        Online::RequestManager::IPERM_NOT_ALLOWED)
+    if (ribbon)
     {
-        m_account_mode = ACCOUNT_NEW_ONLINE;
-        ribbon->select("tab_new_online", PLAYER_ID_GAME_MASTER);
-    }
-    else
-    {
-        m_account_mode = ACCOUNT_OFFLINE;
-        ribbon->select("tab_offline", PLAYER_ID_GAME_MASTER);
-    }
+        if (UserConfigParams::m_internet_status !=
+            Online::RequestManager::IPERM_NOT_ALLOWED)
+        {
+            m_account_mode = ACCOUNT_NEW_ONLINE;
+            ribbon->select("tab_new_online", PLAYER_ID_GAME_MASTER);
+        }
+        else
+        {
+            m_account_mode = ACCOUNT_OFFLINE;
+            ribbon->select("tab_offline", PLAYER_ID_GAME_MASTER);
+        }
 
-    // Hide the tabs in case of a rename
-    ribbon->setVisible(m_existing_player == NULL);
+        // Hide the tabs in case of a rename
+        ribbon->setVisible(m_existing_player == NULL);
+    }
     Screen::init();
 
     // If there is no player (i.e. first start of MK), try to pick
@@ -148,11 +159,17 @@ void RegisterScreen::init()
     }
 
     TextBoxWidget* local_username = getWidget<TextBoxWidget>("local_username");
-    local_username->setText(username);
-    local_username->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
+    if (local_username)
+    {
+        local_username->setText(username);
+        local_username->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
+    }
 
-    m_password_widget->setPasswordBox(true, L'*');
-    getWidget<TextBoxWidget>("password_confirm")->setPasswordBox(true, L'*');
+    if (m_password_widget)
+        m_password_widget->setPasswordBox(true, L'*');
+    TextBoxWidget* passwordConfirm = getWidget<TextBoxWidget>("password_confirm");
+    if (passwordConfirm)
+        passwordConfirm->setPasswordBox(true, L'*');
 
     m_signup_request = nullptr;
     m_info_message_shown = false;
@@ -164,10 +181,14 @@ void RegisterScreen::init()
     // when it is the first screen: cancel will exit the game, and in
     // this case no 'back' error should be shown.
     bool has_player_profile = (PlayerManager::get()->getNumPlayers() > 0);
-    getWidget<IconButtonWidget>("back")->setVisible(has_player_profile);
-    getWidget<IconButtonWidget>("cancel")->setLabel(has_player_profile
-        ? _("Cancel")
-        : _("Exit game"));
+    IconButtonWidget* backWidget = getWidget<IconButtonWidget>("back");
+    if (backWidget)
+        backWidget->setVisible(has_player_profile);
+    IconButtonWidget* cancelWidget = getWidget<IconButtonWidget>("cancel");
+    if (cancelWidget)
+        cancelWidget->setLabel(has_player_profile
+            ? _("Cancel")
+            : _("Exit game"));
 }   // init
 
 // -----------------------------------------------------------------------------
@@ -188,16 +209,18 @@ void RegisterScreen::onDialogClose()
     m_account_mode = online ? ACCOUNT_NEW_ONLINE : ACCOUNT_OFFLINE;
 
     RibbonWidget* ribbon = getWidget<RibbonWidget>("mode_tabs");
-    assert(ribbon);
-    if (m_account_mode == ACCOUNT_NEW_ONLINE)
+    if (ribbon)
     {
-        ribbon->select("tab_new_online", PLAYER_ID_GAME_MASTER);
-    }
-    else
-    {
-        ribbon->select("tab_offline", PLAYER_ID_GAME_MASTER);
-        // Set the account mode and the info text
-        eventCallback(ribbon, "mode_tabs", PLAYER_ID_GAME_MASTER);
+        if (m_account_mode == ACCOUNT_NEW_ONLINE)
+        {
+            ribbon->select("tab_new_online", PLAYER_ID_GAME_MASTER);
+        }
+        else
+        {
+            ribbon->select("tab_offline", PLAYER_ID_GAME_MASTER);
+            // Set the account mode and the info text
+            eventCallback(ribbon, "mode_tabs", PLAYER_ID_GAME_MASTER);
+        }
     }
     makeEntryFieldsVisible();
 }   // onDialogClose
@@ -207,10 +230,10 @@ void RegisterScreen::onFocusChanged(GUIEngine::Widget* previous,
                                     GUIEngine::Widget* focus,  int playerID)
 {
     TextBoxWidget *online_name = getWidget<TextBoxWidget>("username");
-    if (focus == online_name)
+    if (online_name && focus == online_name)
     {
         TextBoxWidget *local_name = getWidget<TextBoxWidget>("local_username");
-        if (online_name->getText() == "")
+        if (local_name && online_name->getText() == "")
             online_name->setText(local_name->getText());
     }
 }   // onFocusChanged
@@ -273,16 +296,22 @@ void RegisterScreen::handleLocalName(const stringw &local_name)
         }
         else
         {
-            m_info_widget->setErrorColor();
-            m_info_widget->setText(_("Could not create player '%s'.", local_name),
-                                   false);
+            if (m_info_widget)
+            {
+                m_info_widget->setErrorColor();
+                m_info_widget->setText(_("Could not create player '%s'.", local_name),
+                                    false);
+            }
         }
     }
     else
     {
-        m_info_widget->setErrorColor();
-        m_info_widget->setText(_("Could not create player '%s'.", local_name),
-                               false);
+        if (m_info_widget)
+        {
+            m_info_widget->setErrorColor();
+            m_info_widget->setText(_("Could not create player '%s'.", local_name),
+                                false);
+        }
     }
 }   // handleLocalName
 
@@ -292,13 +321,16 @@ void RegisterScreen::handleLocalName(const stringw &local_name)
  */
 void RegisterScreen::doRegister()
 {
-    stringw local_name = getWidget<TextBoxWidget>("local_username")
-                       ->getText().trim();
+    TextBoxWidget* local_username_widget = getWidget<TextBoxWidget>("local_username");
+    stringw local_name = local_username_widget ? local_username_widget->getText().trim() : L"";
                        
     if (local_name.empty())
     {
-        m_info_widget->setErrorColor();
-        m_info_widget->setText(_("User name cannot be empty."), false);
+        if (m_info_widget)
+        {
+            m_info_widget->setErrorColor();
+            m_info_widget->setText(_("User name cannot be empty."), false);
+        }
         return;
     }
 
@@ -307,11 +339,13 @@ void RegisterScreen::doRegister()
     // If no online account is requested, don't register
     if(m_account_mode==ACCOUNT_EXISTING_ONLINE)
     {
-        core::stringw password = m_password_widget->getText();
-        core::stringw online_name = getWidget<TextBoxWidget>("username")->getText().trim();
+        core::stringw password = m_password_widget ? m_password_widget->getText() : L"";
+        TextBoxWidget* username_widget = getWidget<TextBoxWidget>("username");
+        core::stringw online_name = username_widget ? username_widget->getText().trim() : L"";
 #ifndef SERVER_ONLY
-        m_parent_screen->setNewAccountData(true, /*auto login*/true,
-                                           online_name, password);
+        if (m_parent_screen)
+            m_parent_screen->setNewAccountData(true, /*auto login*/true,
+                                               online_name, password);
 #endif
         StateManager::get()->popMenu();
         return;
@@ -323,12 +357,13 @@ void RegisterScreen::doRegister()
         return;
     }
 
-    stringw username = getWidget<TextBoxWidget>("username")->getText().trim();
-    stringw password = m_password_widget->getText().trim();
-    stringw password_confirm =  getWidget<TextBoxWidget>("password_confirm")
-                             ->getText().trim();
+    TextBoxWidget* username_widget = getWidget<TextBoxWidget>("username");
+    stringw username = username_widget ? username_widget->getText().trim() : L"";
+    stringw password = m_password_widget ? m_password_widget->getText().trim() : L"";
+    TextBoxWidget* password_confirm_widget = getWidget<TextBoxWidget>("password_confirm");
+    stringw password_confirm = password_confirm_widget ? password_confirm_widget->getText().trim() : L"";
 
-    m_info_widget->setErrorColor();
+    if (m_info_widget) m_info_widget->setErrorColor();
 
     bool namecheck = false;
     for (unsigned i = 0; i < username.size(); i++)
@@ -344,33 +379,33 @@ void RegisterScreen::doRegister()
     }
     if (password != password_confirm)
     {
-        m_info_widget->setText(_("Passwords don't match!"), false);
+        if (m_info_widget) m_info_widget->setText(_("Passwords don't match!"), false);
     }
     else if (username == password)
     {
-        m_info_widget->setText(_("Online username and password must be different!"), false);
+        if (m_info_widget) m_info_widget->setText(_("Online username and password must be different!"), false);
     }
     else if (namecheck)
     {
-        m_info_widget->setText(_("The online username can only contain alphanumeric characters, periods, dashes and underscores!"), false);
+        if (m_info_widget) m_info_widget->setText(_("The online username can only contain alphanumeric characters, periods, dashes and underscores!"), false);
         // TODO: When setting a text, there should automatically be a check in the widget to see if the text-size has to be reduced
         // Currently, this string overflows with big text sizes, but any slight resizing of the window gets it to shrink back.
     }
     else if (username.size() < 3 || username.size() > 30)
     {
-        m_info_widget->setText(_("The online username must be between %i and %i characters long!", 3, 30), false);
+        if (m_info_widget) m_info_widget->setText(_("The online username must be between %i and %i characters long!", 3, 30), false);
     }
     else if (username[0]>='0' && username[0]<='9')
     {
-        m_info_widget->setText(_("The online username cannot start with a number!"), false);
+        if (m_info_widget) m_info_widget->setText(_("The online username cannot start with a number!"), false);
     }
     else if (password.size() < 8 || password.size() > 30)
     {
-        m_info_widget->setText(_("The password must be between %i and %i characters long!", 8, 30), false);
+        if (m_info_widget) m_info_widget->setText(_("The password must be between %i and %i characters long!", 8, 30), false);
     }
     else
     {
-        m_info_widget->setDefaultColor();
+        if (m_info_widget) m_info_widget->setDefaultColor();
         // Skip RegistrationDialog and accept terms automatically
         acceptTerms();
         if (local_name.size() > 0)
@@ -378,11 +413,11 @@ void RegisterScreen::doRegister()
             PlayerProfile *player = PlayerManager::get()->getPlayer(local_name);
             if (player)
             {
-                core::stringw online_name = getWidget<TextBoxWidget>("username")->getText().trim();
 #ifndef SERVER_ONLY
-                m_parent_screen->setNewAccountData(/*online*/true,
-                                                   /*auto_login*/false,
-                                                   username, password);
+                if (m_parent_screen)
+                    m_parent_screen->setNewAccountData(/*online*/true,
+                                                       /*auto_login*/false,
+                                                       username, password);
 #endif
                 player->setLastOnlineName(username);
                 player->setWasOnlineLastTime(true);
@@ -399,11 +434,13 @@ void RegisterScreen::doRegister()
  */
 void RegisterScreen::acceptTerms()
 {
-    m_options_widget->setActive(false);
+    if (m_options_widget) m_options_widget->setActive(false);
 
-    core::stringw username = getWidget<TextBoxWidget>("username")->getText().trim();
-    core::stringw password = m_password_widget->getText().trim();
-    core::stringw password_confirm= getWidget<TextBoxWidget>("password_confirm")->getText().trim();
+    TextBoxWidget* username_widget = getWidget<TextBoxWidget>("username");
+    core::stringw username = username_widget ? username_widget->getText().trim() : L"";
+    core::stringw password = m_password_widget ? m_password_widget->getText().trim() : L"";
+    TextBoxWidget* password_confirm_widget = getWidget<TextBoxWidget>("password_confirm");
+    core::stringw password_confirm = password_confirm_widget ? password_confirm_widget->getText().trim() : L"";
 
     m_signup_request = std::make_shared<XMLRequest>();
     m_signup_request->setApiURL(API::USER_PATH, "register");
@@ -420,7 +457,7 @@ void RegisterScreen::onUpdate(float dt)
 {
     if(m_signup_request)
     {
-        if(!m_options_widget->isActivated())
+        if(m_options_widget && !m_options_widget->isActivated() && m_info_widget)
             m_info_widget->setText(StringUtils::loadingDots(_("Validating info")),
                                    false);
 
@@ -438,11 +475,14 @@ void RegisterScreen::onUpdate(float dt)
             else
             {
                 // Error signing up, display error message
-                m_info_widget->setErrorColor();
-                m_info_widget->setText(m_signup_request->getInfo(), false);
+                if (m_info_widget)
+                {
+                    m_info_widget->setErrorColor();
+                    m_info_widget->setText(m_signup_request->getInfo(), false);
+                }
             }
             m_signup_request = nullptr;
-            m_options_widget->setActive(true);
+            if (m_options_widget) m_options_widget->setActive(true);
         }
     }
     else if(m_info_message_shown && !ModalDialog::isADialogActive())
@@ -465,21 +505,27 @@ void RegisterScreen::eventCallback(Widget* widget, const std::string& name,
         if ( (selection == "tab_new_online" || selection == "tab_existing_online")
             && (UserConfigParams::m_internet_status == Online::RequestManager::IPERM_NOT_ALLOWED) )
         {
-            m_info_widget->setErrorColor();
-            m_info_widget->setText(_("Internet access is disabled, please enable it in the options"), false);
+            if (m_info_widget)
+            {
+                m_info_widget->setErrorColor();
+                m_info_widget->setText(_("Internet access is disabled, please enable it in the options"), false);
+            }
             return;
         }
         else if (selection == "tab_offline")
         {
-            m_info_widget->setDefaultColor();
-            m_info_widget->setText(_("You can play without creating an online account.")
-                + L"\n\n" + _("An online account is required for online multiplayer, "
-                    "to be notified when friends are online, etc."), false);
-            m_info_widget->setVisible(true);
+            if (m_info_widget)
+            {
+                m_info_widget->setDefaultColor();
+                m_info_widget->setText(_("You can play without creating an online account.")
+                    + L"\n\n" + _("An online account is required for online multiplayer, "
+                        "to be notified when friends are online, etc."), false);
+                m_info_widget->setVisible(true);
+            }
         }
         else
         {
-            m_info_widget->setVisible(false);
+            if (m_info_widget) m_info_widget->setVisible(false);
         }
         if (selection == "tab_new_online")
             m_account_mode = ACCOUNT_NEW_ONLINE;
@@ -493,7 +539,8 @@ void RegisterScreen::eventCallback(Widget* widget, const std::string& name,
     else if (name=="options")
     {
         const std::string button = m_options_widget
-                                 ->getSelectionIDString(PLAYER_ID_GAME_MASTER);
+                                 ? m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER)
+                                 : "";
         if(button=="next")
         {
             doRegister();

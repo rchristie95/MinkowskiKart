@@ -1638,8 +1638,7 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
         const KartProperties *prop = kart_properties_manager->getKart(s);
         if (prop)
         {
-            UserConfigParams::m_default_kart = s;
-
+            // Don't update UserConfigParams::m_default_kart to avoid saving it
             // if a player was added with -N, change its kart.
             // Otherwise, nothing to do, kart choice will be picked
             // up upon player creation.
@@ -1743,16 +1742,15 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
 
     if(CommandLine::has("--numkarts", &n) ||CommandLine::has("-k", &n))
     {
-        UserConfigParams::m_default_num_karts = n;
-        if(UserConfigParams::m_default_num_karts > stk_config->m_max_karts)
+        int numKarts = n;
+        if(numKarts > stk_config->m_max_karts)
         {
             Log::warn("main", "Number of karts reset to maximum number %d.",
                       stk_config->m_max_karts);
-            UserConfigParams::m_default_num_karts = stk_config->m_max_karts;
+            numKarts = stk_config->m_max_karts;
         }
-        RaceManager::get()->setNumKarts( UserConfigParams::m_default_num_karts );
-        Log::verbose("main", "%d karts will be used.",
-                     (int)UserConfigParams::m_default_num_karts);
+        RaceManager::get()->setNumKarts( numKarts );
+        Log::verbose("main", "%d karts will be used.", numKarts);
     }   // --numkarts
 
     if(CommandLine::has( "--no-start-screen") ||
