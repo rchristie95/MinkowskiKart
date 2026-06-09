@@ -79,6 +79,8 @@ void main()
     tc_velocity[gl_InvocationID] = v_velocity[gl_InvocationID];
     tc_disable_relativity_visual[gl_InvocationID] =
         v_disable_relativity_visual[gl_InvocationID];
+    // Apple's OpenGL driver culls patches whose TCS does not write gl_Position.
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 
     if (gl_InvocationID == 0)
     {

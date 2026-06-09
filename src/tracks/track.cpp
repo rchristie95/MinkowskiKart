@@ -1692,6 +1692,10 @@ bool Track::loadMainTrack(const XMLNode &root)
     {
         convertTrackToBullet(ghost_texture_nodes[i], NULL, true/*force_gfx*/);
         uploadNodeVertexBuffer(ghost_texture_nodes[i]);
+        // Register in m_all_nodes so Track::cleanup() removes them on race exit.
+        // Without this, stale scene nodes survive into the next race and leave
+        // dangling material pointers that break zipper raycast triggers.
+        m_all_nodes.push_back(ghost_texture_nodes[i]);
     }
 
     // Free the tangent (track mesh) after converting to physics

@@ -476,6 +476,7 @@ void SPMeshBuffer::uploadInstanceData()
         else
         {
             glBindBuffer(GL_ARRAY_BUFFER, m_ins_array[i]);
+#ifndef __APPLE__
             void* ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0,
                 m_ins_dat[i].size() * SPInstancedData::getStride(),
                 GL_MAP_WRITE_BIT |
@@ -484,6 +485,14 @@ void SPMeshBuffer::uploadInstanceData()
                 memcpy(ptr, m_ins_dat[i].data(),
                     m_ins_dat[i].size() * SPInstancedData::getStride());
             glUnmapBuffer(GL_ARRAY_BUFFER);
+#else
+            // macOS driver stalls every frame on glMapBufferRange +
+            // GL_MAP_UNSYNCHRONIZED_BIT because it doesn't auto-orphan.
+            // glBufferData forces an implicit orphan, sidestepping the stall.
+            glBufferData(GL_ARRAY_BUFFER,
+                m_ins_dat[i].size() * SPInstancedData::getStride(),
+                m_ins_dat[i].data(), GL_DYNAMIC_DRAW);
+#endif
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
