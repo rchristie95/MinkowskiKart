@@ -82,7 +82,10 @@ MusicManager::MusicManager()
 #if defined(__APPLE__) && !defined(NDEBUG)
         }
 #endif
-        alGetError(); //Called here to clear any non-important errors found
+        if (m_initialized)
+        {
+            alGetError(); //Called here to clear any non-important errors found
+        }
     }
 #endif
 
