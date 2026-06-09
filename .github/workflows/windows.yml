@@ -350,7 +350,7 @@ jobs:
           $env:SUPERTUXKART_SAVEDIR = Join-Path (Resolve-Path $pkg).Path "smoke-profile"
           New-Item -ItemType Directory -Force -Path $env:SUPERTUXKART_SAVEDIR | Out-Null
           $proc = Start-Process -FilePath "$pkg\bin\x86_64\MinkowskiKart.exe" `
-            -ArgumentList "--no-start-screen","--track=sandtrack","--kart=minkowski","--laps=1","--numkarts=2" `
+            -ArgumentList "--no-start-screen","--track=mobius_track","--kart=minkowski","--laps=1","--numkarts=2" `
             -RedirectStandardOutput "$pkg\out.txt" `
             -RedirectStandardError "$pkg\err.txt" `
             -PassThru -WorkingDirectory "$pkg\bin\x86_64"
