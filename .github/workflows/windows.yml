@@ -341,6 +341,22 @@ jobs:
         if: ${{ env.release_tag != '' }}
         run: |
           Compress-Archive -LiteralPath MinkowskiKart-${{ env.release_tag }}-win -DestinationPath MinkowskiKart-${{ env.release_tag }}-win.zip
+      - name: Install Mesa3D for headless OpenGL
+        if: ${{ env.release_tag != '' }}
+        shell: pwsh
+        run: |
+          $pkg = "MinkowskiKart-${{ env.release_tag }}-win"
+          # GDI Generic only provides OpenGL 1.1; STK requires 1.2+.
+          # Shadow it with Mesa llvmpipe (software OpenGL 3.x+) by placing
+          # opengl32.dll in the exe's working directory, which Windows searches first.
+          $tag = (Invoke-RestMethod "https://api.github.com/repos/pal1000/mesa-dist-win/releases/latest").tag_name
+          $asset = "mesa3d-$tag-release-mingw.7z"
+          curl.exe -L -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/$tag/$asset"
+          7z x mesa.7z -omesa -y | Out-Null
+          Copy-Item mesa\x64\opengl32.dll "$pkg\bin\x86_64\"
+          if (Test-Path mesa\x64\libglapi.dll) {
+            Copy-Item mesa\x64\libglapi.dll "$pkg\bin\x86_64\"
+          }
       - name: Smoke test packaged executable
         if: ${{ env.release_tag != '' }}
         shell: pwsh
