@@ -21,16 +21,34 @@
 #include "graphics/camera/camera.hpp"
 #include "graphics/irr_driver.hpp"
 #include "graphics/render_target.hpp"
+#include "graphics/sp/sp_base.hpp"
 #include "modes/world.hpp"
 #include "physics/physics.hpp"
+#include "relativity/relativity_math.hpp"
 #include "utils/profiler.hpp"
 
 #include <ISceneManager.h>
 #include <IVideoDriver.h>
 
+#include <ge_main.hpp>
+#include <ge_vulkan_camera_scene_node.hpp>
+
 void FixedPipelineRenderer::onLoadWorld()
 {
-    
+    // Under the GE Vulkan renderer, fill the per-object relativistic
+    // velocity in the object buffer the same way the SP instance buffer
+    // carries it under OpenGL.
+    if (irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
+    {
+        GE::setNodeVelocityFunction(&SP::fillNodeRelativityVelocity);
+        // Relativistic warping moves vertices far outside their mesh
+        // bounding boxes (aberration brings geometry from behind into
+        // view), so frustum culling against unwarped boxes would hide
+        // visible geometry (e.g. the sun, the far side of the Möbius
+        // strip). SP disables culling the same way under OpenGL.
+        GE::getGEConfig()->m_disable_frustum_culling =
+            Relativity::isEnabled();
+    }
 }
 
 void FixedPipelineRenderer::onUnloadWorld()
@@ -62,6 +80,21 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                                  0x00, 0x00);
         camera->activate();
         rg->preRenderCallback(camera);   // adjusts start referee
+
+        // Feed the relativistic observer parameters for this camera into
+        // the GE Vulkan camera UBO (the SP pipeline does the equivalent in
+        // SP::uploadAll, which never runs under Vulkan).
+        if (irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
+        {
+            SP::sp_cur_player = i;
+            SP::updateRelativityKartVelocities(i);
+            const std::array<float, 26> relativity_tail =
+                SP::getRelativityUBOTail(i);
+            auto* cam_node = dynamic_cast<GE::GEVulkanCameraSceneNode*>(
+                camera->getCameraSceneNode());
+            if (cam_node)
+                cam_node->setRelativityData(relativity_tail.data());
+        }
 
         irr_driver->getSceneManager()->drawAll();
 

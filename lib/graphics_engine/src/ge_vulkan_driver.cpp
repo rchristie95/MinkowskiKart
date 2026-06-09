@@ -1,5 +1,7 @@
 #include "ge_vulkan_driver.hpp"
 
+#include <cstdio>
+
 #include "ge_compressor_astc_4x4.hpp"
 #include "ge_compressor_bptc_bc7.hpp"
 #include "ge_main.hpp"
@@ -1840,7 +1842,10 @@ bool GEVulkanDriver::endScene()
     ul.unlock();
 
     if (result != VK_SUCCESS)
+    {
+        printf("vkQueueSubmit failed with VkResult %d\n", (int)result);
         throw std::runtime_error("vkQueueSubmit failed");
+    }
 
     VkSemaphore semaphores[] =
     {
@@ -1874,6 +1879,9 @@ bool GEVulkanDriver::endScene()
         result = vkQueuePresentKHR(present_queue, &present_info);
         ul.unlock();
     }
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR &&
+        result != VK_ERROR_OUT_OF_DATE_KHR)
+        printf("vkQueuePresentKHR failed with VkResult %d\n", (int)result);
     if (!video::CNullDriver::endScene())
         return false;
 

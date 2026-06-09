@@ -234,10 +234,15 @@ void TriangleMesh::removeAll()
     delete m_collision_shape;
     m_collision_shape = NULL;
 
-    m_triangleIndex2Material.clear();
-    m_normals.clear();
-    m_p1p2p3.clear();
-    m_mesh = btTriangleMesh();
+    // Do NOT clear the collected triangle data (m_mesh,
+    // m_triangleIndex2Material, m_normals, m_p1p2p3) here:
+    // Track::createPhysicsModel relies on it surviving so the main track
+    // (and physics-only objects) don't need to be converted again before
+    // the final collision shape is built. Clearing it leaves
+    // m_triangleIndex2Material empty, which makes createCollisionShape()
+    // bail out with a NULL shape and breaks all terrain raycasts.
+    // (Resetting m_mesh via copy-assignment also corrupts btTriangleMesh's
+    // internal index-vertex array pointers, crashing on free.)
 }   // removeAll
 
 // -----------------------------------------------------------------------------

@@ -62,13 +62,16 @@ PowerupManager::~PowerupManager()
         scene::IMesh *mesh = m_all_meshes[(PowerupType)i];
         if(mesh)
         {
+            // Check the reference count BEFORE dropping our reference:
+            // reading it after drop() is a use-after-free when ours was
+            // the last reference. That happens for meshes shared with the
+            // attachment manager (e.g. the swatter), whose destructor
+            // already removed them from irrlicht's mesh cache.
+            // If exactly our reference and the cache's are left, drop ours
+            // and then remove the cache's so the mesh gets deleted.
+            bool only_cache_ref_left = mesh->getReferenceCount() == 2;
             mesh->drop();
-            // If the ref count is 1, the only reference is in
-            // irrlicht's mesh cache, from which the mesh can
-            // then be deleted.
-            // Note that this test is necessary, since some meshes
-            // are also used in attachment_manager!!!
-            if(mesh->getReferenceCount()==1)
+            if (only_cache_ref_left)
                 irr_driver->removeMeshFromCache(mesh);
         }
     }

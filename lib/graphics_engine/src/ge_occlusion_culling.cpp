@@ -61,6 +61,12 @@ void GEOcclusionCulling::addOccluderMesh(
                             const std::vector<std::array<btVector3, 3> >& tris)
 {
     assert(m_triangle_mesh == NULL);
+    // Building a BVH over an empty mesh crashes in btQuantizedBvh::buildTree.
+    // Tracks whose main model is visual-only (all materials ignored or
+    // transparent, e.g. mobius_track) produce no occluder triangles; leave
+    // m_triangle_mesh NULL so isOccluded() reports nothing as occluded.
+    if (tris.empty())
+        return;
     m_triangle_mesh = new btTriangleMesh();
     for (auto& t : tris)
         m_triangle_mesh->addTriangle(t[0], t[1], t[2]);

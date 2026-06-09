@@ -123,6 +123,16 @@ bool skinningUseTBO();
 // ----------------------------------------------------------------------------
 void prepareDrawCalls();
 // ----------------------------------------------------------------------------
+// Relativity bridge for the GE (Vulkan) renderer. These let the fixed
+// pipeline renderer feed the same relativistic parameters into the GE camera
+// UBO / per-object data that the SP pipeline uploads under OpenGL.
+std::array<float, 26> getRelativityUBOTail(unsigned player_index);
+// ----------------------------------------------------------------------------
+void updateRelativityKartVelocities(unsigned player_index);
+// ----------------------------------------------------------------------------
+void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
+                                float* out);
+// ----------------------------------------------------------------------------
 void draw(RenderPass, DrawCallType dct = DCT_NORMAL);
 // ----------------------------------------------------------------------------
 void drawGlow();

@@ -3070,8 +3070,12 @@ bool Track::isOnGround(const Vec3& xyz, const Vec3& down, Vec3* hit_point,
     }
 
     // See if the kart is too high above the ground - it would drop
-    // too long.
-    if(xyz.getY() - hit_point->getY() > 5)
+    // too long. Use distance along the actual down vector so this works
+    // correctly on tracks with non-world-Y gravity (e.g. Möbius track).
+    Vec3 down_unit = down;
+    down_unit.normalize();
+    float drop_dist = down_unit.dot(*hit_point - xyz);
+    if(drop_dist > 15.0f)
     {
         if (print_warning)
         {

@@ -68,6 +68,7 @@
 
 #include <ge_main.hpp>
 #include <ge_render_info.hpp>
+#include <ISceneManager.h>
 #include <ge_vulkan_camera_scene_node.hpp>
 
 #include <IrrlichtDevice.h>
@@ -309,6 +310,84 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
 }   // buildRelativityUBOTail
 
 }   // anonymous namespace
+
+// ----------------------------------------------------------------------------
+/** Public wrapper so the GE (Vulkan) renderer can build the same relativity
+ *  UBO tail that uploadAll() writes for the SP/OpenGL pipeline. */
+std::array<float, 26> getRelativityUBOTail(unsigned player_index)
+{
+    static_assert(SP_RELATIVITY_UBO_FLOAT_COUNT == 26,
+                  "Relativity UBO tail size changed");
+    return buildRelativityUBOTail(player_index);
+}   // getRelativityUBOTail
+
+// ----------------------------------------------------------------------------
+/** Refreshes the per-camera kart root -> visual velocity cache. Called from
+ *  prepareDrawCalls() for the SP pipeline and from FixedPipelineRenderer for
+ *  the GE Vulkan pipeline (which does not run prepareDrawCalls). */
+void updateRelativityKartVelocities(unsigned player_index)
+{
+    g_kart_root_velocities.clear();
+    if (!Relativity::isEnabled())
+        return;
+    World* world = World::getWorld();
+    if (!world)
+        return;
+    Camera* camera = player_index < Camera::getNumCameras()
+        ? Camera::getCamera(player_index) : nullptr;
+    AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
+    const unsigned num_karts = world->getNumKarts();
+    for (unsigned i = 0; i < num_karts; i++)
+    {
+        AbstractKart* abstract_kart = world->getKart(i);
+        if (!abstract_kart)
+            continue;
+        scene::ISceneNode* root = abstract_kart->getNode();
+        if (!root)
+            continue;
+        core::vector3df visual_velocity(0.0f, 0.0f, 0.0f);
+        if (abstract_kart == observer_kart)
+        {
+            Kart* kart = dynamic_cast<Kart*>(abstract_kart);
+            if (kart)
+            {
+                const btVector3& v =
+                    kart->getRelativisticState().m_coordinate_velocity;
+                visual_velocity = core::vector3df(
+                    (float)v.x(), (float)v.y(), (float)v.z());
+                if (!isFiniteVector(visual_velocity))
+                    visual_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
+            }
+        }
+        g_kart_root_velocities[root] = visual_velocity;
+    }
+}   // updateRelativityKartVelocities
+
+// ----------------------------------------------------------------------------
+/** Fills out[0..2] with the world-space velocity to use for relativistic
+ *  warping of the given scene node, and out[3] with the "disable relativity
+ *  visuals" flag (1.0 = do not warp, used for the observer's own kart).
+ *  Registered as GE::setNodeVelocityFunction so the Vulkan draw call fills
+ *  the same per-object data the SP instance buffer carries under OpenGL. */
+void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node, float* out)
+{
+    out[0] = out[1] = out[2] = out[3] = 0.0f;
+    if (!Relativity::isEnabled() || !node)
+        return;
+    core::vector3df velocity;
+    if (!findKartVelocityForNode(node, velocity))
+    {
+        const core::matrix4& model_matrix =
+            node->getAbsoluteTransformation();
+        const core::vector3df position(model_matrix[12], model_matrix[13],
+                                       model_matrix[14]);
+        velocity = estimateNodeVelocity(node, position);
+    }
+    out[0] = velocity.X;
+    out[1] = velocity.Y;
+    out[2] = velocity.Z;
+    out[3] = shouldDisableRelativityVisualsForNode(node) ? 1.0f : 0.0f;
+}   // fillNodeRelativityVelocity
 
 // ----------------------------------------------------------------------------
 ShaderBasedRenderer* g_stk_sbr = NULL;
@@ -1023,42 +1102,7 @@ void prepareDrawCalls()
     g_glow_meshes.clear();
     g_instances.clear();
 
-    g_kart_root_velocities.clear();
-    if (Relativity::isEnabled())
-    {
-        World* world = World::getWorld();
-        if (world)
-        {
-            Camera* camera = sp_cur_player < Camera::getNumCameras()
-                ? Camera::getCamera(sp_cur_player) : nullptr;
-            AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
-            const unsigned num_karts = world->getNumKarts();
-            for (unsigned i = 0; i < num_karts; i++)
-            {
-                AbstractKart* abstract_kart = world->getKart(i);
-                if (!abstract_kart)
-                    continue;
-                scene::ISceneNode* root = abstract_kart->getNode();
-                if (!root)
-                    continue;
-                core::vector3df visual_velocity(0.0f, 0.0f, 0.0f);
-                if (abstract_kart == observer_kart)
-                {
-                    Kart* kart = dynamic_cast<Kart*>(abstract_kart);
-                    if (kart)
-                    {
-                        const btVector3& v =
-                            kart->getRelativisticState().m_coordinate_velocity;
-                        visual_velocity = core::vector3df(
-                            (float)v.x(), (float)v.y(), (float)v.z());
-                        if (!isFiniteVector(visual_velocity))
-                            visual_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
-                    }
-                }
-                g_kart_root_velocities[root] = visual_velocity;
-            }
-        }
-    }
+    updateRelativityKartVelocities(sp_cur_player);
 }
 
 // ----------------------------------------------------------------------------

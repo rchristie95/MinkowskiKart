@@ -38,6 +38,7 @@ else()
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/graphics_engine/include")
+include_directories("${PROJECT_SOURCE_DIR}/lib/graphics_engine/src")
 include_directories("${PROJECT_SOURCE_DIR}/lib/graphics_utils")
 include_directories("${PROJECT_SOURCE_DIR}/lib/irrlicht/include")
 include_directories("${PROJECT_SOURCE_DIR}/lib/bullet/src")

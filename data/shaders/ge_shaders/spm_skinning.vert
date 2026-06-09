@@ -1,8 +1,10 @@
 #include "utils/camera.glsl"
+#include "utils/relativity_bridge.glsl"
 #include "utils/get_vertex_color.glsl"
 #include "utils/spm_data.glsl"
 #include "utils/spm_layout.vert"
 #include "../utils/get_world_location.vert"
+#include "../utils/relativity_visual.vert"
 
 void main()
 {
@@ -13,11 +15,23 @@ void main()
         v_weight[2] * u_skinning_matrices.m_mat[max(v_joint[2] + offset, 0)] +
         v_weight[3] * u_skinning_matrices.m_mat[max(v_joint[3] + offset, 0)];
     vec4 v_skinning_position = joint_matrix * vec4(v_position, 1.0);
-    vec4 v_world_position = getWorldPosition(
+    vec4 raw_world_position = getWorldPosition(
         u_object_buffer.m_objects[gl_InstanceIndex].m_translation,
         u_object_buffer.m_objects[gl_InstanceIndex].m_rotation,
         u_object_buffer.m_objects[gl_InstanceIndex].m_scale,
         v_skinning_position.xyz);
+
+    // Apply relativistic Lorentz contraction and light-travel-time correction.
+    // m_velocity.xyz = object world-space velocity; .w = disable_relativity flag.
+    vec3 i_velocity    = u_object_buffer.m_objects[gl_InstanceIndex].m_velocity.xyz;
+    float disable_rel  = u_object_buffer.m_objects[gl_InstanceIndex].m_velocity.w;
+    float visual_fade  = getRelativisticVisualFade(raw_world_position.xyz,
+                             i_velocity, disable_rel);
+    vec4 v_world_position = applyRelativisticContraction(raw_world_position,
+                                visual_fade);
+    v_world_position = applyRelativisticVisualPosition(v_world_position,
+                           i_velocity, visual_fade);
+
     f_world_position = v_world_position;
     gl_Position = u_camera.m_projection_view_matrix * v_world_position;
     f_vertex_color = v_color.zyxw * getVertexColor(
@@ -33,8 +47,12 @@ void main()
 #ifdef PBR_ENABLED
     vec4 skinned_normal = joint_matrix * v_normal;
     vec4 skinned_tangent = joint_matrix * vec4(v_tangent.xyz, 0.0);
-    vec3 world_normal = rotateVector(u_object_buffer.m_objects[gl_InstanceIndex].m_rotation, skinned_normal.xyz);
-    vec3 world_tangent = rotateVector(u_object_buffer.m_objects[gl_InstanceIndex].m_rotation, skinned_tangent.xyz);
+    vec3 world_normal = applyRelativisticNormalTransform(
+        rotateVector(u_object_buffer.m_objects[gl_InstanceIndex].m_rotation, skinned_normal.xyz),
+        visual_fade);
+    vec3 world_tangent = applyRelativisticDisplacement(
+        rotateVector(u_object_buffer.m_objects[gl_InstanceIndex].m_rotation, skinned_tangent.xyz),
+        visual_fade);
     f_bitangent = cross(world_normal, world_tangent) * v_tangent.w;
     f_tangent = world_tangent;
     f_normal = world_normal;

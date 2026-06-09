@@ -210,6 +210,29 @@ void GEMaterialManager::init()
     }
 
     xml->drop();
+
+    // Register a "<name>_2sided" variant for every culling material so mesh
+    // buffers whose irrlicht material disables backface culling (e.g. track
+    // materials.xml backface-culling="N") can render double-sided like they
+    // do in the OpenGL pipeline. These variants share the irr material type
+    // of their base material and are selected in GEVulkanDrawCall::getShader.
+    std::vector<
+        std::pair<std::string, std::shared_ptr<const GEMaterial> > >
+        with_variants;
+    with_variants.reserve(g_materials.size() * 2);
+    for (auto& p : g_materials)
+    {
+        with_variants.push_back(p);
+        if (!p.second->m_backface_culling || p.first == "displace")
+            continue;
+        GEMaterial copy = *p.second;
+        copy.m_backface_culling = false;
+        auto m = std::make_shared<const GEMaterial>(copy);
+        const std::string variant_name = p.first + "_2sided";
+        with_variants.emplace_back(variant_name, m);
+        g_mat_map[variant_name] = m;
+    }
+    g_materials = std::move(with_variants);
 }   // init
 
 // ----------------------------------------------------------------------------

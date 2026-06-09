@@ -98,7 +98,10 @@ void ObjectData::init(irr::scene::ISceneNode* node, int material_id,
         node->getMaterial(irrlicht_material_id).getTextureMatrix(0);
     m_texture_trans[0] = texture_matrix[8];
     m_texture_trans[1] = texture_matrix[9];
-    m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
+    if (GENodeVelocityFunction velocity_function = getNodeVelocityFunction())
+        velocity_function(node, m_velocity);
+    else
+        m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
     auto& ri = node->getMaterial(irrlicht_material_id).getRenderInfo();
     if (ri && ri->getHue() > 0.0f)
         m_hue_change = ri->getHue();
@@ -870,6 +873,14 @@ std::string GEVulkanDrawCall::getShader(const irr::video::SMaterial& m)
     // Use real transparent shader first
     if (!material->isTransparent() && ri && ri->isTransparent())
         return "ghost";
+    // Honour the per-mesh-buffer backface culling flag (set from the track's
+    // materials.xml backface-culling="N" under STK) like the GL pipeline.
+    if (!m.BackfaceCulling && material && material->m_backface_culling)
+    {
+        std::string two_sided = shader + "_2sided";
+        if (GEMaterialManager::getMaterial(two_sided))
+            return two_sided;
+    }
     return shader;
 }   // getShader
 
@@ -923,14 +934,16 @@ void GEVulkanDrawCall::createAllPipelines(GEVulkanDriver* vk)
         m_graphics_pipelines["ghost"].m_settings = settings;
         m_graphics_pipelines["ghost"].m_settings.m_vertex_description = {};
         m_graphics_pipelines["ghost"].m_pipelines[GVPT_GHOST_DEPTH] =
-            dp_cache.at(def_mat.m_vertex_shader + def_mat.m_fragment_shader);
+            dp_cache.at(def_mat.m_vertex_shader + def_mat.m_fragment_shader +
+            "|cull");
         m_graphics_pipelines["ghost" SKINNING_PIPELINE] = {};
         m_graphics_pipelines["ghost" SKINNING_PIPELINE].m_settings = settings;
         m_graphics_pipelines["ghost" SKINNING_PIPELINE]
             .m_settings.m_vertex_description = {};
         m_graphics_pipelines["ghost" SKINNING_PIPELINE]
             .m_pipelines[GVPT_GHOST_DEPTH] = dp_cache.at(
-            def_mat.m_skinning_vertex_shader + def_mat.m_fragment_shader);
+            def_mat.m_skinning_vertex_shader + def_mat.m_fragment_shader +
+            "|cull");
     }
     else
     {
@@ -1318,13 +1331,24 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
             depth_only_fs);
     }
 
-    auto insert_from_cache = [&dp_cache, this](const PipelineSettings& s,
-                                               bool skinning)
+    // The depth-only pipeline cache key must include the culling mode:
+    // otherwise a two-sided material reuses the back-culled depth pipeline
+    // of an earlier material with the same shaders, its back faces never
+    // get written in the depth pre-pass, and the colour pass (which uses
+    // VK_COMPARE_OP_EQUAL) discards them.
+    auto dp_cache_key = [](const PipelineSettings& s, bool skinning)
     {
         std::string vs = skinning ?
             s.m_material->m_skinning_vertex_shader :
             s.m_material->m_vertex_shader;
-        auto it = dp_cache.find(vs + s.m_material->m_depth_only_fragment_shader);
+        return vs + s.m_material->m_depth_only_fragment_shader +
+            (s.m_material->m_backface_culling ? "|cull" : "|nocull");
+    };
+
+    auto insert_from_cache = [&dp_cache, &dp_cache_key, this](
+        const PipelineSettings& s, bool skinning)
+    {
+        auto it = dp_cache.find(dp_cache_key(s, skinning));
         if (it == dp_cache.end())
             return false;
         std::string key = s.m_shader_name;
@@ -1340,7 +1364,7 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
         return true;
     };
 
-    auto insert_pipeline = [vk, &dp_cache, this](VkPipeline p,
+    auto insert_pipeline = [vk, &dp_cache, &dp_cache_key, this](VkPipeline p,
                                                  const PipelineSettings& s,
                                                  bool depth_only,
                                                  bool skinning)
@@ -1359,10 +1383,7 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
             auto sp = std::shared_ptr<VkPipeline>(new VkPipeline(p),
                 destroyPipeline);
             m_graphics_pipelines[key].m_pipelines[GVPT_DEPTH] = sp;
-            std::string vs = skinning ?
-                s.m_material->m_skinning_vertex_shader :
-                s.m_material->m_vertex_shader;
-            dp_cache[vs + s.m_material->m_depth_only_fragment_shader] = sp;
+            dp_cache[dp_cache_key(s, skinning)] = sp;
         }
         else
         {
@@ -1794,6 +1815,13 @@ std::vector<uint32_t> GEVulkanDrawCall::getDefaultDynamicOffsets() const
 // ----------------------------------------------------------------------------
 void GEVulkanDrawCall::bindAllMaterials(VkCommandBuffer cmd)
 {
+    // A draw call that had no visible node yet has not run createVulkanData,
+    // so its pipeline layout doesn't exist (this happens for one frame when
+    // entering a race from the menus). Binding with a null layout crashes
+    // inside the driver; renderPipeline guards the same way via
+    // m_data_layout.
+    if (m_pipeline_layout == VK_NULL_HANDLE)
+        return;
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipeline_layout, 0, 1,
         m_texture_descriptor->getDescriptorSet(), 0, NULL);

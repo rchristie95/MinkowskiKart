@@ -29,13 +29,25 @@ GEConfig g_config =
     GSSRT_DISABLED,
     false,
     {},
-    1.0f
+    1.0f,
+    false
 };
 std::string g_shader_folder = "";
 std::chrono::steady_clock::time_point g_mono_start =
     std::chrono::steady_clock::now();
 std::unique_ptr<GEOcclusionCulling> g_occulsion_culling;
 std::array<float, 4> g_displace_direction = {};
+GENodeVelocityFunction g_node_velocity_function = NULL;
+
+void setNodeVelocityFunction(GENodeVelocityFunction func)
+{
+    g_node_velocity_function = func;
+}   // setNodeVelocityFunction
+
+GENodeVelocityFunction getNodeVelocityFunction()
+{
+    return g_node_velocity_function;
+}   // getNodeVelocityFunction
 
 void setVideoDriver(irr::video::IVideoDriver* driver)
 {

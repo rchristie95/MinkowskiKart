@@ -14,7 +14,7 @@ namespace irr
 {
     namespace scene
     {
-        class IMesh; class IAnimatedMesh;
+        class IMesh; class IAnimatedMesh; class ISceneNode;
     }
 }
 
@@ -54,8 +54,21 @@ GEScreenSpaceReflectionType m_screen_space_reflection_type;
 bool m_force_deferred;
 std::unordered_set<std::string> m_ondemand_load_texture_paths;
 float m_render_scale;
+// Set when relativistic warping is active: vertices can be displaced far
+// outside their mesh's bounding box (aberration brings geometry from behind
+// the camera into view), so CPU frustum culling against unwarped boxes
+// would wrongly hide visible geometry. Mirrors the SP/OpenGL pipeline's
+// disable_relativistic_culling behaviour.
+bool m_disable_frustum_culling;
 };
 
+// Optional callback used to fill the per-object relativistic velocity in the
+// object buffer: out[0..2] = world-space velocity, out[3] = disable flag
+// (1.0 = skip relativistic warping for this node, e.g. the observer's kart).
+typedef void (*GENodeVelocityFunction)(const irr::scene::ISceneNode* node,
+                                       float* out);
+void setNodeVelocityFunction(GENodeVelocityFunction func);
+GENodeVelocityFunction getNodeVelocityFunction();
 void setVideoDriver(irr::video::IVideoDriver* driver);
 void setShaderFolder(const std::string& path);
 irr::video::IVideoDriver* getDriver();

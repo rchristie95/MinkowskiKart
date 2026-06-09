@@ -64,8 +64,14 @@ namespace Scripting
 
 
     //Constructor, creates a new Scripting Engine using AngelScript
-    ScriptEngine::ScriptEngine()
+    ScriptEngine::ScriptEngine() : m_engine(NULL)
     {
+    }
+
+    void ScriptEngine::init()
+    {
+        if (m_engine) return;
+
         // Create the script engine
         m_engine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
         if (m_engine == NULL)
@@ -83,10 +89,13 @@ namespace Scripting
 
     ScriptEngine::~ScriptEngine()
     {
-        // Release the engine
-        m_pending_timeouts.clearAndDeleteAll();
-        m_engine->DiscardModule(MODULE_ID_MAIN_SCRIPT_FILE);
-        m_engine->Release();
+        if (m_engine)
+        {
+            // Release the engine
+            m_pending_timeouts.clearAndDeleteAll();
+            m_engine->DiscardModule(MODULE_ID_MAIN_SCRIPT_FILE);
+            m_engine->Release();
+        }
     }
 
 
@@ -175,6 +184,7 @@ namespace Scripting
 
     void ScriptEngine::evalScript(std::string script_fragment)
     {
+        init();
         script_fragment = "void evalScript_main() { \n" + script_fragment + "\n}";
 
         asIScriptModule* mod = m_engine->GetModule(MODULE_ID_MAIN_SCRIPT_FILE, asGM_ONLY_IF_EXISTS);
@@ -230,6 +240,7 @@ namespace Scripting
 
     void ScriptEngine::runDelegate(asIScriptFunction* delegate)
     {
+        init();
         asIScriptContext *ctx = m_engine->CreateContext();
         if (ctx == NULL)
         {
@@ -349,6 +360,7 @@ namespace Scripting
         std::function<void(asIScriptContext*)> callback,
         std::function<void(asIScriptContext*)> get_return_value)
     {
+        init();
         int r; //int for error checking
 
         asIScriptFunction *func;
@@ -479,6 +491,7 @@ namespace Scripting
 
     void ScriptEngine::cleanupCache()
     {
+        if (!m_engine) return;
         for (auto curr : m_functions_cache)
         {
             if (curr.second != NULL)
@@ -521,6 +534,7 @@ namespace Scripting
 
     bool ScriptEngine::loadScript(std::string script_path, bool clear_previous)
     {
+        init();
         int r;
 
         std::string script = getScript(script_path);
@@ -551,6 +565,7 @@ namespace Scripting
 
     bool ScriptEngine::compileLoadedScripts()
     {
+        init();
         int r;
         asIScriptModule *mod = m_engine->GetModule(MODULE_ID_MAIN_SCRIPT_FILE, asGM_CREATE_IF_NOT_EXISTS);
 
@@ -607,6 +622,7 @@ namespace Scripting
 
     void ScriptEngine::addPendingTimeout(double time, const std::string& callback_name)
     {
+        init();
         m_pending_timeouts.push_back(new PendingTimeout(time, callback_name));
     }
 
@@ -614,6 +630,7 @@ namespace Scripting
 
     void ScriptEngine::addPendingTimeout(double time, asIScriptFunction* delegate)
     {
+        init();
         m_pending_timeouts.push_back(new PendingTimeout(time, delegate));
     }
 
@@ -621,6 +638,7 @@ namespace Scripting
 
     void ScriptEngine::update(float dt)
     {
+        if (!m_engine) return;
         for (int i = m_pending_timeouts.size() - 1; i >= 0; i--)
         {
             PendingTimeout& curr = m_pending_timeouts[i];
