@@ -25,6 +25,20 @@ float m_relativity_observer_pos[4]; // [ox, oy, oz, scanner_active]
 float m_relativity_bubble[4];       // [bubble.x, bubble.y, bubble.z, warp_radius]
 float m_black_hole[4];              // [wx, wy, wz, scale]  (scale=0 = inactive)
 float m_wormhole[4];                // [wx, wy, wz, radius] (radius=0 = inactive)
+// Screen-space post effect parameters (displace_color.frag)
+irr::core::matrix4 m_previous_pv_matrix; // previous frame projection*view
+float m_motion_blur[4];             // [boost_amount, center_x, center_y, mask_radius]
+float m_compactification[4];        // [strength, 0, 0, 0]
+
+GEVulkanCameraUBO()
+{
+    // The float parameter blocks are only refreshed per frame during races;
+    // make sure cameras that never get fed (RTT previews, menus) read all
+    // effects as disabled instead of stack garbage.
+    memset(m_relativity_params, 0, sizeof(float) * 4 * 6);
+    memset(m_motion_blur, 0, sizeof(m_motion_blur));
+    memset(m_compactification, 0, sizeof(m_compactification));
+}
 };
 
 class GEVulkanCameraSceneNode : public irr::scene::CCameraSceneNode
@@ -70,6 +84,15 @@ public:
         memcpy(m_ubo_data.m_relativity_bubble,         tail26 + 14, 16);
         memcpy(m_ubo_data.m_black_hole,                tail26 + 18, 16);
         memcpy(m_ubo_data.m_wormhole,                  tail26 + 22, 16);
+    }
+    // ------------------------------------------------------------------------
+    // Per-camera screen-space post effect parameters, applied by
+    // displace_color.frag: motion blur [boost, center.xy, mask_radius] and
+    // compactification [strength, 0, 0, 0].
+    void setPostFXData(const float* motion_blur4, const float* compact4)
+    {
+        memcpy(m_ubo_data.m_motion_blur, motion_blur4, 16);
+        memcpy(m_ubo_data.m_compactification, compact4, 16);
     }
 };   // GEVulkanCameraSceneNode
 

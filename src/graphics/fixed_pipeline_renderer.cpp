@@ -20,8 +20,10 @@
 #include "config/user_config.hpp"
 #include "graphics/camera/camera.hpp"
 #include "graphics/irr_driver.hpp"
+#include "graphics/relativistic_vfx.hpp"
 #include "graphics/render_target.hpp"
 #include "graphics/sp/sp_base.hpp"
+#include "karts/abstract_kart.hpp"
 #include "modes/world.hpp"
 #include "physics/physics.hpp"
 #include "relativity/relativity_math.hpp"
@@ -48,7 +50,14 @@ void FixedPipelineRenderer::onLoadWorld()
         // strip). SP disables culling the same way under OpenGL.
         GE::getGEConfig()->m_disable_frustum_culling =
             Relativity::isEnabled();
+        // Screen-space post effects (motion blur, black hole / wormhole
+        // lensing, compactification) are applied in the deferred displace
+        // compose pass; force that path so they always work.
+        GE::getGEConfig()->m_force_displace_compose =
+            Relativity::isEnabled();
     }
+    m_boost_time.clear();
+    m_boost_time.resize(Camera::getNumCameras(), 0.0f);
 }
 
 void FixedPipelineRenderer::onUnloadWorld()
@@ -93,7 +102,36 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
             auto* cam_node = dynamic_cast<GE::GEVulkanCameraSceneNode*>(
                 camera->getCameraSceneNode());
             if (cam_node)
+            {
                 cam_node->setRelativityData(relativity_tail.data());
+
+                // Screen-space post effect parameters, mirroring the
+                // SP/OpenGL post processing chain: boost motion blur
+                // (PostProcessing::renderMotionBlur uses boost_time * 10,
+                // centre (0.5, 0.5) and mask radius 0.15) and the
+                // compactification screen warp strength.
+                if (i < m_boost_time.size() && m_boost_time[i] > 0.0f)
+                {
+                    m_boost_time[i] -= dt;
+                    if (m_boost_time[i] < 0.0f)
+                        m_boost_time[i] = 0.0f;
+                }
+                float motion_blur[4] =
+                {
+                    i < m_boost_time.size() ? m_boost_time[i] * 10.0f : 0.0f,
+                    0.5f, 0.5f, 0.15f
+                };
+                float compactification[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                if (camera->getKart() && RelativisticVFXManager::get())
+                {
+                    const CompactificationVFX* cvfx =
+                        RelativisticVFXManager::get()->getCompactification(
+                        camera->getKart()->getWorldKartId());
+                    if (cvfx && cvfx->strength > 0.0f)
+                        compactification[0] = cvfx->strength;
+                }
+                cam_node->setPostFXData(motion_blur, compactification);
+            }
         }
 
         irr_driver->getSceneManager()->drawAll();
@@ -149,6 +187,14 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
     irr_driver->getVideoDriver()->endScene();
     
 }
+
+void FixedPipelineRenderer::giveBoost(unsigned int cam_index)
+{
+    // Same boost duration as PostProcessing::giveBoost under OpenGL.
+    if (cam_index >= m_boost_time.size())
+        m_boost_time.resize(cam_index + 1, 0.0f);
+    m_boost_time[cam_index] = 0.75f;
+}   // giveBoost
 
 std::unique_ptr<RenderTarget> FixedPipelineRenderer::createRenderTarget(const irr::core::dimension2du &dimension,
                                                                         const std::string &name)

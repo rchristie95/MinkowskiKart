@@ -23,18 +23,25 @@
 #include "utils/cpp2011.hpp"
 
 #include <map>
+#include <vector>
 
 class RenderTarget;
 class GL1RenderTarget;
 
 class FixedPipelineRenderer: public AbstractRenderer
 {
+private:
+    /** Remaining boost (motion blur) time per camera, mirrors
+     *  PostProcessing::m_boost_time of the SP/OpenGL pipeline. */
+    std::vector<float> m_boost_time;
 public:
-    
+
     void onLoadWorld() OVERRIDE;
     void onUnloadWorld() OVERRIDE;
 
     void render(float dt, bool is_loading) OVERRIDE;
+
+    void giveBoost(unsigned int cam_index) OVERRIDE;
 
     std::unique_ptr<RenderTarget> createRenderTarget(const irr::core::dimension2du &dimension,
                                                      const std::string &name) OVERRIDE;

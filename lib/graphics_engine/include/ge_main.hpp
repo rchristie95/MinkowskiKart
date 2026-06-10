@@ -58,8 +58,13 @@ float m_render_scale;
 // outside their mesh's bounding box (aberration brings geometry from behind
 // the camera into view), so CPU frustum culling against unwarped boxes
 // would wrongly hide visible geometry. Mirrors the SP/OpenGL pipeline's
-// disable_relativistic_culling behaviour.
+// disable_frustum_culling behaviour.
 bool m_disable_frustum_culling;
+// Force the deferred displace compose path even when no displace material
+// is in the scene, so screen-space post effects (motion blur, black hole /
+// wormhole lensing, compactification) always have a sampled scene colour
+// texture to read in displace_color.frag.
+bool m_force_displace_compose;
 };
 
 // Optional callback used to fill the per-object relativistic velocity in the

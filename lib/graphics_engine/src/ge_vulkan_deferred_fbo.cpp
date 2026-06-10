@@ -285,7 +285,7 @@ void GEVulkanDeferredFBO::initConvertColorDescriptor(GEVulkanDriver* vk)
 void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
 {
     // m_descriptor_layout[GVDFP_DISPLACE_COLOR]
-    std::array<VkDescriptorSetLayoutBinding, 3> texture_layout_binding = {};
+    std::array<VkDescriptorSetLayoutBinding, 4> texture_layout_binding = {};
     texture_layout_binding[0].binding = 0;
     texture_layout_binding[0].descriptorCount = 1;
     texture_layout_binding[0].descriptorType =
@@ -296,6 +296,10 @@ void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
     texture_layout_binding[1].binding = 1;
     texture_layout_binding[2] = texture_layout_binding[0];
     texture_layout_binding[2].binding = 2;
+    // Scene depth, sampled by the screen-space post effects (lensing
+    // occlusion tests and motion blur reprojection).
+    texture_layout_binding[3] = texture_layout_binding[0];
+    texture_layout_binding[3].binding = 3;
 
     VkDescriptorSetLayoutCreateInfo setinfo = {};
     setinfo.flags = 0;
@@ -364,6 +368,11 @@ void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
     image_infos[2].imageView =
         (VkImageView)m_attachments[GVDFT_DISPLACE_COLOR]->getTextureHandler();
     image_infos[2].sampler = m_vk->getSampler(GVS_NEAREST);
+    image_infos[3].imageLayout =
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    image_infos[3].imageView =
+        (VkImageView)m_depth_texture->getTextureHandler();
+    image_infos[3].sampler = m_vk->getSampler(GVS_NEAREST);
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
