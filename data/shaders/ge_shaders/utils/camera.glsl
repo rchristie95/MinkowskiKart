@@ -14,7 +14,7 @@ layout(std140, set = 1, binding = 0) uniform CameraBuffer
     vec4 m_relativity_beta;         // [bx, by, bz, c_light]
     vec4 m_relativity_observer_pos; // [ox, oy, oz, scanner_active]
     vec4 m_relativity_bubble;       // [bubble.xyz, warp_radius]
-    vec4 m_black_hole;              // [wx, wy, wz, scale]  (scale=0 = inactive)
+    vec4 m_black_holes[4];          // [wx, wy, wz, radius] (radius=0 = slot inactive)
     vec4 m_wormhole;                // [wx, wy, wz, radius] (radius=0 = inactive)
     // Screen-space post effect parameters (displace_color.frag)
     mat4 m_previous_pv_matrix;      // previous frame projection*view

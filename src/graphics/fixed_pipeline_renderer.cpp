@@ -20,7 +20,6 @@
 #include "config/user_config.hpp"
 #include "graphics/camera/camera.hpp"
 #include "graphics/irr_driver.hpp"
-#include "graphics/relativistic_vfx.hpp"
 #include "graphics/render_target.hpp"
 #include "graphics/sp/sp_base.hpp"
 #include "karts/abstract_kart.hpp"
@@ -106,19 +105,24 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
 
             SP::sp_cur_player = i;
             SP::updateRelativityKartVelocities(i);
-            std::array<float, 26> relativity_tail =
+            std::array<float, 38> relativity_tail =
                 SP::getRelativityUBOTail(i);
             if (test_fx && camera->getKart())
             {
                 const Vec3& kp = camera->getKart()->getSmoothedXYZ();
+                // Two test black holes (slots 0 and 1) and a wormhole.
                 relativity_tail[18] = kp.getX() - 8.0f;
                 relativity_tail[19] = kp.getY() + 4.0f;
                 relativity_tail[20] = kp.getZ();
                 relativity_tail[21] = 3.0f;
-                relativity_tail[22] = kp.getX() + 10.0f;
-                relativity_tail[23] = kp.getY() + 5.0f;
-                relativity_tail[24] = kp.getZ() - 6.0f;
-                relativity_tail[25] = 4.0f;
+                relativity_tail[22] = kp.getX() - 14.0f;
+                relativity_tail[23] = kp.getY() + 6.0f;
+                relativity_tail[24] = kp.getZ() + 8.0f;
+                relativity_tail[25] = 2.0f;
+                relativity_tail[34] = kp.getX() + 10.0f;
+                relativity_tail[35] = kp.getY() + 5.0f;
+                relativity_tail[36] = kp.getZ() - 6.0f;
+                relativity_tail[37] = 4.0f;
             }
             auto* cam_node = dynamic_cast<GE::GEVulkanCameraSceneNode*>(
                 camera->getCameraSceneNode());
@@ -144,15 +148,11 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                 };
                 if (test_blur)
                     motion_blur[0] = 3.0f;
+                // The compactification debuff only flattens the affected
+                // kart's model; the full-screen compression for the affected
+                // player was removed on purpose. The shader path stays for
+                // debugging via MK_TEST_COMPACT.
                 float compactification[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-                if (camera->getKart() && RelativisticVFXManager::get())
-                {
-                    const CompactificationVFX* cvfx =
-                        RelativisticVFXManager::get()->getCompactification(
-                        camera->getKart()->getWorldKartId());
-                    if (cvfx && cvfx->strength > 0.0f)
-                        compactification[0] = cvfx->strength;
-                }
                 if (test_compact)
                     compactification[0] = 0.7f;
                 cam_node->setPostFXData(motion_blur, compactification);

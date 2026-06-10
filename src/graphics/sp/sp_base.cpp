@@ -62,6 +62,7 @@
 #include <cassert>
 #include <functional>
 #include <string>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -83,9 +84,9 @@ extern unsigned sp_cur_player;
 namespace
 {
 const size_t SP_MATRIX_UBO_BASE_FLOATS = 16 * 9 + 2;
-const size_t SP_MATRIX_UBO_FLOATS = 172;   // +4 for u_black_hole vec4, +4 for u_wormhole vec4
+const size_t SP_MATRIX_UBO_FLOATS = 184;   // +16 for u_black_holes[4], +4 for u_wormhole vec4
 const size_t SP_RELATIVITY_UBO_FLOAT_OFFSET = 146;
-const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 26; // +4 for u_black_hole, +4 for u_wormhole
+const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 38; // +16 for u_black_holes[4], +4 for u_wormhole
 
 struct RelativityMotionState
 {
@@ -109,6 +110,11 @@ std::unordered_set<const scene::ISceneNode*> g_animated_track_nodes;
 // road. The observer kart keeps its previous coordinate-velocity path.
 std::unordered_map<const scene::ISceneNode*, core::vector3df>
     g_kart_root_velocities;
+
+// Live black holes that lens the screen, keyed by their BlackHole flyable so
+// several can be active at once. Values are (world position, world radius).
+std::map<const void*, std::pair<core::vector3df, float> >
+    g_black_hole_lenses;
 
 bool isFiniteVector(const core::vector3df& v)
 {
@@ -292,20 +298,28 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[15] = bubble_center.getY();
     tail[16] = bubble_center.getZ();
     tail[17] = Relativity::getWarpBubbleRadius();
-    // u_black_hole: world-space position (xyz) + scale (w).
-    // w = 0 means inactive; w = 0..1 is the effect scale (shrinks to 0 on death).
-    tail[18] = sp_black_hole_world_pos.X;
-    tail[19] = sp_black_hole_world_pos.Y;
-    tail[20] = sp_black_hole_world_pos.Z;
-    tail[21] = sp_black_hole_active ? sp_black_hole_radius : 0.0f;
+    // u_black_holes[4]: world-space position (xyz) + radius (w) per hole.
+    // w = 0 means the slot is inactive. Several black holes can be live at
+    // the same time; each registers itself in g_black_hole_lenses.
+    unsigned bh_slot = 0;
+    for (auto& p : g_black_hole_lenses)
+    {
+        if (bh_slot >= 4)
+            break;
+        tail[18 + bh_slot * 4 + 0] = p.second.first.X;
+        tail[18 + bh_slot * 4 + 1] = p.second.first.Y;
+        tail[18 + bh_slot * 4 + 2] = p.second.first.Z;
+        tail[18 + bh_slot * 4 + 3] = p.second.second;
+        bh_slot++;
+    }
     // u_wormhole: world-space position (xyz) + world-space radius (w).
     // A non-zero radius implicitly marks the wormhole as active; the
     // tonemap post-process uses this radius to project the mouth
     // silhouette into screen space for proper Interstellar-style lensing.
-    tail[22] = sp_wormhole_world_pos.X;
-    tail[23] = sp_wormhole_world_pos.Y;
-    tail[24] = sp_wormhole_world_pos.Z;
-    tail[25] = sp_wormhole_active ? sp_wormhole_radius : 0.0f;
+    tail[34] = sp_wormhole_world_pos.X;
+    tail[35] = sp_wormhole_world_pos.Y;
+    tail[36] = sp_wormhole_world_pos.Z;
+    tail[37] = sp_wormhole_active ? sp_wormhole_radius : 0.0f;
     return tail;
 }   // buildRelativityUBOTail
 
@@ -314,12 +328,27 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
 // ----------------------------------------------------------------------------
 /** Public wrapper so the GE (Vulkan) renderer can build the same relativity
  *  UBO tail that uploadAll() writes for the SP/OpenGL pipeline. */
-std::array<float, 26> getRelativityUBOTail(unsigned player_index)
+std::array<float, 38> getRelativityUBOTail(unsigned player_index)
 {
-    static_assert(SP_RELATIVITY_UBO_FLOAT_COUNT == 26,
+    static_assert(SP_RELATIVITY_UBO_FLOAT_COUNT == 38,
                   "Relativity UBO tail size changed");
     return buildRelativityUBOTail(player_index);
 }   // getRelativityUBOTail
+
+// ----------------------------------------------------------------------------
+/** Registers or refreshes the screen-space lensing data of one live black
+ *  hole. Keyed by owner so several black holes can lens at the same time. */
+void setBlackHoleLens(const void* owner, const irr::core::vector3df& pos,
+                      float radius)
+{
+    g_black_hole_lenses[owner] = std::make_pair(pos, radius);
+}   // setBlackHoleLens
+
+// ----------------------------------------------------------------------------
+void removeBlackHoleLens(const void* owner)
+{
+    g_black_hole_lenses.erase(owner);
+}   // removeBlackHoleLens
 
 // ----------------------------------------------------------------------------
 /** Refreshes the per-camera kart root -> visual velocity cache. Called from
@@ -394,11 +423,6 @@ ShaderBasedRenderer* g_stk_sbr = NULL;
 // ----------------------------------------------------------------------------
 std::array<float, 16>* g_joint_ptr = NULL;
 // ----------------------------------------------------------------------------
-// Black hole world position for gravitational lensing in tonemap.frag
-// Set by BlackHole projectile each frame; cleared when no black hole is live.
-irr::core::vector3df sp_black_hole_world_pos(0.0f, 0.0f, 0.0f);
-bool sp_black_hole_active = false;
-float sp_black_hole_radius = 0.0f;
 // Wormhole world position for gravitational lensing in tonemap.frag. Set by
 // the Wormhole flyable while alive; cleared on destruction.
 irr::core::vector3df sp_wormhole_world_pos(0.0f, 0.0f, 0.0f);

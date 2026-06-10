@@ -16,7 +16,7 @@
 #define u_relativity_beta         u_camera.m_relativity_beta
 #define u_relativity_observer_pos u_camera.m_relativity_observer_pos
 #define u_relativity_bubble       u_camera.m_relativity_bubble
-#define u_black_hole              u_camera.m_black_hole
+#define u_black_holes             u_camera.m_black_holes
 #define u_wormhole                u_camera.m_wormhole
 
 // Matrix aliases used by tonemap/post-process relativity shaders

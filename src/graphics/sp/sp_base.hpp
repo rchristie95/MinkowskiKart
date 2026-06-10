@@ -99,10 +99,6 @@ extern bool sp_apitrace;
 extern unsigned sp_cur_player;
 extern unsigned sp_cur_buf_id[MAX_PLAYER_COUNT];
 extern irr::core::vector3df sp_wind_dir;
-extern irr::core::vector3df sp_black_hole_world_pos;
-extern bool sp_black_hole_active;
-// Scale of the black hole effect (0=inactive, 1=full size, shrinks to 0 on death).
-extern float sp_black_hole_radius;
 extern irr::core::vector3df sp_wormhole_world_pos;
 extern bool sp_wormhole_active;
 // World-space visual radius of the wormhole mouth currently used for
@@ -126,7 +122,14 @@ void prepareDrawCalls();
 // Relativity bridge for the GE (Vulkan) renderer. These let the fixed
 // pipeline renderer feed the same relativistic parameters into the GE camera
 // UBO / per-object data that the SP pipeline uploads under OpenGL.
-std::array<float, 26> getRelativityUBOTail(unsigned player_index);
+std::array<float, 38> getRelativityUBOTail(unsigned player_index);
+// ----------------------------------------------------------------------------
+// Registers / removes one live black hole for screen-space lensing. Keyed by
+// owner so several black holes can lens the screen at the same time.
+void setBlackHoleLens(const void* owner, const irr::core::vector3df& pos,
+                      float radius);
+// ----------------------------------------------------------------------------
+void removeBlackHoleLens(const void* owner);
 // ----------------------------------------------------------------------------
 void updateRelativityKartVelocities(unsigned player_index);
 // ----------------------------------------------------------------------------

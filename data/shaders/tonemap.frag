@@ -14,11 +14,14 @@ void main()
     bool in_event_horizon = false;  // Track if we're inside the black hole shadow
     float distortion_strength = 0.0; // Track how strong the lensing is at this pixel
 
-    // ---- Gravitational lensing from active black hole ----
-    // u_black_hole.w = world-space sphere radius (0 = inactive, shrinks to 0 on death).
-    if (u_black_hole.w > 0.001)
+    // ---- Gravitational lensing from the active black holes ----
+    // u_black_holes[i].w = world-space sphere radius (0 = slot inactive).
+    // Several black holes can be live at once; apply each in turn.
+    for (int bh_i = 0; bh_i < 4; bh_i++)
     {
-        vec4 bh_clip = u_projection_view_matrix * vec4(u_black_hole.xyz, 1.0);
+        if (in_event_horizon || u_black_holes[bh_i].w <= 0.001)
+            continue;
+        vec4 bh_clip = u_projection_view_matrix * vec4(u_black_holes[bh_i].xyz, 1.0);
         if (bh_clip.w > 0.001 && bh_clip.z > 0.0)
         {
             vec2 bh_ndc    = bh_clip.xy / bh_clip.w;
@@ -29,14 +32,14 @@ void main()
                                   u_view_matrix[1][0],
                                   u_view_matrix[2][0]);
             vec4 rim_clip  = u_projection_view_matrix
-                           * vec4(u_black_hole.xyz + cam_right * u_black_hole.w, 1.0);
+                           * vec4(u_black_holes[bh_i].xyz + cam_right * u_black_holes[bh_i].w, 1.0);
             vec2 rim_ndc    = rim_clip.xy / max(rim_clip.w, 0.001);
             vec2 rim_screen = (rim_ndc * 0.5 + 0.5) * u_screen;
             float R_E = max(length(rim_screen - bh_screen), 2.0);
 
             float bh_depth01 = bh_clip.z / bh_clip.w * 0.5 + 0.5;
 
-            vec2  delta = gl_FragCoord.xy - bh_screen;
+            vec2  delta = uv * u_screen - bh_screen;
             float r     = length(delta);
 
             if (r > 0.5 && r < R_E * 6.0)
@@ -57,8 +60,8 @@ void main()
                         vec2 sample_pos = bh_screen + normalize(delta) * r_src;
                         uv = sample_pos / u_screen;
 
-                        distortion_strength = 1.0 - (r_src / (R_E * 3.0));
-                        distortion_strength = clamp(distortion_strength, 0.0, 1.0);
+                        distortion_strength = max(distortion_strength,
+                            clamp(1.0 - (r_src / (R_E * 3.0)), 0.0, 1.0));
                     }
                     uv = clamp(uv, vec2(0.0), vec2(1.0));
                 }
