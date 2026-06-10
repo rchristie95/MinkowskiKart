@@ -95,10 +95,31 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
         // SP::uploadAll, which never runs under Vulkan).
         if (irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
         {
+            // Debug hooks to force the screen-space post effects on, so
+            // they can be tested without the corresponding gameplay items:
+            // MK_TEST_FX (black hole + wormhole), MK_TEST_BLUR,
+            // MK_TEST_COMPACT.
+            static const bool test_fx = getenv("MK_TEST_FX") != NULL;
+            static const bool test_blur = getenv("MK_TEST_BLUR") != NULL;
+            static const bool test_compact =
+                getenv("MK_TEST_COMPACT") != NULL;
+
             SP::sp_cur_player = i;
             SP::updateRelativityKartVelocities(i);
-            const std::array<float, 26> relativity_tail =
+            std::array<float, 26> relativity_tail =
                 SP::getRelativityUBOTail(i);
+            if (test_fx && camera->getKart())
+            {
+                const Vec3& kp = camera->getKart()->getSmoothedXYZ();
+                relativity_tail[18] = kp.getX() - 8.0f;
+                relativity_tail[19] = kp.getY() + 4.0f;
+                relativity_tail[20] = kp.getZ();
+                relativity_tail[21] = 3.0f;
+                relativity_tail[22] = kp.getX() + 10.0f;
+                relativity_tail[23] = kp.getY() + 5.0f;
+                relativity_tail[24] = kp.getZ() - 6.0f;
+                relativity_tail[25] = 4.0f;
+            }
             auto* cam_node = dynamic_cast<GE::GEVulkanCameraSceneNode*>(
                 camera->getCameraSceneNode());
             if (cam_node)
@@ -121,6 +142,8 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                     i < m_boost_time.size() ? m_boost_time[i] * 10.0f : 0.0f,
                     0.5f, 0.5f, 0.15f
                 };
+                if (test_blur)
+                    motion_blur[0] = 3.0f;
                 float compactification[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
                 if (camera->getKart() && RelativisticVFXManager::get())
                 {
@@ -130,6 +153,8 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                     if (cvfx && cvfx->strength > 0.0f)
                         compactification[0] = cvfx->strength;
                 }
+                if (test_compact)
+                    compactification[0] = 0.7f;
                 cam_node->setPostFXData(motion_blur, compactification);
             }
         }

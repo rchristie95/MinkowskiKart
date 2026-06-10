@@ -49,6 +49,7 @@
 #include "graphics/sp/sp_mesh_node.hpp"
 #include "graphics/sp/sp_shader_manager.hpp"
 #include "graphics/sp/sp_texture_manager.hpp"
+#include "relativity/relativity_math.hpp"
 #include "graphics/stk_text_billboard.hpp"
 #include "graphics/stk_tex_manager.hpp"
 #include "graphics/sun.hpp"
@@ -563,6 +564,17 @@ begin:
                 UserConfigParams::m_dynamic_lights;
             GE::getGEConfig()->m_ibl =
                 !UserConfigParams::m_degraded_IBL;
+            // Must be set before the first GE camera triggers the deferred
+            // type detection: the relativity screen-space post effects
+            // (motion blur, black hole / wormhole lensing, compactification)
+            // are applied in the displace compose pass, and the warped
+            // geometry breaks CPU frustum culling. Setting these only in
+            // FixedPipelineRenderer::onLoadWorld is too late for the first
+            // race, whose cameras are created before onLoadWorld runs.
+            GE::getGEConfig()->m_force_displace_compose =
+                Relativity::isEnabled();
+            GE::getGEConfig()->m_disable_frustum_culling =
+                Relativity::isEnabled();
 #endif
         }
         else
