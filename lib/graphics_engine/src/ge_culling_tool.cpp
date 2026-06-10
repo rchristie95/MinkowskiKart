@@ -18,8 +18,9 @@ void GECullingTool::init(GEVulkanCameraSceneNode* cam)
 // ----------------------------------------------------------------------------
 bool GECullingTool::isCulled(const irr::core::vector3df& center, float radius)
 {
-    if (getGEConfig()->m_disable_frustum_culling)
-        return false;
+    // Note: this overload (point lights) stays active even when
+    // m_disable_frustum_culling is set for warped geometry — disabling it
+    // overflows the per-frame light cap and makes lighting flicker.
     for (int i = 0; i < 6; i++)
     {
         irr::core::quaternion q(center.X, center.Y, center.Z, 1.0f);

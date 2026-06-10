@@ -907,9 +907,20 @@ void GEVulkanDrawCall::createAllPipelines(GEVulkanDriver* vk)
     settings.m_vertex_description = getDefaultVertexDescription();
     std::unordered_map<std::string, std::shared_ptr<VkPipeline> > dp_cache;
     int drawing_order = 1;
+    // Skip tessellation materials on devices without the feature: creating
+    // pipelines with tessellation stages there is undefined behaviour.
+    const bool supports_tess =
+        vk->getPhysicalDeviceFeatures().tessellationShader == VK_TRUE;
+    auto skip_material = [supports_tess](
+        const std::shared_ptr<const GEMaterial>& m)
+    {
+        return !supports_tess &&
+            !m->m_tesc_shader.empty() && !m->m_tese_shader.empty();
+    };
+
     for (auto& p : GEMaterialManager::g_materials)
     {
-        if (p.second->isTransparent())
+        if (p.second->isTransparent() || skip_material(p.second))
             continue;
         if (!getGEConfig()->m_pbr && !p.second->m_nonpbr_fallback.empty())
             continue;
@@ -964,7 +975,7 @@ void GEVulkanDrawCall::createAllPipelines(GEVulkanDriver* vk)
         m_deferred_layouts[GVDFP_DISPLACE_COLOR] != VK_NULL_HANDLE;
     for (auto& p : GEMaterialManager::g_materials)
     {
-        if (!p.second->isTransparent())
+        if (!p.second->isTransparent() || skip_material(p.second))
             continue;
         if (!getGEConfig()->m_pbr && !p.second->m_nonpbr_fallback.empty())
             continue;

@@ -128,6 +128,21 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                 camera->getCameraSceneNode());
             if (cam_node)
             {
+                // (debug) measure camera movement before the previous-PV
+                // capture below collapses the two matrices.
+                static const bool test_zip_dbg = getenv("MK_TEST_ZIP") != NULL;
+                float pv_delta = 0.0f;
+                if (test_zip_dbg)
+                {
+                    const GE::GEVulkanCameraUBO* ubo = cam_node->getUBOData();
+                    for (int m = 0; m < 16; m++)
+                    {
+                        pv_delta += fabsf(
+                            ubo->m_projection_view_matrix[m] -
+                            ubo->m_previous_pv_matrix[m]);
+                    }
+                }
+                cam_node->updatePreviousPVMatrix();
                 cam_node->setRelativityData(relativity_tail.data());
 
                 // Screen-space post effect parameters, mirroring the
@@ -148,6 +163,26 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                 };
                 if (test_blur)
                     motion_blur[0] = 3.0f;
+                // MK_TEST_ZIP: simulate a zipper boost every 4 seconds to
+                // exercise the full giveBoost -> decay -> blur path.
+                static const bool test_zip = getenv("MK_TEST_ZIP") != NULL;
+                if (test_zip)
+                {
+                    static float zip_timer = 0.0f;
+                    zip_timer += dt;
+                    if (zip_timer > 4.0f)
+                    {
+                        zip_timer = 0.0f;
+                        giveBoost(i);
+                        printf("MK_TEST_ZIP: giveBoost(%u)\n", i);
+                    }
+                    if (i < m_boost_time.size() && m_boost_time[i] > 0.0f)
+                    {
+                        printf("MK_TEST_ZIP: boost=%f blur_amount=%f "
+                               "pv_delta=%f\n",
+                               m_boost_time[i], motion_blur[0], pv_delta);
+                    }
+                }
                 // The compactification debuff only flattens the affected
                 // kart's model; the full-screen compression for the affected
                 // player was removed on purpose. The shader path stays for

@@ -1075,6 +1075,10 @@ void GEVulkanDriver::createDevice()
 
     if (m_features.samplerAnisotropy == VK_TRUE)
         device_features.samplerAnisotropy = VK_TRUE;
+    // The tessellation materials (ge_tess.tesc/tese) need this; creating
+    // their pipelines without it is undefined behaviour.
+    if (m_features.tessellationShader == VK_TRUE)
+        device_features.tessellationShader = VK_TRUE;
 
     VkDeviceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

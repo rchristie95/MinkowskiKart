@@ -94,6 +94,14 @@ public:
         memcpy(m_ubo_data.m_motion_blur, motion_blur4, 16);
         memcpy(m_ubo_data.m_compactification, compact4, 16);
     }
+    // ------------------------------------------------------------------------
+    // Stores the current projection*view as last frame's matrix for
+    // reprojection-based effects. Call exactly once per frame, before the
+    // scene render recomputes the current matrix.
+    void updatePreviousPVMatrix()
+    {
+        m_ubo_data.m_previous_pv_matrix = m_ubo_data.m_projection_view_matrix;
+    }
 };   // GEVulkanCameraSceneNode
 
 }

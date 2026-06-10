@@ -55,9 +55,10 @@ void GEVulkanCameraSceneNode::render()
 
     mat = m_ubo_data.m_projection_matrix * m_ubo_data.m_view_matrix;
 
-    // Keep last frame's projection*view for reprojection-based effects
-    // (motion blur in displace_color.frag).
-    m_ubo_data.m_previous_pv_matrix = m_ubo_data.m_projection_view_matrix;
+    // Note: m_previous_pv_matrix is updated once per frame via
+    // updatePreviousPVMatrix() (render() can run several times per frame,
+    // which would collapse the previous matrix onto the current one and
+    // break reprojection-based motion blur).
     m_ubo_data.m_projection_view_matrix = mat;
 
     m_ubo_data.m_projection_view_matrix.getInverse(
