@@ -48,6 +48,7 @@
 #include "network/network_string.hpp"
 #include "network/rewind_manager.hpp"
 #include "physics/physics.hpp"
+#include "tracks/mobius_surface.hpp"
 #include "tracks/track.hpp"
 #include "utils/constants.hpp"
 #include "utils/string_utils.hpp"
@@ -57,31 +58,13 @@
 
 namespace
 {
-const btScalar MOBIUS_RADIUS = btScalar(82.0f);
-const btScalar MOBIUS_ROAD_HALF_WIDTH = btScalar(8.0f);
-const btScalar MOBIUS_PI = btScalar(3.14159265358979323846f);
-const btScalar MOBIUS_TWO_PI = btScalar(2.0f) * MOBIUS_PI;
-
-btScalar clampMobiusScalar(btScalar value, btScalar minimum, btScalar maximum)
-{
-    return std::max(minimum, std::min(maximum, value));
-}   // clampMobiusScalar
-
-void wrapMobiusParameters(btScalar* u, btScalar* v)
-{
-    while (*u < btScalar(0.0f))
-    {
-        *u += MOBIUS_TWO_PI;
-        *v = -*v;
-    }
-    while (*u >= MOBIUS_TWO_PI)
-    {
-        *u -= MOBIUS_TWO_PI;
-        *v = -*v;
-    }
-    *v = clampMobiusScalar(*v, -MOBIUS_ROAD_HALF_WIDTH,
-                           MOBIUS_ROAD_HALF_WIDTH);
-}   // wrapMobiusParameters
+// Gravity magnitude for flyables. Upstream STK hard-codes 70 for flyable
+// gravity (it is deliberately stronger than track gravity so projectiles
+// hug the road); keep that here, but named.
+const btScalar FLYABLE_GRAVITY = btScalar(70.0f);
+// Minimum tangential speed kept when projecting a flyable's velocity onto
+// the Möbius surface, as a fraction of its nominal speed.
+const btScalar MOBIUS_TANGENT_SPEED_FRACTION = btScalar(0.35f);
 
 btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
 {
@@ -91,158 +74,6 @@ btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
     result.normalize();
     return result;
 }   // normalizedOrDefault
-
-btVector3 mobiusPoint(btScalar u, btScalar v)
-{
-    const btScalar cu = btCos(u);
-    const btScalar su = btSin(u);
-    const btScalar ch = btCos(u * btScalar(0.5f));
-    return btVector3((MOBIUS_RADIUS + v * ch) * cu,
-                     v * btSin(u * btScalar(0.5f)),
-                     (MOBIUS_RADIUS + v * ch) * su);
-}   // mobiusPoint
-
-btVector3 mobiusDu(btScalar u, btScalar v)
-{
-    const btScalar cu = btCos(u);
-    const btScalar su = btSin(u);
-    const btScalar ch = btCos(u * btScalar(0.5f));
-    const btScalar sh = btSin(u * btScalar(0.5f));
-    const btScalar radial = MOBIUS_RADIUS + v * ch;
-    const btScalar dr = btScalar(-0.5f) * v * sh;
-    return btVector3(dr * cu - radial * su,
-                     btScalar(0.5f) * v * ch,
-                     dr * su + radial * cu);
-}   // mobiusDu
-
-btVector3 mobiusDv(btScalar u)
-{
-    const btScalar cu = btCos(u);
-    const btScalar su = btSin(u);
-    const btScalar ch = btCos(u * btScalar(0.5f));
-    const btScalar sh = btSin(u * btScalar(0.5f));
-    return btVector3(ch * cu, sh, ch * su);
-}   // mobiusDv
-
-bool isMobiusTrackActive()
-{
-    const Track* track = Track::getCurrentTrack();
-    return track && track->getIdent() == "mobius_track";
-}   // isMobiusTrackActive
-
-void refineMobiusParameters(const btVector3& position,
-                            btScalar* u,
-                            btScalar* v,
-                            int refinements)
-{
-    for (int refinement = 0; refinement < refinements; refinement++)
-    {
-        const btVector3 point = mobiusPoint(*u, *v);
-        const btVector3 residual = point - position;
-        const btVector3 du = mobiusDu(*u, *v);
-        const btVector3 dv = mobiusDv(*u);
-        const btScalar du_len2 = std::max(du.length2(), btScalar(1.0e-6f));
-        const btScalar dv_len2 = std::max(dv.length2(), btScalar(1.0e-6f));
-        const btScalar u_step = clampMobiusScalar(
-            residual.dot(du) / du_len2, btScalar(-0.12f), btScalar(0.12f));
-        const btScalar v_step = clampMobiusScalar(
-            residual.dot(dv) / dv_len2, btScalar(-0.85f), btScalar(0.85f));
-        *u -= u_step;
-        *v -= v_step;
-        wrapMobiusParameters(u, v);
-    }
-}   // refineMobiusParameters
-
-bool solveMobiusContinuation(const btVector3& position,
-                             btScalar* u,
-                             btScalar* v,
-                             btVector3* outward,
-                             btVector3* surface_normal,
-                             btScalar* distance2)
-{
-    if (!u || !v || !outward || !surface_normal || !distance2)
-        return false;
-
-    wrapMobiusParameters(u, v);
-    refineMobiusParameters(position, u, v, 6);
-    const btVector3 point = mobiusPoint(*u, *v);
-    btVector3 result = position - point;
-    *distance2 = result.length2();
-    btVector3 normal = normalizedOrDefault(
-        mobiusDu(*u, *v).cross(mobiusDv(*u)), btVector3(0.0f, 1.0f, 0.0f));
-    if (result.length2() <= btScalar(1.0e-6f))
-        result = normal;
-    *outward = normalizedOrDefault(result, btVector3(0.0f, 1.0f, 0.0f));
-    if (normal.dot(*outward) < btScalar(0.0f))
-        normal = -normal;
-    *surface_normal = normal;
-    return std::isfinite((double)outward->x()) &&
-           std::isfinite((double)outward->y()) &&
-           std::isfinite((double)outward->z()) &&
-           std::isfinite((double)surface_normal->x()) &&
-           std::isfinite((double)surface_normal->y()) &&
-           std::isfinite((double)surface_normal->z());
-}   // solveMobiusContinuation
-
-bool solveMobiusGlobal(const btVector3& position,
-                       btScalar* out_u,
-                       btScalar* out_v,
-                       btVector3* outward,
-                       btVector3* surface_normal)
-{
-    if (!out_u || !out_v || !outward || !surface_normal)
-        return false;
-
-    btScalar base_u = btAtan2(position.z(), position.x());
-    if (base_u < btScalar(0.0f))
-        base_u += MOBIUS_TWO_PI;
-
-    btVector3 best_outward(0.0f, 1.0f, 0.0f);
-    btVector3 best_surface_normal(0.0f, 1.0f, 0.0f);
-    btScalar best_u = btScalar(0.0f);
-    btScalar best_v = btScalar(0.0f);
-    btScalar best_distance2 = std::numeric_limits<btScalar>::max();
-
-    for (int seed = 0; seed < 16; seed++)
-    {
-        btScalar u = base_u + MOBIUS_TWO_PI * btScalar(seed) /
-            btScalar(16.0f);
-        btScalar v = btScalar(0.0f);
-        wrapMobiusParameters(&u, &v);
-
-        const btScalar cu = btCos(u);
-        const btScalar su = btSin(u);
-        const btVector3 center(MOBIUS_RADIUS * cu, btScalar(0.0f),
-                               MOBIUS_RADIUS * su);
-        v = clampMobiusScalar((position - center).dot(mobiusDv(u)),
-                              -MOBIUS_ROAD_HALF_WIDTH,
-                              MOBIUS_ROAD_HALF_WIDTH);
-
-        btVector3 candidate_outward;
-        btVector3 candidate_surface_normal;
-        btScalar candidate_distance2;
-        if (solveMobiusContinuation(position, &u, &v, &candidate_outward,
-                                    &candidate_surface_normal,
-                                    &candidate_distance2) &&
-            candidate_distance2 < best_distance2)
-        {
-            best_distance2 = candidate_distance2;
-            best_outward = candidate_outward;
-            best_surface_normal = candidate_surface_normal;
-            best_u = u;
-            best_v = v;
-        }
-    }
-
-    if (best_distance2 == std::numeric_limits<btScalar>::max())
-        return false;
-
-    *out_u = best_u;
-    *out_v = best_v;
-    *outward = best_outward;
-    *surface_normal = best_surface_normal;
-    return true;
-}   // solveMobiusGlobal
 
 void projectVelocityOntoMobiusSurface(btRigidBody* body,
                                       const btVector3& surface_normal,
@@ -710,38 +541,41 @@ bool Flyable::updateAndDelete(int ticks)
     {
         Vec3 towards = MiniGLM::decompressVector3(m_compressed_gravity_vector);
         bool use_mobius_gravity = false;
-        if (isMobiusTrackActive())
+        if (MobiusSurface::isActive())
         {
-            btVector3 outward;
-            btVector3 surface_normal;
-            btScalar distance2 = btScalar(0.0f);
+            // Side hint: keep the surface normal on the side the flyable is
+            // on (its position relative to the surface), matching the
+            // previous outward-based behaviour.
+            MobiusSurface::Query query;
             bool solved = false;
             if (m_mobius_surface_cache_valid &&
                 (xyz - m_mobius_surface_cache_position).length2() <
                     btScalar(324.0f))
             {
-                solved = solveMobiusContinuation(
-                    xyz, &m_mobius_surface_cache_u,
-                    &m_mobius_surface_cache_v, &outward, &surface_normal,
-                    &distance2);
+                solved = MobiusSurface::solveContinuation(
+                    xyz, btVector3(0.0f, 0.0f, 0.0f),
+                    m_mobius_surface_cache_u, m_mobius_surface_cache_v,
+                    &query);
             }
             if (!solved)
             {
-                solved = solveMobiusGlobal(
-                    xyz, &m_mobius_surface_cache_u,
-                    &m_mobius_surface_cache_v, &outward, &surface_normal);
+                solved = MobiusSurface::solveGlobal(
+                    xyz, btVector3(0.0f, 0.0f, 0.0f), &query);
             }
 
             if (solved)
             {
                 m_mobius_surface_cache_valid = true;
                 m_mobius_surface_cache_position = xyz;
-                towards = Vec3(-outward);
-                getBody()->setGravity(towards * 70.0f);
+                m_mobius_surface_cache_u = query.m_u;
+                m_mobius_surface_cache_v = query.m_v;
+                towards = Vec3(-query.m_surface_normal);
+                getBody()->setGravity(towards * FLYABLE_GRAVITY);
                 m_compressed_gravity_vector = MiniGLM::compressVector3(
                     towards.toIrrVector());
                 projectVelocityOntoMobiusSurface(
-                    getBody(), surface_normal, btScalar(0.35f * m_speed));
+                    getBody(), query.m_surface_normal,
+                    MOBIUS_TANGENT_SPEED_FRACTION * m_speed);
                 use_mobius_gravity = true;
             }
             else
@@ -763,9 +597,9 @@ bool Flyable::updateAndDelete(int ticks)
         if (!use_mobius_gravity)
         {
             if (m && m->hasGravity())
-                getBody()->setGravity(TerrainInfo::getNormal() * -70.0f);
+                getBody()->setGravity(TerrainInfo::getNormal() * -FLYABLE_GRAVITY);
             else
-                getBody()->setGravity(Vec3(0, 1, 0) * -70.0f);
+                getBody()->setGravity(Vec3(0, 1, 0) * -FLYABLE_GRAVITY);
         }
         m_compressed_gravity_vector = MiniGLM::compressVector3(
             Vec3(m_body->getGravity().normalized()).toIrrVector());

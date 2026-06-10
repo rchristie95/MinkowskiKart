@@ -33,6 +33,7 @@
 #include "race/race_manager.hpp"
 #include "relativity/relativity_math.hpp"
 #include "tracks/terrain_info.hpp"
+#include "tracks/mobius_surface.hpp"
 #include "tracks/track.hpp"
 
 #include <algorithm>
@@ -46,11 +47,6 @@ namespace
 
 const btScalar SUPPORT_NORMAL_TIME_CONSTANT = btScalar(0.06f);
 const btScalar SUPPORT_NORMAL_MAX_RATE = btScalar(7.0f);
-const btScalar MOBIUS_RADIUS = btScalar(82.0f);
-const btScalar MOBIUS_ROAD_HALF_WIDTH = btScalar(8.0f);
-const btScalar MOBIUS_PI = btScalar(3.14159265358979323846f);
-const btScalar MOBIUS_TWO_PI = btScalar(2.0f) * MOBIUS_PI;
-
 btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
 {
     if (v.length2() <= btScalar(1.0e-8f))
@@ -65,69 +61,14 @@ btScalar clampMobiusScalar(btScalar value, btScalar minimum, btScalar maximum)
     return std::max(minimum, std::min(maximum, value));
 }   // clampMobiusScalar
 
-void wrapMobiusParameters(btScalar* u, btScalar* v)
-{
-    while (*u < btScalar(0.0f))
-    {
-        *u += MOBIUS_TWO_PI;
-        *v = -*v;
-    }
-    while (*u >= MOBIUS_TWO_PI)
-    {
-        *u -= MOBIUS_TWO_PI;
-        *v = -*v;
-    }
-    *v = clampMobiusScalar(*v, -MOBIUS_ROAD_HALF_WIDTH,
-                           MOBIUS_ROAD_HALF_WIDTH);
-}   // wrapMobiusParameters
-
-btVector3 mobiusPoint(btScalar u, btScalar v)
-{
-    const btScalar cu = btCos(u);
-    const btScalar su = btSin(u);
-    const btScalar ch = btCos(u * btScalar(0.5f));
-    return btVector3((MOBIUS_RADIUS + v * ch) * cu,
-                     v * btSin(u * btScalar(0.5f)),
-                     (MOBIUS_RADIUS + v * ch) * su);
-}   // mobiusPoint
-
-btVector3 mobiusDu(btScalar u, btScalar v)
-{
-    const btScalar cu = btCos(u);
-    const btScalar su = btSin(u);
-    const btScalar ch = btCos(u * btScalar(0.5f));
-    const btScalar sh = btSin(u * btScalar(0.5f));
-    const btScalar radial = MOBIUS_RADIUS + v * ch;
-    const btScalar dr = btScalar(-0.5f) * v * sh;
-    return btVector3(dr * cu - radial * su,
-                     btScalar(0.5f) * v * ch,
-                     dr * su + radial * cu);
-}   // mobiusDu
-
-btVector3 mobiusDv(btScalar u)
-{
-    const btScalar cu = btCos(u);
-    const btScalar su = btSin(u);
-    const btScalar ch = btCos(u * btScalar(0.5f));
-    const btScalar sh = btSin(u * btScalar(0.5f));
-    return btVector3(ch * cu, sh, ch * su);
-}   // mobiusDv
-
-struct MobiusSurfaceQuery
-{
-    btVector3 m_closest_point;
-    btVector3 m_surface_normal;
-    btVector3 m_gravity_normal;
-    btScalar  m_u;
-    btScalar  m_v;
-    btScalar  m_distance2;
-};
-
-bool isMobiusTrackActive()
-{
-    const Track* track = Track::getCurrentTrack();
-    return track && track->getIdent() == "mobius_track";
-}   // isMobiusTrackActive
+// Gravity tuning for the Möbius surface:
+// - the gravity normal is rate limited so crossing the rim cannot flip
+//   gravity 180 degrees in a single physics tick;
+// - far away from the strip gravity blends back to world-down so karts
+//   launched off the track fall naturally onto the reset surface.
+const btScalar MOBIUS_GRAVITY_MAX_STEP = btScalar(0.10f);  // rad per tick
+const btScalar MOBIUS_GRAVITY_BLEND_START = btScalar(12.0f);
+const btScalar MOBIUS_GRAVITY_BLEND_END = btScalar(30.0f);
 
 bool isFiniteVector(const btVector3& v)
 {
@@ -136,125 +77,26 @@ bool isFiniteVector(const btVector3& v)
            std::isfinite((double)v.z());
 }   // isFiniteVector
 
-void refineMobiusParameters(const btVector3& position,
-                            btScalar* u,
-                            btScalar* v,
-                            int refinements)
+// Rotates 'from' toward 'to' by at most max_angle radians (both unit).
+btVector3 rotateTowards(const btVector3& from, const btVector3& to,
+                        btScalar max_angle)
 {
-    for (int refinement = 0; refinement < refinements; refinement++)
+    const btScalar c = clampMobiusScalar(from.dot(to), btScalar(-1.0f),
+                                         btScalar(1.0f));
+    const btScalar angle = btAcos(c);
+    if (angle <= max_angle)
+        return to;
+    btVector3 axis = from.cross(to);
+    if (axis.length2() < btScalar(1.0e-10f))
     {
-        const btVector3 point = mobiusPoint(*u, *v);
-        const btVector3 residual = point - position;
-        const btVector3 du = mobiusDu(*u, *v);
-        const btVector3 dv = mobiusDv(*u);
-        const btScalar du_len2 = std::max(du.length2(), btScalar(1.0e-6f));
-        const btScalar dv_len2 = std::max(dv.length2(), btScalar(1.0e-6f));
-        const btScalar u_step = clampMobiusScalar(
-            residual.dot(du) / du_len2, btScalar(-0.12f), btScalar(0.12f));
-        const btScalar v_step = clampMobiusScalar(
-            residual.dot(dv) / dv_len2, btScalar(-0.85f), btScalar(0.85f));
-        *u -= u_step;
-        *v -= v_step;
-        wrapMobiusParameters(u, v);
+        // Anti-parallel: pick any perpendicular axis.
+        axis = from.cross(btVector3(1.0f, 0.0f, 0.0f));
+        if (axis.length2() < btScalar(1.0e-10f))
+            axis = from.cross(btVector3(0.0f, 0.0f, 1.0f));
     }
-}   // refineMobiusParameters
-
-MobiusSurfaceQuery evaluateMobiusQuery(const btVector3& position,
-                                       const btVector3& chassis_up,
-                                       btScalar u,
-                                       btScalar v)
-{
-    MobiusSurfaceQuery query;
-    query.m_u = u;
-    query.m_v = v;
-    query.m_closest_point = mobiusPoint(u, v);
-    query.m_distance2 = (position - query.m_closest_point).length2();
-
-    btVector3 surface_normal = normalizedOrDefault(
-        mobiusDu(u, v).cross(mobiusDv(u)), chassis_up);
-    btVector3 outward = position - query.m_closest_point;
-    if (outward.length2() > btScalar(1.0e-6f))
-        outward.normalize();
-    else
-        outward = surface_normal;
-
-    if (surface_normal.dot(outward) < btScalar(0.0f))
-        surface_normal = -surface_normal;
-
-    query.m_surface_normal = surface_normal;
-    // Keep custom gravity exactly paired with the support normal used by the
-    // wheel contacts. Using the chassis-to-surface vector here lets suspension
-    // and chassis pitch introduce a tangential gravity component on steep
-    // Mobius sections; with relativity's tangent-velocity projection enabled,
-    // that can erase uphill traction.
-    query.m_gravity_normal = surface_normal;
-    return query;
-}   // evaluateMobiusQuery
-
-bool solveMobiusSurfaceContinuation(const btVector3& position,
-                                    const btVector3& chassis_up,
-                                    btScalar start_u,
-                                    btScalar start_v,
-                                    MobiusSurfaceQuery* query)
-{
-    if (!query)
-        return false;
-
-    btScalar u = start_u;
-    btScalar v = start_v;
-    wrapMobiusParameters(&u, &v);
-    refineMobiusParameters(position, &u, &v, 6);
-    *query = evaluateMobiusQuery(position, chassis_up, u, v);
-    return isFiniteVector(query->m_closest_point) &&
-           isFiniteVector(query->m_surface_normal) &&
-           isFiniteVector(query->m_gravity_normal);
-}   // solveMobiusSurfaceContinuation
-
-bool solveMobiusSurfaceGlobal(const btVector3& position,
-                              const btVector3& chassis_up,
-                              MobiusSurfaceQuery* query)
-{
-    if (!query)
-        return false;
-
-    btScalar base_u = btAtan2(position.z(), position.x());
-    if (base_u < btScalar(0.0f))
-        base_u += MOBIUS_TWO_PI;
-
-    MobiusSurfaceQuery best_query;
-    btScalar best_distance2 = std::numeric_limits<btScalar>::max();
-
-    for (int seed = 0; seed < 16; seed++)
-    {
-        btScalar u = base_u + MOBIUS_TWO_PI * btScalar(seed) /
-            btScalar(16.0f);
-        btScalar v = btScalar(0.0f);
-        wrapMobiusParameters(&u, &v);
-
-        const btScalar cu = btCos(u);
-        const btScalar su = btSin(u);
-        const btVector3 center(MOBIUS_RADIUS * cu, btScalar(0.0f),
-                               MOBIUS_RADIUS * su);
-        v = clampMobiusScalar((position - center).dot(mobiusDv(u)),
-                              -MOBIUS_ROAD_HALF_WIDTH,
-                              MOBIUS_ROAD_HALF_WIDTH);
-
-        refineMobiusParameters(position, &u, &v, 6);
-        const MobiusSurfaceQuery candidate =
-            evaluateMobiusQuery(position, chassis_up, u, v);
-        if (candidate.m_distance2 < best_distance2)
-        {
-            best_distance2 = candidate.m_distance2;
-            best_query = candidate;
-        }
-    }
-
-    *query = best_query;
-    return best_distance2 < std::numeric_limits<btScalar>::max() &&
-           isFiniteVector(query->m_closest_point) &&
-           isFiniteVector(query->m_surface_normal) &&
-           isFiniteVector(query->m_gravity_normal);
-}   // solveMobiusSurfaceGlobal
+    axis.normalize();
+    return from.rotate(axis, max_angle).normalized();
+}   // rotateTowards
 
 btVector3 getGroundStickImpulse(Kart* kart,
                                 btRigidBody* body,
@@ -307,7 +149,7 @@ btKart::~btKart()
 // ----------------------------------------------------------------------------
 bool btKart::updateMobiusSurfaceCache() const
 {
-    if (!isMobiusTrackActive() || !m_chassisBody)
+    if (!MobiusSurface::isActive() || !m_chassisBody)
     {
         m_mobius_surface_cache_valid = false;
         return false;
@@ -326,19 +168,31 @@ bool btKart::updateMobiusSurfaceCache() const
             return true;
     }
 
-    MobiusSurfaceQuery query;
+    // Side hint orients the surface normal: when the kart rests on the
+    // surface the chassis-to-surface vector degenerates and can flip frame
+    // to frame, so prefer the chassis up vector when the wheels are
+    // grounded; use the position offset when airborne.
+    btVector3 side_hint = chassis_up;
+    if (m_num_wheels_on_ground < 3 && m_mobius_surface_cache_valid)
+    {
+        const btVector3 outward = position - m_mobius_surface_cache_point;
+        if (outward.length2() > btScalar(0.04f))
+            side_hint = outward;
+    }
+
+    MobiusSurface::Query query;
     bool solved = false;
     if (m_mobius_surface_cache_valid &&
         (position - m_mobius_surface_cache_position).length2() <
             btScalar(324.0f))
     {
-        solved = solveMobiusSurfaceContinuation(
-            position, chassis_up, m_mobius_surface_cache_u,
+        solved = MobiusSurface::solveContinuation(
+            position, side_hint, m_mobius_surface_cache_u,
             m_mobius_surface_cache_v, &query);
     }
 
     if (!solved)
-        solved = solveMobiusSurfaceGlobal(position, chassis_up, &query);
+        solved = MobiusSurface::solveGlobal(position, side_hint, &query);
 
     if (!solved)
     {
@@ -346,10 +200,33 @@ bool btKart::updateMobiusSurfaceCache() const
         return false;
     }
 
+    // Gravity normal: pair with the support normal, but blend back to
+    // world-up far away from the strip and rate limit the change so rim
+    // crossings cannot flip gravity instantly.
+    btVector3 gravity_normal = query.m_surface_normal;
+    const btScalar distance = btSqrt(query.m_distance2);
+    if (distance > MOBIUS_GRAVITY_BLEND_START)
+    {
+        const btScalar t = clampMobiusScalar(
+            (distance - MOBIUS_GRAVITY_BLEND_START) /
+            (MOBIUS_GRAVITY_BLEND_END - MOBIUS_GRAVITY_BLEND_START),
+            btScalar(0.0f), btScalar(1.0f));
+        gravity_normal = normalizedOrDefault(
+            gravity_normal * (btScalar(1.0f) - t) +
+            btVector3(0.0f, 1.0f, 0.0f) * t, gravity_normal);
+    }
+    if (m_mobius_surface_cache_valid && isFiniteVector(gravity_normal))
+    {
+        gravity_normal = rotateTowards(
+            normalizedOrDefault(m_mobius_gravity_cache_normal,
+                                gravity_normal),
+            gravity_normal, MOBIUS_GRAVITY_MAX_STEP);
+    }
+
     m_mobius_surface_cache_position = position;
     m_mobius_surface_cache_point = query.m_closest_point;
     m_mobius_surface_cache_normal = query.m_surface_normal;
-    m_mobius_gravity_cache_normal = query.m_gravity_normal;
+    m_mobius_gravity_cache_normal = gravity_normal;
     m_mobius_surface_cache_u = query.m_u;
     m_mobius_surface_cache_v = query.m_v;
     m_mobius_surface_cache_valid = true;
