@@ -489,7 +489,7 @@
     <particles base="smoke_yellow.xml" condition="skid drive" />
   </material>
   
-  <material name="sea.jpg"          shader="unlit" reset="Y" no-relativity-warp="Y"/>
+  <material name="sea.jpg"          shader="unlit" reset="Y"/>
   <material name="signs.png"        shader="alphatest"/>
   
   <material name="slipstream.png" shader="additive" ignore="Y"/>
@@ -520,7 +520,7 @@
   
   <material name="transparence.png" shader="alphatest" />
   <material name="unlit.png" shader="unlit"/>
-  <material name="water_light.png" shader="unlit" reset="Y" no-relativity-warp="Y"/>
+  <material name="water_light.png" shader="unlit" reset="Y"/>
   <material name="water-splash.png" shader="alphablend" ignore="Y"/>
 
   <material name="wood_planks1_alpha.png" shader="alphablend"/>

@@ -234,18 +234,18 @@ void main()
     if (boost_amount > 0.001)
     {
         const int NB_SAMPLES = 8;
-        vec2 texcoords = (src_px - vp_xy) / vp_wh;
+        vec2 texcoords = (frag_px - vp_xy) / vp_wh;
 
         // Reconstruct the world position of this pixel and reproject it
         // with last frame's projection*view to get the blur direction.
-        float z = texture(u_depth, src_px / u_camera.m_screensize).x;
+        float z = texture(u_depth, frag_px / u_camera.m_screensize).x;
         vec2 ndc = texcoords * 2.0 - 1.0;
         vec4 clip = vec4(ndc, z, 1.0);
         vec4 view_pos = u_camera.m_inverse_projection_matrix * clip;
         view_pos /= view_pos.w;
         vec4 world_pos = u_camera.m_inverse_view_matrix * view_pos;
         vec4 old_clip = u_camera.m_previous_pv_matrix * world_pos;
-        old_clip.xy /= max(abs(old_clip.w), 0.0001);
+        old_clip /= old_clip.w;
         vec2 old_texcoords = old_clip.xy * 0.5 + 0.5;
 
         // Not normalized: avoids a glitch around the centre and scales

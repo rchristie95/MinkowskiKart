@@ -5,7 +5,9 @@
 // relativistic deformation, then projects to clip space via the camera UBO.
 // Outputs the standard GE fragment varyings matching spm_layout.vert.
 
-layout(triangles, equal_spacing, ccw) in;
+// Vulkan GE pipelines use VK_FRONT_FACE_CLOCKWISE. Keep tessellated patches in
+// the same winding as the non-tessellated triangle-list path.
+layout(triangles, equal_spacing, cw) in;
 
 // ---- Inputs from ge_tess.tesc ----
 layout(location = 0) in vec4  tc_vertex_color[];

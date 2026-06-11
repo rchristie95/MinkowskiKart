@@ -41,6 +41,7 @@ void FixedPipelineRenderer::onLoadWorld()
     // carries it under OpenGL.
     if (irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
     {
+        SP::resetRelativityNodeCaches();
         GE::setNodeVelocityFunction(&SP::fillNodeRelativityVelocity);
         // Relativistic warping moves vertices far outside their mesh
         // bounding boxes (aberration brings geometry from behind into
@@ -53,6 +54,11 @@ void FixedPipelineRenderer::onLoadWorld()
         // lensing, compactification) are applied in the deferred displace
         // compose pass; force that path so they always work.
         GE::getGEConfig()->m_force_displace_compose =
+            Relativity::isEnabled();
+        // Route static geometry through the adaptively tessellated material
+        // variants so large triangles (ocean planes etc.) subdivide and
+        // warp smoothly instead of rigidly.
+        GE::getGEConfig()->m_adaptive_tessellation =
             Relativity::isEnabled();
     }
     m_boost_time.clear();
@@ -156,9 +162,12 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                     if (m_boost_time[i] < 0.0f)
                         m_boost_time[i] = 0.0f;
                 }
+                const bool motion_blur_enabled =
+                    UserConfigParams::m_motionblur || test_blur;
                 float motion_blur[4] =
                 {
-                    i < m_boost_time.size() ? m_boost_time[i] * 10.0f : 0.0f,
+                    motion_blur_enabled && i < m_boost_time.size() ?
+                        m_boost_time[i] * 10.0f : 0.0f,
                     0.5f, 0.5f, 0.15f
                 };
                 if (test_blur)

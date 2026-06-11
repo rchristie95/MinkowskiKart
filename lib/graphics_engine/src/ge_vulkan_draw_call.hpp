@@ -207,9 +207,11 @@ private:
     // ------------------------------------------------------------------------
     void createVulkanData();
     // ------------------------------------------------------------------------
-    std::string getShader(const irr::video::SMaterial& m);
+    std::string getShader(const irr::video::SMaterial& m,
+                          bool allow_tessellation = true);
     // ------------------------------------------------------------------------
-    std::string getShader(irr::scene::ISceneNode* node, int material_id);
+    std::string getShader(irr::scene::ISceneNode* node, int material_id,
+                          bool allow_tessellation = true);
     // ------------------------------------------------------------------------
     bool bindPipeline(VkCommandBuffer cmd, const std::string& name,
                       VkPipeline* prev_pipeline,

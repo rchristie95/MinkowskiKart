@@ -99,7 +99,10 @@ void ObjectData::init(irr::scene::ISceneNode* node, int material_id,
     m_texture_trans[0] = texture_matrix[8];
     m_texture_trans[1] = texture_matrix[9];
     if (GENodeVelocityFunction velocity_function = getNodeVelocityFunction())
-        velocity_function(node, m_velocity);
+    {
+        velocity_function(node,
+            &node->getMaterial(irrlicht_material_id), m_velocity);
+    }
     else
         m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
     auto& ri = node->getMaterial(irrlicht_material_id).getRenderInfo();
@@ -319,9 +322,12 @@ void GEVulkanDrawCall::addNode(irr::scene::ISceneNode* node)
             mesh->getMeshBuffer(i));
         if (m_culling_tool->isCulled(buffer, node))
             continue;
-        const std::string& shader = getShader(node, i);
-        if (buffer->getHardwareMappingHint_Vertex() == irr::scene::EHM_STREAM ||
-            buffer->getHardwareMappingHint_Index() == irr::scene::EHM_STREAM)
+        const bool dynamic_spm =
+            buffer->getHardwareMappingHint_Vertex() == irr::scene::EHM_STREAM ||
+            buffer->getHardwareMappingHint_Index() == irr::scene::EHM_STREAM;
+        const std::string shader = getShader(node, i,
+            /*allow_tessellation*/!dynamic_spm);
+        if (dynamic_spm)
         {
             GEVulkanDynamicSPMBuffer* dbuffer = static_cast<
                 GEVulkanDynamicSPMBuffer*>(buffer);
@@ -850,14 +856,16 @@ start:
 
 // ----------------------------------------------------------------------------
 std::string GEVulkanDrawCall::getShader(irr::scene::ISceneNode* node,
-                                        int material_id)
+                                        int material_id,
+                                        bool allow_tessellation)
 {
     irr::video::SMaterial& m = node->getMaterial(material_id);
-    return getShader(m);
+    return getShader(m, allow_tessellation);
 }   // getShader
 
 // ----------------------------------------------------------------------------
-std::string GEVulkanDrawCall::getShader(const irr::video::SMaterial& m)
+std::string GEVulkanDrawCall::getShader(const irr::video::SMaterial& m,
+                                        bool allow_tessellation)
 {
     std::string shader = GEMaterialManager::getShader(m.MaterialType);
     auto material = GEMaterialManager::getMaterial(shader);
@@ -879,7 +887,20 @@ std::string GEVulkanDrawCall::getShader(const irr::video::SMaterial& m)
     {
         std::string two_sided = shader + "_2sided";
         if (GEMaterialManager::getMaterial(two_sided))
-            return two_sided;
+            shader = two_sided;
+    }
+    // With relativistic warping active, route static geometry through the
+    // adaptively tessellated variant so large triangles (ocean planes etc.)
+    // subdivide and warp smoothly per-vertex. Skinned draws of the same
+    // variant use a pipeline built without the tessellation stages.
+    if (allow_tessellation &&
+        getGEConfig()->m_adaptive_tessellation &&
+        getVKDriver()->getPhysicalDeviceFeatures().tessellationShader ==
+        VK_TRUE)
+    {
+        std::string tess = shader + "_tess";
+        if (GEMaterialManager::getMaterial(tess))
+            return tess;
     }
     return shader;
 }   // getShader
@@ -986,8 +1007,8 @@ void GEVulkanDrawCall::createAllPipelines(GEVulkanDriver* vk)
         drawing_order = drawing_order + 1;
         settings.m_shader_name = p.first;
         settings.m_material = p.second;
-        if (is_displace)
-            settings.m_pipeline_type = GVPT_DISPLACE_COLOR;
+        settings.m_pipeline_type =
+            is_displace ? GVPT_DISPLACE_COLOR : GVPT_TRANSPARENT;
         createPipeline(vk, settings, dp_cache);
     }
 
@@ -1352,7 +1373,13 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
         std::string vs = skinning ?
             s.m_material->m_skinning_vertex_shader :
             s.m_material->m_vertex_shader;
+        const bool has_tessellation = !skinning &&
+            !s.m_material->m_tesc_shader.empty() &&
+            !s.m_material->m_tese_shader.empty();
         return vs + s.m_material->m_depth_only_fragment_shader +
+            (has_tessellation ?
+            s.m_material->m_tesc_shader + s.m_material->m_tese_shader :
+            std::string()) +
             (s.m_material->m_backface_culling ? "|cull" : "|nocull");
     };
 
@@ -1407,6 +1434,19 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
     VkPipeline graphics_pipeline;
     const std::string& shader_name = settings.m_shader_name;
 
+    // Skinned meshes (karts, characters) are dense and animated; they are
+    // drawn without the tessellation stages even for "_tess" material
+    // variants (the skinning vertex shader outputs the fragment layout
+    // directly, which would not match the TCS inputs).
+    auto set_tess_enabled = [&](bool enabled)
+    {
+        pipeline_info.stageCount = enabled ? shader_stages.size() : 2;
+        pipeline_info.pTessellationState =
+            enabled ? &tessellation_state : NULL;
+        input_assembly.topology = enabled ?
+            VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : settings.m_topology;
+    };
+
     if (!insert_from_cache(settings, false))
     {
         VkResult result = vkCreateGraphicsPipelines(vk->getDevice(),
@@ -1424,8 +1464,10 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
     {
         shader_stages[0].module = GEVulkanShaderManager::getShader(
             settings.m_material->m_skinning_vertex_shader);
+        set_tess_enabled(false);
         VkResult result = vkCreateGraphicsPipelines(vk->getDevice(),
             VK_NULL_HANDLE, 1, &pipeline_info, NULL, &graphics_pipeline);
+        set_tess_enabled(has_tessellation);
         if (result != VK_SUCCESS)
         {
             throw std::runtime_error("vkCreateGraphicsPipelines failed for " +
@@ -1460,8 +1502,10 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
 
     shader_stages[0].module = GEVulkanShaderManager::getShader(
         settings.m_material->m_skinning_vertex_shader);
+    set_tess_enabled(false);
     result = vkCreateGraphicsPipelines(vk->getDevice(),
         VK_NULL_HANDLE, 1, &pipeline_info, NULL, &graphics_pipeline);
+    set_tess_enabled(has_tessellation);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("vkCreateGraphicsPipelines failed for " +

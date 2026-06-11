@@ -87,7 +87,7 @@ RubberBand::RubberBand(Photon *plunger, AbstractKart *kart)
         }
         m_wave_dy_dc = std::make_shared<SP::SPDynamicDrawCall>
             (scene::EPT_TRIANGLE_STRIP,
-            SP::SPShaderManager::get()->getSPShader("additive"),
+            SP::SPShaderManager::get()->getSPShader("additive_dynamic"),
             material_manager->getDefaultSPMaterial("additive"));
         m_wave_dy_dc->getVerticesVector().resize((kPhotonWaveSegments + 1) * 2);
         for (unsigned i = 0; i < m_wave_dy_dc->getVerticesVector().size(); i++)

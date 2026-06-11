@@ -65,12 +65,21 @@ bool m_disable_frustum_culling;
 // wormhole lensing, compactification) always have a sampled scene colour
 // texture to read in displace_color.frag.
 bool m_force_displace_compose;
+// Set when relativistic warping is active: route static geometry through
+// the auto-generated "<material>_tess" pipelines so large triangles are
+// adaptively subdivided (coarser with distance, no cutoff radius) and warp
+// smoothly per-vertex instead of rigidly. Skinned meshes are unaffected.
+bool m_adaptive_tessellation;
 };
 
 // Optional callback used to fill the per-object relativistic velocity in the
 // object buffer: out[0..2] = world-space velocity, out[3] = disable flag
 // (1.0 = skip relativistic warping for this node, e.g. the observer's kart).
+// material is the irrlicht material of the mesh buffer being drawn (may be
+// NULL); it lets the game exempt per-material geometry from warping, e.g.
+// huge water sheets flagged no-relativity-warp.
 typedef void (*GENodeVelocityFunction)(const irr::scene::ISceneNode* node,
+                                       const irr::video::SMaterial* material,
                                        float* out);
 void setNodeVelocityFunction(GENodeVelocityFunction func);
 GENodeVelocityFunction getNodeVelocityFunction();

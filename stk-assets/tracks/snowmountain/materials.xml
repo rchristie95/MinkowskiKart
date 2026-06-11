@@ -5,5 +5,5 @@
   <material name="roadwayborder.png">
     <particles base="smoke.xml" condition="skid drive"/>
   </material>
-  <material name="water_light.png" reset="Y" no-relativity-warp="Y"/>
+  <material name="water_light.png" reset="Y"/>
 </materials>

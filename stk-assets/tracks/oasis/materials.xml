@@ -6,7 +6,7 @@
   </material>
   <material name="goal.png" shader="alphablend"/>
   <material name="oasis-water.png" ignore="Y" surface="Y" shader="displace" no-relativity-warp="Y"/>
-  <material name="seabed.jpg" ignore="Y" no-relativity-warp="Y"/>
+  <material name="seabed.jpg" ignore="Y"/>
   <material name="stk_generic_grassA.png">
     <particles base="smoke_brown.xml" condition="skid"/>
   </material>

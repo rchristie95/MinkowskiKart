@@ -26,9 +26,8 @@ out float tc_disable_relativity_visual[];
 
 #stk_include "utils/relativity_visual.vert"
 
-const float TARGET_EDGE_LENGTH_NEAR = 0.25;
+const float TARGET_EDGE_LENGTH_NEAR = 0.1;
 const float FULL_TESSELLATION_RADIUS = 10.0;
-const float FALLOFF_END_RADIUS = 50.0;
 const float MAX_TESS_LEVEL = 64.0;
 
 float getDistanceToEdge(vec3 point, vec3 pA, vec3 pB)
@@ -47,22 +46,16 @@ float getDistanceToEdge(vec3 point, vec3 pA, vec3 pB)
 float getTessLevel(vec3 pA, vec3 pB)
 {
     float edge_l = length(pB - pA);
-    float near_level = ceil(edge_l / TARGET_EDGE_LENGTH_NEAR);
     float dist = getDistanceToEdge(u_relativity_bubble.xyz, pA, pB);
-
-    if (dist <= FULL_TESSELLATION_RADIUS)
-    {
-        return clamp(near_level, 1.0, MAX_TESS_LEVEL);
-    }
-    if (dist >= FALLOFF_END_RADIUS)
-    {
-        return 1.0;
-    }
-
-    float falloff = smoothstep(
-        FULL_TESSELLATION_RADIUS, FALLOFF_END_RADIUS, dist);
-    float level = mix(near_level, 1.0, falloff);
-    return clamp(level, 1.0, MAX_TESS_LEVEL);
+    // Unbounded adaptive falloff: rather than cutting tessellation off at a
+    // fixed radius (which left huge far triangles rigidly warped, e.g. an
+    // ocean plane), the target edge length grows linearly with distance, so
+    // geometry keeps subdividing everywhere, just coarser further away.
+    // The level depends only on the edge endpoints and the bubble centre, so
+    // patches sharing an edge agree on its level and no cracks appear.
+    float target_edge = TARGET_EDGE_LENGTH_NEAR *
+        max(1.0, dist / FULL_TESSELLATION_RADIUS);
+    return clamp(edge_l / target_edge, 1.0, MAX_TESS_LEVEL);
 }
 
 void main()

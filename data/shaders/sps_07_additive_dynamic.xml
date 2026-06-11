@@ -1,7 +1,6 @@
 <spshader>
-    <shader-info name="alphablend" transparent="Y" use-alpha-channel="Y"/>
-    <first-pass use-function="alphaBlendUse" vertex-shader="sp_pass.vert"
-        tess-control-shader="sp_tess.tesc" tess-evaluation-shader="sp_tess.tese"
+    <shader-info name="additive_dynamic" transparent="Y" use-alpha-channel="Y"/>
+    <first-pass use-function="additiveUse" vertex-shader="sp_pass.vert"
         fragment-shader="sp_transparent.frag"
         skinned-mesh-shader="sp_skinning.vert">
     </first-pass>

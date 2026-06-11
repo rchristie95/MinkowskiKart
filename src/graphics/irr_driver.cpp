@@ -520,16 +520,11 @@ begin:
                 "switching to Vulkan/MoltenVK automatically.");
             UserConfigParams::m_render_driver = "vulkan";
         }
-#elif defined(WIN32) && !defined(_M_ARM) && !defined(SERVER_ONLY)
-        // Migrate existing Windows installs from OpenGL to Vulkan for better
-        // CPU overhead and multi-threading on modern NVIDIA/AMD/Intel drivers.
-        if (std::string(UserConfigParams::m_render_driver) == "opengl")
-        {
-            Log::info("IrrDriver", "Windows: switching from OpenGL to Vulkan "
-                "for better performance.");
-            UserConfigParams::m_render_driver = "vulkan";
-        }
 #endif
+        // Note: Windows defaults to Vulkan via user_config.hpp, but a user
+        // selecting OpenGL in the video options must be respected — do not
+        // auto-migrate the config back to Vulkan here, or the renderer
+        // toggle in the menus can never switch away from Vulkan.
         if (std::string(UserConfigParams::m_render_driver) == "opengl")
         {
 #if defined(USE_GLES2)
@@ -574,6 +569,11 @@ begin:
             GE::getGEConfig()->m_force_displace_compose =
                 Relativity::isEnabled();
             GE::getGEConfig()->m_disable_frustum_culling =
+                Relativity::isEnabled();
+            // Route static geometry through the adaptively tessellated
+            // material variants so large triangles (ocean planes etc.)
+            // subdivide and warp smoothly instead of rigidly.
+            GE::getGEConfig()->m_adaptive_tessellation =
                 Relativity::isEnabled();
 #endif
         }

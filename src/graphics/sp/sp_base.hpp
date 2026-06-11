@@ -37,7 +37,7 @@
 namespace irr
 {
     namespace scene { class ICameraSceneNode; class IMesh; class ISceneNode; }
-    namespace video { class SColor; }
+    namespace video { class SColor; class SMaterial; }
 }
 
 class ShaderBasedRenderer;
@@ -134,6 +134,7 @@ void removeBlackHoleLens(const void* owner);
 void updateRelativityKartVelocities(unsigned player_index);
 // ----------------------------------------------------------------------------
 void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
+                                const irr::video::SMaterial* irr_material,
                                 float* out);
 // ----------------------------------------------------------------------------
 void draw(RenderPass, DrawCallType dct = DCT_NORMAL);
@@ -171,6 +172,17 @@ void loadShaders();
 void registerAnimatedTrackNode(const irr::scene::ISceneNode* node);
 // ----------------------------------------------------------------------------
 void unregisterAnimatedTrackNode(const irr::scene::ISceneNode* node);
+// ----------------------------------------------------------------------------
+// Register a camera-anchored presentation node (e.g. the start referee) so
+// that estimateNodeVelocity returns zero for it and all its descendants:
+// its per-frame repositioning is presentation-only, not physical motion.
+void registerPresentationNode(const irr::scene::ISceneNode* node);
+// ----------------------------------------------------------------------------
+void unregisterPresentationNode(const irr::scene::ISceneNode* node);
+// ----------------------------------------------------------------------------
+// Drops per-texture / per-node relativity caches whose keys (texture and
+// scene node pointers) are recycled between tracks. Call on world load.
+void resetRelativityNodeCaches();
 // ----------------------------------------------------------------------------
 SPMesh* convertEVTStandard(irr::scene::IMesh* mesh,
                            const irr::video::SColor* color = NULL);

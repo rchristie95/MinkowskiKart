@@ -31,6 +31,7 @@ GEConfig g_config =
     {},
     1.0f,
     false,
+    false,
     false
 };
 std::string g_shader_folder = "";
