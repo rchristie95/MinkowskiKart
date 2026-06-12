@@ -732,15 +732,11 @@ namespace UserConfigParams
     PARAM_PREFIX StringUserConfigParam         m_render_driver
         PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
-#elif defined(WIN32) && !defined(_M_ARM)
-    // Windows x86/x64: default to the mature OpenGL pipeline; Vulkan stays
-    // selectable in the graphics settings.
-    PARAM_PREFIX StringUserConfigParam         m_render_driver
-        PARAM_DEFAULT(  StringUserConfigParam("opengl", "render_driver",
-        &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #else
+    // Windows, Linux and the rest default to the Vulkan renderer (OpenGL
+    // stays selectable in the graphics settings).
     PARAM_PREFIX StringUserConfigParam         m_render_driver
-        PARAM_DEFAULT(  StringUserConfigParam("opengl", "render_driver",
+        PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #endif
 
