@@ -18,9 +18,7 @@ void main()
     vec4 raw_world_position = vec4(i_origin + raw_world_offset, 1.0);
     float relativity_fade = getRelativisticVisualFade(raw_world_position.xyz,
         i_velocity, i_scale.w);
-    vec4 world_position = applyRelativisticContraction(raw_world_position,
-        relativity_fade);
-    world_position = applyRelativisticVisualPosition(world_position,
+    vec4 world_position = applyRelativisticVisualPosition(raw_world_position,
         i_velocity, relativity_fade);
     uv = i_uv;
     gl_Position = u_shadow_projection_view_matrices[layer] * world_position;

@@ -11,7 +11,7 @@ uniform highp vec4 u_relativity_params;
 uniform highp vec4 u_relativity_beta;
 uniform highp vec4 u_relativity_observer_pos;
 uniform highp vec4 u_relativity_bubble;
-uniform highp vec4 u_black_hole;
+uniform highp vec4 u_black_holes[4];
 uniform highp vec4 u_wormhole;
 
 uniform vec3 sun_direction;
@@ -43,7 +43,7 @@ layout (std140) uniform Matrices
     highp vec4 u_relativity_beta;
     highp vec4 u_relativity_observer_pos;
     highp vec4 u_relativity_bubble;
-    highp vec4 u_black_hole;
+    highp vec4 u_black_holes[4];
     highp vec4 u_wormhole;
 };
 

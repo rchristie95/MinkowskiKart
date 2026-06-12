@@ -6,7 +6,7 @@
   <material name="transparence.png" shader="alphatest">
     <zipper duration="2.5" max-speed-increase="10.0" fade-out-time="2.0" speed-gain="5.0" min-speed="20.0"/>
   </material>
-  <material name="under_sea.png" shader="additive" no-relativity-warp="Y"/>
+  <material name="under_sea.png" shader="additive"/>
   <material name="windows.png" shader="alphablend"/>
   <material name="windows_reflection.png" gloss-map="windows_reflection_gloss.png"/>
 </materials>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <materials>
-  <material name="acid_lake.jpg" gloss-map="acid_glow.png" no-relativity-warp="Y"/>
+  <material name="acid_lake.jpg" gloss-map="acid_glow.png"/>
   <material name="ball.png" gloss-map="ball_gloss.png"/>
   <material name="barrier_grid.png" shader="alphatest" gloss-map="grid_glow.png"/>
   <material name="glassWindows.png" shader="alphatest"/>

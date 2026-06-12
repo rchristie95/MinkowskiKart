@@ -1310,7 +1310,18 @@ const Material* Kart::getTriggeredZipperMaterial() const
                                                  &hit_point, &zipper_material,
                                                  &normal))
         {
-            return zipper_material;
+            // Only accept zipper pads facing the same way as the kart:
+            // on the Möbius strip both faces of the road are driveable and
+            // the other face's zipper pad lies only millimetres away
+            // through the surface, so without this check zippers trigger
+            // from the wrong side of the track.
+            Vec3 zipper_normal = normal;
+            if (zipper_normal.length2() > 0.0001f)
+            {
+                zipper_normal.normalize();
+                if (zipper_normal.dot(up) > 0.65f)
+                    return zipper_material;
+            }
         }
     }
 

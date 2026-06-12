@@ -23,6 +23,7 @@
 #include "graphics/light.hpp"
 #include "graphics/material.hpp"
 #include "graphics/mesh_tools.hpp"
+#include "graphics/sp/sp_base.hpp"
 #include "graphics/sp/sp_mesh_buffer.hpp"
 #include "graphics/sp/sp_mesh_node.hpp"
 #include "karts/abstract_kart.hpp"
@@ -244,6 +245,11 @@ Referee::Referee()
     }
     m_rescue_rotor_node = NULL;
 #ifndef SERVER_ONLY
+    // The referee is repositioned per camera every frame (a presentation
+    // object); without this the relativistic warp treats the descent and
+    // the camera-relative repositioning as physical velocity and Einstein
+    // pops around during the start countdown.
+    SP::registerPresentationNode(m_scene_node);
     if ((CVS->isGLSL() && CVS->isDeferredEnabled()) ||
         irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN)
     {
@@ -278,6 +284,9 @@ Referee::Referee(const AbstractKart &kart)
     m_body_node->setFrameLoop(m_st_first_rescue_frame, m_st_last_rescue_frame);
     m_start_light_node = NULL;
     m_light = NULL;
+#ifndef SERVER_ONLY
+    SP::registerPresentationNode(m_scene_node);
+#endif
 
     if (m_st_rescue_rotor_mesh)
     {
@@ -297,6 +306,9 @@ Referee::Referee(const AbstractKart &kart)
 // ----------------------------------------------------------------------------
 Referee::~Referee()
 {
+#ifndef SERVER_ONLY
+    SP::unregisterPresentationNode(m_scene_node);
+#endif
     if(m_scene_node->getParent())
         irr_driver->removeNode(m_scene_node);
     m_scene_node->drop();

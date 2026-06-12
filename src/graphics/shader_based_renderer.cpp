@@ -100,6 +100,19 @@ void ShaderBasedRenderer::uploadLightingData() const
         memcpy(&Lighting[26], sh_coeff->red_SH_coeff, 9 * sizeof(float));
     }
 
+    // TEMPORARY diagnostic
+    static int s_light_log = 0;
+    s_light_log++;
+    if (getenv("MK_DRIVER_SWITCH_TEST") &&
+        (s_light_log < 4 || s_light_log % 300 == 0))
+    {
+        Log::info("LightDiag", "sun dir %.3f %.3f %.3f col %.4f %.4f %.4f "
+            "sh0 b %.4f g %.4f r %.4f",
+            Lighting[0], Lighting[1], Lighting[2],
+            Lighting[4], Lighting[5], Lighting[6],
+            Lighting[8], Lighting[17], Lighting[26]);
+    }
+
     glBindBuffer(GL_UNIFORM_BUFFER, SharedGPUObjects::getLightingDataUBO());
     glBufferSubData(GL_UNIFORM_BUFFER, 0, 36 * sizeof(float), Lighting);
 }   // uploadLightingData

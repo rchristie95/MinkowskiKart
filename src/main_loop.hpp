@@ -36,6 +36,11 @@ private:
 
     std::atomic_bool m_request_abort;
 
+    /** True if the process should relaunch itself after the main loop
+     *  exits (used when the render driver changes, which needs a clean
+     *  process). Static so it survives MainLoop deletion during cleanup. */
+    static std::atomic_bool m_request_restart;
+
     std::atomic_bool m_paused;
 
     /** True if the frame rate should be throttled. */
@@ -69,6 +74,13 @@ public:
     /** Set the abort flag, causing the mainloop to be left. */
     void abort() { m_abort = true; }
     void requestAbort() { m_request_abort = true; }
+    /** Leave the main loop and relaunch the game in a fresh process. */
+    void requestRestart()
+    {
+        m_request_restart = true;
+        m_request_abort = true;
+    }
+    static bool isRestartRequested()    { return m_request_restart.load(); }
     void setThrottleFPS(bool throttle) { m_throttle_fps = throttle; }
     void setAllowLargeDt(bool enable) { m_allow_large_dt = enable; }
     void renderGUI(int phase, int loop_index=-1, int loop_size=-1);

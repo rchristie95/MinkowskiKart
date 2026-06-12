@@ -852,8 +852,28 @@ unsigned int LinearWorld::getRescuePositionIndex(AbstractKart *kart)
     if (Graph::get()->getQuad(index)->isIgnored())
     {
         Vec3 pos = kart->getFrontXYZ();
-        int sector = Graph::get()->findOutOfRoadSector(pos);
-        return sector;
+        index = Graph::get()->findOutOfRoadSector(pos);
+    }
+
+    // On tracks where both faces of the road are driveable (Möbius strip)
+    // the two tours of the driveline occupy the same space, so the sector
+    // found by distance can belong to the opposite face. If the chosen
+    // quad's normal points against the kart's up vector, rescue to the
+    // corresponding node on the other tour instead, so Hawking drops the
+    // kart back on the face it was driving on.
+    const int node_count = (int)DriveGraph::get()->getNumNodes();
+    if (index >= 0 && index < node_count && node_count > 1)
+    {
+        const Vec3 up = kart->getTrans().getBasis().getColumn(1);
+        const Vec3& normal = DriveGraph::get()->getNode(index)->getNormal();
+        if (normal.dot(up) < 0.0f)
+        {
+            const int opposite = (index + node_count / 2) % node_count;
+            const Vec3& opp_normal =
+                DriveGraph::get()->getNode(opposite)->getNormal();
+            if (opp_normal.dot(up) > normal.dot(up))
+                index = opposite;
+        }
     }
 
     return index;

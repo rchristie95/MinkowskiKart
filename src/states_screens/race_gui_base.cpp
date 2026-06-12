@@ -613,7 +613,11 @@ void RaceGUIBase::update(float dt)
         }
         else if(world->isStartPhase())  // must be ready or set now
         {
-            m_referee_height = 0;
+            // Finish the descent smoothly instead of snapping to the
+            // ground in case the track intro ended before it completed.
+            m_referee_height -= dt*5.0f;
+            if(m_referee_height<0)
+               m_referee_height = 0;
             m_referee->selectReadySetGo(world->getPhase()==World::SET_PHASE
                                         ? 1 : 0);
         }

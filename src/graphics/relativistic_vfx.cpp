@@ -380,7 +380,7 @@ void RelativisticVFXManager::triggerPairProduction(const Vec3 &origin,
         vfx.wave_draw_call =
             std::make_shared<SP::SPDynamicDrawCall>(
                 scene::EPT_TRIANGLE_STRIP,
-                SP::SPShaderManager::get()->getSPShader("additive"),
+                SP::SPShaderManager::get()->getSPShader("additive_dynamic"),
                 material_manager->getDefaultSPMaterial("additive"));
         vfx.wave_draw_call->getVerticesVector().resize(
             (kPairWaveSegments + 1) * 2);

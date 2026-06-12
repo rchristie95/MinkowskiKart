@@ -21,12 +21,12 @@
   <material name="sand.jpg" max-speed="0.30">
     <particles condition="skid drive" base="sand.xml"/>
   </material>
-  <material name="seabed.jpg" falling-effect="Y" reset="Y" no-relativity-warp="Y"/>
+  <material name="seabed.jpg" falling-effect="Y" reset="Y"/>
   <material name="StreamPlant.png" ignore="Y" shader="alphatest"/>
   <material name="tarmac.jpg" slowdown-time="1.12" max-speed="0.95"/>
   <material name="tree_1.png" shader="grass" grass-speed="1.50"/>
   <material name="tree_noanim.png" grass-speed="1.50" shader="grass"/>
-  <material name="water.png" surface="Y" shader="alphablend" no-relativity-warp="Y">
+  <material name="water.png" surface="Y" shader="alphablend">
     <sfx filename="splash.ogg" min_speed="0.00" max_speed="0.00" min_pitch="0.80" max_pitch="1.20" positional="true" rolloff="0.30"/>
     <particles condition="skid drive" base="splash.xml"/>
   </material>

@@ -4,5 +4,5 @@
   <material name="glass_crack.png" shader="additive"/>
   <material name="oceanic_water_normal.png" shader="displace" reset="Y" no-relativity-warp="Y"/>
   <material name="underwater_lights.png" ignore="Y" shader="additive"/>
-  <material name="water_dark-transp-subsea.png" ignore="Y" shader="alphablend" no-relativity-warp="Y"/>
+  <material name="water_dark-transp-subsea.png" ignore="Y" shader="alphablend"/>
 </materials>

@@ -194,10 +194,14 @@ int SPMeshNode::getTotalJoints() const
 SPShader* SPMeshNode::getShader(unsigned mesh_buffer_id) const
 {
 #ifndef SERVER_ONLY
-    if (!m_mesh || mesh_buffer_id < m_mesh->getMeshBufferCount())
+    if (m_mesh && mesh_buffer_id < m_mesh->getMeshBufferCount())
     {
-        SPShader* shader =
-            m_mesh->getSPMeshBuffer(mesh_buffer_id)->getShader(m_animated);
+        SPMeshBuffer* mb = m_mesh->getSPMeshBuffer(mesh_buffer_id);
+        if (!mb)
+        {
+            return NULL;
+        }
+        SPShader* shader = mb->getShader(m_animated);
         if (shader && shader->isTransparent())
         {
             // Use real transparent shader first

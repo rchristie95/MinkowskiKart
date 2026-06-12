@@ -13,8 +13,8 @@
   <material name="plants.png" shader="grass" grass-speed="1.50"/>
   <material name="racetrack_blend.png" ignore="Y" shader="alphatest"/>
   <material name="racetrack_grass.jpg" slowdown-time="2.00" max-speed="0.75"/>
-  <material name="sea-bed.jpg" reset="Y" no-relativity-warp="Y"/>
-  <material name="sea.png" shader="alphablend" ignore="Y" no-relativity-warp="Y"/>
+  <material name="sea-bed.jpg" reset="Y"/>
+  <material name="sea.png" shader="alphablend" ignore="Y"/>
   <material name="trail_diff.png" shader="alphatest"/>
   <material name="tree_1.png" shader="grass" grass-speed="1.50"/>
   <material name="tree_noanim.png" shader="alphatest"/>

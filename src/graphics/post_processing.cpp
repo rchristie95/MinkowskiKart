@@ -1316,23 +1316,9 @@ FrameBuffer *PostProcessing::render(scene::ICameraSceneNode * const camnode,
         PROFILER_POP_CPU_MARKER();
     }
 
-    // Compactification: Calabi-Yau manifold screen warp for the banana debuff
-    if (isRace && World::getWorld() && RelativisticVFXManager::get())
-    {
-        Camera *cam = Camera::getActiveCamera();
-        if (cam && cam->getKart())
-        {
-            unsigned int kid = cam->getKart()->getWorldKartId();
-            const CompactificationVFX *cvfx =
-                RelativisticVFXManager::get()->getCompactification(kid);
-            if (cvfx && cvfx->strength > 0.0f)
-            {
-                // out_fbo holds the current frame; in_fbo is the spare buffer
-                renderCompactification(*out_fbo, *in_fbo, cvfx->strength);
-                std::swap(in_fbo, out_fbo);
-            }
-        }
-    }
+    // The compactification debuff only flattens the affected kart's model;
+    // the full-screen Calabi-Yau compression for the affected player was
+    // removed on purpose (renderCompactification stays available).
 
     // Handle lightning rendering
     {

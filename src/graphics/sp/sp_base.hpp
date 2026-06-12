@@ -37,7 +37,7 @@
 namespace irr
 {
     namespace scene { class ICameraSceneNode; class IMesh; class ISceneNode; }
-    namespace video { class SColor; }
+    namespace video { class SColor; class SColorf; class SMaterial; }
 }
 
 class ShaderBasedRenderer;
@@ -99,10 +99,6 @@ extern bool sp_apitrace;
 extern unsigned sp_cur_player;
 extern unsigned sp_cur_buf_id[MAX_PLAYER_COUNT];
 extern irr::core::vector3df sp_wind_dir;
-extern irr::core::vector3df sp_black_hole_world_pos;
-extern bool sp_black_hole_active;
-// Scale of the black hole effect (0=inactive, 1=full size, shrinks to 0 on death).
-extern float sp_black_hole_radius;
 extern irr::core::vector3df sp_wormhole_world_pos;
 extern bool sp_wormhole_active;
 // World-space visual radius of the wormhole mouth currently used for
@@ -122,6 +118,34 @@ SPShader* getGlowShader();
 bool skinningUseTBO();
 // ----------------------------------------------------------------------------
 void prepareDrawCalls();
+// ----------------------------------------------------------------------------
+// Relativity bridge for the GE (Vulkan) renderer. These let the fixed
+// pipeline renderer feed the same relativistic parameters into the GE camera
+// UBO / per-object data that the SP pipeline uploads under OpenGL.
+std::array<float, 38> getRelativityUBOTail(unsigned player_index);
+// ----------------------------------------------------------------------------
+// Registers / removes one live black hole for screen-space lensing. Keyed by
+// owner so several black holes can lens the screen at the same time.
+void setBlackHoleLens(const void* owner, const irr::core::vector3df& pos,
+                      float radius);
+// ----------------------------------------------------------------------------
+void removeBlackHoleLens(const void* owner);
+// ----------------------------------------------------------------------------
+void updateRelativityKartVelocities(unsigned player_index);
+// ----------------------------------------------------------------------------
+void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
+                                const irr::video::SMaterial* irr_material,
+                                float* out);
+// ----------------------------------------------------------------------------
+// Per-node glow colours for the GE Vulkan renderer. Under OpenGL the glow
+// colour lives on SPMeshNode; under Vulkan the game registers it here and
+// the GE draw call queries it via GE::setNodeGlowColorFunction.
+void setVulkanNodeGlowColor(const irr::scene::ISceneNode* node,
+                            const irr::video::SColorf& color);
+// ----------------------------------------------------------------------------
+void clearVulkanGlowNodes();
+// ----------------------------------------------------------------------------
+void fillNodeGlowColor(const irr::scene::ISceneNode* node, float* out);
 // ----------------------------------------------------------------------------
 void draw(RenderPass, DrawCallType dct = DCT_NORMAL);
 // ----------------------------------------------------------------------------
@@ -158,6 +182,17 @@ void loadShaders();
 void registerAnimatedTrackNode(const irr::scene::ISceneNode* node);
 // ----------------------------------------------------------------------------
 void unregisterAnimatedTrackNode(const irr::scene::ISceneNode* node);
+// ----------------------------------------------------------------------------
+// Register a camera-anchored presentation node (e.g. the start referee) so
+// that estimateNodeVelocity returns zero for it and all its descendants:
+// its per-frame repositioning is presentation-only, not physical motion.
+void registerPresentationNode(const irr::scene::ISceneNode* node);
+// ----------------------------------------------------------------------------
+void unregisterPresentationNode(const irr::scene::ISceneNode* node);
+// ----------------------------------------------------------------------------
+// Drops per-texture / per-node relativity caches whose keys (texture and
+// scene node pointers) are recycled between tracks. Call on world load.
+void resetRelativityNodeCaches();
 // ----------------------------------------------------------------------------
 SPMesh* convertEVTStandard(irr::scene::IMesh* mesh,
                            const irr::video::SColor* color = NULL);

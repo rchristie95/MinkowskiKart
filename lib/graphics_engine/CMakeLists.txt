@@ -38,6 +38,7 @@ else()
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/lib/graphics_engine/include")
+include_directories("${PROJECT_SOURCE_DIR}/lib/graphics_engine/src")
 include_directories("${PROJECT_SOURCE_DIR}/lib/graphics_utils")
 include_directories("${PROJECT_SOURCE_DIR}/lib/irrlicht/include")
 include_directories("${PROJECT_SOURCE_DIR}/lib/bullet/src")
@@ -88,6 +89,7 @@ set(GE_SOURCES
     src/ge_vulkan_environment_map.cpp
     src/ge_vulkan_fbo_texture.cpp
     src/ge_vulkan_features.cpp
+    src/ge_vulkan_ao_pass.cpp
     src/ge_vulkan_hiz_depth.cpp
     src/ge_vulkan_light_handler.cpp
     src/ge_vulkan_mesh_cache.cpp

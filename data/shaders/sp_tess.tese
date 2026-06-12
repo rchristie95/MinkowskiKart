@@ -1,4 +1,4 @@
-layout(triangles, equal_spacing, ccw) in;
+layout(triangles, fractional_odd_spacing, ccw) in;
 
 in vec3 tc_tangent[];
 in vec3 tc_bitangent[];
@@ -74,11 +74,10 @@ void main()
     // Apply warping here!
     float relativity_fade = getRelativisticVisualFade(p, vel,
         disable_relativity_visual);
-    vec4 v_world_position = applyRelativisticContraction(vec4(p, 1.0),
+    vec3 v_world_normal = n;
+    vec3 world_tangent = t;
+    vec4 v_world_position = applyRelativisticVisualPosition(vec4(p, 1.0), vel,
         relativity_fade);
-    vec3 v_world_normal = applyRelativisticNormalTransform(n, relativity_fade);
-    vec3 world_tangent = applyRelativisticDisplacement(t, relativity_fade);
-    v_world_position = applyRelativisticVisualPosition(v_world_position, vel, relativity_fade);
 
     tangent = world_tangent;
     bitangent = b; // Or re-derive from normal and tangent

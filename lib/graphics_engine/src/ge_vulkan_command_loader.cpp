@@ -234,11 +234,23 @@ void GEVulkanCommandLoader::endSingleTimeCommands(VkCommandBuffer command_buffer
     const int loader_id = g_loader_id;
     VkQueue queue = VK_NULL_HANDLE;
     std::unique_lock<std::mutex> lock = g_vk->getGraphicsQueue(&queue);
-    vkQueueSubmit(queue, 1, &submit_info, g_command_fences[loader_id]);
+    VkResult submit_result =
+        vkQueueSubmit(queue, 1, &submit_info, g_command_fences[loader_id]);
     lock.unlock();
+    if (submit_result != VK_SUCCESS)
+    {
+        printf("GEVulkanCommandLoader: vkQueueSubmit failed with VkResult "
+               "%d (loader %d)\n", (int)submit_result, loader_id);
+    }
 
-    vkWaitForFences(g_vk->getDevice(), 1, &g_command_fences[loader_id],
-        VK_TRUE, std::numeric_limits<uint64_t>::max());
+    VkResult wait_result = vkWaitForFences(g_vk->getDevice(), 1,
+        &g_command_fences[loader_id], VK_TRUE,
+        std::numeric_limits<uint64_t>::max());
+    if (wait_result != VK_SUCCESS)
+    {
+        printf("GEVulkanCommandLoader: vkWaitForFences failed with VkResult "
+               "%d (loader %d)\n", (int)wait_result, loader_id);
+    }
     vkResetFences(g_vk->getDevice(), 1, &g_command_fences[loader_id]);
     vkFreeCommandBuffers(g_vk->getDevice(), g_command_pools[loader_id], 1,
         &command_buffer);

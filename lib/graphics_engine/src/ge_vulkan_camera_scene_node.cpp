@@ -15,6 +15,7 @@ GEVulkanCameraSceneNode::GEVulkanCameraSceneNode(irr::scene::ISceneNode* parent,
                                              const irr::core::vector3df& lookat)
                        : CCameraSceneNode(parent, mgr, id, position, lookat)
 {
+    memset(&m_ubo_data, 0, sizeof(m_ubo_data));
     static_cast<GEVulkanSceneManager*>(SceneManager)->addDrawCall(this);
 }   // GEVulkanCameraSceneNode
 
@@ -54,6 +55,10 @@ void GEVulkanCameraSceneNode::render()
 
     mat = m_ubo_data.m_projection_matrix * m_ubo_data.m_view_matrix;
 
+    // Note: m_previous_pv_matrix is updated once per frame via
+    // updatePreviousPVMatrix() (render() can run several times per frame,
+    // which would collapse the previous matrix onto the current one and
+    // break reprojection-based motion blur).
     m_ubo_data.m_projection_view_matrix = mat;
 
     m_ubo_data.m_projection_view_matrix.getInverse(

@@ -338,6 +338,12 @@ void TrackObject::init(const XMLNode &xml_node, scene::ISceneNode* parent,
             {
                 spmn->setGlowColor(video::SColorf(r, g, b));
             }
+            else
+            {
+                // GE Vulkan renderer: nodes are not SPMeshNodes; register
+                // the glow colour for the GE glow pass instead.
+                SP::setVulkanNodeGlowColor(glownode, video::SColorf(r, g, b));
+            }
         }
 
         bool is_in_shadowpass = true;

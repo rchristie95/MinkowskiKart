@@ -14,7 +14,7 @@ namespace irr
 {
     namespace scene
     {
-        class IMesh; class IAnimatedMesh;
+        class IMesh; class IAnimatedMesh; class ISceneNode;
     }
 }
 
@@ -54,8 +54,55 @@ GEScreenSpaceReflectionType m_screen_space_reflection_type;
 bool m_force_deferred;
 std::unordered_set<std::string> m_ondemand_load_texture_paths;
 float m_render_scale;
+// Set when relativistic warping is active: vertices can be displaced far
+// outside their mesh's bounding box (aberration brings geometry from behind
+// the camera into view), so CPU frustum culling against unwarped boxes
+// would wrongly hide visible geometry. Mirrors the SP/OpenGL pipeline's
+// disable_frustum_culling behaviour.
+bool m_disable_frustum_culling;
+// Force the deferred displace compose path even when no displace material
+// is in the scene, so screen-space post effects (motion blur, black hole /
+// wormhole lensing, compactification) always have a sampled scene colour
+// texture to read in displace_color.frag.
+bool m_force_displace_compose;
+// Set when relativistic warping is active: route static geometry through
+// the auto-generated "<material>_tess" pipelines so large triangles are
+// adaptively subdivided (coarser with distance, no cutoff radius) and warp
+// smoothly per-vertex instead of rigidly. Skinned meshes are unaffected.
+bool m_adaptive_tessellation;
+// Sun shadow map resolution (0 = shadows disabled). The shadow map and its
+// pipelines are (re)created when a draw call initializes its Vulkan data,
+// i.e. changing this applies from the next race.
+int m_shadow_map_size;
+// Use PCSS (contact-hardening soft shadows) instead of fixed-kernel PCF in
+// the deferred sun lighting pass.
+bool m_pcss;
+// Per-object glow outlines (mirrors UserConfigParams::m_glow); checked per
+// frame when recording the displace mask pass.
+bool m_glow;
+// Half-res compute ambient occlusion (mirrors UserConfigParams::m_ssao);
+// checked per frame when recording the AO dispatches.
+bool m_ssao;
 };
 
+// Optional callback used to fill the per-object relativistic velocity in the
+// object buffer: out[0..2] = world-space velocity, out[3] = disable flag
+// (1.0 = skip relativistic warping for this node, e.g. the observer's kart).
+// material is the irrlicht material of the mesh buffer being drawn (may be
+// NULL); it lets the game exempt per-material geometry from warping, e.g.
+// huge water sheets flagged no-relativity-warp.
+typedef void (*GENodeVelocityFunction)(const irr::scene::ISceneNode* node,
+                                       const irr::video::SMaterial* material,
+                                       float* out);
+void setNodeVelocityFunction(GENodeVelocityFunction func);
+GENodeVelocityFunction getNodeVelocityFunction();
+// Optional callback used to fill the per-object glow colour in the object
+// buffer: out[0..2] = linear glow rgb, out[3] = 1.0 if the node glows.
+// Mirrors the SP/OpenGL per-node glow colour (SPMeshNode::getGlowColor).
+typedef void (*GENodeGlowColorFunction)(const irr::scene::ISceneNode* node,
+                                        float* out);
+void setNodeGlowColorFunction(GENodeGlowColorFunction func);
+GENodeGlowColorFunction getNodeGlowColorFunction();
 void setVideoDriver(irr::video::IVideoDriver* driver);
 void setShaderFolder(const std::string& path);
 irr::video::IVideoDriver* getDriver();

@@ -183,4 +183,44 @@
         </shaders>
     </setting>
 
+    <!-- Tessellation-based terrain/road materials.
+         The TCS/TES pair subdivides geometry near the warp-bubble for
+         smooth relativistic deformation, matching the SP/OpenGL path. -->
+    <setting name="tillingMitigation">
+        <shaders>
+            <vertex>spm_tess.vert</vertex>
+            <tess-control>ge_tess.tesc</tess-control>
+            <tess-eval>ge_tess.tese</tess-eval>
+            <fragment>solid.frag</fragment>
+            <depth>depth_only.frag</depth>
+        </shaders>
+    </setting>
+
+    <setting name="verticalMapping">
+        <properties>
+            <nonpbr-fallback>solid</nonpbr-fallback>
+        </properties>
+        <shaders>
+            <vertex>spm_tess.vert</vertex>
+            <tess-control>ge_tess.tesc</tess-control>
+            <tess-eval>ge_tess.tese</tess-eval>
+            <fragment>normalmap.frag</fragment>
+            <depth>depth_only.frag</depth>
+        </shaders>
+    </setting>
+
+    <setting name="roadBlending">
+        <properties>
+            <nonpbr-fallback>splatting</nonpbr-fallback>
+            <srgb-settings>YNYYYY</srgb-settings>
+        </properties>
+        <shaders>
+            <vertex>spm_tess.vert</vertex>
+            <tess-control>ge_tess.tesc</tess-control>
+            <tess-eval>ge_tess.tese</tess-eval>
+            <fragment>splatting.frag</fragment>
+            <depth>depth_only.frag</depth>
+        </shaders>
+    </setting>
+
 </shader-settings>

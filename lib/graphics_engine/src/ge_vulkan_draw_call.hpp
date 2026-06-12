@@ -12,6 +12,8 @@
 
 #include "vulkan_wrapper.h"
 
+#include "ge_vulkan_camera_scene_node.hpp"
+
 #include "matrix4.h"
 #include "vector3d.h"
 #include "ESceneNodeTypes.h"
@@ -34,6 +36,8 @@ namespace GE
 class GECullingTool;
 class GESPMBuffer;
 class GEVulkanAnimatedMeshSceneNode;
+class GEVulkanAOPass;
+class GEVulkanAttachmentTexture;
 class GEVulkanCameraSceneNode;
 class GEVulkanDriver;
 class GEVulkanDynamicBuffer;
@@ -59,6 +63,15 @@ struct ObjectData
     int m_skinning_offset;
     int m_material_id;
     float m_texture_trans[2];
+    // Per-instance velocity (world-space) for relativistic aberration.
+    // w = disable_relativity_visual flag (1.0 = disabled, 0.0 = enabled).
+    // Defaults to zero (no velocity, relativity still applies to geometry
+    // via the observer beta stored in the camera UBO).
+    float m_velocity[4];
+    // Per-object glow colour (linear rgb, w = 1.0 if the node glows),
+    // mirroring SPMeshNode::getGlowColor under SP/OpenGL. Rendered by the
+    // ge_glow pipelines into the glow attachment of the displace mask pass.
+    float m_glow_color[4];
     // ------------------------------------------------------------------------
     void init(irr::scene::ISceneNode* node, int material_id,
               int skinning_offset, int irrlicht_material_id);
@@ -83,6 +96,10 @@ enum GEVulkanPipelineType : unsigned
     GVPT_SKYBOX,
     GVPT_DISPLACE_MASK,
     GVPT_DISPLACE_COLOR,
+    // Depth-only rendering into the per-draw-call sun shadow map
+    GVPT_SHADOW,
+    // Per-object glow silhouettes into the glow attachment (mask pass)
+    GVPT_GLOW,
 };
 
 struct GEMaterial;
@@ -116,6 +133,8 @@ struct DrawCallData
     GESPMBuffer* m_mb;
     int m_material_id;
     uint32_t m_dynamic_offset;
+    // True if any node in this batch has a glow colour (GVPT_GLOW pass)
+    bool m_glow;
 };
 
 class GEVulkanHiZDepth;
@@ -194,17 +213,52 @@ private:
 
     GEVulkanHiZDepth* m_hiz_depth;
 
+    // Half-res compute ambient occlusion (sampled via data descriptor
+    // binding 7 by displace_color.frag)
+    GEVulkanAOPass* m_ao_pass;
+
+    // Sun shadow map pass resources (deferred PBR only). The shadow map is
+    // rendered with the GVPT_SHADOW depth-only pipelines before the main
+    // render pass and sampled by deferred_pbr.frag via the data descriptor
+    // (set 1, bindings 5 and 6).
+    GEVulkanAttachmentTexture* m_shadow_map;
+
+    VkRenderPass m_shadow_render_pass;
+
+    VkFramebuffer m_shadow_framebuffer;
+
+    // Camera UBOs for the sun's orthographic views (near + far cascade),
+    // uploaded right after the main camera UBO in m_dynamic_data (bound via
+    // dynamic offset during the shadow pass).
+    GEVulkanCameraUBO m_shadow_camera_ubo[2];
+
+    // Cascade being recorded by renderShadowMap (selects the camera
+    // dynamic offset in renderPipeline for GVPT_SHADOW).
+    unsigned m_shadow_cascade;
+
     // ------------------------------------------------------------------------
     void createAllPipelines(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void createShadowResources(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void createShadowPipelines(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void createGlowPipelines(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void updateSunShadowCamera(GEVulkanCameraSceneNode* cam);
+    // ------------------------------------------------------------------------
+    size_t getShadowCameraOffset(unsigned cascade = 0) const;
     // ------------------------------------------------------------------------
     void createPipeline(GEVulkanDriver* vk, const PipelineSettings& settings,
       std::unordered_map<std::string, std::shared_ptr<VkPipeline> >& dp_cache);
     // ------------------------------------------------------------------------
     void createVulkanData();
     // ------------------------------------------------------------------------
-    std::string getShader(const irr::video::SMaterial& m);
+    std::string getShader(const irr::video::SMaterial& m,
+                          bool allow_tessellation = true);
     // ------------------------------------------------------------------------
-    std::string getShader(irr::scene::ISceneNode* node, int material_id);
+    std::string getShader(irr::scene::ISceneNode* node, int material_id,
+                          bool allow_tessellation = true);
     // ------------------------------------------------------------------------
     bool bindPipeline(VkCommandBuffer cmd, const std::string& name,
                       VkPipeline* prev_pipeline,
@@ -300,6 +354,21 @@ public:
     void renderDisplaceColor(GEVulkanDriver* vk, VkCommandBuffer cmd,
                              VkBool32 has_displace);
     // ------------------------------------------------------------------------
+    // Renders the sun shadow map (own render pass, recorded before the main
+    // render pass begins). No-op when shadows are disabled.
+    void renderShadowMap(GEVulkanDriver* vk, VkCommandBuffer cmd);
+    // ------------------------------------------------------------------------
+    // True if any visible batch contains a glowing node this frame.
+    bool hasGlowObjects() const
+    {
+        for (auto& cmd : m_cmds)
+        {
+            if (cmd.m_glow)
+                return true;
+        }
+        return false;
+    }
+    // ------------------------------------------------------------------------
     unsigned getPolyCount() const
     {
         unsigned result = 0;
@@ -334,6 +403,8 @@ public:
     }
     // ------------------------------------------------------------------------
     GEVulkanHiZDepth* getHiZDepth() const               { return m_hiz_depth; }
+    // ------------------------------------------------------------------------
+    GEVulkanAOPass* getAOPass() const                     { return m_ao_pass; }
 };   // GEVulkanDrawCall
 
 }

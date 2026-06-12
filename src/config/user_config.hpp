@@ -727,11 +727,37 @@ namespace UserConfigParams
     PARAM_PREFIX StringUserConfigParam         m_render_driver
         PARAM_DEFAULT(  StringUserConfigParam("directx9", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
-#else
+#elif defined(__APPLE__)
+    // OpenGL 4.1 is deprecated on macOS since 2018; default to Vulkan/MoltenVK.
     PARAM_PREFIX StringUserConfigParam         m_render_driver
-        PARAM_DEFAULT(  StringUserConfigParam("opengl", "render_driver",
+        PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
+        &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
+#else
+    // Windows, Linux and the rest default to the Vulkan renderer (OpenGL
+    // stays selectable in the graphics settings).
+    PARAM_PREFIX StringUserConfigParam         m_render_driver
+        PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #endif
+
+    // Vulkan post-processing style knobs (GE Vulkan renderer only), exposed
+    // in the advanced graphics settings. Stored as scaled integers matching
+    // the dialog gauges.
+    PARAM_PREFIX IntUserConfigParam         m_vk_exposure
+        PARAM_DEFAULT(IntUserConfigParam(22, "vk_exposure",
+        &m_video_group, "Vulkan filmic tonemap exposure x0.1 (10-40)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_saturation
+        PARAM_DEFAULT(IntUserConfigParam(106, "vk_saturation",
+        &m_video_group, "Vulkan colour grade saturation x0.01 (80-140)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_vignette
+        PARAM_DEFAULT(IntUserConfigParam(22, "vk_vignette",
+        &m_video_group, "Vulkan vignette strength x0.01 (0-60)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_sharpness
+        PARAM_DEFAULT(IntUserConfigParam(30, "vk_sharpness",
+        &m_video_group, "Vulkan adaptive sharpening strength x0.01 (0-80)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_flare
+        PARAM_DEFAULT(IntUserConfigParam(45, "vk_flare",
+        &m_video_group, "Vulkan sun lens flare strength x0.01 (0-100)"));
 
 #if defined(MOBILE_STK)
     PARAM_PREFIX BoolUserConfigParam        m_vulkan_fullscreen_desktop
@@ -1383,9 +1409,12 @@ namespace UserConfigParams
     PARAM_PREFIX IntUserConfigParam        m_relativity_track_clipping_mode
             PARAM_DEFAULT( IntUserConfigParam(
                 (int)RelativityTrackClippingMode::
-                    WARPED_COLLISION_PHYSICS,
+                    DYNAMIC_TESSELLATION,
                 "track_clipping_mode", &m_relativity_group,
-                "Anti-clipping mode: locked to 5 warped collision physics") );
+                "Anti-clipping mode: 0 dynamic tessellation (default), "
+                "1 height correction, 2 both, 3 disabled, "
+                "4 tangent velocity projection, "
+                "5 warped collision physics (experimental)") );
 
     // ---- User management
 

@@ -70,6 +70,13 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
                 VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
         }
 
+        // Per-object glow silhouettes, rendered in the displace mask pass and
+        // composited as a blurred outline by displace_color.frag (port of the
+        // SP/OpenGL glow pass).
+        m_attachments[GVDFT_GLOW] = new GEVulkanAttachmentTexture(vk, size,
+            VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+
         VkCommandBuffer command_buffer =
             GEVulkanCommandLoader::beginSingleTimeCommands();
         m_attachments[GVDFT_DISPLACE_MASK]->transitionImageLayout(
@@ -81,6 +88,9 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
                 command_buffer, VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
+        m_attachments[GVDFT_GLOW]->transitionImageLayout(
+            command_buffer, VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         GEVulkanCommandLoader::endSingleTimeCommands(command_buffer);
 
         m_attachments[GVDFT_DISPLACE_COLOR] = new GEVulkanAttachmentTexture(vk,
@@ -285,7 +295,7 @@ void GEVulkanDeferredFBO::initConvertColorDescriptor(GEVulkanDriver* vk)
 void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
 {
     // m_descriptor_layout[GVDFP_DISPLACE_COLOR]
-    std::array<VkDescriptorSetLayoutBinding, 3> texture_layout_binding = {};
+    std::array<VkDescriptorSetLayoutBinding, 5> texture_layout_binding = {};
     texture_layout_binding[0].binding = 0;
     texture_layout_binding[0].descriptorCount = 1;
     texture_layout_binding[0].descriptorType =
@@ -296,6 +306,13 @@ void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
     texture_layout_binding[1].binding = 1;
     texture_layout_binding[2] = texture_layout_binding[0];
     texture_layout_binding[2].binding = 2;
+    // Scene depth, sampled by the screen-space post effects (lensing
+    // occlusion tests and motion blur reprojection).
+    texture_layout_binding[3] = texture_layout_binding[0];
+    texture_layout_binding[3].binding = 3;
+    // Per-object glow silhouettes (composited by displace_color.frag).
+    texture_layout_binding[4] = texture_layout_binding[0];
+    texture_layout_binding[4].binding = 4;
 
     VkDescriptorSetLayoutCreateInfo setinfo = {};
     setinfo.flags = 0;
@@ -364,6 +381,15 @@ void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
     image_infos[2].imageView =
         (VkImageView)m_attachments[GVDFT_DISPLACE_COLOR]->getTextureHandler();
     image_infos[2].sampler = m_vk->getSampler(GVS_NEAREST);
+    image_infos[3].imageLayout =
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    image_infos[3].imageView =
+        (VkImageView)m_depth_texture->getTextureHandler();
+    image_infos[3].sampler = m_vk->getSampler(GVS_NEAREST);
+    image_infos[4].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_infos[4].imageView =
+        (VkImageView)m_attachments[GVDFT_GLOW]->getTextureHandler();
+    image_infos[4].sampler = m_vk->getSampler(GVS_NEAREST);
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -391,6 +417,10 @@ void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
         (VkImageView)m_vk->getTransparentTexture()->getTextureHandler();
     write_descriptor_set.dstSet = m_descriptor_set[GVDFP_DISPLACE_MASK];
     image_infos[2].sampler = m_vk->getSampler(GVS_SKYBOX);
+    // Glow attachment is being rendered while this set is bound; keep the
+    // binding valid with a dummy texture (it is never sampled in this pass).
+    image_infos[4].imageView =
+        (VkImageView)m_vk->getTransparentTexture()->getTextureHandler();
 
     vkUpdateDescriptorSets(vk->getDevice(), 1, &write_descriptor_set, 0,
         NULL);
@@ -656,6 +686,12 @@ void GEVulkanDeferredFBO::createDisplacePasses()
             attachment_desc.back().format =
                 getAttachment<GVDFT_DISPLACE_SSR>()->getInternalFormat();
         }
+        if (getAttachment<GVDFT_GLOW>())
+        {
+            attachment_desc.push_back(attachment_desc[0]);
+            attachment_desc.back().format =
+                getAttachment<GVDFT_GLOW>()->getInternalFormat();
+        }
         VkAttachmentDescription depth_desc = {};
         depth_desc.format = m_depth_texture->getInternalFormat();
         depth_desc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -672,9 +708,16 @@ void GEVulkanDeferredFBO::createDisplacePasses()
             {{ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL }};
         if (getAttachment<GVDFT_DISPLACE_SSR>())
         {
-            color_references.push_back({ 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
-            depth_reference.attachment = 2;
+            color_references.push_back(
+                { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
         }
+        if (getAttachment<GVDFT_GLOW>())
+        {
+            color_references.push_back(
+                { (uint32_t)color_references.size(),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+        }
+        depth_reference.attachment = (uint32_t)color_references.size();
 
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -783,6 +826,11 @@ void GEVulkanDeferredFBO::createDisplacePasses()
         {
             attachments.push_back((VkImageView)
                 m_attachments[GVDFT_DISPLACE_SSR]->getTextureHandler());
+        }
+        if (getAttachment<GVDFT_GLOW>())
+        {
+            attachments.push_back((VkImageView)
+                m_attachments[GVDFT_GLOW]->getTextureHandler());
         }
         attachments.push_back((VkImageView)m_depth_texture->getTextureHandler());
 

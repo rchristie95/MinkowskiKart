@@ -69,7 +69,7 @@ CheckCannon::CheckCannon(const XMLNode &node,  unsigned int index)
     {
         m_debug_target_dy_dc = std::make_shared<SP::SPDynamicDrawCall>
             (scene::EPT_TRIANGLE_STRIP,
-            SP::SPShaderManager::get()->getSPShader("additive"),
+            SP::SPShaderManager::get()->getSPShader("additive_dynamic"),
             material_manager->getDefaultSPMaterial("additive"));
         SP::addDynamicDrawCall(m_debug_target_dy_dc);
         m_debug_target_dy_dc->getVerticesVector().resize(4);

@@ -84,9 +84,10 @@ namespace Scripting
         void addPendingTimeout(double time, asIScriptFunction* delegate_fn);
         void update(float dt);
 
-        asIScriptEngine* getEngine() { return m_engine; }
+        asIScriptEngine* getEngine() { init(); return m_engine; }
 
     private:
+        void init();
         asIScriptEngine *m_engine;
         std::map<std::string, asIScriptFunction*> m_functions_cache;
         PtrVector<PendingTimeout> m_pending_timeouts;

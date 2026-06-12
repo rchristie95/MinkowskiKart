@@ -53,7 +53,7 @@ static std::vector<UserConfigParam*> all_params;
 const int UserConfig::m_current_config_version = 8;
 namespace
 {
-const int RELATIVITY_DEFAULTS_VERSION = 1;
+const int RELATIVITY_DEFAULTS_VERSION = 2;
 const int LEGACY_RELATIVITY_NORMAL_C_LIGHT = 1000;
 const int CURRENT_RELATIVITY_NORMAL_C_LIGHT = 35;
 }
@@ -756,17 +756,16 @@ bool UserConfig::loadConfig()
         UserConfigParams::m_relativity_defaults_version <
             RELATIVITY_DEFAULTS_VERSION)
     {
-        UserConfigParams::m_relativity_defaults_version =
-            RELATIVITY_DEFAULTS_VERSION;
-        save_migrated_config = true;
-    }
-    if (UserConfigParams::m_relativity_track_clipping_mode !=
-        (int)UserConfigParams::RelativityTrackClippingMode::
-            WARPED_COLLISION_PHYSICS)
-    {
+        // One-time migration (defaults version 1 -> 2): older builds locked
+        // the clipping mode to WARPED_COLLISION_PHYSICS, which mutates Bullet
+        // contact manifolds with the camera-dependent visual transform and
+        // caused real collision glitches. Move those configs to the new
+        // default; afterwards the user's choice is respected.
         UserConfigParams::m_relativity_track_clipping_mode =
             (int)UserConfigParams::RelativityTrackClippingMode::
-                WARPED_COLLISION_PHYSICS;
+                DYNAMIC_TESSELLATION;
+        UserConfigParams::m_relativity_defaults_version =
+            RELATIVITY_DEFAULTS_VERSION;
         save_migrated_config = true;
     }
     // ---- Read Saved GP's

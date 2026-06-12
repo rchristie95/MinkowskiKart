@@ -100,7 +100,7 @@ int wiiuse_os_find(struct wiimote_t **wm, int max_wiimotes, int timeout)
 
         /* get the size of the data block required */
         i                   = SetupDiGetDeviceInterfaceDetail(device_info, &device_data, NULL, 0, &len, NULL);
-        detail_data         = (SP_DEVICE_INTERFACE_DETAIL_DATA_A *)malloc(len);
+        detail_data         = (PSP_DEVICE_INTERFACE_DETAIL_DATA)malloc(len);
         detail_data->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 
         /* query the data for this device */
@@ -111,8 +111,7 @@ int wiiuse_os_find(struct wiimote_t **wm, int max_wiimotes, int timeout)
 
         /* open the device */
         dev = CreateFile(detail_data->DevicePath, (GENERIC_READ | GENERIC_WRITE),
-                         (FILE_SHARE_READ | FILE_SHARE_WRITE), NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED,
-                         NULL);
+                         (FILE_SHARE_READ | FILE_SHARE_WRITE), NULL, OPEN_EXISTING, 0, NULL);
         if (dev == INVALID_HANDLE_VALUE)
         {
             continue;

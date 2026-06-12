@@ -57,7 +57,7 @@ SkidMarks::SkidMarks(const AbstractKart& kart, float width) : m_kart(kart)
         "alphablend");
     if (CVS->isGLSL())
     {
-        m_shader = SP::SPShaderManager::get()->getSPShader("alphablend");
+        m_shader = SP::SPShaderManager::get()->getSPShader("alphablend_dynamic");
         assert(m_shader);
         auto texture = SP::SPTextureManager::get()->getTexture(
             m_material->getSamplerPath(0), m_material,

@@ -16,6 +16,7 @@ extern "C"
     #include <mipmap/imgresize.h>
 }
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <IAttributes.h>
@@ -434,16 +435,28 @@ void GEVulkanTexture::copyBufferToImage(VkCommandBuffer command_buffer,
                                         s32 y, u32 offset, u32 mipmap_level,
                                         u32 layer_level)
 {
+    // Clamp the copied region to the image bounds: writing outside the
+    // image with vkCmdCopyBufferToImage is undefined behaviour and causes
+    // VK_ERROR_DEVICE_LOST on some drivers (e.g. oversized font glyphs on
+    // very large screens). bufferRowLength/bufferImageHeight keep the
+    // original data stride when the extent is clamped.
+    u32 max_w = std::max(m_size.Width >> mipmap_level, 1u);
+    u32 max_h = std::max(m_size.Height >> mipmap_level, 1u);
+    if (x < 0 || y < 0 || (u32)x >= max_w || (u32)y >= max_h)
+        return;
+    u32 copy_w = std::min(w, max_w - (u32)x);
+    u32 copy_h = std::min(h, max_h - (u32)y);
+
     VkBufferImageCopy region = {};
     region.bufferOffset = offset;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
+    region.bufferRowLength = w;
+    region.bufferImageHeight = h;
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel = mipmap_level;
     region.imageSubresource.baseArrayLayer = layer_level;
     region.imageSubresource.layerCount = 1;
     region.imageOffset = {x, y, 0};
-    region.imageExtent = {w, h, 1};
+    region.imageExtent = {copy_w, copy_h, 1};
 
     vkCmdCopyBufferToImage(command_buffer, buffer, m_image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);

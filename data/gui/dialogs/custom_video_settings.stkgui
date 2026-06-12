@@ -132,7 +132,66 @@
                 <label text="Depth of field" I18N="Video settings"/>
             </div>
         </div>
-        
+
+        <spacer height="4" width="10" />
+
+        <!-- Vulkan post-processing style (GE Vulkan renderer only) -->
+        <div layout="horizontal-row" width="100%" proportion="1">
+            <spacer width="70" height="10"/>
+
+            <div layout="horizontal-row" proportion="1" height="fit">
+                <label text="Exposure" I18N="Video settings"/>
+                <spacer width="10" height="10"/>
+                <gauge id="vk_exposure" min_value="10" max_value="40" proportion="1"/>
+            </div>
+
+            <spacer height="4" width="10" />
+
+            <div layout="horizontal-row" proportion="1" height="fit">
+                <label text="Saturation" I18N="Video settings"/>
+                <spacer width="10" height="10"/>
+                <gauge id="vk_saturation" min_value="80" max_value="140" proportion="1"/>
+            </div>
+        </div>
+
+        <spacer height="4" width="10" />
+
+        <div layout="horizontal-row" width="100%" proportion="1">
+            <spacer width="70" height="10"/>
+
+            <div layout="horizontal-row" proportion="1" height="fit">
+                <label text="Vignette" I18N="Video settings"/>
+                <spacer width="10" height="10"/>
+                <gauge id="vk_vignette" min_value="0" max_value="60" proportion="1"/>
+            </div>
+
+            <spacer height="4" width="10" />
+
+            <div layout="horizontal-row" proportion="1" height="fit">
+                <label text="Sharpness" I18N="Video settings"/>
+                <spacer width="10" height="10"/>
+                <gauge id="vk_sharpness" min_value="0" max_value="80" proportion="1"/>
+            </div>
+        </div>
+
+        <spacer height="4" width="10" />
+
+        <div layout="horizontal-row" width="100%" proportion="1">
+            <spacer width="70" height="10"/>
+
+            <div layout="horizontal-row" proportion="1" height="fit">
+                <label text="Lens flare" I18N="Video settings"/>
+                <spacer width="10" height="10"/>
+                <gauge id="vk_flare" min_value="0" max_value="100" proportion="1"/>
+            </div>
+
+            <spacer height="4" width="10" />
+
+            <div layout="horizontal-row" proportion="1" height="fit">
+                <spacer width="10" height="10"/>
+            </div>
+        </div>
+
         <spacer height="4" width="10" />
 
         <div layout="horizontal-row" width="100%" proportion="1">

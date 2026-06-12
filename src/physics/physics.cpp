@@ -571,8 +571,15 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
 
             if ((a_is_kart && b_is_track) || (b_is_kart && a_is_track))
             {
+                // Experimental mode: warps contact manifolds toward the
+                // *visual* surface. Note the observer here is the kart at its
+                // own position, while rendering warps relative to the camera
+                // position with a smoothed beta, so the physics surface and
+                // the rendered surface never quite agree; this mode is no
+                // longer the default for that reason.
                 AbstractKart* kart = a_is_kart ? upA->getPointerKart() : upB->getPointerKart();
                 const btVector3 kart_pos = kart->getBody()->getWorldTransform().getOrigin();
+                const btVector3 kart_velocity = kart->getBody()->getLinearVelocity();
                 const Relativity::ObserverVisualState observer_state =
                     Relativity::buildObserverVisualState(kart, kart_pos);
 
@@ -587,14 +594,22 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
                         // Limit warping to a 3.0-meter sphere around the kart
                         if ((contact_pos - kart_pos).length2() <= 9.0f)
                         {
+                            // Warp BOTH contact points (the kart side with
+                            // the kart's velocity, the track side as static
+                            // geometry); mixing one warped and one unwarped
+                            // point made m_distance1 report phantom
+                            // penetration/separation.
                             if (a_is_kart) // A is kart, B is track
                             {
+                                btVector3 warped_pos_A = Relativity::applyVisualPosition(
+                                    pt.m_positionWorldOnA, observer_state, kart_velocity);
                                 btVector3 warped_pos_B = Relativity::applyVisualPosition(
                                     pt.m_positionWorldOnB, observer_state);
                                 btVector3 warped_normal = Relativity::applyVisualNormal(
                                     pt.m_positionWorldOnB, pt.m_normalWorldOnB, observer_state);
                                 warped_normal.normalize();
 
+                                pt.m_positionWorldOnA = warped_pos_A;
                                 pt.m_positionWorldOnB = warped_pos_B;
                                 pt.m_normalWorldOnB = warped_normal;
                                 pt.m_distance1 = (pt.m_positionWorldOnA - pt.m_positionWorldOnB).dot(pt.m_normalWorldOnB);
@@ -603,11 +618,14 @@ btScalar Physics::solveGroup(btCollisionObject** bodies, int numBodies,
                             {
                                 btVector3 warped_pos_A = Relativity::applyVisualPosition(
                                     pt.m_positionWorldOnA, observer_state);
+                                btVector3 warped_pos_B = Relativity::applyVisualPosition(
+                                    pt.m_positionWorldOnB, observer_state, kart_velocity);
                                 btVector3 warped_normal = Relativity::applyVisualNormal(
                                     pt.m_positionWorldOnA, pt.m_normalWorldOnB, observer_state);
                                 warped_normal.normalize();
 
                                 pt.m_positionWorldOnA = warped_pos_A;
+                                pt.m_positionWorldOnB = warped_pos_B;
                                 pt.m_normalWorldOnB = warped_normal;
                                 pt.m_distance1 = (pt.m_positionWorldOnA - pt.m_positionWorldOnB).dot(pt.m_normalWorldOnB);
                             }

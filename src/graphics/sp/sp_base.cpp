@@ -45,6 +45,7 @@
 #include "graphics/sp/sp_texture_manager.hpp"
 #include "graphics/sp/sp_uniform_assigner.hpp"
 #include "guiengine/engine.hpp"
+#include "io/file_manager.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/kart.hpp"
 #include "modes/world.hpp"
@@ -62,12 +63,16 @@
 #include <cassert>
 #include <functional>
 #include <string>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include <ge_main.hpp>
 #include <ge_render_info.hpp>
+#include <IFileSystem.h>
+#include <ISceneManager.h>
+#include <ge_vulkan_camera_scene_node.hpp>
 
 #include <IrrlichtDevice.h>
 
@@ -81,9 +86,9 @@ extern unsigned sp_cur_player;
 namespace
 {
 const size_t SP_MATRIX_UBO_BASE_FLOATS = 16 * 9 + 2;
-const size_t SP_MATRIX_UBO_FLOATS = 172;   // +4 for u_black_hole vec4, +4 for u_wormhole vec4
+const size_t SP_MATRIX_UBO_FLOATS = 184;   // +16 for u_black_holes[4], +4 for u_wormhole vec4
 const size_t SP_RELATIVITY_UBO_FLOAT_OFFSET = 146;
-const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 26; // +4 for u_black_hole, +4 for u_wormhole
+const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 38; // +16 for u_black_holes[4], +4 for u_wormhole
 
 struct RelativityMotionState
 {
@@ -101,12 +106,23 @@ std::unordered_map<const scene::ISceneNode*, RelativityMotionState>
 // so we always return zero velocity for them to avoid relativistic stutter.
 std::unordered_set<const scene::ISceneNode*> g_animated_track_nodes;
 
-// Per-camera cache: kart root scene node -> visual velocity. Other karts are
-// treated as v=0 geometry for retarded-position visuals, like the track, so
-// their body/wheels stay visually grounded instead of floating relative to the
-// road. The observer kart keeps its previous coordinate-velocity path.
+// Camera-anchored presentation nodes (e.g. the start referee, which is
+// repositioned per camera every frame by RaceGUIBase::preRenderCallback).
+// Their graphics deltas are presentation-only, so they render with zero
+// velocity like static scenery instead of feeding the relativistic warp.
+std::unordered_set<const scene::ISceneNode*> g_presentation_nodes;
+
+// Per-camera cache: kart root scene node -> visual velocity. Every kart uses
+// its true coordinate velocity so the whole kart (body/wheels/headlights)
+// shares one consistent retarded-position transform instead of noisy per-node
+// graphics-delta estimates.
 std::unordered_map<const scene::ISceneNode*, core::vector3df>
     g_kart_root_velocities;
+
+// Live black holes that lens the screen, keyed by their BlackHole flyable so
+// several can be active at once. Values are (world position, world radius).
+std::map<const void*, std::pair<core::vector3df, float> >
+    g_black_hole_lenses;
 
 bool isFiniteVector(const core::vector3df& v)
 {
@@ -145,6 +161,14 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
     if (g_animated_track_nodes.count(node))
         return core::vector3df(0.0f, 0.0f, 0.0f);
 
+    // Presentation objects (start referee etc.) are repositioned per camera
+    // per frame; their motion is not a physical velocity.
+    for (const scene::ISceneNode* cur = node; cur; cur = cur->getParent())
+    {
+        if (g_presentation_nodes.count(cur))
+            return core::vector3df(0.0f, 0.0f, 0.0f);
+    }
+
     // Item pickups rotate, respawn-scale, and swap LODs as gameplay markers,
     // not as physical moving bodies. Keep their shader velocity anchored to
     // the track so those presentation transforms do not produce lateral drift.
@@ -153,7 +177,7 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
 
     RelativityMotionState& state = g_relativity_motion_states[node];
     const unsigned int now_ms = (unsigned int)irr_driver->getRealTime();
-    if (!state.m_has_sample || now_ms <= state.m_last_time_ms)
+    if (!state.m_has_sample)
     {
         state.m_has_sample = true;
         state.m_last_time_ms = now_ms;
@@ -161,6 +185,12 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
         state.m_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
         return state.m_velocity;
     }
+    // A node is sampled once per mesh buffer per camera each frame; repeat
+    // calls within the same millisecond must not disturb the estimator
+    // state, or the smoothed velocity gets zeroed every frame for
+    // multi-material nodes (visible as metre-scale warp popping).
+    if (now_ms <= state.m_last_time_ms)
+        return state.m_velocity;
 
     const float dt = (float)(now_ms - state.m_last_time_ms) * 0.001f;
     state.m_last_time_ms = now_ms;
@@ -217,37 +247,39 @@ bool findKartVelocityForNode(const scene::ISceneNode* node,
     return false;
 }   // findKartVelocityForNode
 
-bool nodeHasAncestor(const scene::ISceneNode* node,
-                     const scene::ISceneNode* ancestor)
-{
-    if (!node || !ancestor)
-        return false;
+// Texture -> no-relativity-warp flag of its STK material. The GE Vulkan
+// draw call asks once per object per frame, and resolving the STK material
+// walks every loaded material doing string compares, so cache by texture.
+// Cleared on world load (texture pointers are recycled between tracks).
+std::unordered_map<const video::ITexture*, bool> g_no_warp_texture_cache;
 
-    const scene::ISceneNode* current = node;
-    while (current)
-    {
-        if (current == ancestor)
-            return true;
-        current = current->getParent();
-    }
-    return false;
-}   // nodeHasAncestor
+bool materialHasNoRelativityWarp(const video::SMaterial* m)
+{
+    video::ITexture* t = m->getTexture(0);
+    if (!t)
+        return false;
+    auto it = g_no_warp_texture_cache.find(t);
+    if (it != g_no_warp_texture_cache.end())
+        return it->second;
+    // Resolve the STK material the same way MaterialManager::
+    // setAllMaterialFlags does at load time: getMaterialSPM lower-cases and
+    // normalises the path, unlike getMaterialFor(t) whose case-sensitive
+    // full-path compare never matches on Windows.
+    io::path fp =
+        file_manager->getFileSystem()->getAbsolutePath(t->getName());
+    video::ITexture* t1 = m->getTexture(1);
+    Material* stk_material = material_manager->getMaterialSPM(fp.c_str(),
+        t1 ? StringUtils::getBasename(t1->getFullPath().c_str()) : "", "");
+    const bool no_warp =
+        stk_material && stk_material->isNoRelativityWarp();
+    g_no_warp_texture_cache[t] = no_warp;
+    return no_warp;
+}   // materialHasNoRelativityWarp
 
 bool shouldDisableRelativityVisualsForNode(const scene::ISceneNode* node)
 {
-    if (!Relativity::isEnabled() || !node ||
-        sp_cur_player >= Camera::getNumCameras())
-    {
-        return false;
-    }
-    if (Relativity::useWarpedTrackCollisionPhysics())
-        return false;
-
-    Camera* camera = Camera::getCamera(sp_cur_player);
-    AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
-    const scene::ISceneNode* observer_root =
-        observer_kart ? observer_kart->getNode() : nullptr;
-    return nodeHasAncestor(node, observer_root);
+    (void)node;
+    return false;
 }   // shouldDisableRelativityVisualsForNode
 
 std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
@@ -290,35 +322,140 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[15] = bubble_center.getY();
     tail[16] = bubble_center.getZ();
     tail[17] = Relativity::getWarpBubbleRadius();
-    // u_black_hole: world-space position (xyz) + scale (w).
-    // w = 0 means inactive; w = 0..1 is the effect scale (shrinks to 0 on death).
-    tail[18] = sp_black_hole_world_pos.X;
-    tail[19] = sp_black_hole_world_pos.Y;
-    tail[20] = sp_black_hole_world_pos.Z;
-    tail[21] = sp_black_hole_active ? sp_black_hole_radius : 0.0f;
+    // u_black_holes[4]: world-space position (xyz) + radius (w) per hole.
+    // w = 0 means the slot is inactive. Several black holes can be live at
+    // the same time; each registers itself in g_black_hole_lenses.
+    unsigned bh_slot = 0;
+    for (auto& p : g_black_hole_lenses)
+    {
+        if (bh_slot >= 4)
+            break;
+        tail[18 + bh_slot * 4 + 0] = p.second.first.X;
+        tail[18 + bh_slot * 4 + 1] = p.second.first.Y;
+        tail[18 + bh_slot * 4 + 2] = p.second.first.Z;
+        tail[18 + bh_slot * 4 + 3] = p.second.second;
+        bh_slot++;
+    }
     // u_wormhole: world-space position (xyz) + world-space radius (w).
     // A non-zero radius implicitly marks the wormhole as active; the
     // tonemap post-process uses this radius to project the mouth
     // silhouette into screen space for proper Interstellar-style lensing.
-    tail[22] = sp_wormhole_world_pos.X;
-    tail[23] = sp_wormhole_world_pos.Y;
-    tail[24] = sp_wormhole_world_pos.Z;
-    tail[25] = sp_wormhole_active ? sp_wormhole_radius : 0.0f;
+    tail[34] = sp_wormhole_world_pos.X;
+    tail[35] = sp_wormhole_world_pos.Y;
+    tail[36] = sp_wormhole_world_pos.Z;
+    tail[37] = sp_wormhole_active ? sp_wormhole_radius : 0.0f;
     return tail;
 }   // buildRelativityUBOTail
 
 }   // anonymous namespace
 
 // ----------------------------------------------------------------------------
+/** Public wrapper so the GE (Vulkan) renderer can build the same relativity
+ *  UBO tail that uploadAll() writes for the SP/OpenGL pipeline. */
+std::array<float, 38> getRelativityUBOTail(unsigned player_index)
+{
+    static_assert(SP_RELATIVITY_UBO_FLOAT_COUNT == 38,
+                  "Relativity UBO tail size changed");
+    return buildRelativityUBOTail(player_index);
+}   // getRelativityUBOTail
+
+// ----------------------------------------------------------------------------
+/** Registers or refreshes the screen-space lensing data of one live black
+ *  hole. Keyed by owner so several black holes can lens at the same time. */
+void setBlackHoleLens(const void* owner, const irr::core::vector3df& pos,
+                      float radius)
+{
+    g_black_hole_lenses[owner] = std::make_pair(pos, radius);
+}   // setBlackHoleLens
+
+// ----------------------------------------------------------------------------
+void removeBlackHoleLens(const void* owner)
+{
+    g_black_hole_lenses.erase(owner);
+}   // removeBlackHoleLens
+
+// ----------------------------------------------------------------------------
+/** Refreshes the per-camera kart root -> visual velocity cache. Called from
+ *  prepareDrawCalls() for the SP pipeline and from FixedPipelineRenderer for
+ *  the GE Vulkan pipeline (which does not run prepareDrawCalls). */
+void updateRelativityKartVelocities(unsigned player_index)
+{
+    (void)player_index;
+    g_kart_root_velocities.clear();
+    if (!Relativity::isEnabled())
+        return;
+    World* world = World::getWorld();
+    if (!world)
+        return;
+    // Every kart renders with its true coordinate velocity. Contact is a
+    // spacetime event, so a wheel touching the road in world space also
+    // touches it in the retarded-position image; rendering karts with v=0
+    // (as this used to do for non-observer karts) instead displaces them
+    // relative to the road by ~v*d/c.
+    const unsigned num_karts = world->getNumKarts();
+    for (unsigned i = 0; i < num_karts; i++)
+    {
+        AbstractKart* abstract_kart = world->getKart(i);
+        if (!abstract_kart)
+            continue;
+        scene::ISceneNode* root = abstract_kart->getNode();
+        if (!root)
+            continue;
+        core::vector3df visual_velocity(0.0f, 0.0f, 0.0f);
+        Kart* kart = dynamic_cast<Kart*>(abstract_kart);
+        if (kart)
+        {
+            const btVector3& v =
+                kart->getRelativisticState().m_coordinate_velocity;
+            visual_velocity = core::vector3df(
+                (float)v.x(), (float)v.y(), (float)v.z());
+            if (!isFiniteVector(visual_velocity))
+                visual_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
+        }
+        g_kart_root_velocities[root] = visual_velocity;
+    }
+}   // updateRelativityKartVelocities
+
+// ----------------------------------------------------------------------------
+/** Fills out[0..2] with the world-space velocity to use for relativistic
+ *  warping of the given scene node, and out[3] with the "disable relativity
+ *  visuals" flag (1.0 = do not warp, used for materials flagged
+ *  no-relativity-warp, e.g. huge water sheets).
+ *  Registered as GE::setNodeVelocityFunction so the Vulkan draw call fills
+ *  the same per-object data the SP instance buffer carries under OpenGL. */
+void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
+                                const irr::video::SMaterial* irr_material,
+                                float* out)
+{
+    out[0] = out[1] = out[2] = out[3] = 0.0f;
+    if (!Relativity::isEnabled() || !node)
+        return;
+    core::vector3df velocity;
+    if (!findKartVelocityForNode(node, velocity))
+    {
+        const core::matrix4& model_matrix =
+            node->getAbsoluteTransformation();
+        const core::vector3df position(model_matrix[12], model_matrix[13],
+                                       model_matrix[14]);
+        velocity = estimateNodeVelocity(node, position);
+    }
+    out[0] = velocity.X;
+    out[1] = velocity.Y;
+    out[2] = velocity.Z;
+    bool disable_relativity_visual =
+        shouldDisableRelativityVisualsForNode(node);
+    // Same per-mesh-buffer exemption the SP/OpenGL instance buffer applies
+    // via Material::isNoRelativityWarp (see uploadAll).
+    if (!disable_relativity_visual && irr_material)
+        disable_relativity_visual = materialHasNoRelativityWarp(irr_material);
+    out[3] = disable_relativity_visual ? 1.0f : 0.0f;
+}   // fillNodeRelativityVelocity
+
+// ----------------------------------------------------------------------------
 ShaderBasedRenderer* g_stk_sbr = NULL;
 // ----------------------------------------------------------------------------
 std::array<float, 16>* g_joint_ptr = NULL;
 // ----------------------------------------------------------------------------
-// Black hole world position for gravitational lensing in tonemap.frag
-// Set by BlackHole projectile each frame; cleared when no black hole is live.
-irr::core::vector3df sp_black_hole_world_pos(0.0f, 0.0f, 0.0f);
-bool sp_black_hole_active = false;
-float sp_black_hole_radius = 0.0f;
 // Wormhole world position for gravitational lensing in tonemap.frag. Set by
 // the Wormhole flyable while alive; cleared on destruction.
 irr::core::vector3df sp_wormhole_world_pos(0.0f, 0.0f, 0.0f);
@@ -1022,42 +1159,7 @@ void prepareDrawCalls()
     g_glow_meshes.clear();
     g_instances.clear();
 
-    g_kart_root_velocities.clear();
-    if (Relativity::isEnabled())
-    {
-        World* world = World::getWorld();
-        if (world)
-        {
-            Camera* camera = sp_cur_player < Camera::getNumCameras()
-                ? Camera::getCamera(sp_cur_player) : nullptr;
-            AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
-            const unsigned num_karts = world->getNumKarts();
-            for (unsigned i = 0; i < num_karts; i++)
-            {
-                AbstractKart* abstract_kart = world->getKart(i);
-                if (!abstract_kart)
-                    continue;
-                scene::ISceneNode* root = abstract_kart->getNode();
-                if (!root)
-                    continue;
-                core::vector3df visual_velocity(0.0f, 0.0f, 0.0f);
-                if (abstract_kart == observer_kart)
-                {
-                    Kart* kart = dynamic_cast<Kart*>(abstract_kart);
-                    if (kart)
-                    {
-                        const btVector3& v =
-                            kart->getRelativisticState().m_coordinate_velocity;
-                        visual_velocity = core::vector3df(
-                            (float)v.x(), (float)v.y(), (float)v.z());
-                        if (!isFiniteVector(visual_velocity))
-                            visual_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
-                    }
-                }
-                g_kart_root_velocities[root] = visual_velocity;
-            }
-        }
-    }
+    updateRelativityKartVelocities(sp_cur_player);
 }
 
 // ----------------------------------------------------------------------------
@@ -1084,7 +1186,11 @@ void addObject(SPMeshNode* node)
     for (unsigned m = 0; m < node->getSPM()->getMeshBufferCount(); m++)
     {
         SPMeshBuffer* mb = node->getSPM()->getSPMeshBuffer(m);
-        const Material* mat = mb ? mb->getSTKMaterial() : nullptr;
+        if (!mb)
+        {
+            continue;
+        }
+        const Material* mat = mb->getSTKMaterial();
         const bool disable_relativity_visual =
             disable_relativity_visual_base ||
             (mat && mat->isNoRelativityWarp());
@@ -1527,6 +1633,16 @@ void uploadAll()
         relativity_tail.data());
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    // Also feed relativity data into the GE Vulkan camera UBO so that
+    // Vulkan shaders get the same relativistic parameters as SP/OpenGL.
+    if (GE::getDriver()->getDriverType() == irr::video::EDT_VULKAN)
+    {
+        auto* cam_node = dynamic_cast<GE::GEVulkanCameraSceneNode*>(
+            irr_driver->getSceneManager()->getActiveCamera());
+        if (cam_node)
+            cam_node->setRelativityData(relativity_tail.data());
+    }
+
     for (SPMeshBuffer* spmb : g_instances)
     {
         spmb->uploadInstanceData();
@@ -1742,6 +1858,10 @@ void uploadSPM(irr::scene::IMesh* mesh)
         for (u32 i = 0; i < spm->getMeshBufferCount(); i++)
         {
             SP::SPMeshBuffer* mb = spm->getSPMeshBuffer(i);
+            if (!mb)
+            {
+                continue;
+            }
             mb->uploadGLMesh();
         }
     }
@@ -1769,6 +1889,67 @@ void unregisterAnimatedTrackNode(const scene::ISceneNode* node)
     if (node)
         g_animated_track_nodes.erase(node);
 }   // unregisterAnimatedTrackNode
+
+// ----------------------------------------------------------------------------
+void resetRelativityNodeCaches()
+{
+    g_no_warp_texture_cache.clear();
+    g_relativity_motion_states.clear();
+}   // resetRelativityNodeCaches
+
+// ----------------------------------------------------------------------------
+// Per-node glow colours for the GE Vulkan renderer (see sp_base.hpp).
+std::unordered_map<const scene::ISceneNode*, video::SColorf>
+    g_vulkan_glow_nodes;
+// ----------------------------------------------------------------------------
+void setVulkanNodeGlowColor(const scene::ISceneNode* node,
+                            const video::SColorf& color)
+{
+    if (!node)
+        return;
+    if (color.r == 0.0f && color.g == 0.0f && color.b == 0.0f)
+        g_vulkan_glow_nodes.erase(node);
+    else
+        g_vulkan_glow_nodes[node] = color;
+}   // setVulkanNodeGlowColor
+
+// ----------------------------------------------------------------------------
+void clearVulkanGlowNodes()
+{
+    g_vulkan_glow_nodes.clear();
+}   // clearVulkanGlowNodes
+
+// ----------------------------------------------------------------------------
+/** Fills out[0..2] with the node's glow colour and out[3] with 1.0 when the
+ *  node glows. Registered as GE::setNodeGlowColorFunction so the Vulkan draw
+ *  call fills the same per-object data SPMeshNode carries under OpenGL. */
+void fillNodeGlowColor(const scene::ISceneNode* node, float* out)
+{
+    out[0] = out[1] = out[2] = out[3] = 0.0f;
+    if (!node || !UserConfigParams::m_glow || g_vulkan_glow_nodes.empty())
+        return;
+    auto it = g_vulkan_glow_nodes.find(node);
+    if (it == g_vulkan_glow_nodes.end())
+        return;
+    out[0] = it->second.r;
+    out[1] = it->second.g;
+    out[2] = it->second.b;
+    out[3] = 1.0f;
+}   // fillNodeGlowColor
+
+// ----------------------------------------------------------------------------
+void registerPresentationNode(const scene::ISceneNode* node)
+{
+    if (node)
+        g_presentation_nodes.insert(node);
+}   // registerPresentationNode
+
+// ----------------------------------------------------------------------------
+void unregisterPresentationNode(const scene::ISceneNode* node)
+{
+    if (node)
+        g_presentation_nodes.erase(node);
+}   // unregisterPresentationNode
 
 }
 

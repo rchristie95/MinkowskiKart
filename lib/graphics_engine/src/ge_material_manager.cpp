@@ -147,6 +147,10 @@ void GEMaterialManager::init()
                                     settings.m_depth_only_fragment_shader = readString(xml);
                                 else if (!strcmp(node_name, "skinning-vertex"))
                                     settings.m_skinning_vertex_shader = readString(xml);
+                                else if (!strcmp(node_name, "tess-control"))
+                                    settings.m_tesc_shader = readString(xml);
+                                else if (!strcmp(node_name, "tess-eval"))
+                                    settings.m_tese_shader = readString(xml);
                             }
                             else if (xml->getNodeType() == io::EXN_ELEMENT_END &&
                                 !strcmp(xml->getNodeName(), "shaders"))
@@ -206,6 +210,58 @@ void GEMaterialManager::init()
     }
 
     xml->drop();
+
+    // Register a "<name>_2sided" variant for every culling material so mesh
+    // buffers whose irrlicht material disables backface culling (e.g. track
+    // materials.xml backface-culling="N") can render double-sided like they
+    // do in the OpenGL pipeline. These variants share the irr material type
+    // of their base material and are selected in GEVulkanDrawCall::getShader.
+    std::vector<
+        std::pair<std::string, std::shared_ptr<const GEMaterial> > >
+        with_variants;
+    with_variants.reserve(g_materials.size() * 2);
+    for (auto& p : g_materials)
+    {
+        with_variants.push_back(p);
+        if (!p.second->m_backface_culling || p.first == "displace")
+            continue;
+        GEMaterial copy = *p.second;
+        copy.m_backface_culling = false;
+        auto m = std::make_shared<const GEMaterial>(copy);
+        const std::string variant_name = p.first + "_2sided";
+        with_variants.emplace_back(variant_name, m);
+        g_mat_map[variant_name] = m;
+    }
+    g_materials = std::move(with_variants);
+
+    // Register a "<name>_tess" variant for every plain spm.vert material
+    // (including the _2sided variants created above). They are selected in
+    // GEVulkanDrawCall::getShader when GEConfig::m_adaptive_tessellation is
+    // set, so static geometry is adaptively subdivided for smooth
+    // relativistic warping. Displace is excluded: its mask/color passes are
+    // built from dedicated pipelines that bypass these settings. Skinned
+    // draws of these variants are built without the tessellation stages
+    // (see GEVulkanDrawCall::createPipeline).
+    std::vector<
+        std::pair<std::string, std::shared_ptr<const GEMaterial> > >
+        with_tess;
+    with_tess.reserve(g_materials.size() * 2);
+    for (auto& p : g_materials)
+    {
+        with_tess.push_back(p);
+        if (p.second->m_vertex_shader != "spm.vert" ||
+            p.first.rfind("displace", 0) == 0)
+            continue;
+        GEMaterial copy = *p.second;
+        copy.m_vertex_shader = "spm_tess.vert";
+        copy.m_tesc_shader = "ge_tess.tesc";
+        copy.m_tese_shader = "ge_tess.tese";
+        auto m = std::make_shared<const GEMaterial>(copy);
+        const std::string variant_name = p.first + "_tess";
+        with_tess.emplace_back(variant_name, m);
+        g_mat_map[variant_name] = m;
+    }
+    g_materials = std::move(with_tess);
 }   // init
 
 // ----------------------------------------------------------------------------

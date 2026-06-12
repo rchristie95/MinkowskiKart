@@ -85,6 +85,8 @@ extern "C" {
 
 MainLoop* main_loop = 0;
 
+std::atomic_bool MainLoop::m_request_restart(false);
+
 #ifdef WIN32
 LRESULT CALLBACK separateProcessProc(_In_ HWND hwnd, _In_ UINT uMsg,
                                      _In_ WPARAM wParam, _In_ LPARAM lParam)

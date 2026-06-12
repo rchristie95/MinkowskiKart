@@ -2514,10 +2514,14 @@ void Track::loadTrackModel(bool reverse_track, unsigned int mode_id)
     STKTexManager::getInstance()->unsetTextureErrorMessage();
 #ifndef SERVER_ONLY
     if (CVS->isGLSL())
-    {
         m_sky_textures.clear();
-        m_spherical_harmonics_textures.clear();
-    }
+    // Always clear the SH texture list: non-GLSL renderers fill it with
+    // null placeholders (handleSky) which would otherwise survive on this
+    // persistent Track object. A later GLSL race (after an in-process
+    // render driver switch) would then see size() != 6, skip the skybox
+    // SH and fall back to the ambient-colour SH (x4), blowing out all lit
+    // materials with the track's ambient tint.
+    m_spherical_harmonics_textures.clear();
 #endif   // !SERVER_ONLY
 }   // loadTrackModel
 
@@ -3070,8 +3074,12 @@ bool Track::isOnGround(const Vec3& xyz, const Vec3& down, Vec3* hit_point,
     }
 
     // See if the kart is too high above the ground - it would drop
-    // too long.
-    if(xyz.getY() - hit_point->getY() > 5)
+    // too long. Use distance along the actual down vector so this works
+    // correctly on tracks with non-world-Y gravity (e.g. Möbius track).
+    Vec3 down_unit = down;
+    down_unit.normalize();
+    float drop_dist = down_unit.dot(*hit_point - xyz);
+    if(drop_dist > 15.0f)
     {
         if (print_warning)
         {
