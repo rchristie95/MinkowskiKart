@@ -1,6 +1,7 @@
 layout(binding = 0) uniform sampler2D u_displace_mask;
 layout(binding = 2) uniform sampler2D u_displace_color;
 layout(binding = 3) uniform sampler2D u_depth;
+layout(binding = 4) uniform sampler2D u_glow;
 
 layout(location = 0) in vec2 f_uv;
 
@@ -12,6 +13,7 @@ layout(push_constant) uniform Constants
 } u_push_constants;
 
 #include "utils/camera.glsl"
+#include "utils/global_light_data.glsl"
 #include "../utils/displace_utils.frag"
 
 // Screen-space post effects, ported from the SP/OpenGL pipeline so both
@@ -24,6 +26,422 @@ layout(push_constant) uniform Constants
 vec3 sampleScene(vec2 px)
 {
     return texture(u_displace_color, px / u_camera.m_screensize).rgb;
+}
+
+float sceneLuma(vec3 c)
+{
+    return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
+
+// View-space position reconstruction from the depth buffer (irrlicht
+// convention: +z forward, like the SP/OpenGL post shaders).
+vec3 viewPosAt(vec2 px)
+{
+    vec2 vp_xy = u_camera.m_viewport.xy;
+    vec2 vp_wh = u_camera.m_viewport.zw;
+    vec2 ndc = ((px - vp_xy) / vp_wh) * 2.0 - 1.0;
+    float z = texture(u_depth, px / u_camera.m_screensize).x;
+    vec4 clip = vec4(ndc, z, 1.0);
+    vec4 view_pos = u_camera.m_inverse_projection_matrix * clip;
+    return view_pos.xyz / view_pos.w;
+}
+
+// ---- Anti-aliasing (FXAA, standing in for the SP/OpenGL MLAA option) ----
+vec3 antialiasScene(vec2 px)
+{
+    vec3 rgbM  = sampleScene(px);
+    vec3 rgbNW = sampleScene(px + vec2(-1.0, -1.0));
+    vec3 rgbNE = sampleScene(px + vec2( 1.0, -1.0));
+    vec3 rgbSW = sampleScene(px + vec2(-1.0,  1.0));
+    vec3 rgbSE = sampleScene(px + vec2( 1.0,  1.0));
+
+    float lumaM  = sceneLuma(rgbM);
+    float lumaNW = sceneLuma(rgbNW);
+    float lumaNE = sceneLuma(rgbNE);
+    float lumaSW = sceneLuma(rgbSW);
+    float lumaSE = sceneLuma(rgbSE);
+
+    float luma_min = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+    float luma_max = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+    if (luma_max - luma_min < max(0.0312, luma_max * 0.125))
+        return rgbM;
+
+    vec2 dir = vec2(-((lumaNW + lumaNE) - (lumaSW + lumaSE)),
+                    ((lumaNW + lumaSW) - (lumaNE + lumaSE)));
+    float dir_reduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * 0.03125,
+                           1.0 / 128.0);
+    float rcp_dir_min = 1.0 / (min(abs(dir.x), abs(dir.y)) + dir_reduce);
+    dir = clamp(dir * rcp_dir_min, vec2(-8.0), vec2(8.0));
+
+    vec3 rgbA = 0.5 * (sampleScene(px + dir * (1.0 / 3.0 - 0.5)) +
+                       sampleScene(px + dir * (2.0 / 3.0 - 0.5)));
+    vec3 rgbB = rgbA * 0.5 + 0.25 * (sampleScene(px + dir * -0.5) +
+                                     sampleScene(px + dir * 0.5));
+    float lumaB = sceneLuma(rgbB);
+    if (lumaB < luma_min || lumaB > luma_max)
+        return rgbA;
+    return rgbB;
+}
+
+// ---- SSAO ----
+// Port of the SP/OpenGL ssao.frag (Alchemy/SAO estimator) with the track's
+// default parameters (radius 0.5, k 3, sigma 1; see Track::loadTrackModel).
+// Uses the raw depth buffer with full unprojection instead of the GL
+// pipeline's mip-mapped linear-depth texture.
+float interleavedGradientNoise(highp vec2 w)
+{
+    const vec3 m = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(m.z * fract(dot(w, m.xy)));
+}
+
+float computeSSAO(vec2 px)
+{
+    const float RADIUS = 0.5;
+    const float K = 3.0;
+    const float SIGMA = 1.0;
+    const float THICKNESS = 10.0;
+    const int SAMPLES = 6;
+    const float INV_SAMPLES = 1.0 / float(SAMPLES);
+
+    vec3 frag_pos = viewPosAt(px);
+    // Derivatives must be taken in uniform control flow, before any
+    // non-uniform early exit.
+    vec3 ddx = dFdx(frag_pos);
+    vec3 ddy = dFdy(frag_pos);
+    if (frag_pos.z <= 0.001 || frag_pos.z > 500.0)
+        return 1.0;
+
+    vec3 norm = normalize(cross(ddy, ddx));
+
+    vec2 vp_xy = u_camera.m_viewport.xy;
+    vec2 vp_wh = u_camera.m_viewport.zw;
+
+    float r = RADIUS / frag_pos.z;
+    float phi = interleavedGradientNoise(px);
+    float bl = 0.0;
+
+    float peak = 0.1 * RADIUS;
+    float intensity = 2.0 * 3.14159 * SIGMA * peak * INV_SAMPLES;
+
+    float horizon = min(100.0 / min(vp_wh.x, vp_wh.y), 0.3);
+    float bias = min(1.0 / min(vp_wh.x, vp_wh.y), 0.003);
+
+    float theta = phi * 2.0 * 2.4 * 3.14159;
+    vec2 rotations = vec2(cos(theta), sin(theta)) * vp_wh;
+    vec2 offset = vec2(cos(INV_SAMPLES), sin(INV_SAMPLES));
+
+    for (int i = 0; i < SAMPLES; ++i)
+    {
+        float alpha = (float(i) + 0.5) * INV_SAMPLES;
+        rotations = vec2(rotations.x * offset.x - rotations.y * offset.y,
+                         rotations.x * offset.y + rotations.y * offset.x);
+        float h = r * alpha;
+        vec2 occluder_px = clamp(px + h * rotations, vp_xy, vp_xy + vp_wh);
+        vec3 occluder_pos = viewPosAt(occluder_px);
+
+        vec3 vi = occluder_pos - frag_pos;
+        float vv = dot(vi, vi);
+        float vn = dot(vi, norm);
+        float w = max(0.0, 1.0 - vv / (THICKNESS * THICKNESS));
+        w = w * w;
+        w *= step(vv * horizon * horizon, vn * vn);
+        bl += w * max(0.0, vn - frag_pos.z * bias) / (vv + peak * peak);
+    }
+
+    return pow(max(1.0 - sqrt(bl * intensity), 0.0), K);
+}
+
+// The GL pipeline renders its AO to a texture and gaussian-blurs it; the
+// single-pass equivalent evaluates the estimator over a 3x3 neighbourhood
+// (each position integrates a differently-rotated sample disk, so the nine
+// estimates decorrelate) and averages them, turning the per-pixel sampling
+// noise into a smooth estimate instead of a static screen-door pattern.
+float smoothedSSAO(vec2 px)
+{
+    float sum = 0.0;
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+            sum += computeSSAO(px + vec2(float(x), float(y)) * 2.0);
+    }
+    return sum * (1.0 / 9.0);
+}
+
+// ---- Bloom ----
+// Single-pass approximation of the SP/OpenGL bloom chain (bright-pass with a
+// smoothstep threshold, gaussian pyramid at 512/256/128, weighted re-blend).
+// Operates on the tonemapped output, so the threshold targets near-white
+// pixels rather than the >1 HDR range the GL bright-pass uses.
+vec3 brightPass(vec3 c)
+{
+    // The GL chain bright-passes HDR values > 1; on this tonemapped LDR
+    // input only near-clipped pixels count as highlights, otherwise bright
+    // scenes (desert sand) bloom everywhere and wash the image out.
+    return c * smoothstep(0.92, 1.0, sceneLuma(c));
+}
+
+vec3 bloomGather(vec2 px)
+{
+    // Pixel radii scaled to the viewport so the halo size tracks resolution
+    // like the GL fixed-size 512/256/128 pyramid does.
+    float s = u_camera.m_viewport.w / 540.0;
+    vec3 accum = brightPass(sampleScene(px)) * 0.5;
+    const vec2 DIRS[8] = vec2[](
+        vec2(1.0, 0.0), vec2(0.7071, 0.7071), vec2(0.0, 1.0),
+        vec2(-0.7071, 0.7071), vec2(-1.0, 0.0), vec2(-0.7071, -0.7071),
+        vec2(0.0, -1.0), vec2(0.7071, -0.7071));
+    for (int i = 0; i < 8; i++)
+    {
+        accum += brightPass(sampleScene(px + DIRS[i] * (4.0 * s))) * 0.25;
+        accum += brightPass(sampleScene(px + DIRS[i] * (9.0 * s))) * 0.125;
+        accum += brightPass(sampleScene(px + DIRS[i] * (16.0 * s))) * 0.0625;
+    }
+    // Total weight 0.5 + 8*(0.4375) = 4.0
+    return accum * (0.25 / 4.0);
+}
+
+// ---- Depth of field ----
+// Direct port of the SP/OpenGL dof.frag (41-tap bokeh disc, focal depth 10,
+// range 100, blended back by the same depth ramp).
+vec3 applyDOF(vec3 col_in, vec2 px)
+{
+    const float FOCAL_DEPTH = 10.0;
+    const float MAX_BLUR = 1.0;
+    const float RANGE = 100.0;
+
+    float depth = viewPosAt(px).z;
+    float blur = clamp(abs(depth - FOCAL_DEPTH) / RANGE, -MAX_BLUR, MAX_BLUR);
+
+    // GL taps at uv + dir * (10 / screen) * blur, i.e. dir * 10 * blur px.
+    float o = 10.0 * blur;
+    vec3 col = col_in;
+
+    const vec2 TAPS[16] = vec2[](
+        vec2(0.0, 0.4), vec2(0.15, 0.37), vec2(0.29, 0.29),
+        vec2(-0.37, 0.15), vec2(0.4, 0.0), vec2(0.37, -0.15),
+        vec2(0.29, -0.29), vec2(-0.15, -0.37), vec2(0.0, -0.4),
+        vec2(-0.15, 0.37), vec2(-0.29, 0.29), vec2(0.37, 0.15),
+        vec2(-0.4, 0.0), vec2(-0.37, -0.15), vec2(-0.29, -0.29),
+        vec2(0.15, -0.37));
+    for (int i = 0; i < 16; i++)
+        col += sampleScene(px + TAPS[i] * o);
+
+    const vec2 TAPS9[8] = vec2[](
+        vec2(0.15, 0.37), vec2(-0.37, 0.15), vec2(0.37, -0.15),
+        vec2(-0.15, -0.37), vec2(-0.15, 0.37), vec2(0.37, 0.15),
+        vec2(-0.37, -0.15), vec2(0.15, -0.37));
+    for (int i = 0; i < 8; i++)
+        col += sampleScene(px + TAPS9[i] * (o * 0.9));
+
+    const vec2 TAPS7[8] = vec2[](
+        vec2(0.29, 0.29), vec2(0.4, 0.0), vec2(0.29, -0.29),
+        vec2(0.0, -0.4), vec2(-0.29, 0.29), vec2(-0.4, 0.0),
+        vec2(-0.29, -0.29), vec2(0.0, 0.4));
+    for (int i = 0; i < 8; i++)
+    {
+        col += sampleScene(px + TAPS7[i] * (o * 0.7));
+        col += sampleScene(px + TAPS7[i] * (o * 0.4));
+    }
+
+    col /= 41.0;
+    float focus = clamp(max(1.1666 - (depth / 240.0), depth - 2000.0),
+                        0.0, 1.0);
+    return col_in * focus + col * (1.0 - focus);
+}
+
+// ---- Track god rays / light shafts ----
+// Single-pass approximation of the SP/OpenGL PostProcessing::renderGodRays
+// chain (sun interposer sphere -> godfade mask -> radial blur toward the sun
+// -> additive blend at the track opacity). The source term is an analytic
+// glow disc at the projected lightshaft position, depth-masked so scenery
+// occludes the sun, marched radially with the same decay style as
+// godray.frag. Computed at the (possibly black-hole-warped) sample position
+// so gravitational lensing smears the sun glow exactly like it does on GL.
+vec3 godRays(vec2 px)
+{
+    float opacity = u_camera.m_godrays_pos.w;
+    if (opacity <= 0.001)
+        return vec3(0.0);
+
+    vec4 sun_clip = u_camera.m_projection_view_matrix *
+        vec4(u_camera.m_godrays_pos.xyz, 1.0);
+    if (sun_clip.w <= 0.001 || sun_clip.z <= 0.0)
+        return vec3(0.0);
+
+    vec2 vp_xy = u_camera.m_viewport.xy;
+    vec2 vp_wh = u_camera.m_viewport.zw;
+    vec2 sun_ndc = sun_clip.xy / sun_clip.w;
+    vec2 sun_screen = vp_xy + (sun_ndc * 0.5 + 0.5) * vp_wh;
+    // Occlusion is tested in view space: raw depth01 is so non-linear that
+    // any fixed epsilon lets distant walls pass (shafts leaked through
+    // geometry). The interposer world radius doubles as the margin.
+    float sun_vz = (u_camera.m_view_matrix *
+        vec4(u_camera.m_godrays_pos.xyz, 1.0)).z;
+    float sun_margin = u_camera.m_godrays_color.w;
+
+    // Project the interposer's world radius to pixels (robust to FOV/aspect).
+    vec3 cam_right = vec3(u_camera.m_view_matrix[0][0],
+                          u_camera.m_view_matrix[1][0],
+                          u_camera.m_view_matrix[2][0]);
+    vec4 rim_clip = u_camera.m_projection_view_matrix *
+        vec4(u_camera.m_godrays_pos.xyz +
+             cam_right * u_camera.m_godrays_color.w, 1.0);
+    vec2 rim_ndc = rim_clip.xy / max(rim_clip.w, 0.001);
+    vec2 rim_screen = vp_xy + (rim_ndc * 0.5 + 0.5) * vp_wh;
+    float R_px = max(length(rim_screen - sun_screen), 4.0);
+
+    // Skip pixels far outside the shaft range to keep the pass cheap.
+    float px_dist = length(px - sun_screen);
+    if (px_dist > R_px * 14.0)
+        return vec3(0.0);
+
+    const int N = 24;
+    const float DECAY = 0.90;
+    // Like godray.frag, march most of the way toward the sun.
+    vec2 step_px = (sun_screen - px) / (float(N) * 1.12);
+    vec2 cur = px;
+    float decay = 1.0;
+    float accum = 0.0;
+    for (int i = 0; i < N; i++)
+    {
+        cur += step_px;
+        vec2 sample_px = clamp(cur, vp_xy, vp_xy + vp_wh);
+        // Scene in front of the sun (view space) blocks the shaft; sky
+        // pixels unproject to the far plane and always pass.
+        if (viewPosAt(sample_px).z >= sun_vz - sun_margin)
+        {
+            float r = length(sample_px - sun_screen) / R_px;
+            accum += exp(-r * r * 2.0) * decay;
+        }
+        decay *= DECAY;
+    }
+
+    // Normalised march sum peaks around ~9 at the disc centre; the gain maps
+    // that to roughly the additive brightness the GL chain produces.
+    return u_camera.m_godrays_color.rgb * (accum * 0.30 * opacity);
+}
+
+// ---- Per-object glow outlines ----
+// Port of the SP/OpenGL glow chain: glowing objects were drawn flat-coloured
+// into the glow attachment (mask pass); here the silhouettes are blurred and
+// added as a halo outside the object (the GL pass excluded the interior via
+// a stencil mask).
+vec3 glowOutline(vec3 col_in, vec2 px)
+{
+    vec2 guv = px / u_camera.m_screensize;
+    vec4 center = texture(u_glow, guv);
+    // Pixel radii scaled to the viewport, like the GL half/quarter pyramid.
+    float s = u_camera.m_viewport.w / 540.0;
+    const vec2 DIRS[8] = vec2[](
+        vec2(1.0, 0.0), vec2(0.7071, 0.7071), vec2(0.0, 1.0),
+        vec2(-0.7071, 0.7071), vec2(-1.0, 0.0), vec2(-0.7071, -0.7071),
+        vec2(0.0, -1.0), vec2(0.7071, -0.7071));
+    vec4 blur = center * 0.25;
+    float weight = 0.25;
+    for (int i = 0; i < 8; i++)
+    {
+        blur += texture(u_glow,
+            (px + DIRS[i] * (4.0 * s)) / u_camera.m_screensize) * 0.125;
+        blur += texture(u_glow,
+            (px + DIRS[i] * (9.0 * s)) / u_camera.m_screensize) * 0.0625;
+        weight += 0.1875;
+    }
+    blur /= weight;
+    if (blur.a < 0.004)
+        return col_in;
+    vec3 glow_col = blur.rgb / max(blur.a, 0.001);
+    // glow.frag boosted the colour (x4) and blended with alpha 0.9 * a;
+    // keep the halo outside the silhouette like the GL stencil mask did.
+    float a = clamp(blur.a * 1.5, 0.0, 1.0) * 0.6 * (1.0 - center.a);
+    return mix(col_in, min(glow_col * 2.0, vec3(1.0)), a);
+}
+
+// ---- Volumetric light scattering (pointlightscatter.frag port) ----
+// For every rendered point light, march the view ray through the light's
+// sphere of influence accumulating fog in-scatter, with the same attenuation
+// terms as the SP/OpenGL shader. density = 1 / (40 * track fog start); the
+// GL pass used a white fog colour and additive blending at half resolution
+// followed by a gaussian blur (the march is smooth enough unblurred).
+vec3 lightScatter(vec2 px)
+{
+    float density = u_camera.m_postfx_flags2.y;
+    if (density <= 0.0001)
+        return vec3(0.0);
+
+    vec3 pixelpos = viewPosAt(px);
+    float pixel_len = length(pixelpos);
+    if (pixel_len < 0.01)
+        return vec3(0.0);
+    vec3 eyedir = -normalize(pixelpos);
+
+    vec3 fog = vec3(0.0);
+    for (int i = 0; i < u_global_light.m_light_count; i++)
+    {
+        vec3 light_pos = (u_camera.m_view_matrix *
+            vec4(u_global_light.m_lights[i].m_position_radius.xyz, 1.0)).xyz;
+        // The GL chain blurs its half-res scatter buffer (~20 full-res px),
+        // spreading small bright lamp cores into soft orbs. Equivalent here:
+        // widen the scattering radius and conserve the in-scattered energy.
+        float light_radius = u_global_light.m_lights[i].m_position_radius.w;
+        float radius = max(light_radius * 2.0, light_radius + 4.0);
+        float energy_scale = (light_radius * light_radius) /
+            (radius * radius);
+        float t_center = dot(-eyedir, light_pos);
+        float t_far = min(t_center + radius, pixel_len);
+        float t_near = t_center - radius;
+        if (t_far <= max(t_near, 0.0))
+            continue;
+        vec3 farthestpoint = -eyedir * t_far;
+        vec3 closestpoint = -eyedir * t_near;
+        if (closestpoint.z < 1.0)
+            closestpoint = vec3(0.0);
+
+        const int STEPS = 8;
+        float stepsize = length(farthestpoint - closestpoint) / float(STEPS);
+        vec3 light_col =
+            u_global_light.m_lights[i].m_color_inverse_square_range.xyz;
+        // The GL energy uniform is folded into the GE light colour. The
+        // extra gain compensates for compositing post-tonemap (the GL chain
+        // accumulates in HDR where the bright cores survive the blur).
+        vec3 fog_factor = light_col * density * stepsize * 20.0 *
+            energy_scale * 56.0;
+        vec3 xpos = farthestpoint;
+        vec3 xpos_step = eyedir * stepsize;
+
+        // Spotlight direction (same encoding as deferred_pointlight)
+        float sscale =
+            u_global_light.m_lights[i].m_direction_scale_offset.z;
+        vec3 sdir = vec3(0.0);
+        if (sscale != 0.0)
+        {
+            sdir = vec3(
+                u_global_light.m_lights[i].m_direction_scale_offset.xy, 0.0);
+            sdir.z = sqrt(max(1.0 - dot(sdir, sdir), 0.0)) * sign(sscale);
+            sdir = (u_camera.m_view_matrix * vec4(sdir, 0.0)).xyz;
+        }
+
+        for (int j = 0; j < STEPS; j++)
+        {
+            vec3 light_to_pos = light_pos - xpos;
+            float d = length(light_to_pos);
+            float l = float(STEPS - j) * stepsize;
+            vec3 base_att = fog_factor / (1.0 + d * d) *
+                max((radius - d) / radius, 0.0) *
+                exp(-density * d) * exp(-density * l);
+            if (sscale != 0.0)
+            {
+                float offset =
+                    u_global_light.m_lights[i].m_direction_scale_offset.w;
+                float sattenuation = clamp(dot(-sdir,
+                    normalize(light_to_pos)) * abs(sscale) + offset,
+                    0.0, 1.0);
+                base_att *= sattenuation * sattenuation;
+            }
+            fog += base_att;
+            xpos += xpos_step;
+        }
+    }
+    return fog;
 }
 
 void main()
@@ -125,7 +543,45 @@ void main()
         }
     }
 
-    vec3 col = sampleScene(src_px);
+    // Base scene sample with the SP/OpenGL advanced-pipeline post effects:
+    // anti-aliasing, SSAO and bloom, all evaluated at the lens-warped source
+    // position so black holes bend them with the rest of the scene.
+    vec3 col = u_camera.m_postfx_flags.w > 0.5 ?
+        antialiasScene(src_px) : sampleScene(src_px);
+    if (u_camera.m_postfx_flags.y > 0.5)
+        col *= smoothedSSAO(src_px);
+    if (u_camera.m_postfx_flags.x > 0.5)
+        col += bloomGather(src_px);
+    // ---- Track distance fog ----
+    // Mirrors combine_diffuse_color.frag: haze toward the track fog colour
+    // with density 1 / (40 * fog_start), skipping the skybox.
+    if (u_global_light.m_fog_density > 0.0001)
+    {
+        float fog_z = texture(u_depth, src_px / u_camera.m_screensize).x;
+        if (fog_z < 1.0)
+        {
+            float fog_dist = length(viewPosAt(src_px));
+            float fog_f = clamp(1.0 - exp(-u_global_light.m_fog_density *
+                fog_dist), 0.0, 1.0);
+            col = mix(col, u_global_light.m_fog_color.rgb, fog_f);
+        }
+    }
+
+    // God rays are evaluated at the lens-warped source position so black
+    // holes bend and smear the sun glow along with the rest of the scene.
+    col += godRays(src_px);
+    // Per-object glow outlines and volumetric light scattering, also at the
+    // lens-warped position.
+    if (u_camera.m_postfx_flags2.x > 0.5)
+        col = glowOutline(col, src_px);
+    // The GL chain accumulates the fog in-scatter in HDR before the
+    // tonemapper compresses it; here the input is already tonemapped, so
+    // soft-clamp the contribution to avoid blown-out fog blobs.
+    // The GL chain accumulates the fog in-scatter in HDR before the
+    // tonemapper compresses it; here the input is already tonemapped, so
+    // soft-clamp the contribution to avoid blown-out fog blobs.
+    vec3 scatter = lightScatter(src_px);
+    col += scatter / (1.0 + sceneLuma(scatter));
 
     // Darken the distorted region near the black hole.
     if (distortion_strength > 0.01)
@@ -228,6 +684,10 @@ void main()
             }
         }
     }
+
+    // ---- Depth of field (dof.frag port) ----
+    if (u_camera.m_postfx_flags.z > 0.5)
+        col = applyDOF(col, frag_px);
 
     // ---- Boost motion blur (reprojection-based, motion_blur.frag) ----
     float boost_amount = u_camera.m_motion_blur.x;

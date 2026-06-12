@@ -463,6 +463,31 @@ void CameraNormal::updateRelativityCamera(float dt)
     btVector3 desired_tgt = kart_pos
         + support_forward * RC_TARGET_FORWARD
         + support_up * RC_HEIGHT;
+
+    // "Camera on a stick": a rigid boom comoving with the kart Lorentz-
+    // contracts in the world frame, so the chase offset's component parallel
+    // to the velocity shrinks by 1/gamma. Without this the kart's apparent
+    // (retarded + aberrated) image sits at its proper distance gamma*L and
+    // recedes as speed grows, which reads as the camera zooming out.
+    {
+        const Relativity::RelativisticState& rstate =
+            kart->getRelativisticState();
+        const btScalar speed2 = rstate.m_coordinate_velocity.length2();
+        if (rstate.m_gamma > 1.0001 && speed2 > btScalar(0.01f))
+        {
+            const btVector3 v_dir =
+                rstate.m_coordinate_velocity / btSqrt(speed2);
+            const btScalar inv_gamma = btScalar(1.0 / rstate.m_gamma);
+            auto contractOffset = [&](const btVector3& offset)
+            {
+                const btVector3 parallel = v_dir * offset.dot(v_dir);
+                return (offset - parallel) + parallel * inv_gamma;
+            };
+            desired = kart_pos + contractOffset(desired - kart_pos);
+            desired_tgt = kart_pos + contractOffset(desired_tgt - kart_pos);
+        }
+    }
+
     const btVector3 kart_anchor =
         kart_pos + support_up * 0.28f + support_forward * 0.08f;
     const float clearance_alpha = m_rc_initialized

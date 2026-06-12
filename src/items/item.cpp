@@ -22,6 +22,7 @@
 #include "SColor.h"
 #include "graphics/irr_driver.hpp"
 #include "graphics/lod_node.hpp"
+#include "graphics/sp/sp_base.hpp"
 #include "graphics/sp/sp_mesh.hpp"
 #include "graphics/sp/sp_mesh_node.hpp"
 #include "guiengine/engine.hpp"
@@ -544,6 +545,12 @@ void Item::handleNewMesh(ItemType type)
         SP::SPMeshNode* spmn = dynamic_cast<SP::SPMeshNode*>(node);
         if (spmn)
             spmn->setGlowColor(ItemManager::getGlowColor(type));
+        else
+        {
+            // GE Vulkan renderer: nodes are not SPMeshNodes; register the
+            // glow colour for the GE glow pass instead.
+            SP::setVulkanNodeGlowColor(node, ItemManager::getGlowColor(type));
+        }
     }
     Vec3 hpr;
     hpr.setHPR(getOriginalRotation());

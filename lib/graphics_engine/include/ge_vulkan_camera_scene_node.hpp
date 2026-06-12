@@ -29,6 +29,17 @@ float m_wormhole[4];                // [wx, wy, wz, radius] (radius=0 = inactive
 irr::core::matrix4 m_previous_pv_matrix; // previous frame projection*view
 float m_motion_blur[4];             // [boost_amount, center_x, center_y, mask_radius]
 float m_compactification[4];        // [strength, 0, 0, 0]
+// Track god rays / light shafts (matches the SP/OpenGL renderGodRays sun)
+float m_godrays_pos[4];             // [x, y, z, opacity] (opacity=0 = inactive)
+float m_godrays_color[4];           // [r, g, b, world_radius]
+// Post effect toggles mirroring the SP/OpenGL advanced pipeline options
+float m_postfx_flags[4];            // [bloom, ssao, dof, antialias]
+// Sun shadow mapping (filled by GEVulkanDrawCall::uploadDynamicData):
+// world position -> shadow map [uv.xy, depth01] (already bias-mapped).
+irr::core::matrix4 m_sun_shadow_matrix;
+float m_shadow_params[4];           // [enabled, pcss, 1/resolution, penumbra]
+// Second post effect toggle block: [glow, scatter_density, 0, 0]
+float m_postfx_flags2[4];
 
 GEVulkanCameraUBO()
 {
@@ -38,6 +49,11 @@ GEVulkanCameraUBO()
     memset(m_relativity_params, 0, sizeof(float) * (4 * 5 + 16 + 4));
     memset(m_motion_blur, 0, sizeof(m_motion_blur));
     memset(m_compactification, 0, sizeof(m_compactification));
+    memset(m_godrays_pos, 0, sizeof(m_godrays_pos));
+    memset(m_godrays_color, 0, sizeof(m_godrays_color));
+    memset(m_postfx_flags, 0, sizeof(m_postfx_flags));
+    memset(m_shadow_params, 0, sizeof(m_shadow_params));
+    memset(m_postfx_flags2, 0, sizeof(m_postfx_flags2));
 }
 };
 
@@ -89,10 +105,32 @@ public:
     // Per-camera screen-space post effect parameters, applied by
     // displace_color.frag: motion blur [boost, center.xy, mask_radius] and
     // compactification [strength, 0, 0, 0].
-    void setPostFXData(const float* motion_blur4, const float* compact4)
+    void setPostFXData(const float* motion_blur4, const float* compact4,
+                       const float* postfx_flags4,
+                       const float* postfx_flags2_4 = NULL)
     {
         memcpy(m_ubo_data.m_motion_blur, motion_blur4, 16);
         memcpy(m_ubo_data.m_compactification, compact4, 16);
+        memcpy(m_ubo_data.m_postfx_flags, postfx_flags4, 16);
+        if (postfx_flags2_4)
+            memcpy(m_ubo_data.m_postfx_flags2, postfx_flags2_4, 16);
+    }
+    // ------------------------------------------------------------------------
+    // Sun shadow data, computed per frame by GEVulkanDrawCall before the
+    // camera UBO is uploaded.
+    void setSunShadowData(const irr::core::matrix4& world_to_shadow_uv,
+                          const float* params4)
+    {
+        m_ubo_data.m_sun_shadow_matrix = world_to_shadow_uv;
+        memcpy(m_ubo_data.m_shadow_params, params4, 16);
+    }
+    // ------------------------------------------------------------------------
+    // Track god rays / light shafts, applied by displace_color.frag.
+    // data8 = [pos.xyz, opacity, color.rgb, world_radius]; opacity 0 disables.
+    void setGodRaysData(const float* data8)
+    {
+        memcpy(m_ubo_data.m_godrays_pos, data8, 16);
+        memcpy(m_ubo_data.m_godrays_color, data8 + 4, 16);
     }
     // ------------------------------------------------------------------------
     // Stores the current projection*view as last frame's matrix for

@@ -33,6 +33,19 @@ void GEVulkanLightHandler::prepare()
     m_buffer.m_sun_color = core::vector3df(0.75f, 0.75f, 0.75f);
     m_buffer.m_sun_angle_tan_half = 0.0022f;
     m_buffer.m_sun_direction = core::vector3df(0.15f, 0.2f, 1.0f).normalize();
+    // Track distance fog (consumed by displace_color.frag, mirroring the
+    // GL combine_diffuse_color.frag density 1 / (40 * fog_start)).
+    video::SColor fog_color;
+    video::E_FOG_TYPE fog_type;
+    f32 fog_start, fog_end, fog_density;
+    bool pixel_fog, range_fog;
+    m_vk->getFog(fog_color, fog_type, fog_start, fog_end, fog_density,
+        pixel_fog, range_fog);
+    if (fog_end > 0.0f && fog_end > fog_start)
+    {
+        m_buffer.m_fog_density = 1.0f / (40.0f * (fog_start + 0.001f));
+        m_buffer.m_fog_color = video::SColorf(fog_color);
+    }
     m_buffer.m_skytop_color.X = 0.325f;
     m_buffer.m_skytop_color.Y = 0.35f;
     m_buffer.m_skytop_color.Z = 0.375f;

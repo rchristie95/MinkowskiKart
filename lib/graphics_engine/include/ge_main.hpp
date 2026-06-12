@@ -70,6 +70,16 @@ bool m_force_displace_compose;
 // adaptively subdivided (coarser with distance, no cutoff radius) and warp
 // smoothly per-vertex instead of rigidly. Skinned meshes are unaffected.
 bool m_adaptive_tessellation;
+// Sun shadow map resolution (0 = shadows disabled). The shadow map and its
+// pipelines are (re)created when a draw call initializes its Vulkan data,
+// i.e. changing this applies from the next race.
+int m_shadow_map_size;
+// Use PCSS (contact-hardening soft shadows) instead of fixed-kernel PCF in
+// the deferred sun lighting pass.
+bool m_pcss;
+// Per-object glow outlines (mirrors UserConfigParams::m_glow); checked per
+// frame when recording the displace mask pass.
+bool m_glow;
 };
 
 // Optional callback used to fill the per-object relativistic velocity in the
@@ -83,6 +93,13 @@ typedef void (*GENodeVelocityFunction)(const irr::scene::ISceneNode* node,
                                        float* out);
 void setNodeVelocityFunction(GENodeVelocityFunction func);
 GENodeVelocityFunction getNodeVelocityFunction();
+// Optional callback used to fill the per-object glow colour in the object
+// buffer: out[0..2] = linear glow rgb, out[3] = 1.0 if the node glows.
+// Mirrors the SP/OpenGL per-node glow colour (SPMeshNode::getGlowColor).
+typedef void (*GENodeGlowColorFunction)(const irr::scene::ISceneNode* node,
+                                        float* out);
+void setNodeGlowColorFunction(GENodeGlowColorFunction func);
+GENodeGlowColorFunction getNodeGlowColorFunction();
 void setVideoDriver(irr::video::IVideoDriver* driver);
 void setShaderFolder(const std::string& path);
 irr::video::IVideoDriver* getDriver();

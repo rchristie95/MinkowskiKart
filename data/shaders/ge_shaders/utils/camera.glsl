@@ -20,4 +20,14 @@ layout(std140, set = 1, binding = 0) uniform CameraBuffer
     mat4 m_previous_pv_matrix;      // previous frame projection*view
     vec4 m_motion_blur;             // [boost_amount, center_x, center_y, mask_radius]
     vec4 m_compactification;        // [strength, 0, 0, 0]
+    // Track god rays / light shafts (matches the SP/OpenGL renderGodRays sun)
+    vec4 m_godrays_pos;             // [x, y, z, opacity] (opacity=0 = inactive)
+    vec4 m_godrays_color;           // [r, g, b, world_radius]
+    // Post effect toggles mirroring the SP/OpenGL advanced pipeline options
+    vec4 m_postfx_flags;            // [bloom, ssao, dof, antialias]
+    // Sun shadow mapping: world position -> shadow map [uv.xy, depth01]
+    mat4 m_sun_shadow_matrix;
+    vec4 m_shadow_params;           // [enabled, pcss, 1/resolution, penumbra]
+    // Second post effect toggle block: [glow, scatter_density, 0, 0]
+    vec4 m_postfx_flags2;
 } u_camera;

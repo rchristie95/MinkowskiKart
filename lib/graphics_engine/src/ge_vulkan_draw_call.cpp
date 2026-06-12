@@ -3,6 +3,8 @@
 #include "ge_culling_tool.hpp"
 #include "ge_main.hpp"
 #include "ge_material_manager.hpp"
+#include "ge_vulkan_attachment_texture.hpp"
+#include "ge_vulkan_command_loader.hpp"
 #include "ge_render_info.hpp"
 #include "ge_spm.hpp"
 #include "ge_vulkan_animated_mesh_scene_node.hpp"
@@ -105,6 +107,13 @@ void ObjectData::init(irr::scene::ISceneNode* node, int material_id,
     }
     else
         m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
+    if (GENodeGlowColorFunction glow_function = getNodeGlowColorFunction())
+        glow_function(node, m_glow_color);
+    else
+    {
+        m_glow_color[0] = m_glow_color[1] = m_glow_color[2] =
+            m_glow_color[3] = 0.0f;
+    }
     auto& ri = node->getMaterial(irrlicht_material_id).getRenderInfo();
     if (ri && ri->getHue() > 0.0f)
         m_hue_change = ri->getHue();
@@ -145,6 +154,8 @@ void ObjectData::init(irr::scene::IBillboardSceneNode* node, int material_id,
     m_texture_trans[1] = 0.0f;
     m_hue_change = 0.0f;
     m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
+    m_glow_color[0] = m_glow_color[1] = m_glow_color[2] =
+        m_glow_color[3] = 0.0f;
     // Only support average of them at the moment
     irr::video::SColor top, bottom, output;
     node->getColor(top, bottom);
@@ -231,6 +242,8 @@ void ObjectData::init(const irr::scene::SParticle& particle, int material_id,
     m_texture_trans[1] = 0.0f;
     m_hue_change = 0.0f;
     m_velocity[0] = m_velocity[1] = m_velocity[2] = m_velocity[3] = 0.0f;
+    m_glow_color[0] = m_glow_color[1] = m_glow_color[2] =
+        m_glow_color[3] = 0.0f;
     if (getGEConfig()->m_pbr)
         m_custom_vertex_color = srgb255ToLinearFromSColor(particle.color).color;
     else
@@ -255,6 +268,9 @@ GEVulkanDrawCall::GEVulkanDrawCall()
     m_pipeline_layout = VK_NULL_HANDLE;
     m_skybox_layout = VK_NULL_HANDLE;
     m_skybox_renderer = NULL;
+    m_shadow_map = NULL;
+    m_shadow_render_pass = VK_NULL_HANDLE;
+    m_shadow_framebuffer = VK_NULL_HANDLE;
     GEVulkanDriver* vk = static_cast<GEVulkanDriver*>(getDriver());
     m_texture_descriptor = vk->getMeshTextureDescriptor();
     GEVulkanDeferredFBO* dfbo =
@@ -288,6 +304,11 @@ GEVulkanDrawCall::~GEVulkanDrawCall()
             if (layout != VK_NULL_HANDLE)
                 vkDestroyPipelineLayout(vk->getDevice(), layout, NULL);
         }
+        if (m_shadow_framebuffer != VK_NULL_HANDLE)
+            vkDestroyFramebuffer(vk->getDevice(), m_shadow_framebuffer, NULL);
+        if (m_shadow_render_pass != VK_NULL_HANDLE)
+            vkDestroyRenderPass(vk->getDevice(), m_shadow_render_pass, NULL);
+        delete m_shadow_map;
     }
     delete m_hiz_depth;
 }   // ~GEVulkanDrawCall
@@ -550,6 +571,23 @@ start:
             if (m_graphics_pipelines.find(cur_shader) ==
                 m_graphics_pipelines.end())
                 continue;
+            // Mark batches containing glowing nodes for the GVPT_GLOW pass.
+            bool group_glow = false;
+            if (GENodeGlowColorFunction gf = getNodeGlowColorFunction())
+            {
+                for (auto& r : q.second)
+                {
+                    if (r.second == BILLBOARD_NODE || r.second == PARTICLE_NODE)
+                        break;
+                    float glow[4];
+                    gf(r.first, glow);
+                    if (glow[3] > 0.0f)
+                    {
+                        group_glow = true;
+                        break;
+                    }
+                }
+            }
             InstanceKey key;
             key.m_nodes.reserve(q.second.size());
             key.m_instance_count = visible_count;
@@ -709,7 +747,7 @@ start:
             std::string sorting_key =
                 std::string(1, settings.m_drawing_priority) + cur_shader;
             m_cmds.push_back({ cmd, cur_shader, sorting_key, mb, material_id,
-                offset_map[cmd.firstInstance] });
+                offset_map[cmd.firstInstance], group_glow });
             if (!skip_instance_key && it == cur_key.end())
                  cur_key.push_back(key);
         }
@@ -1079,7 +1117,684 @@ void GEVulkanDrawCall::createAllPipelines(GEVulkanDriver* vk)
         settings.m_custom_pl = m_deferred_layouts[GVDFP_DISPLACE_COLOR];
         createPipeline(vk, settings, dp_cache);
     }
+
+    if (m_shadow_render_pass != VK_NULL_HANDLE)
+        createShadowPipelines(vk);
+    if (has_displace)
+        createGlowPipelines(vk);
 }   // createAllPipelines
+
+// ----------------------------------------------------------------------------
+void GEVulkanDrawCall::createShadowResources(GEVulkanDriver* vk)
+{
+    // Sun shadow mapping needs the deferred PBR pipeline (the shadow factor
+    // is applied in deferred_pbr.frag). The map is created even when shadows
+    // are currently disabled so the data descriptor bindings stay valid; the
+    // render pass is simply skipped then.
+    if (!getGEConfig()->m_pbr || !vk->getRTTTexture() ||
+        !vk->getRTTTexture()->isDeferredFBO())
+        return;
+
+    int size = getGEConfig()->m_shadow_map_size;
+    if (size <= 0)
+        size = 512;
+    size = std::min(std::max(size, 256), 4096);
+    irr::core::dimension2du dim(size, size);
+    m_shadow_map = GEVulkanAttachmentTexture::createDepthTexture(vk, dim,
+        false/*lazy_allocation*/);
+
+    // Make sure the first frame can sample it even if the shadow pass has
+    // not run yet.
+    VkCommandBuffer command_buffer =
+        GEVulkanCommandLoader::beginSingleTimeCommands();
+    VkImageMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_shadow_map->getImage();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1,
+        &barrier);
+    GEVulkanCommandLoader::endSingleTimeCommands(command_buffer);
+
+    // Depth-only render pass: cleared each frame, sampled by the deferred
+    // lighting subpass of the main render pass afterwards.
+    VkAttachmentDescription depth_desc = {};
+    depth_desc.format = m_shadow_map->getInternalFormat();
+    depth_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depth_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depth_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depth_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+    VkAttachmentReference depth_reference =
+        { 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 0;
+    subpass.pDepthStencilAttachment = &depth_reference;
+
+    std::array<VkSubpassDependency, 2> dependencies = {};
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    VkRenderPassCreateInfo render_pass_info = {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = 1;
+    render_pass_info.pAttachments = &depth_desc;
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = dependencies.size();
+    render_pass_info.pDependencies = dependencies.data();
+
+    if (vkCreateRenderPass(vk->getDevice(), &render_pass_info, NULL,
+        &m_shadow_render_pass) != VK_SUCCESS)
+        throw std::runtime_error("vkCreateRenderPass failed for shadow map");
+
+    VkImageView attachment = (VkImageView)m_shadow_map->getTextureHandler();
+    VkFramebufferCreateInfo framebuffer_info = {};
+    framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebuffer_info.renderPass = m_shadow_render_pass;
+    framebuffer_info.attachmentCount = 1;
+    framebuffer_info.pAttachments = &attachment;
+    framebuffer_info.width = dim.Width;
+    framebuffer_info.height = dim.Height;
+    framebuffer_info.layers = 1;
+    if (vkCreateFramebuffer(vk->getDevice(), &framebuffer_info, NULL,
+        &m_shadow_framebuffer) != VK_SUCCESS)
+        throw std::runtime_error("vkCreateFramebuffer failed for shadow map");
+}   // createShadowResources
+
+// ----------------------------------------------------------------------------
+// Depth-only pipelines targeting the shadow render pass. Mirrors the
+// GVPT_DEPTH pre-pass variants (same vertex/tessellation/depth fragment
+// shaders) with a polygon depth bias against acne.
+void GEVulkanDrawCall::createShadowPipelines(GEVulkanDriver* vk)
+{
+    const bool supports_tess =
+        vk->getPhysicalDeviceFeatures().tessellationShader == VK_TRUE;
+    std::unordered_map<std::string, std::shared_ptr<VkPipeline> > cache;
+
+    VkPipelineShaderStageCreateInfo stage_info = {};
+    stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stage_info.pName = "main";
+
+    VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+    vertex_input_info.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    VertexDescription vertex_desc = getDefaultVertexDescription();
+    vertex_input_info.vertexBindingDescriptionCount =
+        vertex_desc.first.size();
+    vertex_input_info.vertexAttributeDescriptionCount =
+        vertex_desc.second.size();
+    vertex_input_info.pVertexBindingDescriptions = vertex_desc.first.data();
+    vertex_input_info.pVertexAttributeDescriptions = vertex_desc.second.data();
+
+    VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
+    input_assembly.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_assembly.primitiveRestartEnable = VK_FALSE;
+
+    VkPipelineTessellationStateCreateInfo tessellation_state = {};
+    tessellation_state.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    tessellation_state.patchControlPoints = 3;
+
+    VkViewport viewport = {};
+    viewport.width = (float)m_shadow_map->getSize().Width;
+    viewport.height = (float)m_shadow_map->getSize().Height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    VkRect2D scissor = {};
+    scissor.extent = { m_shadow_map->getSize().Width,
+        m_shadow_map->getSize().Height };
+    VkPipelineViewportStateCreateInfo viewport_state = {};
+    viewport_state.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_state.viewportCount = 1;
+    viewport_state.pViewports = &viewport;
+    viewport_state.scissorCount = 1;
+    viewport_state.pScissors = &scissor;
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {};
+    rasterizer.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_TRUE;
+    rasterizer.depthBiasConstantFactor = 2.0f;
+    rasterizer.depthBiasSlopeFactor = 4.0f;
+
+    VkPipelineMultisampleStateCreateInfo multisampling = {};
+    multisampling.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
+    depth_stencil.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil.depthTestEnable = VK_TRUE;
+    depth_stencil.depthWriteEnable = VK_TRUE;
+    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depth_stencil.depthBoundsTestEnable = VK_FALSE;
+    depth_stencil.stencilTestEnable = VK_FALSE;
+
+    VkPipelineColorBlendStateCreateInfo color_blending = {};
+    color_blending.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    color_blending.attachmentCount = 0;
+
+    std::array<VkDynamicState, 2> dynamic_state =
+    {{
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_VIEWPORT
+    }};
+    VkPipelineDynamicStateCreateInfo dynamic_state_info = {};
+    dynamic_state_info.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state_info.dynamicStateCount = dynamic_state.size();
+    dynamic_state_info.pDynamicStates = dynamic_state.data();
+
+    VkGraphicsPipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_info.pVertexInputState = &vertex_input_info;
+    pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pViewportState = &viewport_state;
+    pipeline_info.pRasterizationState = &rasterizer;
+    pipeline_info.pMultisampleState = &multisampling;
+    pipeline_info.pDepthStencilState = &depth_stencil;
+    pipeline_info.pColorBlendState = &color_blending;
+    pipeline_info.pDynamicState = &dynamic_state_info;
+    pipeline_info.layout = m_pipeline_layout;
+    pipeline_info.renderPass = m_shadow_render_pass;
+    pipeline_info.subpass = 0;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+
+    for (auto& p : GEMaterialManager::g_materials)
+    {
+        const std::shared_ptr<const GEMaterial>& m = p.second;
+        if (m->isTransparent() ||
+            m->m_depth_only_fragment_shader.empty())
+            continue;
+        if (!getGEConfig()->m_pbr && !m->m_nonpbr_fallback.empty())
+            continue;
+        const bool has_tessellation = supports_tess &&
+            !m->m_tesc_shader.empty() && !m->m_tese_shader.empty();
+        if (!supports_tess &&
+            !m->m_tesc_shader.empty() && !m->m_tese_shader.empty())
+            continue;
+        if (m_graphics_pipelines.find(p.first) == m_graphics_pipelines.end())
+            continue;
+
+        auto build = [&](bool skinning) -> std::shared_ptr<VkPipeline>
+        {
+            const std::string& vs = skinning ?
+                m->m_skinning_vertex_shader : m->m_vertex_shader;
+            if (vs.empty())
+                return nullptr;
+            const bool use_tess = has_tessellation && !skinning;
+            std::string key = vs + m->m_depth_only_fragment_shader +
+                (use_tess ? m->m_tesc_shader + m->m_tese_shader :
+                std::string()) +
+                (m->m_backface_culling ? "|cull" : "|nocull");
+            auto it = cache.find(key);
+            if (it != cache.end())
+                return it->second;
+
+            std::vector<VkPipelineShaderStageCreateInfo> stages;
+            stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+            stage_info.module = GEVulkanShaderManager::getShader(vs);
+            stages.push_back(stage_info);
+            stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+            stage_info.module = GEVulkanShaderManager::getShader(
+                m->m_depth_only_fragment_shader);
+            stages.push_back(stage_info);
+            if (use_tess)
+            {
+                stage_info.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+                stage_info.module = GEVulkanShaderManager::getShader(
+                    m->m_tesc_shader);
+                stages.push_back(stage_info);
+                stage_info.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+                stage_info.module = GEVulkanShaderManager::getShader(
+                    m->m_tese_shader);
+                stages.push_back(stage_info);
+            }
+            pipeline_info.stageCount = stages.size();
+            pipeline_info.pStages = stages.data();
+            pipeline_info.pTessellationState =
+                use_tess ? &tessellation_state : NULL;
+            input_assembly.topology = use_tess ?
+                VK_PRIMITIVE_TOPOLOGY_PATCH_LIST :
+                VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            rasterizer.cullMode = m->m_backface_culling ?
+                VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
+
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            if (vkCreateGraphicsPipelines(vk->getDevice(), VK_NULL_HANDLE, 1,
+                &pipeline_info, NULL, &pipeline) != VK_SUCCESS)
+            {
+                throw std::runtime_error(
+                    "vkCreateGraphicsPipelines failed for shadow " + p.first);
+            }
+            auto sp = std::shared_ptr<VkPipeline>(new VkPipeline(pipeline),
+                destroyPipeline);
+            cache[key] = sp;
+            return sp;
+        };
+
+        auto pipeline = build(false);
+        if (pipeline)
+            m_graphics_pipelines[p.first].m_pipelines[GVPT_SHADOW] = pipeline;
+        if (!m->m_skinning_vertex_shader.empty())
+        {
+            std::string sk = p.first + SKINNING_PIPELINE;
+            if (m_graphics_pipelines.find(sk) != m_graphics_pipelines.end())
+            {
+                auto sk_pipeline = build(true);
+                if (sk_pipeline)
+                {
+                    m_graphics_pipelines[sk].m_pipelines[GVPT_SHADOW] =
+                        sk_pipeline;
+                }
+            }
+        }
+    }
+}   // createShadowPipelines
+
+// ----------------------------------------------------------------------------
+// One shared pipeline pair (static + skinning) drawing per-object glow
+// silhouettes into the glow attachment of the displace mask pass. Registered
+// for every solid spm-based material so the glow pass can reuse the existing
+// draw commands.
+void GEVulkanDrawCall::createGlowPipelines(GEVulkanDriver* vk)
+{
+    auto* dfbo = static_cast<GEVulkanDeferredFBO*>(vk->getRTTTexture());
+    if (!dfbo || !dfbo->getAttachment<GVDFT_GLOW>())
+        return;
+
+    VkPipelineShaderStageCreateInfo stage_info = {};
+    stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stage_info.pName = "main";
+    std::vector<VkPipelineShaderStageCreateInfo> stages(2, stage_info);
+    stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stages[0].module = GEVulkanShaderManager::getShader("ge_glow.vert");
+    stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stages[1].module = GEVulkanShaderManager::getShader("ge_glow.frag");
+
+    VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+    vertex_input_info.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    VertexDescription vertex_desc = getDefaultVertexDescription();
+    vertex_input_info.vertexBindingDescriptionCount =
+        vertex_desc.first.size();
+    vertex_input_info.vertexAttributeDescriptionCount =
+        vertex_desc.second.size();
+    vertex_input_info.pVertexBindingDescriptions = vertex_desc.first.data();
+    vertex_input_info.pVertexAttributeDescriptions = vertex_desc.second.data();
+
+    VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
+    input_assembly.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    input_assembly.primitiveRestartEnable = VK_FALSE;
+
+    VkViewport viewport = {};
+    viewport.width = (float)vk->getSwapChainExtent().width;
+    viewport.height = (float)vk->getSwapChainExtent().height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    VkRect2D scissor = {};
+    scissor.extent = vk->getSwapChainExtent();
+    VkPipelineViewportStateCreateInfo viewport_state = {};
+    viewport_state.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_state.viewportCount = 1;
+    viewport_state.pViewports = &viewport;
+    viewport_state.scissorCount = 1;
+    viewport_state.pScissors = &scissor;
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {};
+    rasterizer.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+    VkPipelineMultisampleStateCreateInfo multisampling = {};
+    multisampling.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    // Test (but don't write) against the scene depth so occluded glow
+    // objects don't outline through walls. LEQUAL tolerates the slight
+    // difference against depth laid down by the tessellated variants.
+    VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
+    depth_stencil.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil.depthTestEnable = VK_TRUE;
+    depth_stencil.depthWriteEnable = VK_FALSE;
+    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
+    // Write only the glow attachment (the last colour attachment of the
+    // displace mask pass); the displace mask / SSR attachments keep their
+    // contents.
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment(
+        vk->getRTTTexture()->getZeroClearCountForPass(GVDFP_DISPLACE_MASK));
+    for (auto& a : color_blend_attachment)
+    {
+        a = {};
+        a.colorWriteMask = 0;
+        a.blendEnable = VK_FALSE;
+    }
+    color_blend_attachment.back().colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+        VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+        VK_COLOR_COMPONENT_A_BIT;
+    VkPipelineColorBlendStateCreateInfo color_blending = {};
+    color_blending.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    color_blending.attachmentCount = color_blend_attachment.size();
+    color_blending.pAttachments = color_blend_attachment.data();
+
+    std::array<VkDynamicState, 2> dynamic_state =
+    {{
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_VIEWPORT
+    }};
+    VkPipelineDynamicStateCreateInfo dynamic_state_info = {};
+    dynamic_state_info.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state_info.dynamicStateCount = dynamic_state.size();
+    dynamic_state_info.pDynamicStates = dynamic_state.data();
+
+    VkGraphicsPipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_info.stageCount = stages.size();
+    pipeline_info.pStages = stages.data();
+    pipeline_info.pVertexInputState = &vertex_input_info;
+    pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pViewportState = &viewport_state;
+    pipeline_info.pRasterizationState = &rasterizer;
+    pipeline_info.pMultisampleState = &multisampling;
+    pipeline_info.pDepthStencilState = &depth_stencil;
+    pipeline_info.pColorBlendState = &color_blending;
+    pipeline_info.pDynamicState = &dynamic_state_info;
+    pipeline_info.layout = m_pipeline_layout;
+    pipeline_info.renderPass =
+        vk->getRTTTexture()->getRTTRenderPass(GVDFP_DISPLACE_MASK);
+    pipeline_info.subpass = 0;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    if (vkCreateGraphicsPipelines(vk->getDevice(), VK_NULL_HANDLE, 1,
+        &pipeline_info, NULL, &pipeline) != VK_SUCCESS)
+        throw std::runtime_error("vkCreateGraphicsPipelines failed for glow");
+    auto glow = std::shared_ptr<VkPipeline>(new VkPipeline(pipeline),
+        destroyPipeline);
+
+    stages[0].module = GEVulkanShaderManager::getShader(
+        "ge_glow_skinning.vert");
+    if (vkCreateGraphicsPipelines(vk->getDevice(), VK_NULL_HANDLE, 1,
+        &pipeline_info, NULL, &pipeline) != VK_SUCCESS)
+    {
+        throw std::runtime_error(
+            "vkCreateGraphicsPipelines failed for glow skinning");
+    }
+    auto glow_skinning = std::shared_ptr<VkPipeline>(new VkPipeline(pipeline),
+        destroyPipeline);
+
+    // Attach to every solid spm-based pipeline so renderPipeline(GVPT_GLOW)
+    // can replay the existing draw commands.
+    for (auto& p : GEMaterialManager::g_materials)
+    {
+        const std::shared_ptr<const GEMaterial>& m = p.second;
+        if (m->isTransparent())
+            continue;
+        if (m->m_vertex_shader != "spm.vert" &&
+            m->m_vertex_shader != "spm_tess.vert")
+            continue;
+        auto it = m_graphics_pipelines.find(p.first);
+        if (it != m_graphics_pipelines.end())
+            it->second.m_pipelines[GVPT_GLOW] = glow;
+        if (!m->m_skinning_vertex_shader.empty())
+        {
+            it = m_graphics_pipelines.find(p.first + SKINNING_PIPELINE);
+            if (it != m_graphics_pipelines.end())
+                it->second.m_pipelines[GVPT_GLOW] = glow_skinning;
+        }
+    }
+}   // createGlowPipelines
+
+// ----------------------------------------------------------------------------
+size_t GEVulkanDrawCall::getShadowCameraOffset() const
+{
+    size_t ubo_size = sizeof(GEVulkanCameraUBO);
+    return ubo_size +
+        getPadding(ubo_size, m_limits.minUniformBufferOffsetAlignment);
+}   // getShadowCameraOffset
+
+// ----------------------------------------------------------------------------
+// Fits the sun's orthographic frustum around the near part of the camera
+// frustum (single cascade) and fills both the shadow camera UBO (used by the
+// GVPT_SHADOW pass) and the player camera's shadow sampling parameters.
+void GEVulkanDrawCall::updateSunShadowCamera(GEVulkanCameraSceneNode* cam)
+{
+    const bool enabled = m_shadow_map != NULL &&
+        getGEConfig()->m_shadow_map_size > 0 && m_light_handler != NULL;
+    float params[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    if (!enabled)
+    {
+        cam->setSunShadowData(irr::core::matrix4(), params);
+        return;
+    }
+
+    // Distance along the view direction covered by the shadow map (matches
+    // the second SP/OpenGL cascade boundary; beyond it surfaces are lit).
+    const float SHADOW_RANGE = 60.0f;
+
+    const GEGlobalLightBuffer* light =
+        (const GEGlobalLightBuffer*)m_light_handler->getData();
+    irr::core::vector3df sun_dir = light->m_sun_direction; // towards the sun
+    if (sun_dir.getLengthSQ() < 0.0001f)
+        sun_dir = irr::core::vector3df(0.0f, 1.0f, 0.0f);
+    sun_dir.normalize();
+
+    // Camera frustum corners (unwarped matrices) up to SHADOW_RANGE.
+    const irr::core::matrix4& proj =
+        cam->getViewFrustum()->getTransform(irr::video::ETS_PROJECTION);
+    irr::core::matrix4 inv_view;
+    cam->getViewFrustum()->getTransform(irr::video::ETS_VIEW)
+        .getInverse(inv_view);
+    float tx = proj[0] != 0.0f ? 1.0f / proj[0] : 1.0f;
+    float ty = proj[5] != 0.0f ? 1.0f / proj[5] : 1.0f;
+    std::array<irr::core::vector3df, 8> corners;
+    unsigned corner_count = 0;
+    for (float z : { cam->getNearValue(),
+        std::min(SHADOW_RANGE, cam->getFarValue()) })
+    {
+        for (float sx : { -1.0f, 1.0f })
+        {
+            for (float sy : { -1.0f, 1.0f })
+            {
+                irr::core::vector3df p(sx * tx * z, sy * ty * z, z);
+                inv_view.transformVect(p);
+                corners[corner_count++] = p;
+            }
+        }
+    }
+    irr::core::vector3df center(0.0f, 0.0f, 0.0f);
+    for (auto& c : corners)
+        center += c;
+    center /= (float)corner_count;
+
+    // Sun view matrix looking at the frustum centre.
+    irr::core::vector3df up = std::abs(sun_dir.Y) > 0.99f ?
+        irr::core::vector3df(1.0f, 0.0f, 0.0f) :
+        irr::core::vector3df(0.0f, 1.0f, 0.0f);
+    irr::core::matrix4 light_view;
+    light_view.buildCameraLookAtMatrixLH(center + sun_dir * 200.0f, center,
+        up);
+
+    // Light-space bounding box of the frustum corners.
+    irr::core::vector3df min_l, max_l;
+    for (unsigned i = 0; i < corner_count; i++)
+    {
+        irr::core::vector3df p = corners[i];
+        light_view.transformVect(p);
+        if (i == 0)
+            min_l = max_l = p;
+        else
+        {
+            min_l.X = std::min(min_l.X, p.X); max_l.X = std::max(max_l.X, p.X);
+            min_l.Y = std::min(min_l.Y, p.Y); max_l.Y = std::max(max_l.Y, p.Y);
+            min_l.Z = std::min(min_l.Z, p.Z); max_l.Z = std::max(max_l.Z, p.Z);
+        }
+    }
+    // Room for casters between the sun and the visible volume.
+    const float CASTER_MARGIN = 150.0f;
+    float zn = min_l.Z - CASTER_MARGIN;
+    float zf = max_l.Z + 10.0f;
+    float w = std::max(max_l.X - min_l.X, 1.0f);
+    float h = std::max(max_l.Y - min_l.Y, 1.0f);
+    float cx = (min_l.X + max_l.X) * 0.5f;
+    float cy = (min_l.Y + max_l.Y) * 0.5f;
+
+    // Snap the ortho window to shadow texel multiples to avoid shimmer when
+    // the camera moves.
+    const float res = (float)m_shadow_map->getSize().Width;
+    float texel_x = w / res;
+    float texel_y = h / res;
+    cx = std::floor(cx / texel_x) * texel_x;
+    cy = std::floor(cy / texel_y) * texel_y;
+
+    // Off-centre orthographic projection straight into Vulkan clip space
+    // (x,y in [-1,1], z in [0,1]).
+    irr::core::matrix4 ortho;
+    float* o = ortho.pointer();
+    memset(o, 0, sizeof(float) * 16);
+    o[0] = 2.0f / w;
+    o[5] = 2.0f / h;
+    o[10] = 1.0f / (zf - zn);
+    o[12] = -2.0f * cx / w;
+    o[13] = -2.0f * cy / h;
+    o[14] = -zn / (zf - zn);
+    o[15] = 1.0f;
+
+    irr::core::matrix4 sun_pv = ortho * light_view;
+
+    // The shadow camera UBO only needs the matrices used by the depth-only
+    // vertex/tessellation path; the relativity blocks stay zeroed (default)
+    // so geometry is rendered unwarped, and the warp bubble is pushed far
+    // away so the adaptive tessellation collapses to level 1.
+    m_shadow_camera_ubo.m_view_matrix = light_view;
+    m_shadow_camera_ubo.m_projection_matrix = ortho;
+    m_shadow_camera_ubo.m_projection_view_matrix = sun_pv;
+    sun_pv.getInverse(m_shadow_camera_ubo.m_inverse_projection_view_matrix);
+    light_view.getInverse(m_shadow_camera_ubo.m_inverse_view_matrix);
+    ortho.getInverse(m_shadow_camera_ubo.m_inverse_projection_matrix);
+    m_shadow_camera_ubo.m_viewport.UpperLeftCorner.X = 0.0f;
+    m_shadow_camera_ubo.m_viewport.UpperLeftCorner.Y = 0.0f;
+    m_shadow_camera_ubo.m_viewport.LowerRightCorner.X = res;
+    m_shadow_camera_ubo.m_viewport.LowerRightCorner.Y = res;
+    m_shadow_camera_ubo.m_screensize.UpperLeftCorner.X = res;
+    m_shadow_camera_ubo.m_screensize.UpperLeftCorner.Y = res;
+    m_shadow_camera_ubo.m_relativity_bubble[0] = 1.0e8f;
+    m_shadow_camera_ubo.m_relativity_bubble[1] = 1.0e8f;
+    m_shadow_camera_ubo.m_relativity_bubble[2] = 1.0e8f;
+
+    // World -> shadow map UV (xy in [0,1]) + depth01 for sampling in
+    // deferred_pbr.frag.
+    irr::core::matrix4 uv_bias;
+    float* b = uv_bias.pointer();
+    memset(b, 0, sizeof(float) * 16);
+    b[0] = 0.5f;
+    b[5] = 0.5f;
+    b[10] = 1.0f;
+    b[12] = 0.5f;
+    b[13] = 0.5f;
+    b[15] = 1.0f;
+
+    // [depth range (0 = disabled), pcss, texel uv, penumbra uv per metre]
+    params[0] = zf - zn;
+    params[1] = getGEConfig()->m_pcss ? 1.0f : 0.0f;
+    params[2] = 1.0f / res;
+    // PCSS penumbra: shadow-map UV radius per metre of receiver-blocker
+    // separation, for an effective sun angular size of ~1 degree.
+    params[3] = 0.02f / w;
+    cam->setSunShadowData(uv_bias * sun_pv, params);
+}   // updateSunShadowCamera
+
+// ----------------------------------------------------------------------------
+void GEVulkanDrawCall::renderShadowMap(GEVulkanDriver* vk, VkCommandBuffer cmd)
+{
+    if (m_data_layout == VK_NULL_HANDLE || m_cmds.empty() ||
+        m_shadow_map == NULL || m_shadow_render_pass == VK_NULL_HANDLE ||
+        getGEConfig()->m_shadow_map_size <= 0)
+        return;
+
+    // Descriptor sets are bound while recording this pass; make sure their
+    // pending updates run now (renderDrawCalls calls this again later, which
+    // is then a no-op).
+    prepareRendering(vk);
+
+    VkClearValue clear_value;
+    clear_value.depthStencil = { 1.0f, 0 };
+    VkRenderPassBeginInfo render_pass_info = {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = m_shadow_render_pass;
+    render_pass_info.framebuffer = m_shadow_framebuffer;
+    render_pass_info.renderArea.offset = { 0, 0 };
+    render_pass_info.renderArea.extent = { m_shadow_map->getSize().Width,
+        m_shadow_map->getSize().Height };
+    render_pass_info.clearValueCount = 1;
+    render_pass_info.pClearValues = &clear_value;
+    vkCmdBeginRenderPass(cmd, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport vp = {};
+    vp.width = (float)m_shadow_map->getSize().Width;
+    vp.height = (float)m_shadow_map->getSize().Height;
+    vp.minDepth = 0.0f;
+    vp.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &vp);
+    VkRect2D scissor = {};
+    scissor.extent = render_pass_info.renderArea.extent;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    if (GEVulkanFeatures::supportsBindMeshTexturesAtOnce())
+        bindAllMaterials(cmd);
+    bool rebind_base_vertex = true;
+    renderPipeline(vk, cmd, GVPT_SHADOW, rebind_base_vertex);
+
+    vkCmdEndRenderPass(cmd);
+}   // renderShadowMap
 
 // ----------------------------------------------------------------------------
 void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
@@ -1226,10 +1941,17 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
                 color_blend_attachment[0]);
             break;
         case GVPT_DISPLACE_MASK:
+        {
             color_blend_attachment.resize(vk->getRTTTexture()
                 ->getZeroClearCountForPass(GVDFP_DISPLACE_MASK),
                 color_blend_attachment[0]);
+            // The glow attachment (last colour attachment of the mask pass)
+            // is written by the dedicated GVPT_GLOW pipelines only.
+            auto* dfbo = static_cast<GEVulkanDeferredFBO*>(vk->getRTTTexture());
+            if (dfbo->getAttachment<GVDFT_GLOW>())
+                color_blend_attachment.back().colorWriteMask = 0;
             break;
+        }
         case GVPT_DISPLACE_COLOR:
             color_blend_attachment.resize(vk->getRTTTexture()
                 ->getZeroClearCountForPass(GVDFP_DISPLACE_COLOR),
@@ -1575,6 +2297,23 @@ void GEVulkanDrawCall::createVulkanData()
         bindings.push_back(material_binding);
     }
 
+    // Sun shadow map samplers (deferred_pbr.frag): binding 5 with a compare
+    // sampler for hardware PCF, binding 6 with a plain sampler for the PCSS
+    // blocker search. Only written when the shadow map exists (deferred PBR);
+    // shaders in other configurations never statically use them.
+    VkDescriptorSetLayoutBinding shadow_pcf_binding = {};
+    shadow_pcf_binding.binding = 5;
+    shadow_pcf_binding.descriptorCount = 1;
+    shadow_pcf_binding.descriptorType =
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    shadow_pcf_binding.pImmutableSamplers = NULL;
+    shadow_pcf_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings.push_back(shadow_pcf_binding);
+
+    VkDescriptorSetLayoutBinding shadow_raw_binding = shadow_pcf_binding;
+    shadow_raw_binding.binding = 6;
+    bindings.push_back(shadow_raw_binding);
+
     VkDescriptorSetLayoutCreateInfo setinfo = {};
     setinfo.flags = 0;
     setinfo.pNext = NULL;
@@ -1604,6 +2343,12 @@ void GEVulkanDrawCall::createVulkanData()
     };
     if (GEVulkanFeatures::supportsBindMeshTexturesAtOnce())
         sizes.back().descriptorCount = (vk->getMaxFrameInFlight() + 1) * 3;
+    // Sun shadow map samplers (bindings 5 and 6)
+    sizes.push_back(
+    {
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        (vk->getMaxFrameInFlight() + 1) * 2
+    });
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1712,6 +2457,7 @@ void GEVulkanDrawCall::createVulkanData()
                 "vkCreatePipelineLayout failed for m_deferred_layouts");
         }
     }
+    createShadowResources(vk);
     createAllPipelines(vk);
 
     size_t extra_size = 0;
@@ -1755,11 +2501,21 @@ void GEVulkanDrawCall::uploadDynamicData(GEVulkanDriver* vk,
     VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
+    // Fill the sun shadow matrices (consumed both by the camera UBO below
+    // and by the shadow camera UBO appended after it).
+    updateSunShadowCamera(cam);
+
     std::vector<std::pair<void*, size_t> > data_uploading;
     data_uploading.emplace_back((void*)cam->getUBOData(),
         sizeof(GEVulkanCameraUBO));
 
-    size_t sbo_padding = getLightDataOffset() - sizeof(GEVulkanCameraUBO);
+    size_t sbo_padding = getShadowCameraOffset() - sizeof(GEVulkanCameraUBO);
+    if (sbo_padding > 0)
+        data_uploading.emplace_back((void*)NULL, sbo_padding);
+    // Sun camera UBO for the GVPT_SHADOW pass, bound with a camera dynamic
+    // offset of getShadowCameraOffset().
+    data_uploading.emplace_back((void*)&m_shadow_camera_ubo,
+        sizeof(GEVulkanCameraUBO));
     if (sbo_padding > 0)
         data_uploading.emplace_back((void*)NULL, sbo_padding);
     if (m_light_handler)
@@ -1902,6 +2658,10 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
 
     int cur_mid = -1;
     std::vector<uint32_t> dynamic_offsets = getDefaultDynamicOffsets();
+    // The shadow pass renders with the sun camera UBO uploaded right after
+    // the main camera UBO.
+    if (pt == GVPT_SHADOW)
+        dynamic_offsets[0] = (uint32_t)getShadowCameraOffset();
     if (getGEConfig()->m_pbr)
     {
         switch (pt)
@@ -1992,8 +2752,33 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
                     dynamic_offsets[4] = m_materials_data[cur_pipeline].first;
                     bindDataDescriptor(cmd, current_buffer_idx,
                         dynamic_offsets);
-                    vkCmdDrawIndexedIndirect(cmd, indirect_buffer,
-                        indirect_offset, draw_count, indirect_size);
+                    if (pt == GVPT_GLOW)
+                    {
+                        // Only replay the batches that contain glowing nodes.
+                        unsigned group_start = i + 1 - draw_count;
+                        unsigned k = 0;
+                        while (k < draw_count)
+                        {
+                            if (!m_cmds[group_start + k].m_glow)
+                            {
+                                k++;
+                                continue;
+                            }
+                            unsigned run = k + 1;
+                            while (run < draw_count &&
+                                m_cmds[group_start + run].m_glow)
+                                run++;
+                            vkCmdDrawIndexedIndirect(cmd, indirect_buffer,
+                                indirect_offset + k * indirect_size,
+                                run - k, indirect_size);
+                            k = run;
+                        }
+                    }
+                    else
+                    {
+                        vkCmdDrawIndexedIndirect(cmd, indirect_buffer,
+                            indirect_offset, draw_count, indirect_size);
+                    }
                 }
                 indirect_offset += draw_count * indirect_size;
                 if (!is_last_cmd)
@@ -2008,6 +2793,8 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
     {
         for (unsigned i = 0; i < m_cmds.size(); i++)
         {
+            if (pt == GVPT_GLOW && !m_cmds[i].m_glow)
+                continue;
             const VkDrawIndexedIndirectCommand& cur_cmd = m_cmds[i].m_cmd;
             if (m_cmds[i].m_shader != cur_pipeline)
             {
@@ -2238,6 +3025,32 @@ void GEVulkanDrawCall::updateDataDescriptorSets(GEVulkanDriver* vk)
             ds.pBufferInfo = &sbo_info_material;
         }
 
+        // Sun shadow map samplers: binding 5 (compare sampler for PCF) and
+        // binding 6 (plain sampler for the PCSS blocker search).
+        std::array<VkDescriptorImageInfo, 2> shadow_infos = {};
+        if (m_shadow_map)
+        {
+            shadow_infos[0].imageLayout =
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            shadow_infos[0].imageView =
+                (VkImageView)m_shadow_map->getTextureHandler();
+            shadow_infos[0].sampler = vk->getSampler(GVS_SHADOW);
+            shadow_infos[1] = shadow_infos[0];
+            shadow_infos[1].sampler = vk->getSampler(GVS_NEAREST);
+            for (unsigned b = 0; b < 2; b++)
+            {
+                data_set.push_back({});
+                VkWriteDescriptorSet& ds = data_set.back();
+                ds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                ds.dstSet = m_data_descriptor_sets[i];
+                ds.dstBinding = 5 + b;
+                ds.dstArrayElement = 0;
+                ds.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                ds.descriptorCount = 1;
+                ds.pImageInfo = &shadow_infos[b];
+            }
+        }
+
         vkUpdateDescriptorSets(vk->getDevice(), data_set.size(),
             data_set.data(), 0, NULL);
     }
@@ -2378,7 +3191,8 @@ void GEVulkanDrawCall::bindSingleMaterial(VkCommandBuffer cmd,
     if (data.m_pipelines.find(pt) == data.m_pipelines.end())
         return;
     const PipelineSettings& s = data.m_settings;
-    if (pt == GVPT_GHOST_DEPTH ||(pt == GVPT_DEPTH &&
+    if (pt == GVPT_GHOST_DEPTH ||
+        ((pt == GVPT_DEPTH || pt == GVPT_SHADOW) &&
         s.m_material->texturelessDepth()))
         return;
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -2507,9 +3321,8 @@ void GEVulkanDrawCall::addLightNode(irr::scene::ILightSceneNode* node)
 // ----------------------------------------------------------------------------
 size_t GEVulkanDrawCall::getLightDataOffset() const
 {
-    size_t ubo_size = sizeof(GEVulkanCameraUBO);
-    return ubo_size +
-        getPadding(ubo_size, m_limits.minUniformBufferOffsetAlignment);
+    // [camera UBO][padding][sun shadow camera UBO][padding][light data]
+    return getShadowCameraOffset() * 2;
 }   // getLightDataOffset
 
 // ----------------------------------------------------------------------------

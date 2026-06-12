@@ -733,9 +733,10 @@ namespace UserConfigParams
         PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #elif defined(WIN32) && !defined(_M_ARM)
-    // Windows x86/x64: Vulkan gives lower CPU overhead than OpenGL on modern drivers.
+    // Windows x86/x64: default to the mature OpenGL pipeline; Vulkan stays
+    // selectable in the graphics settings.
     PARAM_PREFIX StringUserConfigParam         m_render_driver
-        PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
+        PARAM_DEFAULT(  StringUserConfigParam("opengl", "render_driver",
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #else
     PARAM_PREFIX StringUserConfigParam         m_render_driver
@@ -1393,9 +1394,12 @@ namespace UserConfigParams
     PARAM_PREFIX IntUserConfigParam        m_relativity_track_clipping_mode
             PARAM_DEFAULT( IntUserConfigParam(
                 (int)RelativityTrackClippingMode::
-                    WARPED_COLLISION_PHYSICS,
+                    DYNAMIC_TESSELLATION,
                 "track_clipping_mode", &m_relativity_group,
-                "Anti-clipping mode: locked to 5 warped collision physics") );
+                "Anti-clipping mode: 0 dynamic tessellation (default), "
+                "1 height correction, 2 both, 3 disabled, "
+                "4 tangent velocity projection, "
+                "5 warped collision physics (experimental)") );
 
     // ---- User management
 

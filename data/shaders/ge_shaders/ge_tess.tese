@@ -7,7 +7,7 @@
 
 // Vulkan GE pipelines use VK_FRONT_FACE_CLOCKWISE. Keep tessellated patches in
 // the same winding as the non-tessellated triangle-list path.
-layout(triangles, equal_spacing, cw) in;
+layout(triangles, fractional_odd_spacing, cw) in;
 
 // ---- Inputs from ge_tess.tesc ----
 layout(location = 0) in vec4  tc_vertex_color[];
@@ -89,14 +89,11 @@ void main()
     // Apply relativistic deformation at the interpolated world position
     float visual_fade = getRelativisticVisualFade(world_pos.xyz, i_velocity,
                             disable_rel);
-    vec4 deformed_pos = applyRelativisticContraction(world_pos, visual_fade);
-    deformed_pos = applyRelativisticVisualPosition(deformed_pos, i_velocity,
-                       visual_fade);
+    vec4 deformed_pos = applyRelativisticVisualPosition(world_pos, i_velocity,
+                            visual_fade);
 
-    vec3 deformed_normal  = applyRelativisticNormalTransform(
-                                normalize(raw_normal), visual_fade);
-    vec3 deformed_tangent = applyRelativisticDisplacement(
-                                normalize(raw_tangent), visual_fade);
+    vec3 deformed_normal  = normalize(raw_normal);
+    vec3 deformed_tangent = normalize(raw_tangent);
 
     f_world_position = deformed_pos;
     f_normal    = deformed_normal;

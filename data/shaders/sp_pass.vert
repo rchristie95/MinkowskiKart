@@ -49,13 +49,9 @@ void main()
     vec4 raw_world_position = vec4(i_origin + raw_world_offset, 1.0);
     float relativity_fade = getRelativisticVisualFade(raw_world_position.xyz,
         i_velocity, i_scale.w);
-    vec4 v_world_position = applyRelativisticContraction(raw_world_position,
-        relativity_fade);
-    vec3 v_world_normal = applyRelativisticNormalTransform(
-        rotateVector(i_rotation, i_normal.xyz), relativity_fade);
-    vec3 world_tangent = applyRelativisticDisplacement(
-        rotateVector(i_rotation, i_tangent.xyz), relativity_fade);
-    v_world_position = applyRelativisticVisualPosition(v_world_position,
+    vec3 v_world_normal = normalize(rotateVector(i_rotation, i_normal.xyz));
+    vec3 world_tangent = rotateVector(i_rotation, i_tangent.xyz);
+    vec4 v_world_position = applyRelativisticVisualPosition(raw_world_position,
         i_velocity, relativity_fade);
 
     tangent = world_tangent;

@@ -112,10 +112,10 @@ std::unordered_set<const scene::ISceneNode*> g_animated_track_nodes;
 // velocity like static scenery instead of feeding the relativistic warp.
 std::unordered_set<const scene::ISceneNode*> g_presentation_nodes;
 
-// Per-camera cache: kart root scene node -> visual velocity. Other karts are
-// treated as v=0 geometry for retarded-position visuals, like the track, so
-// their body/wheels stay visually grounded instead of floating relative to the
-// road. The observer kart keeps its previous coordinate-velocity path.
+// Per-camera cache: kart root scene node -> visual velocity. Every kart uses
+// its true coordinate velocity so the whole kart (body/wheels/headlights)
+// shares one consistent retarded-position transform instead of noisy per-node
+// graphics-delta estimates.
 std::unordered_map<const scene::ISceneNode*, core::vector3df>
     g_kart_root_velocities;
 
@@ -276,37 +276,10 @@ bool materialHasNoRelativityWarp(const video::SMaterial* m)
     return no_warp;
 }   // materialHasNoRelativityWarp
 
-bool nodeHasAncestor(const scene::ISceneNode* node,
-                     const scene::ISceneNode* ancestor)
-{
-    if (!node || !ancestor)
-        return false;
-
-    const scene::ISceneNode* current = node;
-    while (current)
-    {
-        if (current == ancestor)
-            return true;
-        current = current->getParent();
-    }
-    return false;
-}   // nodeHasAncestor
-
 bool shouldDisableRelativityVisualsForNode(const scene::ISceneNode* node)
 {
-    if (!Relativity::isEnabled() || !node ||
-        sp_cur_player >= Camera::getNumCameras())
-    {
-        return false;
-    }
-    if (Relativity::useWarpedTrackCollisionPhysics())
-        return false;
-
-    Camera* camera = Camera::getCamera(sp_cur_player);
-    AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
-    const scene::ISceneNode* observer_root =
-        observer_kart ? observer_kart->getNode() : nullptr;
-    return nodeHasAncestor(node, observer_root);
+    (void)node;
+    return false;
 }   // shouldDisableRelativityVisualsForNode
 
 std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
@@ -407,15 +380,18 @@ void removeBlackHoleLens(const void* owner)
  *  the GE Vulkan pipeline (which does not run prepareDrawCalls). */
 void updateRelativityKartVelocities(unsigned player_index)
 {
+    (void)player_index;
     g_kart_root_velocities.clear();
     if (!Relativity::isEnabled())
         return;
     World* world = World::getWorld();
     if (!world)
         return;
-    Camera* camera = player_index < Camera::getNumCameras()
-        ? Camera::getCamera(player_index) : nullptr;
-    AbstractKart* observer_kart = camera ? camera->getKart() : nullptr;
+    // Every kart renders with its true coordinate velocity. Contact is a
+    // spacetime event, so a wheel touching the road in world space also
+    // touches it in the retarded-position image; rendering karts with v=0
+    // (as this used to do for non-observer karts) instead displaces them
+    // relative to the road by ~v*d/c.
     const unsigned num_karts = world->getNumKarts();
     for (unsigned i = 0; i < num_karts; i++)
     {
@@ -426,18 +402,15 @@ void updateRelativityKartVelocities(unsigned player_index)
         if (!root)
             continue;
         core::vector3df visual_velocity(0.0f, 0.0f, 0.0f);
-        if (abstract_kart == observer_kart)
+        Kart* kart = dynamic_cast<Kart*>(abstract_kart);
+        if (kart)
         {
-            Kart* kart = dynamic_cast<Kart*>(abstract_kart);
-            if (kart)
-            {
-                const btVector3& v =
-                    kart->getRelativisticState().m_coordinate_velocity;
-                visual_velocity = core::vector3df(
-                    (float)v.x(), (float)v.y(), (float)v.z());
-                if (!isFiniteVector(visual_velocity))
-                    visual_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
-            }
+            const btVector3& v =
+                kart->getRelativisticState().m_coordinate_velocity;
+            visual_velocity = core::vector3df(
+                (float)v.x(), (float)v.y(), (float)v.z());
+            if (!isFiniteVector(visual_velocity))
+                visual_velocity = core::vector3df(0.0f, 0.0f, 0.0f);
         }
         g_kart_root_velocities[root] = visual_velocity;
     }
@@ -446,8 +419,8 @@ void updateRelativityKartVelocities(unsigned player_index)
 // ----------------------------------------------------------------------------
 /** Fills out[0..2] with the world-space velocity to use for relativistic
  *  warping of the given scene node, and out[3] with the "disable relativity
- *  visuals" flag (1.0 = do not warp, used for the observer's own kart and
- *  for materials flagged no-relativity-warp, e.g. huge water sheets).
+ *  visuals" flag (1.0 = do not warp, used for materials flagged
+ *  no-relativity-warp, e.g. huge water sheets).
  *  Registered as GE::setNodeVelocityFunction so the Vulkan draw call fills
  *  the same per-object data the SP instance buffer carries under OpenGL. */
 void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
@@ -1923,6 +1896,46 @@ void resetRelativityNodeCaches()
     g_no_warp_texture_cache.clear();
     g_relativity_motion_states.clear();
 }   // resetRelativityNodeCaches
+
+// ----------------------------------------------------------------------------
+// Per-node glow colours for the GE Vulkan renderer (see sp_base.hpp).
+std::unordered_map<const scene::ISceneNode*, video::SColorf>
+    g_vulkan_glow_nodes;
+// ----------------------------------------------------------------------------
+void setVulkanNodeGlowColor(const scene::ISceneNode* node,
+                            const video::SColorf& color)
+{
+    if (!node)
+        return;
+    if (color.r == 0.0f && color.g == 0.0f && color.b == 0.0f)
+        g_vulkan_glow_nodes.erase(node);
+    else
+        g_vulkan_glow_nodes[node] = color;
+}   // setVulkanNodeGlowColor
+
+// ----------------------------------------------------------------------------
+void clearVulkanGlowNodes()
+{
+    g_vulkan_glow_nodes.clear();
+}   // clearVulkanGlowNodes
+
+// ----------------------------------------------------------------------------
+/** Fills out[0..2] with the node's glow colour and out[3] with 1.0 when the
+ *  node glows. Registered as GE::setNodeGlowColorFunction so the Vulkan draw
+ *  call fills the same per-object data SPMeshNode carries under OpenGL. */
+void fillNodeGlowColor(const scene::ISceneNode* node, float* out)
+{
+    out[0] = out[1] = out[2] = out[3] = 0.0f;
+    if (!node || !UserConfigParams::m_glow || g_vulkan_glow_nodes.empty())
+        return;
+    auto it = g_vulkan_glow_nodes.find(node);
+    if (it == g_vulkan_glow_nodes.end())
+        return;
+    out[0] = it->second.r;
+    out[1] = it->second.g;
+    out[2] = it->second.b;
+    out[3] = 1.0f;
+}   // fillNodeGlowColor
 
 // ----------------------------------------------------------------------------
 void registerPresentationNode(const scene::ISceneNode* node)

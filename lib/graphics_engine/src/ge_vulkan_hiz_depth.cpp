@@ -217,7 +217,7 @@ void GEVulkanHiZDepth::init()
 // ----------------------------------------------------------------------------
 void GEVulkanHiZDepth::loadRenderingDescriptor()
 {
-    const size_t displace_binding_count = 3;
+    const size_t displace_binding_count = 5;
     VkDescriptorPoolSize pool_size;
     pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_size.descriptorCount = displace_binding_count;
@@ -267,6 +267,16 @@ void GEVulkanHiZDepth::loadRenderingDescriptor()
     image_infos[2].imageView =
         (VkImageView)m_hiz_depth->getTextureHandler();
     image_infos[2].sampler = m_vk->getSampler(GVS_SKYBOX);
+    // Bindings 3 (raw depth) and 4 (glow) are not sampled while this set is
+    // bound during the displace mask pass; keep them valid anyway.
+    image_infos[3].imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    image_infos[3].imageView =
+        (VkImageView)dfbo->getDepthTexture()->getTextureHandler();
+    image_infos[3].sampler = m_vk->getSampler(GVS_NEAREST);
+    image_infos[4].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_infos[4].imageView =
+        (VkImageView)m_vk->getTransparentTexture()->getTextureHandler();
+    image_infos[4].sampler = m_vk->getSampler(GVS_NEAREST);
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

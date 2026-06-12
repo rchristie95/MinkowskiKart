@@ -29,6 +29,7 @@
 #include "graphics/central_settings.hpp"
 #include "graphics/fixed_pipeline_renderer.hpp"
 #include "graphics/glwrap.hpp"
+#include "graphics/graphical_presets.hpp"
 #include "graphics/graphics_restrictions.hpp"
 #include "graphics/light.hpp"
 #include "graphics/material.hpp"
@@ -75,8 +76,13 @@
 #include "network/stk_peer.hpp"
 #include "physics/physics.hpp"
 #include "scriptengine/property_animator.hpp"
+#include "input/device_manager.hpp"
+#include "input/input_manager.hpp"
+#include "input/keyboard_device.hpp"
+#include "race/race_manager.hpp"
 #include "states_screens/dialogs/confirm_resolution_dialog.hpp"
 #include "states_screens/dialogs/message_dialog.hpp"
+#include "states_screens/main_menu_screen.hpp"
 #include "states_screens/options/options_screen_video.hpp"
 #include "states_screens/state_manager.hpp"
 #include "tracks/track_manager.hpp"
@@ -87,6 +93,7 @@
 #include "utils/helpers.hpp"
 #include "utils/log.hpp"
 #include "utils/profiler.hpp"
+#include "utils/time.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/translation.hpp"
 #include "utils/vs.hpp"
@@ -575,6 +582,13 @@ begin:
             // subdivide and warp smoothly instead of rigidly.
             GE::getGEConfig()->m_adaptive_tessellation =
                 Relativity::isEnabled();
+            // Sun shadow mapping, per-object glow and light scattering
+            // (ported from the SP/OpenGL advanced pipeline).
+            GE::getGEConfig()->m_shadow_map_size =
+                UserConfigParams::m_dynamic_lights ?
+                (int)UserConfigParams::m_shadows_resolution : 0;
+            GE::getGEConfig()->m_pcss = UserConfigParams::m_pcss;
+            GE::getGEConfig()->m_glow = UserConfigParams::m_glow;
 #endif
         }
         else
@@ -2153,6 +2167,81 @@ void IrrDriver::updateDisplace(float dt)
  */
 void IrrDriver::update(float dt, bool is_loading)
 {
+#ifndef SERVER_ONLY
+    // TEMPORARY debug hook: MK_DRIVER_SWITCH_TEST=1 automates the
+    // "boot vulkan -> switch to opengl in-process -> race" repro;
+    // MK_DRIVER_SWITCH_TEST=2 just screenshots a running race (baseline).
+    static int g_switch_test_phase = []()
+    {
+        const char* v = getenv("MK_DRIVER_SWITCH_TEST");
+        if (!v) return -1;
+        // 1: menu -> switch to GL -> race; 2: screenshot current race only;
+        // 3: race under vulkan first (-N --track), exit, then like 1.
+        return v[0] == '3' ? 4 : v[0] == '2' ? 2 : v[0] == '1' ? 0 : -1;
+    }();
+    static float g_switch_test_timer = 0.0f;
+    if (g_switch_test_phase >= 0 && !is_loading)
+    {
+        g_switch_test_timer += dt;
+        if (g_switch_test_phase == 0 && g_switch_test_timer > 10.0f &&
+            m_resolution_changing == RES_CHANGE_NONE && !World::getWorld())
+        {
+            Log::info("SwitchTest", "Switching render driver to opengl");
+            UserConfigParams::m_render_driver = "opengl";
+            // Mimic the dialog's apply handler side effects
+            OptionsScreenVideo::setSSR();
+            GraphicalPresets::setImageQuality(GraphicalPresets::getImageQuality());
+            OptionsScreenVideo::updateImageQuality(false);
+            fullRestart();
+            g_switch_test_phase = 1;
+            g_switch_test_timer = 0.0f;
+        }
+        else if (g_switch_test_phase == 1 && g_switch_test_timer > 10.0f &&
+            m_resolution_changing == RES_CHANGE_NONE && !World::getWorld())
+        {
+            Log::info("SwitchTest", "Starting race on opengl");
+            PlayerManager::get()->enforceCurrentPlayer();
+            InputDevice* device =
+                input_manager->getDeviceManager()->getKeyboard(0);
+            StateManager::get()->createActivePlayer(
+                PlayerManager::get()->getPlayer(0), device);
+            input_manager->getDeviceManager()->setAssignMode(ASSIGN);
+            RaceManager::get()->setMajorMode(RaceManager::MAJOR_MODE_SINGLE);
+            RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_NORMAL_RACE);
+            RaceManager::get()->setDifficulty(RaceManager::DIFFICULTY_HARD);
+            RaceManager::get()->setTrack("sandtrack");
+            RaceManager::get()->setNumLaps(1);
+            RaceManager::get()->setNumKarts(4);
+            RaceManager::get()->setupPlayerKartInfo();
+            RaceManager::get()->setPlayerKart(0, UserConfigParams::m_default_kart);
+            StateManager::get()->enterGameState();
+            RaceManager::get()->startNew(false);
+            g_switch_test_phase = 2;
+            g_switch_test_timer = 0.0f;
+        }
+        else if (g_switch_test_phase == 4 && g_switch_test_timer > 15.0f &&
+            World::getWorld())
+        {
+            Log::info("SwitchTest", "Exiting vulkan race");
+            RaceManager::get()->exitRace();
+            StateManager::get()->resetAndGoToScreen(
+                MainMenuScreen::getInstance());
+            g_switch_test_phase = 0;
+            g_switch_test_timer = 0.0f;
+        }
+        else if (g_switch_test_phase == 2 && World::getWorld())
+        {
+            static float s_race_time = 0.0f;
+            s_race_time += dt;
+            if (s_race_time > 12.0f)
+            {
+                Log::info("SwitchTest", "Taking screenshot");
+                requestScreenshot();
+                g_switch_test_phase = 3;
+            }
+        }
+    }
+#endif
     bool show_dialog_yes = m_resolution_changing == RES_CHANGE_YES;
     bool show_dialog_warn = m_resolution_changing == RES_CHANGE_YES_WARN;
     // If the resolution should be switched, do it now. This will delete the
@@ -2216,6 +2305,28 @@ void IrrDriver::update(float dt, bool is_loading)
         }
         m_video_driver->endScene();
 #endif
+    }
+
+    // MK_AUTO_SHOT="<first_s>,<interval_s>": request screenshots
+    // periodically once a world is loaded. Used for CLI-driven renderer
+    // comparisons (works for OpenGL and the Vulkan swapchain readback).
+    static const char* auto_shot = getenv("MK_AUTO_SHOT");
+    if (auto_shot && World::getWorld() && !is_loading)
+    {
+        static double next_shot = -1.0;
+        static double interval = 10.0;
+        double now = StkTime::getRealTime();
+        if (next_shot < 0.0)
+        {
+            double first = 10.0;
+            sscanf(auto_shot, "%lf,%lf", &first, &interval);
+            next_shot = now + first;
+        }
+        else if (now >= next_shot)
+        {
+            m_request_screenshot = true;
+            next_shot = now + interval;
+        }
     }
 
     if (m_request_screenshot) doScreenShot();

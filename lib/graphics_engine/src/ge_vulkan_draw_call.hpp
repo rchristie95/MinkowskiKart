@@ -12,6 +12,8 @@
 
 #include "vulkan_wrapper.h"
 
+#include "ge_vulkan_camera_scene_node.hpp"
+
 #include "matrix4.h"
 #include "vector3d.h"
 #include "ESceneNodeTypes.h"
@@ -34,6 +36,7 @@ namespace GE
 class GECullingTool;
 class GESPMBuffer;
 class GEVulkanAnimatedMeshSceneNode;
+class GEVulkanAttachmentTexture;
 class GEVulkanCameraSceneNode;
 class GEVulkanDriver;
 class GEVulkanDynamicBuffer;
@@ -64,6 +67,10 @@ struct ObjectData
     // Defaults to zero (no velocity, relativity still applies to geometry
     // via the observer beta stored in the camera UBO).
     float m_velocity[4];
+    // Per-object glow colour (linear rgb, w = 1.0 if the node glows),
+    // mirroring SPMeshNode::getGlowColor under SP/OpenGL. Rendered by the
+    // ge_glow pipelines into the glow attachment of the displace mask pass.
+    float m_glow_color[4];
     // ------------------------------------------------------------------------
     void init(irr::scene::ISceneNode* node, int material_id,
               int skinning_offset, int irrlicht_material_id);
@@ -88,6 +95,10 @@ enum GEVulkanPipelineType : unsigned
     GVPT_SKYBOX,
     GVPT_DISPLACE_MASK,
     GVPT_DISPLACE_COLOR,
+    // Depth-only rendering into the per-draw-call sun shadow map
+    GVPT_SHADOW,
+    // Per-object glow silhouettes into the glow attachment (mask pass)
+    GVPT_GLOW,
 };
 
 struct GEMaterial;
@@ -121,6 +132,8 @@ struct DrawCallData
     GESPMBuffer* m_mb;
     int m_material_id;
     uint32_t m_dynamic_offset;
+    // True if any node in this batch has a glow colour (GVPT_GLOW pass)
+    bool m_glow;
 };
 
 class GEVulkanHiZDepth;
@@ -199,8 +212,33 @@ private:
 
     GEVulkanHiZDepth* m_hiz_depth;
 
+    // Sun shadow map pass resources (deferred PBR only). The shadow map is
+    // rendered with the GVPT_SHADOW depth-only pipelines before the main
+    // render pass and sampled by deferred_pbr.frag via the data descriptor
+    // (set 1, bindings 5 and 6).
+    GEVulkanAttachmentTexture* m_shadow_map;
+
+    VkRenderPass m_shadow_render_pass;
+
+    VkFramebuffer m_shadow_framebuffer;
+
+    // Camera UBO for the sun's orthographic view, uploaded right after the
+    // main camera UBO in m_dynamic_data (bound via dynamic offset during the
+    // shadow pass).
+    GEVulkanCameraUBO m_shadow_camera_ubo;
+
     // ------------------------------------------------------------------------
     void createAllPipelines(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void createShadowResources(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void createShadowPipelines(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void createGlowPipelines(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void updateSunShadowCamera(GEVulkanCameraSceneNode* cam);
+    // ------------------------------------------------------------------------
+    size_t getShadowCameraOffset() const;
     // ------------------------------------------------------------------------
     void createPipeline(GEVulkanDriver* vk, const PipelineSettings& settings,
       std::unordered_map<std::string, std::shared_ptr<VkPipeline> >& dp_cache);
@@ -306,6 +344,21 @@ public:
     // ------------------------------------------------------------------------
     void renderDisplaceColor(GEVulkanDriver* vk, VkCommandBuffer cmd,
                              VkBool32 has_displace);
+    // ------------------------------------------------------------------------
+    // Renders the sun shadow map (own render pass, recorded before the main
+    // render pass begins). No-op when shadows are disabled.
+    void renderShadowMap(GEVulkanDriver* vk, VkCommandBuffer cmd);
+    // ------------------------------------------------------------------------
+    // True if any visible batch contains a glowing node this frame.
+    bool hasGlowObjects() const
+    {
+        for (auto& cmd : m_cmds)
+        {
+            if (cmd.m_glow)
+                return true;
+        }
+        return false;
+    }
     // ------------------------------------------------------------------------
     unsigned getPolyCount() const
     {

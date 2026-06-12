@@ -218,8 +218,14 @@ namespace GE
         virtual void setTextureCreationFlag(E_TEXTURE_CREATION_FLAG flag, bool enabled) {}
 
         //! Sets the fog mode.
+        //! Store the fog state so GEVulkanLightHandler can publish it to the
+        //! shaders (track distance fog + light scattering).
         virtual void setFog(SColor color, E_FOG_TYPE fogType, f32 start,
-            f32 end, f32 density, bool pixelFog, bool rangeFog) {}
+            f32 end, f32 density, bool pixelFog, bool rangeFog)
+        {
+            CNullDriver::setFog(color, fogType, start, end, density,
+                pixelFog, rangeFog);
+        }
 
         //! Only used by the internal engine. Used to notify the driver that
         //! the window was resized.
@@ -242,8 +248,10 @@ namespace GE
         //! Clears the ZBuffer.
         virtual void clearZBuffer() {}
 
-        //! Returns an image created from the last rendered frame.
-        virtual IImage* createScreenShot(video::ECOLOR_FORMAT format=video::ECF_UNKNOWN, video::E_RENDER_TARGET target=video::ERT_FRAME_BUFFER) { return NULL; }
+        //! Returns an image created from the last rendered frame (reads the
+        //! last presented swapchain image back; NULL if the surface doesn't
+        //! support transfer-src usage).
+        virtual IImage* createScreenShot(video::ECOLOR_FORMAT format=video::ECF_UNKNOWN, video::E_RENDER_TARGET target=video::ERT_FRAME_BUFFER);
 
         //! Set/unset a clipping plane.
         virtual bool setClipPlane(u32 index, const core::plane3df& plane, bool enable=false) { return true; }
@@ -506,6 +514,9 @@ namespace GE
         unsigned int m_current_frame;
         uint32_t m_image_index;
         unsigned int m_current_semaphore;
+        // True when the swapchain was created with TRANSFER_SRC usage so
+        // createScreenShot can read it back
+        bool m_swap_chain_transfer_src;
         video::SColor m_clear_color, m_rtt_clear_color;
         core::rect<s32> m_clip;
         core::matrix4 m_pre_rotation_matrix;

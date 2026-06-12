@@ -26,6 +26,7 @@
 #include "modes/world.hpp"
 #include "physics/physics.hpp"
 #include "relativity/relativity_math.hpp"
+#include "tracks/track.hpp"
 #include "utils/profiler.hpp"
 
 #include <ISceneManager.h>
@@ -43,6 +44,25 @@ void FixedPipelineRenderer::onLoadWorld()
     {
         SP::resetRelativityNodeCaches();
         GE::setNodeVelocityFunction(&SP::fillNodeRelativityVelocity);
+        // Per-object glow colours (items, glowing track objects) for the GE
+        // glow pass, mirroring SPMeshNode::getGlowColor under OpenGL.
+        GE::setNodeGlowColorFunction(&SP::fillNodeGlowColor);
+        // Sun shadow map settings, picked up when the race's draw calls
+        // create their Vulkan data.
+        GE::getGEConfig()->m_shadow_map_size =
+            UserConfigParams::m_dynamic_lights ?
+            (int)UserConfigParams::m_shadows_resolution : 0;
+        GE::getGEConfig()->m_pcss = UserConfigParams::m_pcss;
+        GE::getGEConfig()->m_glow = UserConfigParams::m_glow;
+        // The driver's fog state persists across tracks (Track only calls
+        // setFog when it uses fog); clear it so a fog-less track doesn't
+        // inherit the previous track's haze.
+        Track* fog_track = Track::getCurrentTrack();
+        if (!(fog_track && fog_track->isFogEnabled()))
+        {
+            irr_driver->getVideoDriver()->setFog(video::SColor(0, 0, 0, 0),
+                video::EFT_FOG_LINEAR, 0.0f, 0.0f, 0.0f);
+        }
         // Relativistic warping moves vertices far outside their mesh
         // bounding boxes (aberration brings geometry from behind into
         // view), so frustum culling against unwarped boxes would hide
@@ -67,7 +87,10 @@ void FixedPipelineRenderer::onLoadWorld()
 
 void FixedPipelineRenderer::onUnloadWorld()
 {
-    
+#ifndef SERVER_ONLY
+    // Scene node pointers are recycled between tracks.
+    SP::clearVulkanGlowNodes();
+#endif
 }
 
 void FixedPipelineRenderer::render(float dt, bool is_loading)
@@ -199,7 +222,70 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                 float compactification[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
                 if (test_compact)
                     compactification[0] = 0.7f;
-                cam_node->setPostFXData(motion_blur, compactification);
+                // Screen-space ports of the SP/OpenGL advanced pipeline
+                // options (bloom, SSAO, depth of field, anti-aliasing),
+                // applied by displace_color.frag.
+                float postfx_flags[4] =
+                {
+                    UserConfigParams::m_bloom ? 1.0f : 0.0f,
+                    // Ambient occlusion is not offered under Vulkan (greyed
+                    // out in the settings dialog).
+                    0.0f,
+                    UserConfigParams::m_dof   ? 1.0f : 0.0f,
+                    UserConfigParams::m_mlaa  ? 1.0f : 0.0f
+                };
+                // Second block: per-object glow outlines and volumetric
+                // light scattering (density = 1 / (40 * fog start), like
+                // LightingPasses::renderLightsScatter; 0 disables).
+                Track* fx_track = Track::getCurrentTrack();
+                float scatter_density = 0.0f;
+                if (UserConfigParams::m_light_scatter && fx_track &&
+                    fx_track->isFogEnabled())
+                {
+                    scatter_density =
+                        1.0f / (40.0f * (fx_track->getFogStart() + 0.001f));
+                }
+                float postfx_flags2[4] =
+                {
+                    UserConfigParams::m_glow ? 1.0f : 0.0f,
+                    scatter_density,
+                    0.0f, 0.0f
+                };
+                // Keep the per-frame GE toggles in sync so the glow pass is
+                // recorded / the shadow pass keeps running when the user
+                // changes settings mid-race (the shadow map resolution
+                // itself applies from the next race).
+                GE::getGEConfig()->m_glow = UserConfigParams::m_glow;
+                GE::getGEConfig()->m_pcss = UserConfigParams::m_pcss;
+                GE::getGEConfig()->m_shadow_map_size =
+                    UserConfigParams::m_dynamic_lights ?
+                    (int)UserConfigParams::m_shadows_resolution : 0;
+                cam_node->setPostFXData(motion_blur, compactification,
+                    postfx_flags, postfx_flags2);
+
+                // Track god rays / light shafts, mirroring the SP/OpenGL
+                // PostProcessing::renderGodRays sun (a world-radius-20 glow
+                // sphere at the track's lightshaft position, additively
+                // blended at the track's opacity).
+                float godrays[8] =
+                    { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+                Track* gr_track = Track::getCurrentTrack();
+                if (gr_track && gr_track->hasGodRays() &&
+                    UserConfigParams::m_light_shaft)
+                {
+                    const core::vector3df gr_pos =
+                        gr_track->getGodRaysPosition();
+                    const video::SColorf gr_col(gr_track->getGodRaysColor());
+                    godrays[0] = gr_pos.X;
+                    godrays[1] = gr_pos.Y;
+                    godrays[2] = gr_pos.Z;
+                    godrays[3] = gr_track->getGodRaysOpacity();
+                    godrays[4] = gr_col.r;
+                    godrays[5] = gr_col.g;
+                    godrays[6] = gr_col.b;
+                    godrays[7] = 20.0f;  // sun interposer world radius
+                }
+                cam_node->setGodRaysData(godrays);
             }
         }
 

@@ -1,10 +1,19 @@
+// ge_glow_skinning.vert
+//
+// Skinned variant of ge_glow.vert (see there); reproduces the
+// spm_skinning.vert world position and forwards the per-object glow colour.
+
 #include "utils/camera.glsl"
 #include "utils/relativity_bridge.glsl"
-#include "utils/get_vertex_color.glsl"
 #include "utils/spm_data.glsl"
-#include "utils/spm_layout.vert"
 #include "../utils/get_world_location.vert"
 #include "../utils/relativity_visual.vert"
+
+layout(location = 0) in vec3 v_position;
+layout(location = 6) in ivec4 v_joint;
+layout(location = 7) in vec4 v_weight;
+
+layout(location = 0) flat out vec4 f_glow_color;
 
 void main()
 {
@@ -21,8 +30,6 @@ void main()
         u_object_buffer.m_objects[gl_InstanceIndex].m_scale,
         v_skinning_position.xyz);
 
-    // Apply relativistic light-travel-time + aberration correction.
-    // m_velocity.xyz = object world-space velocity; .w = disable_relativity flag.
     vec3 i_velocity    = u_object_buffer.m_objects[gl_InstanceIndex].m_velocity.xyz;
     float disable_rel  = u_object_buffer.m_objects[gl_InstanceIndex].m_velocity.w;
     float visual_fade  = getRelativisticVisualFade(raw_world_position.xyz,
@@ -30,29 +37,7 @@ void main()
     vec4 v_world_position = applyRelativisticVisualPosition(raw_world_position,
                                 i_velocity, visual_fade);
 
-    f_world_position = v_world_position;
     gl_Position = u_camera.m_projection_view_matrix * v_world_position;
-    f_vertex_color = v_color.zyxw * getVertexColor(
-        u_object_buffer.m_objects[gl_InstanceIndex].m_custom_vertex_color);
-    f_uv = v_uv + u_object_buffer.m_objects[gl_InstanceIndex].m_texture_trans;
-    f_uv_two = v_uv_two;
-    f_material_id = u_object_buffer.m_objects[gl_InstanceIndex].m_material_id;
-#ifdef BIND_MESH_TEXTURES_AT_ONCE
-    if (f_material_id < 0)
-        f_material_id = u_material_ids.m_material_id[gl_DrawIDARB];
-#endif
-    f_hue_change = u_object_buffer.m_objects[gl_InstanceIndex].m_hue_change;
-#ifdef PBR_ENABLED
-    vec4 skinned_normal = joint_matrix * v_normal;
-    vec4 skinned_tangent = joint_matrix * vec4(v_tangent.xyz, 0.0);
-    vec3 world_normal = normalize(rotateVector(
-        u_object_buffer.m_objects[gl_InstanceIndex].m_rotation,
-        skinned_normal.xyz));
-    vec3 world_tangent = rotateVector(
-        u_object_buffer.m_objects[gl_InstanceIndex].m_rotation,
-        skinned_tangent.xyz);
-    f_bitangent = cross(world_normal, world_tangent) * v_tangent.w;
-    f_tangent = world_tangent;
-    f_normal = world_normal;
-#endif
+    gl_Position.z -= 1e-4 * gl_Position.w;
+    f_glow_color = u_object_buffer.m_objects[gl_InstanceIndex].m_glow_color;
 }

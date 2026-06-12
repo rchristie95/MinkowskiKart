@@ -51,6 +51,23 @@ float getDistanceToEdge(vec3 point, vec3 pA, vec3 pB)
     return length(point - (pA + edge * t));
 }
 
+// Aberration magnifies image space by ~1/(1 + beta.d) (largest behind the
+// observer, where the denominator shrinks), so geometry there needs
+// proportionally denser tessellation to keep the nonlinear warp smooth.
+// Depends only on the edge endpoints, so shared edges still agree (no cracks).
+float getWarpAmplification(vec3 pA, vec3 pB)
+{
+    vec3 beta = getRelativityBetaVector();
+    if (dot(beta, beta) < 1e-6)
+        return 1.0;
+    vec3 mid = 0.5 * (pA + pB) - u_relativity_observer_pos.xyz;
+    float len2 = dot(mid, mid);
+    if (len2 < 1e-6)
+        return 8.0;
+    vec3 dir = mid * inversesqrt(len2);
+    return clamp(1.0 / max(1.0 + dot(beta, dir), 0.125), 1.0, 8.0);
+}
+
 float getTessLevel(vec3 pA, vec3 pB)
 {
     float edge_l = length(pB - pA);
@@ -62,7 +79,8 @@ float getTessLevel(vec3 pA, vec3 pB)
     // The level depends only on the edge endpoints and the bubble centre, so
     // patches sharing an edge agree on its level and no cracks appear.
     float target_edge = TARGET_EDGE_LENGTH_NEAR *
-        max(1.0, dist / FULL_TESSELLATION_RADIUS);
+        max(1.0, dist / FULL_TESSELLATION_RADIUS) /
+        getWarpAmplification(pA, pB);
     return clamp(edge_l / target_edge, 1.0, MAX_TESS_LEVEL);
 }
 

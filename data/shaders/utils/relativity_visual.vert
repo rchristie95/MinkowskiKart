@@ -43,68 +43,12 @@ float getRelativityInverseGamma()
     return inv_gamma > 0.0 ? inv_gamma : 1.0;
 }
 
-vec3 contractRelativisticDisplacement(vec3 displacement)
-{
-    vec3 beta_vector = getRelativityBetaVector();
-    float beta2 = dot(beta_vector, beta_vector);
-    if (!relativityVisualsEnabled() || beta2 < 1e-6)
-        return displacement;
-
-    vec3 beta_direction = normalize(beta_vector);
-    vec3 parallel = beta_direction * dot(displacement, beta_direction);
-    vec3 perpendicular = displacement - parallel;
-    return perpendicular + parallel * getRelativityInverseGamma();
-}
-
-vec3 applyRelativisticDisplacement(vec3 displacement, float visual_fade)
-{
-    if (visual_fade <= 1e-4)
-        return displacement;
-
-    vec3 contracted = contractRelativisticDisplacement(displacement);
-    return mix(displacement, contracted, clamp(visual_fade, 0.0, 1.0));
-}
-
-// Lorentz-contract a world-space position along the beta direction, using the
-// observer position as the reference point. This is the correct reference frame
-// for scene geometry (contraction is relative to the observer, not to each
-// instance's arbitrary authoring anchor). Using this avoids large batched
-// meshes (forests, monolithic track materials) appearing to pivot around their
-// instance origin as the beta direction changes.
-vec4 applyRelativisticContraction(vec4 world_position, float visual_fade)
-{
-    if (!relativityVisualsEnabled() || visual_fade <= 1e-4)
-        return world_position;
-
-    vec3 relative = world_position.xyz - u_relativity_observer_pos.xyz;
-    vec3 contracted = contractRelativisticDisplacement(relative);
-    vec3 blended = mix(relative, contracted, clamp(visual_fade, 0.0, 1.0));
-    return vec4(u_relativity_observer_pos.xyz + blended, 1.0);
-}
-
-vec3 transformRelativisticNormal(vec3 world_normal)
-{
-    vec3 beta_vector = getRelativityBetaVector();
-    float beta2 = dot(beta_vector, beta_vector);
-    if (!relativityVisualsEnabled() || beta2 < 1e-6)
-        return normalize(world_normal);
-
-    vec3 beta_direction = normalize(beta_vector);
-    vec3 parallel = beta_direction * dot(world_normal, beta_direction);
-    vec3 perpendicular = world_normal - parallel;
-    return normalize(perpendicular + parallel * getRelativityGamma());
-}
-
-vec3 applyRelativisticNormalTransform(vec3 world_normal, float visual_fade)
-{
-    vec3 normalized_normal = normalize(world_normal);
-    if (visual_fade <= 1e-4)
-        return normalized_normal;
-
-    vec3 transformed_normal = transformRelativisticNormal(normalized_normal);
-    return normalize(mix(normalized_normal, transformed_normal,
-        clamp(visual_fade, 0.0, 1.0)));
-}
+// NOTE: this pipeline intentionally applies no explicit Lorentz contraction
+// to positions, normals or tangents. What a camera photographs is fully
+// described by retarded (emission-time) positions plus aberration of the
+// incoming ray directions (Terrell-Penrose); coordinate contraction is a
+// simultaneity statement and adding it on top double-counts the effect.
+// Light transport happens in the world frame, so lighting keeps world normals.
 
 vec3 worldDirectionToObserverDirection(vec3 world_direction)
 {

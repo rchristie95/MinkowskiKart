@@ -37,7 +37,7 @@
 namespace irr
 {
     namespace scene { class ICameraSceneNode; class IMesh; class ISceneNode; }
-    namespace video { class SColor; class SMaterial; }
+    namespace video { class SColor; class SColorf; class SMaterial; }
 }
 
 class ShaderBasedRenderer;
@@ -136,6 +136,16 @@ void updateRelativityKartVelocities(unsigned player_index);
 void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
                                 const irr::video::SMaterial* irr_material,
                                 float* out);
+// ----------------------------------------------------------------------------
+// Per-node glow colours for the GE Vulkan renderer. Under OpenGL the glow
+// colour lives on SPMeshNode; under Vulkan the game registers it here and
+// the GE draw call queries it via GE::setNodeGlowColorFunction.
+void setVulkanNodeGlowColor(const irr::scene::ISceneNode* node,
+                            const irr::video::SColorf& color);
+// ----------------------------------------------------------------------------
+void clearVulkanGlowNodes();
+// ----------------------------------------------------------------------------
+void fillNodeGlowColor(const irr::scene::ISceneNode* node, float* out);
 // ----------------------------------------------------------------------------
 void draw(RenderPass, DrawCallType dct = DCT_NORMAL);
 // ----------------------------------------------------------------------------

@@ -26,6 +26,7 @@
 #include "states_screens/state_manager.hpp"
 #include "graphics/central_settings.hpp"
 #include "graphics/irr_driver.hpp"
+#include "main_loop.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/translation.hpp"
 
@@ -273,7 +274,14 @@ GUIEngine::EventPropagation CustomVideoSettingsDialog::processEvent(const std::s
             }
 
             if (need_restart)
-                irr_driver->fullRestart();
+            {
+                // Changing the render driver needs a clean process: the
+                // in-process device recreation (fullRestart) leaves state
+                // from the previous GE/Vulkan session behind, which e.g.
+                // breaks lighting on the next race. The config with the
+                // new driver was saved above; relaunch the game.
+                main_loop->requestRestart();
+            }
 
             return GUIEngine::EVENT_BLOCK;
         }
@@ -330,16 +338,25 @@ void CustomVideoSettingsDialog::updateActivation(const std::string& renderer)
         getWidget<CheckBoxWidget>("dynamiclight")->setActive(true);
         light = false;
     }
-    getWidget<CheckBoxWidget>("motionblur")->setActive(light);
-    getWidget<CheckBoxWidget>("dof")->setActive(light);
-    getWidget<SpinnerWidget>("shadows")->setActive(light);
-    getWidget<CheckBoxWidget>("mlaa")->setActive(light);
-    getWidget<CheckBoxWidget>("ssao")->setActive(light);
+    // Options implemented by both renderers (the Vulkan side runs them as
+    // screen-space ports in displace_color.frag / its post chain).
+    getWidget<CheckBoxWidget>("motionblur")->setActive(light || (vk && real_light));
+    getWidget<CheckBoxWidget>("dof")->setActive(light || (vk && real_light));
+    getWidget<CheckBoxWidget>("mlaa")->setActive(light || (vk && real_light));
+    // Ambient occlusion is not offered under Vulkan (the single-pass port
+    // does not match the GL quality); the renderer also ignores it there.
+    getWidget<CheckBoxWidget>("ssao")->setActive(light && !vk);
     getWidget<CheckBoxWidget>("ssr")->setActive(light || (vk && real_light));
-    getWidget<CheckBoxWidget>("lightshaft")->setActive(light);
+    getWidget<CheckBoxWidget>("lightshaft")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("ibl")->setActive(light || (vk && real_light));
-    getWidget<CheckBoxWidget>("glow")->setActive(light);
-    getWidget<CheckBoxWidget>("bloom")->setActive(light);
-    getWidget<CheckBoxWidget>("lightscattering")->setActive(light);
+    getWidget<CheckBoxWidget>("bloom")->setActive(light || (vk && real_light));
+    // Ported to the Vulkan renderer as dedicated passes: sun shadow mapping
+    // (depth-only pass sampled by deferred_pbr.frag with PCF/PCSS),
+    // per-object glow (silhouette pass composited in displace_color.frag)
+    // and volumetric light scattering (ray march in displace_color.frag).
+    // The shadow map resolution applies from the next race under Vulkan.
+    getWidget<SpinnerWidget>("shadows")->setActive(light || (vk && real_light));
+    getWidget<CheckBoxWidget>("glow")->setActive(light || (vk && real_light));
+    getWidget<CheckBoxWidget>("lightscattering")->setActive(light || (vk && real_light));
 #endif
 }   // updateActivation

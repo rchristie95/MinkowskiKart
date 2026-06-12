@@ -530,6 +530,7 @@ GEVulkanDriver::GEVulkanDriver(const SIrrlichtCreationParameters& params,
     m_current_frame = 0;
     m_image_index = 0;
     m_current_semaphore = 0;
+    m_swap_chain_transfer_src = false;
     m_clear_color = video::SColor(0);
     m_rtt_clear_color = m_clear_color;
     m_white_texture = NULL;
@@ -1276,6 +1277,11 @@ found_mode:
     create_info.imageExtent = actual_extent;
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    // Allow reading the swapchain back for screenshots when supported
+    m_swap_chain_transfer_src = (m_surface_capabilities.supportedUsageFlags &
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0;
+    if (m_swap_chain_transfer_src)
+        create_info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     uint32_t queueFamilyIndices[] = { m_graphics_family, m_present_family };
     if (m_graphics_family != m_present_family)
@@ -2517,6 +2523,15 @@ void GEVulkanDriver::buildCommandBuffers()
         p.second->uploadDynamicData(this, p.first);
     }
 
+    // Sun shadow maps are rendered in their own depth-only render passes
+    // before the main render pass; the deferred lighting subpass samples
+    // them via the data descriptor (set 1, bindings 5 and 6).
+    for (auto& p : static_cast<GEVulkanSceneManager*>(
+        m_irrlicht_device->getSceneManager())->getDrawCalls())
+    {
+        p.second->renderShadowMap(this, getCurrentCommandBuffer());
+    }
+
     vkCmdBeginRenderPass(getCurrentCommandBuffer(), &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE);
 
@@ -2621,14 +2636,22 @@ void GEVulkanDriver::renderDrawCalls(
                     break;
                 }
             }
-            if (has_displace)
+            // The glow attachment lives in the displace mask pass; when glow
+            // is enabled the pass runs every frame so the attachment is
+            // cleared even when no glowing node is visible.
+            const bool has_glow = getGEConfig()->m_glow &&
+                dfbo->getAttachment<GVDFT_GLOW>() != NULL;
+            if (has_displace || has_glow)
             {
                 vkCmdEndRenderPass(cmd);
-                for (auto& q : p)
+                if (has_displace)
                 {
-                    GEVulkanHiZDepth* hiz = q.first->getHiZDepth();
-                    if (hiz)
-                        hiz->generate(cmd);
+                    for (auto& q : p)
+                    {
+                        GEVulkanHiZDepth* hiz = q.first->getHiZDepth();
+                        if (hiz)
+                            hiz->generate(cmd);
+                    }
                 }
                 render_pass_info.clearValueCount = m_rtt_texture
                     ->getZeroClearCountForPass(GVDFP_DISPLACE_MASK);
@@ -2646,8 +2669,16 @@ void GEVulkanDriver::renderDrawCalls(
                         q.first->bindAllMaterials(cmd);
                     else
                         rebind_base_vertex = true;
-                    q.first->renderPipeline(this, cmd, GVPT_DISPLACE_MASK,
-                        rebind_base_vertex);
+                    if (has_displace)
+                    {
+                        q.first->renderPipeline(this, cmd, GVPT_DISPLACE_MASK,
+                            rebind_base_vertex);
+                    }
+                    if (has_glow)
+                    {
+                        q.first->renderPipeline(this, cmd, GVPT_GLOW,
+                            rebind_base_vertex);
+                    }
                 }
             }
             vkCmdEndRenderPass(cmd);
@@ -2716,6 +2747,99 @@ void GEVulkanDriver::renderDrawCalls(
         }
     }
 }   // renderDrawCalls
+
+// ----------------------------------------------------------------------------
+/** Reads the last presented swapchain image back into an irrlicht image so
+ *  the regular screenshot path (IrrDriver::doScreenShot) works under Vulkan.
+ */
+video::IImage* GEVulkanDriver::createScreenShot(video::ECOLOR_FORMAT format,
+                                                video::E_RENDER_TARGET target)
+{
+    if (!m_swap_chain_transfer_src || m_vk->swap_chain_images.empty() ||
+        m_image_index >= m_vk->swap_chain_images.size())
+        return NULL;
+
+    waitIdle();
+
+    const uint32_t w = m_swap_chain_extent.width;
+    const uint32_t h = m_swap_chain_extent.height;
+    VkImage src_image = m_vk->swap_chain_images[m_image_index];
+
+    VkBuffer buffer;
+    VmaAllocation buffer_allocation;
+    VkDeviceSize image_size = (VkDeviceSize)w * h * 4;
+    VmaAllocationCreateInfo buffer_create_info = {};
+    buffer_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+    buffer_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+    buffer_create_info.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    if (!createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        buffer_create_info, buffer, buffer_allocation))
+        return NULL;
+
+    VkCommandBuffer command_buffer =
+        GEVulkanCommandLoader::beginSingleTimeCommands();
+
+    VkImageMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = src_image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent = { w, h, 1 };
+    vkCmdCopyImageToBuffer(command_buffer, src_image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &region);
+
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
+
+    GEVulkanCommandLoader::endSingleTimeCommands(command_buffer);
+
+    video::IImage* image = NULL;
+    void* mapped_data = NULL;
+    if (vmaMapMemory(getVmaAllocator(), buffer_allocation,
+        &mapped_data) == VK_SUCCESS)
+    {
+        vmaInvalidateAllocation(getVmaAllocator(), buffer_allocation, 0,
+            image_size);
+        image = createImage(video::ECF_A8R8G8B8,
+            core::dimension2du(w, h));
+        uint8_t* dst = (uint8_t*)image->lock();
+        memcpy(dst, mapped_data, image_size);
+        // irrlicht ECF_A8R8G8B8 is BGRA in memory, matching
+        // VK_FORMAT_B8G8R8A8_*; swizzle if the swapchain is RGBA.
+        if (m_swap_chain_image_format == VK_FORMAT_R8G8B8A8_UNORM ||
+            m_swap_chain_image_format == VK_FORMAT_R8G8B8A8_SRGB)
+        {
+            for (size_t i = 0; i < (size_t)w * h * 4; i += 4)
+                std::swap(dst[i], dst[i + 2]);
+        }
+        // Screenshots are fully opaque
+        for (size_t i = 3; i < (size_t)w * h * 4; i += 4)
+            dst[i] = 255;
+        image->unlock();
+        vmaUnmapMemory(getVmaAllocator(), buffer_allocation);
+    }
+    vmaDestroyBuffer(getVmaAllocator(), buffer, buffer_allocation);
+    return image;
+}   // createScreenShot
 
 // ----------------------------------------------------------------------------
 VkFormat GEVulkanDriver::findSupportedFormat(const std::vector<VkFormat>& candidates,

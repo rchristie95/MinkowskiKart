@@ -105,32 +105,6 @@ btVector3 normalizedOrDefault(const btVector3& v, const btVector3& fallback)
     return v / btSqrt(length2);
 }   // normalizedOrDefault
 
-btVector3 applyVisualContraction(
-    const btVector3& world_position,
-    const Relativity::ObserverVisualState& observer_state)
-{
-    if (!observer_state.m_valid || !isFiniteVector(world_position) ||
-        !isFiniteVector(observer_state.m_beta_vector) ||
-        observer_state.m_gamma <= 1.0f)
-    {
-        return world_position;
-    }
-
-    const btScalar beta2 = observer_state.m_beta_vector.length2();
-    if (beta2 <= btScalar(1.0e-6f))
-        return world_position;
-
-    const btVector3 relative =
-        world_position - observer_state.m_observer_position;
-    const btVector3 beta_direction =
-        observer_state.m_beta_vector / btSqrt(beta2);
-    const btVector3 parallel =
-        beta_direction * relative.dot(beta_direction);
-    const btVector3 perpendicular = relative - parallel;
-    return observer_state.m_observer_position + perpendicular +
-        parallel * observer_state.m_inverse_gamma;
-}   // applyVisualContraction
-
 btVector3 worldDirectionToObserverDirection(const btVector3& world_direction,
                                             const btVector3& beta_vector,
                                             float gamma)
@@ -826,10 +800,13 @@ btVector3 applyVisualPosition(const btVector3& world_position,
         return world_position;
     }
 
-    const btVector3 contracted_position =
-        applyVisualContraction(world_position, observer_state);
+    // No explicit Lorentz contraction here: what an observer sees is fully
+    // described by retarded (emission-time) positions plus aberration of the
+    // incoming ray directions (Terrell-Penrose). Adding coordinate
+    // contraction on top would double-count the effect; this also matches the
+    // GPU pipeline in data/shaders/utils/relativity_visual.vert.
     btVector3 relative =
-        contracted_position - observer_state.m_observer_position;
+        world_position - observer_state.m_observer_position;
     if (relative.length2() <= btScalar(1.0e-6f))
         return observer_state.m_observer_position;
 
@@ -852,22 +829,11 @@ btVector3 applyVisualNormal(const btVector3& /*world_position*/,
                             const btVector3& world_normal,
                             const ObserverVisualState& observer_state)
 {
-    if (!Relativity::isEnabled() || !observer_state.m_valid ||
-        !isFiniteVector(world_normal))
-    {
-        return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
-    }
-
-    const btVector3 beta_vector = observer_state.m_beta_vector;
-    const btScalar beta2 = beta_vector.length2();
-    if (beta2 < btScalar(1.0e-6f))
-        return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
-
-    const btVector3 beta_direction = beta_vector / btSqrt(beta2);
-    const btVector3 parallel = beta_direction * world_normal.dot(beta_direction);
-    const btVector3 perpendicular = world_normal - parallel;
-    return normalizedOrDefault(perpendicular + parallel * observer_state.m_gamma,
-                               world_normal);
+    // Light transport happens in the world frame, so surfaces keep their
+    // world normals; the gamma-scaling that used to live here was part of the
+    // removed contraction double-count (see applyVisualPosition).
+    (void)observer_state;
+    return normalizedOrDefault(world_normal, btVector3(0.0f, 1.0f, 0.0f));
 }   // applyVisualNormal
 
 // ----------------------------------------------------------------------------

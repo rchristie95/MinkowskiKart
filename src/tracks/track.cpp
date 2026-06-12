@@ -2514,10 +2514,14 @@ void Track::loadTrackModel(bool reverse_track, unsigned int mode_id)
     STKTexManager::getInstance()->unsetTextureErrorMessage();
 #ifndef SERVER_ONLY
     if (CVS->isGLSL())
-    {
         m_sky_textures.clear();
-        m_spherical_harmonics_textures.clear();
-    }
+    // Always clear the SH texture list: non-GLSL renderers fill it with
+    // null placeholders (handleSky) which would otherwise survive on this
+    // persistent Track object. A later GLSL race (after an in-process
+    // render driver switch) would then see size() != 6, skip the skybox
+    // SH and fall back to the ambient-colour SH (x4), blowing out all lit
+    // materials with the track's ambient tint.
+    m_spherical_harmonics_textures.clear();
 #endif   // !SERVER_ONLY
 }   // loadTrackModel
 

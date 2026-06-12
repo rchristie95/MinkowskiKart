@@ -32,6 +32,9 @@ GEConfig g_config =
     1.0f,
     false,
     false,
+    false,
+    0,
+    false,
     false
 };
 std::string g_shader_folder = "";
@@ -50,6 +53,18 @@ GENodeVelocityFunction getNodeVelocityFunction()
 {
     return g_node_velocity_function;
 }   // getNodeVelocityFunction
+
+GENodeGlowColorFunction g_node_glow_color_function = NULL;
+
+void setNodeGlowColorFunction(GENodeGlowColorFunction func)
+{
+    g_node_glow_color_function = func;
+}   // setNodeGlowColorFunction
+
+GENodeGlowColorFunction getNodeGlowColorFunction()
+{
+    return g_node_glow_color_function;
+}   // getNodeGlowColorFunction
 
 void setVideoDriver(irr::video::IVideoDriver* driver)
 {

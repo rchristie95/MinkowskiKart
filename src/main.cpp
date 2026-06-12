@@ -2725,6 +2725,34 @@ int main(int argc, char *argv[])
 
     delete file_manager;
 
+    // Relaunch the game in a fresh process if requested (render driver
+    // change): recreating the irrlicht device in-process leaves state from
+    // the previous driver session behind.
+    if (MainLoop::isRestartRequested())
+    {
+#if defined(WIN32)
+        wchar_t exe_path[MAX_PATH];
+        if (GetModuleFileNameW(NULL, exe_path, MAX_PATH) != 0)
+        {
+            STARTUPINFOW si = {};
+            si.cb = sizeof(si);
+            PROCESS_INFORMATION pi = {};
+            if (CreateProcessW(exe_path, NULL, NULL, NULL, FALSE, 0, NULL,
+                               NULL, &si, &pi))
+            {
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
+            }
+        }
+#elif !defined(__SWITCH__) && !defined(IOS_STK) && !defined(ANDROID)
+        if (argv && argv[0])
+        {
+            char* args[] = { argv[0], NULL };
+            execvp(argv[0], args);
+        }
+#endif
+    }
+
 #ifdef __SWITCH__
     // De-initialize stuff!
     setExit();
