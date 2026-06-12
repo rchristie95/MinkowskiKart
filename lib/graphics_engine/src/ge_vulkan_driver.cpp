@@ -17,6 +17,7 @@
 #include "ge_vulkan_draw_call.hpp"
 #include "ge_vulkan_dynamic_spm_buffer.hpp"
 #include "ge_vulkan_features.hpp"
+#include "ge_vulkan_ao_pass.hpp"
 #include "ge_vulkan_hiz_depth.hpp"
 #include "ge_vulkan_mesh_cache.hpp"
 #include "ge_vulkan_scene_manager.hpp"
@@ -2682,6 +2683,17 @@ void GEVulkanDriver::renderDrawCalls(
                 }
             }
             vkCmdEndRenderPass(cmd);
+            // Half-res ambient occlusion dispatches (sampled by
+            // displace_color.frag); recorded outside any render pass.
+            if (getGEConfig()->m_ssao)
+            {
+                for (auto& q : p)
+                {
+                    GEVulkanAOPass* ao = q.first->getAOPass();
+                    if (ao)
+                        ao->generate(cmd);
+                }
+            }
             render_pass_info.clearValueCount =
                 m_rtt_texture->getZeroClearCountForPass(GVDFP_DISPLACE_COLOR);
             render_pass_info.renderPass =

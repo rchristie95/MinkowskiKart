@@ -98,6 +98,19 @@ void CustomVideoSettingsDialog::beforeAddingWidgets()
                       UserConfigParams::m_shadows_resolution == 1024 ? 2 :
                       UserConfigParams::m_shadows_resolution ==  512 ? 1 : 0);
 
+    // Vulkan post-processing style knobs (scaled integers, see
+    // user_config.hpp)
+    getWidget<SpinnerWidget>("vk_exposure")
+        ->setValue(UserConfigParams::m_vk_exposure);
+    getWidget<SpinnerWidget>("vk_saturation")
+        ->setValue(UserConfigParams::m_vk_saturation);
+    getWidget<SpinnerWidget>("vk_vignette")
+        ->setValue(UserConfigParams::m_vk_vignette);
+    getWidget<SpinnerWidget>("vk_sharpness")
+        ->setValue(UserConfigParams::m_vk_sharpness);
+    getWidget<SpinnerWidget>("vk_flare")
+        ->setValue(UserConfigParams::m_vk_flare);
+
     getWidget<CheckBoxWidget>("dynamiclight")->setState(UserConfigParams::m_dynamic_lights);
     getWidget<CheckBoxWidget>("lightshaft")->setState(UserConfigParams::m_light_shaft);
     getWidget<CheckBoxWidget>("ibl")->setState(!UserConfigParams::m_degraded_IBL);
@@ -227,6 +240,18 @@ GUIEngine::EventPropagation CustomVideoSettingsDialog::processEvent(const std::s
             UserConfigParams::m_light_scatter =
                 advanced_pipeline && getWidget<CheckBoxWidget>("lightscattering")->getState();
 
+            // Vulkan post-processing style knobs
+            UserConfigParams::m_vk_exposure =
+                getWidget<SpinnerWidget>("vk_exposure")->getValue();
+            UserConfigParams::m_vk_saturation =
+                getWidget<SpinnerWidget>("vk_saturation")->getValue();
+            UserConfigParams::m_vk_vignette =
+                getWidget<SpinnerWidget>("vk_vignette")->getValue();
+            UserConfigParams::m_vk_sharpness =
+                getWidget<SpinnerWidget>("vk_sharpness")->getValue();
+            UserConfigParams::m_vk_flare =
+                getWidget<SpinnerWidget>("vk_flare")->getValue();
+
             bool force_reload_texture = getWidget<CheckBoxWidget>("texture_compression")->getState() !=
                 UserConfigParams::m_texture_compression;
             UserConfigParams::m_texture_compression =
@@ -343,9 +368,15 @@ void CustomVideoSettingsDialog::updateActivation(const std::string& renderer)
     getWidget<CheckBoxWidget>("motionblur")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("dof")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("mlaa")->setActive(light || (vk && real_light));
-    // Ambient occlusion is not offered under Vulkan (the single-pass port
-    // does not match the GL quality); the renderer also ignores it there.
+    // Ambient occlusion is not offered under Vulkan; the renderer also
+    // ignores it there.
     getWidget<CheckBoxWidget>("ssao")->setActive(light && !vk);
+    // Vulkan post-processing style knobs (the GL pipeline ignores them)
+    getWidget<SpinnerWidget>("vk_exposure")->setActive(vk && real_light);
+    getWidget<SpinnerWidget>("vk_saturation")->setActive(vk && real_light);
+    getWidget<SpinnerWidget>("vk_vignette")->setActive(vk && real_light);
+    getWidget<SpinnerWidget>("vk_sharpness")->setActive(vk && real_light);
+    getWidget<SpinnerWidget>("vk_flare")->setActive(vk && real_light);
     getWidget<CheckBoxWidget>("ssr")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("lightshaft")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("ibl")->setActive(light || (vk && real_light));

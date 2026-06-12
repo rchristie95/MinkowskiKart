@@ -1,7 +1,8 @@
-// Sun shadow map sampling for the deferred lighting pass. Port of the
+// Sun shadow atlas sampling for the deferred lighting pass. Port of the
 // SP/OpenGL sunlightshadow.frag (PCF) and sunlightshadowpcss.frag (PCSS)
-// with a single cascade fit by GEVulkanDrawCall::updateSunShadowCamera.
-// Requires camera.glsl to be included first.
+// with two cascades (near + far halves of a 2x1 atlas) fit by
+// GEVulkanDrawCall::updateSunShadowCamera.
+// Requires camera.glsl and global_light_data.glsl to be included first.
 
 layout(set = 1, binding = 5) uniform sampler2DShadow u_sun_shadow_pcf;
 layout(set = 1, binding = 6) uniform sampler2D u_sun_shadow_raw;
@@ -43,56 +44,36 @@ float sunShadowNoise(vec2 w)
     return fract(m.z * fract(dot(w, m.xy)));
 }
 
-// world_pos / shading normal from the G-buffer; geo_normal is the
-// geometric (derivative-based) normal used for slope-scaled bias, like the
-// SP/OpenGL sunlightshadow nbias.
-float getSunShadowFactor(vec3 world_pos, vec3 world_normal, vec3 geo_normal)
+// Samples one cascade of the shadow atlas. u_base = 0.0 (near) or 0.5 (far);
+// the u axis covers half the atlas, so horizontal offsets are scaled by 0.5.
+float sampleSunShadowCascade(vec3 world_pos, vec3 geo_normal, float slope,
+                             bool pcss, mat4 sample_matrix, vec4 cparams,
+                             float u_base)
 {
-    // m_shadow_params = [depth range (0 = disabled), pcss, texel uv,
-    //                    penumbra uv per metre of separation]
-    float depth_range = u_camera.m_shadow_params.x;
-    if (depth_range <= 0.0)
-        return 1.0;
-    // The shadow map is rendered from unwarped world positions while
-    // relativity visuals warp the visible receiver geometry; keep the
-    // lighting model consistent whenever relativity visuals are active,
-    // exactly like the SP/OpenGL sunlightshadow shaders.
-    if (u_camera.m_relativity_params.x > 0.5)
-        return 1.0;
-
-    vec3 sun_dir = u_global_light.m_sun_direction;
-    // Surfaces facing away from the sun receive no direct light; skip the
-    // (noisy at grazing angles) shadow test entirely.
-    float ndl = dot(world_normal, sun_dir);
-    if (ndl <= 0.02)
-        return 1.0;
-    // Slope of the geometric surface relative to the sun: tan(acos(N.L)),
-    // used to scale both biases so grazing surfaces don't self-shadow.
-    float geo_ndl = clamp(dot(geo_normal, sun_dir), 0.05, 1.0);
-    float slope = clamp(sqrt(max(1.0 - geo_ndl * geo_ndl, 0.0)) / geo_ndl,
-        0.0, 10.0);
-
-    float texel = u_camera.m_shadow_params.z;
-    float penumbra_per_metre = u_camera.m_shadow_params.w;
+    float depth_range = cparams.x;
+    float texel = cparams.z;
+    float penumbra_per_metre = cparams.w;
     // Normal-offset bias: push the receiver out along the geometric normal
     // by 1..11 shadow texels (world units) depending on slope.
     float texel_world = 0.02 * texel / penumbra_per_metre;
-    vec4 sp = u_camera.m_sun_shadow_matrix * vec4(world_pos +
+    vec4 sp = sample_matrix * vec4(world_pos +
         geo_normal * (texel_world * (1.0 + slope) * 1.5), 1.0);
     vec3 coord = sp.xyz / sp.w;
-    if (coord.x <= 0.001 || coord.x >= 0.999 ||
-        coord.y <= 0.001 || coord.y >= 0.999 ||
+    float u_min = u_base + texel;
+    float u_max = u_base + 0.5 - texel;
+    if (coord.x <= u_min || coord.x >= u_max ||
+        coord.y <= 0.002 || coord.y >= 0.998 ||
         coord.z <= 0.0 || coord.z >= 1.0)
         return 1.0;
 
-    // Receiver depth bias along the sun axis, also slope-scaled.
+    // Receiver depth bias along the sun axis, slope-scaled.
     float ref_z = coord.z -
         max((0.06 + texel_world * slope * 2.0) / depth_range, 0.0006);
+    const vec2 AXIS = vec2(0.5, 1.0); // u axis covers half the atlas
 
-    if (u_camera.m_shadow_params.y > 0.5)
+    if (pcss)
     {
         // ---- PCSS (contact hardening) ----
-        // Random per-pixel rotation of the sampling disks
         float angle = sunShadowNoise(gl_FragCoord.xy) * 6.2831853;
         vec2 base = vec2(cos(angle), sin(angle));
         mat2 R = mat2(base.x, base.y, -base.y, base.x);
@@ -102,7 +83,9 @@ float getSunShadowFactor(vec3 world_pos, vec3 world_normal, vec3 geo_normal)
         float blockers = 0.0;
         for (int i = 0; i < 8; i++)
         {
-            vec2 tc = coord.xy + R * (SUN_SHADOW_SEARCH8[i] * search_radius);
+            vec2 duv = R * (SUN_SHADOW_SEARCH8[i] * search_radius) * AXIS;
+            vec2 tc = vec2(clamp(coord.x + duv.x, u_min, u_max),
+                coord.y + duv.y);
             float z_occ = texture(u_sun_shadow_raw, tc).x;
             if (z_occ < ref_z)
             {
@@ -119,7 +102,9 @@ float getSunShadowFactor(vec3 world_pos, vec3 world_normal, vec3 geo_normal)
         float sum = 0.0;
         for (int i = 0; i < 16; i++)
         {
-            vec2 tc = coord.xy + R * (SUN_SHADOW_VOGEL16[i] * radius);
+            vec2 duv = R * (SUN_SHADOW_VOGEL16[i] * radius) * AXIS;
+            vec2 tc = vec2(clamp(coord.x + duv.x, u_min, u_max),
+                coord.y + duv.y);
             sum += texture(u_sun_shadow_pcf, vec3(tc, ref_z));
         }
         return sum * (1.0 / 16.0);
@@ -133,10 +118,77 @@ float getSunShadowFactor(vec3 world_pos, vec3 world_normal, vec3 geo_normal)
         {
             for (int y = -1; y <= 1; y++)
             {
-                vec2 tc = coord.xy + vec2(float(x), float(y)) * r;
+                vec2 tc = coord.xy +
+                    vec2(float(x) * 0.5, float(y)) * r;
+                tc.x = clamp(tc.x, u_min, u_max);
                 sum += texture(u_sun_shadow_pcf, vec3(tc, ref_z));
             }
         }
         return sum * (1.0 / 9.0);
     }
+}
+
+// world_pos / shading normal from the G-buffer; geo_normal is the geometric
+// (derivative-based) normal used for slope-scaled bias, like the SP/OpenGL
+// sunlightshadow nbias; view_z selects the cascade.
+float getSunShadowFactor(vec3 world_pos, vec3 world_normal, vec3 geo_normal,
+                         float view_z)
+{
+    if (u_camera.m_shadow_params.x <= 0.0)
+        return 1.0;
+    // The shadow atlas is rendered from unwarped world positions while
+    // relativity visuals warp the visible receiver geometry. The SP/OpenGL
+    // shaders disable shadows entirely whenever relativity is active, but in
+    // this game that means shadows would never be seen; instead fade them
+    // out with the observer's beta, so they are correct when slow and vanish
+    // before the warp makes them visibly misplaced.
+    float rel_fade = 0.0;
+    if (u_camera.m_relativity_params.x > 0.5)
+    {
+        float beta = length(u_camera.m_relativity_beta.xyz);
+        rel_fade = clamp((beta - 0.25) * 4.0, 0.0, 1.0);
+        if (rel_fade >= 1.0)
+            return 1.0;
+    }
+
+    vec3 sun_dir = u_global_light.m_sun_direction;
+    // Surfaces facing away from the sun receive no direct light; skip the
+    // (noisy at grazing angles) shadow test entirely.
+    float ndl = dot(world_normal, sun_dir);
+    if (ndl <= 0.02)
+        return 1.0;
+    // Slope of the geometric surface relative to the sun: tan(acos(N.L)),
+    // used to scale both biases so grazing surfaces don't self-shadow.
+    float geo_ndl = clamp(dot(geo_normal, sun_dir), 0.05, 1.0);
+    float slope = clamp(sqrt(max(1.0 - geo_ndl * geo_ndl, 0.0)) / geo_ndl,
+        0.0, 10.0);
+
+    bool pcss = u_camera.m_shadow_params.y > 0.5;
+    float split = u_camera.m_shadow_params_far.y;
+    float blend_start = split * 0.8;
+
+    float factor;
+    if (view_z < blend_start)
+    {
+        factor = sampleSunShadowCascade(world_pos, geo_normal, slope, pcss,
+            u_camera.m_sun_shadow_matrix, u_camera.m_shadow_params, 0.0);
+    }
+    else if (view_z < split)
+    {
+        float near_f = sampleSunShadowCascade(world_pos, geo_normal, slope,
+            pcss, u_camera.m_sun_shadow_matrix, u_camera.m_shadow_params,
+            0.0);
+        float far_f = sampleSunShadowCascade(world_pos, geo_normal, slope,
+            pcss, u_camera.m_sun_shadow_matrix_far,
+            u_camera.m_shadow_params_far, 0.5);
+        factor = mix(near_f, far_f,
+            (view_z - blend_start) / max(split - blend_start, 0.001));
+    }
+    else
+    {
+        factor = sampleSunShadowCascade(world_pos, geo_normal, slope, pcss,
+            u_camera.m_sun_shadow_matrix_far, u_camera.m_shadow_params_far,
+            0.5);
+    }
+    return mix(factor, 1.0, rel_fade);
 }

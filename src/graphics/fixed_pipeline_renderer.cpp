@@ -249,19 +249,31 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                 {
                     UserConfigParams::m_glow ? 1.0f : 0.0f,
                     scatter_density,
-                    0.0f, 0.0f
+                    // Sun lens flare strength (settings gauge, x0.01)
+                    (float)UserConfigParams::m_vk_flare * 0.01f,
+                    0.0f
+                };
+                // Post-processing style knobs from the settings gauges
+                float beauty_params[4] =
+                {
+                    (float)UserConfigParams::m_vk_exposure * 0.1f,
+                    (float)UserConfigParams::m_vk_saturation * 0.01f,
+                    (float)UserConfigParams::m_vk_vignette * 0.01f,
+                    (float)UserConfigParams::m_vk_sharpness * 0.01f
                 };
                 // Keep the per-frame GE toggles in sync so the glow pass is
                 // recorded / the shadow pass keeps running when the user
                 // changes settings mid-race (the shadow map resolution
                 // itself applies from the next race).
                 GE::getGEConfig()->m_glow = UserConfigParams::m_glow;
+                // AO is not offered under Vulkan; skip its dispatches
+                GE::getGEConfig()->m_ssao = false;
                 GE::getGEConfig()->m_pcss = UserConfigParams::m_pcss;
                 GE::getGEConfig()->m_shadow_map_size =
                     UserConfigParams::m_dynamic_lights ?
                     (int)UserConfigParams::m_shadows_resolution : 0;
                 cam_node->setPostFXData(motion_blur, compactification,
-                    postfx_flags, postfx_flags2);
+                    postfx_flags, postfx_flags2, beauty_params);
 
                 // Track god rays / light shafts, mirroring the SP/OpenGL
                 // PostProcessing::renderGodRays sun (a world-radius-20 glow

@@ -36,6 +36,7 @@ namespace GE
 class GECullingTool;
 class GESPMBuffer;
 class GEVulkanAnimatedMeshSceneNode;
+class GEVulkanAOPass;
 class GEVulkanAttachmentTexture;
 class GEVulkanCameraSceneNode;
 class GEVulkanDriver;
@@ -212,6 +213,10 @@ private:
 
     GEVulkanHiZDepth* m_hiz_depth;
 
+    // Half-res compute ambient occlusion (sampled via data descriptor
+    // binding 7 by displace_color.frag)
+    GEVulkanAOPass* m_ao_pass;
+
     // Sun shadow map pass resources (deferred PBR only). The shadow map is
     // rendered with the GVPT_SHADOW depth-only pipelines before the main
     // render pass and sampled by deferred_pbr.frag via the data descriptor
@@ -222,10 +227,14 @@ private:
 
     VkFramebuffer m_shadow_framebuffer;
 
-    // Camera UBO for the sun's orthographic view, uploaded right after the
-    // main camera UBO in m_dynamic_data (bound via dynamic offset during the
-    // shadow pass).
-    GEVulkanCameraUBO m_shadow_camera_ubo;
+    // Camera UBOs for the sun's orthographic views (near + far cascade),
+    // uploaded right after the main camera UBO in m_dynamic_data (bound via
+    // dynamic offset during the shadow pass).
+    GEVulkanCameraUBO m_shadow_camera_ubo[2];
+
+    // Cascade being recorded by renderShadowMap (selects the camera
+    // dynamic offset in renderPipeline for GVPT_SHADOW).
+    unsigned m_shadow_cascade;
 
     // ------------------------------------------------------------------------
     void createAllPipelines(GEVulkanDriver* vk);
@@ -238,7 +247,7 @@ private:
     // ------------------------------------------------------------------------
     void updateSunShadowCamera(GEVulkanCameraSceneNode* cam);
     // ------------------------------------------------------------------------
-    size_t getShadowCameraOffset() const;
+    size_t getShadowCameraOffset(unsigned cascade = 0) const;
     // ------------------------------------------------------------------------
     void createPipeline(GEVulkanDriver* vk, const PipelineSettings& settings,
       std::unordered_map<std::string, std::shared_ptr<VkPipeline> >& dp_cache);
@@ -394,6 +403,8 @@ public:
     }
     // ------------------------------------------------------------------------
     GEVulkanHiZDepth* getHiZDepth() const               { return m_hiz_depth; }
+    // ------------------------------------------------------------------------
+    GEVulkanAOPass* getAOPass() const                     { return m_ao_pass; }
 };   // GEVulkanDrawCall
 
 }

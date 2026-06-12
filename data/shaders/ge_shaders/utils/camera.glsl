@@ -25,9 +25,14 @@ layout(std140, set = 1, binding = 0) uniform CameraBuffer
     vec4 m_godrays_color;           // [r, g, b, world_radius]
     // Post effect toggles mirroring the SP/OpenGL advanced pipeline options
     vec4 m_postfx_flags;            // [bloom, ssao, dof, antialias]
-    // Sun shadow mapping: world position -> shadow map [uv.xy, depth01]
+    // Sun shadow mapping: world position -> shadow atlas [uv.xy, depth01],
+    // near cascade then far cascade
     mat4 m_sun_shadow_matrix;
-    vec4 m_shadow_params;           // [enabled, pcss, 1/resolution, penumbra]
+    vec4 m_shadow_params;           // [depth range (0=off), pcss, texel, penumbra]
     // Second post effect toggle block: [glow, scatter_density, 0, 0]
     vec4 m_postfx_flags2;
+    mat4 m_sun_shadow_matrix_far;
+    vec4 m_shadow_params_far;       // [depth range, split distance, texel, penumbra]
+    // Post-processing style knobs: [exposure, saturation, vignette, sharpness]
+    vec4 m_beauty_params;
 } u_camera;

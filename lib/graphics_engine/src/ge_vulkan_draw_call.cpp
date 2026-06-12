@@ -3,6 +3,7 @@
 #include "ge_culling_tool.hpp"
 #include "ge_main.hpp"
 #include "ge_material_manager.hpp"
+#include "ge_vulkan_ao_pass.hpp"
 #include "ge_vulkan_attachment_texture.hpp"
 #include "ge_vulkan_command_loader.hpp"
 #include "ge_render_info.hpp"
@@ -271,6 +272,7 @@ GEVulkanDrawCall::GEVulkanDrawCall()
     m_shadow_map = NULL;
     m_shadow_render_pass = VK_NULL_HANDLE;
     m_shadow_framebuffer = VK_NULL_HANDLE;
+    m_shadow_cascade = 0;
     GEVulkanDriver* vk = static_cast<GEVulkanDriver*>(getDriver());
     m_texture_descriptor = vk->getMeshTextureDescriptor();
     GEVulkanDeferredFBO* dfbo =
@@ -280,6 +282,10 @@ GEVulkanDrawCall::GEVulkanDrawCall()
         m_hiz_depth = new GEVulkanHiZDepth(vk);
     else
         m_hiz_depth = NULL;
+    if (dfbo && dfbo->getAttachment<GVDFT_DISPLACE_COLOR>())
+        m_ao_pass = new GEVulkanAOPass(vk);
+    else
+        m_ao_pass = NULL;
 }   // GEVulkanDrawCall
 
 // ----------------------------------------------------------------------------
@@ -311,6 +317,7 @@ GEVulkanDrawCall::~GEVulkanDrawCall()
         delete m_shadow_map;
     }
     delete m_hiz_depth;
+    delete m_ao_pass;
 }   // ~GEVulkanDrawCall
 
 // ----------------------------------------------------------------------------
@@ -956,6 +963,11 @@ void GEVulkanDrawCall::prepare(GEVulkanCameraSceneNode* cam)
     m_billboard_rotation = MiniGLM::getBulletQuaternion(cam->getViewMatrix());
     if (m_hiz_depth)
         m_hiz_depth->prepare(cam);
+    if (m_ao_pass)
+    {
+        m_update_data_descriptor_sets =
+            m_ao_pass->prepare(cam) || m_update_data_descriptor_sets;
+    }
 }   // prepare
 
 // ----------------------------------------------------------------------------
@@ -1139,7 +1151,8 @@ void GEVulkanDrawCall::createShadowResources(GEVulkanDriver* vk)
     if (size <= 0)
         size = 512;
     size = std::min(std::max(size, 256), 4096);
-    irr::core::dimension2du dim(size, size);
+    // 2x1 atlas: near cascade in the left half, far cascade in the right
+    irr::core::dimension2du dim(size * 2, size);
     m_shadow_map = GEVulkanAttachmentTexture::createDepthTexture(vk, dim,
         false/*lazy_allocation*/);
 
@@ -1594,30 +1607,34 @@ void GEVulkanDrawCall::createGlowPipelines(GEVulkanDriver* vk)
 }   // createGlowPipelines
 
 // ----------------------------------------------------------------------------
-size_t GEVulkanDrawCall::getShadowCameraOffset() const
+size_t GEVulkanDrawCall::getShadowCameraOffset(unsigned cascade) const
 {
     size_t ubo_size = sizeof(GEVulkanCameraUBO);
-    return ubo_size +
+    size_t aligned = ubo_size +
         getPadding(ubo_size, m_limits.minUniformBufferOffsetAlignment);
+    return aligned * (1 + cascade);
 }   // getShadowCameraOffset
 
 // ----------------------------------------------------------------------------
-// Fits the sun's orthographic frustum around the near part of the camera
-// frustum (single cascade) and fills both the shadow camera UBO (used by the
-// GVPT_SHADOW pass) and the player camera's shadow sampling parameters.
+// Fits two orthographic sun frusta (near and far cascade) around the camera
+// frustum, fills the shadow camera UBOs (used by the GVPT_SHADOW pass into
+// the 2x1 atlas) and the player camera's shadow sampling parameters.
 void GEVulkanDrawCall::updateSunShadowCamera(GEVulkanCameraSceneNode* cam)
 {
     const bool enabled = m_shadow_map != NULL &&
         getGEConfig()->m_shadow_map_size > 0 && m_light_handler != NULL;
-    float params[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    float params[2][4] = {};
+    irr::core::matrix4 sample_matrix[2];
     if (!enabled)
     {
-        cam->setSunShadowData(irr::core::matrix4(), params);
+        cam->setSunShadowData(sample_matrix[0], params[0], sample_matrix[1],
+            params[1]);
         return;
     }
 
-    // Distance along the view direction covered by the shadow map (matches
-    // the second SP/OpenGL cascade boundary; beyond it surfaces are lit).
+    // Cascade split and total distance covered along the view direction
+    // (the far boundary matches the second SP/OpenGL cascade boundary).
+    const float SPLIT = 16.0f;
     const float SHADOW_RANGE = 60.0f;
 
     const GEGlobalLightBuffer* light =
@@ -1627,7 +1644,6 @@ void GEVulkanDrawCall::updateSunShadowCamera(GEVulkanCameraSceneNode* cam)
         sun_dir = irr::core::vector3df(0.0f, 1.0f, 0.0f);
     sun_dir.normalize();
 
-    // Camera frustum corners (unwarped matrices) up to SHADOW_RANGE.
     const irr::core::matrix4& proj =
         cam->getViewFrustum()->getTransform(irr::video::ETS_PROJECTION);
     irr::core::matrix4 inv_view;
@@ -1635,121 +1651,141 @@ void GEVulkanDrawCall::updateSunShadowCamera(GEVulkanCameraSceneNode* cam)
         .getInverse(inv_view);
     float tx = proj[0] != 0.0f ? 1.0f / proj[0] : 1.0f;
     float ty = proj[5] != 0.0f ? 1.0f / proj[5] : 1.0f;
-    std::array<irr::core::vector3df, 8> corners;
-    unsigned corner_count = 0;
-    for (float z : { cam->getNearValue(),
-        std::min(SHADOW_RANGE, cam->getFarValue()) })
-    {
-        for (float sx : { -1.0f, 1.0f })
-        {
-            for (float sy : { -1.0f, 1.0f })
-            {
-                irr::core::vector3df p(sx * tx * z, sy * ty * z, z);
-                inv_view.transformVect(p);
-                corners[corner_count++] = p;
-            }
-        }
-    }
-    irr::core::vector3df center(0.0f, 0.0f, 0.0f);
-    for (auto& c : corners)
-        center += c;
-    center /= (float)corner_count;
 
-    // Sun view matrix looking at the frustum centre.
     irr::core::vector3df up = std::abs(sun_dir.Y) > 0.99f ?
         irr::core::vector3df(1.0f, 0.0f, 0.0f) :
         irr::core::vector3df(0.0f, 1.0f, 0.0f);
-    irr::core::matrix4 light_view;
-    light_view.buildCameraLookAtMatrixLH(center + sun_dir * 200.0f, center,
-        up);
 
-    // Light-space bounding box of the frustum corners.
-    irr::core::vector3df min_l, max_l;
-    for (unsigned i = 0; i < corner_count; i++)
+    // Square per-cascade resolution (the atlas is 2x1).
+    const float res = (float)m_shadow_map->getSize().Height;
+
+    for (unsigned c = 0; c < 2; c++)
     {
-        irr::core::vector3df p = corners[i];
-        light_view.transformVect(p);
-        if (i == 0)
-            min_l = max_l = p;
-        else
+        // The far cascade starts inside the near one so the shader can blend
+        // across the split without sampling outside either cascade.
+        float z0 = c == 0 ? cam->getNearValue() : SPLIT * 0.75f;
+        float z1 = c == 0 ? SPLIT :
+            std::min(SHADOW_RANGE, cam->getFarValue());
+
+        // Camera sub-frustum corners (unwarped matrices).
+        std::array<irr::core::vector3df, 8> corners;
+        unsigned corner_count = 0;
+        for (float z : { z0, z1 })
         {
-            min_l.X = std::min(min_l.X, p.X); max_l.X = std::max(max_l.X, p.X);
-            min_l.Y = std::min(min_l.Y, p.Y); max_l.Y = std::max(max_l.Y, p.Y);
-            min_l.Z = std::min(min_l.Z, p.Z); max_l.Z = std::max(max_l.Z, p.Z);
+            for (float sx : { -1.0f, 1.0f })
+            {
+                for (float sy : { -1.0f, 1.0f })
+                {
+                    irr::core::vector3df p(sx * tx * z, sy * ty * z, z);
+                    inv_view.transformVect(p);
+                    corners[corner_count++] = p;
+                }
+            }
         }
+        irr::core::vector3df center(0.0f, 0.0f, 0.0f);
+        for (auto& p : corners)
+            center += p;
+        center /= (float)corner_count;
+
+        irr::core::matrix4 light_view;
+        light_view.buildCameraLookAtMatrixLH(center + sun_dir * 200.0f,
+            center, up);
+
+        // Light-space bounding box of the sub-frustum corners.
+        irr::core::vector3df min_l, max_l;
+        for (unsigned i = 0; i < corner_count; i++)
+        {
+            irr::core::vector3df p = corners[i];
+            light_view.transformVect(p);
+            if (i == 0)
+                min_l = max_l = p;
+            else
+            {
+                min_l.X = std::min(min_l.X, p.X);
+                max_l.X = std::max(max_l.X, p.X);
+                min_l.Y = std::min(min_l.Y, p.Y);
+                max_l.Y = std::max(max_l.Y, p.Y);
+                min_l.Z = std::min(min_l.Z, p.Z);
+                max_l.Z = std::max(max_l.Z, p.Z);
+            }
+        }
+        // Room for casters between the sun and the visible volume.
+        const float CASTER_MARGIN = 150.0f;
+        float zn = min_l.Z - CASTER_MARGIN;
+        float zf = max_l.Z + 10.0f;
+        float w = std::max(max_l.X - min_l.X, 1.0f);
+        float h = std::max(max_l.Y - min_l.Y, 1.0f);
+        float cx = (min_l.X + max_l.X) * 0.5f;
+        float cy = (min_l.Y + max_l.Y) * 0.5f;
+
+        // Snap the ortho window to shadow texel multiples (anti-shimmer).
+        float texel_x = w / res;
+        float texel_y = h / res;
+        cx = std::floor(cx / texel_x) * texel_x;
+        cy = std::floor(cy / texel_y) * texel_y;
+
+        // Off-centre orthographic projection straight into Vulkan clip
+        // space (x,y in [-1,1], z in [0,1]).
+        irr::core::matrix4 ortho;
+        float* o = ortho.pointer();
+        memset(o, 0, sizeof(float) * 16);
+        o[0] = 2.0f / w;
+        o[5] = 2.0f / h;
+        o[10] = 1.0f / (zf - zn);
+        o[12] = -2.0f * cx / w;
+        o[13] = -2.0f * cy / h;
+        o[14] = -zn / (zf - zn);
+        o[15] = 1.0f;
+
+        irr::core::matrix4 sun_pv = ortho * light_view;
+
+        // The shadow camera UBO only needs the matrices used by the
+        // depth-only vertex/tessellation path; the relativity blocks stay
+        // zeroed (default) so geometry is rendered unwarped, and the warp
+        // bubble is pushed far away so the adaptive tessellation collapses
+        // to level 1.
+        GEVulkanCameraUBO& ubo = m_shadow_camera_ubo[c];
+        ubo.m_view_matrix = light_view;
+        ubo.m_projection_matrix = ortho;
+        ubo.m_projection_view_matrix = sun_pv;
+        sun_pv.getInverse(ubo.m_inverse_projection_view_matrix);
+        light_view.getInverse(ubo.m_inverse_view_matrix);
+        ortho.getInverse(ubo.m_inverse_projection_matrix);
+        ubo.m_viewport.UpperLeftCorner.X = 0.0f;
+        ubo.m_viewport.UpperLeftCorner.Y = 0.0f;
+        ubo.m_viewport.LowerRightCorner.X = res;
+        ubo.m_viewport.LowerRightCorner.Y = res;
+        ubo.m_screensize.UpperLeftCorner.X = res;
+        ubo.m_screensize.UpperLeftCorner.Y = res;
+        ubo.m_relativity_bubble[0] = 1.0e8f;
+        ubo.m_relativity_bubble[1] = 1.0e8f;
+        ubo.m_relativity_bubble[2] = 1.0e8f;
+
+        // World -> shadow atlas UV (u in this cascade's half) + depth01 for
+        // sampling in deferred_pbr.frag.
+        irr::core::matrix4 uv_bias;
+        float* b = uv_bias.pointer();
+        memset(b, 0, sizeof(float) * 16);
+        b[0] = 0.25f;
+        b[5] = 0.5f;
+        b[10] = 1.0f;
+        b[12] = 0.25f + 0.5f * (float)c;
+        b[13] = 0.5f;
+        b[15] = 1.0f;
+        sample_matrix[c] = uv_bias * sun_pv;
+
+        // Near: [depth range (0 = disabled), pcss, texel uv (v axis),
+        // penumbra uv per metre]; far: pcss slot carries the split distance.
+        params[c][0] = zf - zn;
+        params[c][1] = c == 0 ?
+            (getGEConfig()->m_pcss ? 1.0f : 0.0f) : SPLIT;
+        params[c][2] = 1.0f / res;
+        // PCSS penumbra: shadow-map UV radius (v axis) per metre of
+        // receiver-blocker separation, ~1 degree effective sun size.
+        params[c][3] = 0.02f / w;
     }
-    // Room for casters between the sun and the visible volume.
-    const float CASTER_MARGIN = 150.0f;
-    float zn = min_l.Z - CASTER_MARGIN;
-    float zf = max_l.Z + 10.0f;
-    float w = std::max(max_l.X - min_l.X, 1.0f);
-    float h = std::max(max_l.Y - min_l.Y, 1.0f);
-    float cx = (min_l.X + max_l.X) * 0.5f;
-    float cy = (min_l.Y + max_l.Y) * 0.5f;
-
-    // Snap the ortho window to shadow texel multiples to avoid shimmer when
-    // the camera moves.
-    const float res = (float)m_shadow_map->getSize().Width;
-    float texel_x = w / res;
-    float texel_y = h / res;
-    cx = std::floor(cx / texel_x) * texel_x;
-    cy = std::floor(cy / texel_y) * texel_y;
-
-    // Off-centre orthographic projection straight into Vulkan clip space
-    // (x,y in [-1,1], z in [0,1]).
-    irr::core::matrix4 ortho;
-    float* o = ortho.pointer();
-    memset(o, 0, sizeof(float) * 16);
-    o[0] = 2.0f / w;
-    o[5] = 2.0f / h;
-    o[10] = 1.0f / (zf - zn);
-    o[12] = -2.0f * cx / w;
-    o[13] = -2.0f * cy / h;
-    o[14] = -zn / (zf - zn);
-    o[15] = 1.0f;
-
-    irr::core::matrix4 sun_pv = ortho * light_view;
-
-    // The shadow camera UBO only needs the matrices used by the depth-only
-    // vertex/tessellation path; the relativity blocks stay zeroed (default)
-    // so geometry is rendered unwarped, and the warp bubble is pushed far
-    // away so the adaptive tessellation collapses to level 1.
-    m_shadow_camera_ubo.m_view_matrix = light_view;
-    m_shadow_camera_ubo.m_projection_matrix = ortho;
-    m_shadow_camera_ubo.m_projection_view_matrix = sun_pv;
-    sun_pv.getInverse(m_shadow_camera_ubo.m_inverse_projection_view_matrix);
-    light_view.getInverse(m_shadow_camera_ubo.m_inverse_view_matrix);
-    ortho.getInverse(m_shadow_camera_ubo.m_inverse_projection_matrix);
-    m_shadow_camera_ubo.m_viewport.UpperLeftCorner.X = 0.0f;
-    m_shadow_camera_ubo.m_viewport.UpperLeftCorner.Y = 0.0f;
-    m_shadow_camera_ubo.m_viewport.LowerRightCorner.X = res;
-    m_shadow_camera_ubo.m_viewport.LowerRightCorner.Y = res;
-    m_shadow_camera_ubo.m_screensize.UpperLeftCorner.X = res;
-    m_shadow_camera_ubo.m_screensize.UpperLeftCorner.Y = res;
-    m_shadow_camera_ubo.m_relativity_bubble[0] = 1.0e8f;
-    m_shadow_camera_ubo.m_relativity_bubble[1] = 1.0e8f;
-    m_shadow_camera_ubo.m_relativity_bubble[2] = 1.0e8f;
-
-    // World -> shadow map UV (xy in [0,1]) + depth01 for sampling in
-    // deferred_pbr.frag.
-    irr::core::matrix4 uv_bias;
-    float* b = uv_bias.pointer();
-    memset(b, 0, sizeof(float) * 16);
-    b[0] = 0.5f;
-    b[5] = 0.5f;
-    b[10] = 1.0f;
-    b[12] = 0.5f;
-    b[13] = 0.5f;
-    b[15] = 1.0f;
-
-    // [depth range (0 = disabled), pcss, texel uv, penumbra uv per metre]
-    params[0] = zf - zn;
-    params[1] = getGEConfig()->m_pcss ? 1.0f : 0.0f;
-    params[2] = 1.0f / res;
-    // PCSS penumbra: shadow-map UV radius per metre of receiver-blocker
-    // separation, for an effective sun angular size of ~1 degree.
-    params[3] = 0.02f / w;
-    cam->setSunShadowData(uv_bias * sun_pv, params);
+    cam->setSunShadowData(sample_matrix[0], params[0], sample_matrix[1],
+        params[1]);
 }   // updateSunShadowCamera
 
 // ----------------------------------------------------------------------------
@@ -1778,20 +1814,30 @@ void GEVulkanDrawCall::renderShadowMap(GEVulkanDriver* vk, VkCommandBuffer cmd)
     render_pass_info.pClearValues = &clear_value;
     vkCmdBeginRenderPass(cmd, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-    VkViewport vp = {};
-    vp.width = (float)m_shadow_map->getSize().Width;
-    vp.height = (float)m_shadow_map->getSize().Height;
-    vp.minDepth = 0.0f;
-    vp.maxDepth = 1.0f;
-    vkCmdSetViewport(cmd, 0, 1, &vp);
-    VkRect2D scissor = {};
-    scissor.extent = render_pass_info.renderArea.extent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
-
     if (GEVulkanFeatures::supportsBindMeshTexturesAtOnce())
         bindAllMaterials(cmd);
-    bool rebind_base_vertex = true;
-    renderPipeline(vk, cmd, GVPT_SHADOW, rebind_base_vertex);
+
+    // Render the near and far cascade into the two halves of the atlas.
+    const uint32_t res = m_shadow_map->getSize().Height;
+    for (unsigned c = 0; c < 2; c++)
+    {
+        VkViewport vp = {};
+        vp.x = (float)(c * res);
+        vp.width = (float)res;
+        vp.height = (float)res;
+        vp.minDepth = 0.0f;
+        vp.maxDepth = 1.0f;
+        vkCmdSetViewport(cmd, 0, 1, &vp);
+        VkRect2D scissor = {};
+        scissor.offset.x = (int32_t)(c * res);
+        scissor.extent = { res, res };
+        vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+        m_shadow_cascade = c;
+        bool rebind_base_vertex = true;
+        renderPipeline(vk, cmd, GVPT_SHADOW, rebind_base_vertex);
+    }
+    m_shadow_cascade = 0;
 
     vkCmdEndRenderPass(cmd);
 }   // renderShadowMap
@@ -2314,6 +2360,11 @@ void GEVulkanDrawCall::createVulkanData()
     shadow_raw_binding.binding = 6;
     bindings.push_back(shadow_raw_binding);
 
+    // Half-res ambient occlusion result (displace_color.frag)
+    VkDescriptorSetLayoutBinding ao_binding = shadow_pcf_binding;
+    ao_binding.binding = 7;
+    bindings.push_back(ao_binding);
+
     VkDescriptorSetLayoutCreateInfo setinfo = {};
     setinfo.flags = 0;
     setinfo.pNext = NULL;
@@ -2343,11 +2394,11 @@ void GEVulkanDrawCall::createVulkanData()
     };
     if (GEVulkanFeatures::supportsBindMeshTexturesAtOnce())
         sizes.back().descriptorCount = (vk->getMaxFrameInFlight() + 1) * 3;
-    // Sun shadow map samplers (bindings 5 and 6)
+    // Sun shadow map samplers (bindings 5 and 6) + AO result (binding 7)
     sizes.push_back(
     {
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        (vk->getMaxFrameInFlight() + 1) * 2
+        (vk->getMaxFrameInFlight() + 1) * 3
     });
 
     VkDescriptorPoolCreateInfo pool_info = {};
@@ -2509,15 +2560,18 @@ void GEVulkanDrawCall::uploadDynamicData(GEVulkanDriver* vk,
     data_uploading.emplace_back((void*)cam->getUBOData(),
         sizeof(GEVulkanCameraUBO));
 
-    size_t sbo_padding = getShadowCameraOffset() - sizeof(GEVulkanCameraUBO);
+    size_t sbo_padding = getShadowCameraOffset(0) - sizeof(GEVulkanCameraUBO);
     if (sbo_padding > 0)
         data_uploading.emplace_back((void*)NULL, sbo_padding);
-    // Sun camera UBO for the GVPT_SHADOW pass, bound with a camera dynamic
-    // offset of getShadowCameraOffset().
-    data_uploading.emplace_back((void*)&m_shadow_camera_ubo,
-        sizeof(GEVulkanCameraUBO));
-    if (sbo_padding > 0)
-        data_uploading.emplace_back((void*)NULL, sbo_padding);
+    // Sun camera UBOs (near + far cascade) for the GVPT_SHADOW pass, bound
+    // with camera dynamic offsets of getShadowCameraOffset(cascade).
+    for (unsigned c = 0; c < 2; c++)
+    {
+        data_uploading.emplace_back((void*)&m_shadow_camera_ubo[c],
+            sizeof(GEVulkanCameraUBO));
+        if (sbo_padding > 0)
+            data_uploading.emplace_back((void*)NULL, sbo_padding);
+    }
     if (m_light_handler)
     {
         data_uploading.emplace_back(m_light_handler->getData(),
@@ -2658,10 +2712,10 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
 
     int cur_mid = -1;
     std::vector<uint32_t> dynamic_offsets = getDefaultDynamicOffsets();
-    // The shadow pass renders with the sun camera UBO uploaded right after
-    // the main camera UBO.
+    // The shadow pass renders with the sun camera UBO of the cascade being
+    // recorded (uploaded right after the main camera UBO).
     if (pt == GVPT_SHADOW)
-        dynamic_offsets[0] = (uint32_t)getShadowCameraOffset();
+        dynamic_offsets[0] = (uint32_t)getShadowCameraOffset(m_shadow_cascade);
     if (getGEConfig()->m_pbr)
     {
         switch (pt)
@@ -3051,6 +3105,25 @@ void GEVulkanDrawCall::updateDataDescriptorSets(GEVulkanDriver* vk)
             }
         }
 
+        // Half-res ambient occlusion result (binding 7)
+        VkDescriptorImageInfo ao_info = {};
+        if (m_ao_pass && m_ao_pass->getResult())
+        {
+            ao_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            ao_info.imageView =
+                (VkImageView)m_ao_pass->getResult()->getTextureHandler();
+            ao_info.sampler = vk->getSampler(GVS_2D_RENDER);
+            data_set.push_back({});
+            VkWriteDescriptorSet& ds = data_set.back();
+            ds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            ds.dstSet = m_data_descriptor_sets[i];
+            ds.dstBinding = 7;
+            ds.dstArrayElement = 0;
+            ds.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            ds.descriptorCount = 1;
+            ds.pImageInfo = &ao_info;
+        }
+
         vkUpdateDescriptorSets(vk->getDevice(), data_set.size(),
             data_set.data(), 0, NULL);
     }
@@ -3321,8 +3394,8 @@ void GEVulkanDrawCall::addLightNode(irr::scene::ILightSceneNode* node)
 // ----------------------------------------------------------------------------
 size_t GEVulkanDrawCall::getLightDataOffset() const
 {
-    // [camera UBO][padding][sun shadow camera UBO][padding][light data]
-    return getShadowCameraOffset() * 2;
+    // [camera][near sun camera][far sun camera][light data]
+    return getShadowCameraOffset(2);
 }   // getLightDataOffset
 
 // ----------------------------------------------------------------------------

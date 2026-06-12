@@ -589,6 +589,8 @@ begin:
                 (int)UserConfigParams::m_shadows_resolution : 0;
             GE::getGEConfig()->m_pcss = UserConfigParams::m_pcss;
             GE::getGEConfig()->m_glow = UserConfigParams::m_glow;
+            // AO is not offered under Vulkan
+            GE::getGEConfig()->m_ssao = false;
 #endif
         }
         else

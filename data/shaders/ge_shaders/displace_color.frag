@@ -2,6 +2,8 @@ layout(binding = 0) uniform sampler2D u_displace_mask;
 layout(binding = 2) uniform sampler2D u_displace_color;
 layout(binding = 3) uniform sampler2D u_depth;
 layout(binding = 4) uniform sampler2D u_glow;
+// Half-res blurred ambient occlusion (GEVulkanAOPass, data descriptor)
+layout(set = 1, binding = 7) uniform sampler2D u_ao;
 
 layout(location = 0) in vec2 f_uv;
 
@@ -83,88 +85,32 @@ vec3 antialiasScene(vec2 px)
     return rgbB;
 }
 
-// ---- SSAO ----
-// Port of the SP/OpenGL ssao.frag (Alchemy/SAO estimator) with the track's
-// default parameters (radius 0.5, k 3, sigma 1; see Track::loadTrackModel).
-// Uses the raw depth buffer with full unprojection instead of the GL
-// pipeline's mip-mapped linear-depth texture.
-float interleavedGradientNoise(highp vec2 w)
+// ---- Contrast-adaptive sharpening (AMD CAS style) ----
+// Recovers the crispness FXAA blurs away; the adaptive weight backs off in
+// already-contrasty regions so edges don't ring.
+vec3 casSharpen(vec2 px, vec3 center)
 {
-    const vec3 m = vec3(0.06711056, 0.00583715, 52.9829189);
-    return fract(m.z * fract(dot(w, m.xy)));
-}
-
-float computeSSAO(vec2 px)
-{
-    const float RADIUS = 0.5;
-    const float K = 3.0;
-    const float SIGMA = 1.0;
-    const float THICKNESS = 10.0;
-    const int SAMPLES = 6;
-    const float INV_SAMPLES = 1.0 / float(SAMPLES);
-
-    vec3 frag_pos = viewPosAt(px);
-    // Derivatives must be taken in uniform control flow, before any
-    // non-uniform early exit.
-    vec3 ddx = dFdx(frag_pos);
-    vec3 ddy = dFdy(frag_pos);
-    if (frag_pos.z <= 0.001 || frag_pos.z > 500.0)
-        return 1.0;
-
-    vec3 norm = normalize(cross(ddy, ddx));
-
-    vec2 vp_xy = u_camera.m_viewport.xy;
-    vec2 vp_wh = u_camera.m_viewport.zw;
-
-    float r = RADIUS / frag_pos.z;
-    float phi = interleavedGradientNoise(px);
-    float bl = 0.0;
-
-    float peak = 0.1 * RADIUS;
-    float intensity = 2.0 * 3.14159 * SIGMA * peak * INV_SAMPLES;
-
-    float horizon = min(100.0 / min(vp_wh.x, vp_wh.y), 0.3);
-    float bias = min(1.0 / min(vp_wh.x, vp_wh.y), 0.003);
-
-    float theta = phi * 2.0 * 2.4 * 3.14159;
-    vec2 rotations = vec2(cos(theta), sin(theta)) * vp_wh;
-    vec2 offset = vec2(cos(INV_SAMPLES), sin(INV_SAMPLES));
-
-    for (int i = 0; i < SAMPLES; ++i)
-    {
-        float alpha = (float(i) + 0.5) * INV_SAMPLES;
-        rotations = vec2(rotations.x * offset.x - rotations.y * offset.y,
-                         rotations.x * offset.y + rotations.y * offset.x);
-        float h = r * alpha;
-        vec2 occluder_px = clamp(px + h * rotations, vp_xy, vp_xy + vp_wh);
-        vec3 occluder_pos = viewPosAt(occluder_px);
-
-        vec3 vi = occluder_pos - frag_pos;
-        float vv = dot(vi, vi);
-        float vn = dot(vi, norm);
-        float w = max(0.0, 1.0 - vv / (THICKNESS * THICKNESS));
-        w = w * w;
-        w *= step(vv * horizon * horizon, vn * vn);
-        bl += w * max(0.0, vn - frag_pos.z * bias) / (vv + peak * peak);
-    }
-
-    return pow(max(1.0 - sqrt(bl * intensity), 0.0), K);
-}
-
-// The GL pipeline renders its AO to a texture and gaussian-blurs it; the
-// single-pass equivalent evaluates the estimator over a 3x3 neighbourhood
-// (each position integrates a differently-rotated sample disk, so the nine
-// estimates decorrelate) and averages them, turning the per-pixel sampling
-// noise into a smooth estimate instead of a static screen-door pattern.
-float smoothedSSAO(vec2 px)
-{
-    float sum = 0.0;
-    for (int x = -1; x <= 1; x++)
-    {
-        for (int y = -1; y <= 1; y++)
-            sum += computeSSAO(px + vec2(float(x), float(y)) * 2.0);
-    }
-    return sum * (1.0 / 9.0);
+    vec3 up    = sampleScene(px + vec2( 0.0, -1.0));
+    vec3 down  = sampleScene(px + vec2( 0.0,  1.0));
+    vec3 left  = sampleScene(px + vec2(-1.0,  0.0));
+    vec3 right = sampleScene(px + vec2( 1.0,  0.0));
+    // Scalar (luma-driven) weight: per-channel weights tint high-contrast
+    // edges with rainbow speckles.
+    float l_up = sceneLuma(up), l_down = sceneLuma(down);
+    float l_left = sceneLuma(left), l_right = sceneLuma(right);
+    float l_c = sceneLuma(center);
+    float mn = min(min(l_up, l_down), min(min(l_left, l_right), l_c));
+    float mx = max(max(l_up, l_down), max(max(l_left, l_right), l_c));
+    float amp = sqrt(clamp(min(mn, 1.0 - mx) / max(mx, 1e-3), 0.0, 1.0));
+    // Sharpness knob from the settings (x0.01)
+    float w = amp * (-u_camera.m_beauty_params.w);
+    vec3 sharpened = (center + (up + down + left + right) * w) /
+        (1.0 + 4.0 * w);
+    // Anti-ringing: never exceed the local neighbourhood's range, so
+    // aliased high-contrast edges don't sparkle.
+    vec3 lo = min(min(up, down), min(min(left, right), center));
+    vec3 hi = max(max(up, down), max(max(left, right), center));
+    return clamp(sharpened, lo, hi);
 }
 
 // ---- Bloom ----
@@ -175,9 +121,11 @@ float smoothedSSAO(vec2 px)
 vec3 brightPass(vec3 c)
 {
     // The GL chain bright-passes HDR values > 1; on this tonemapped LDR
-    // input only near-clipped pixels count as highlights, otherwise bright
-    // scenes (desert sand) bloom everywhere and wash the image out.
-    return c * smoothstep(0.92, 1.0, sceneLuma(c));
+    // input only near-clipped pixels count as highlights. (An
+    // inverse-tonemap bright-pass was tried and rejected: it explodes on
+    // near-white texture detail and the sparse gather turns it into
+    // sparkle.)
+    return c * smoothstep(0.90, 1.0, sceneLuma(c));
 }
 
 vec3 bloomGather(vec2 px)
@@ -319,6 +267,90 @@ vec3 godRays(vec2 px)
     // Normalised march sum peaks around ~9 at the disc centre; the gain maps
     // that to roughly the additive brightness the GL chain produces.
     return u_camera.m_godrays_color.rgb * (accum * 0.30 * opacity);
+}
+
+// ---- Sun lens flare ----
+// Ghost sprites along the sun -> screen-centre axis plus a faint anamorphic
+// streak, faded by how much of the sun disc is actually visible (same
+// view-space occlusion test as the god rays). Active under the same gate as
+// the god rays (track lightshaft + Light shaft setting).
+vec3 lensFlare(vec2 px)
+{
+    float opacity = u_camera.m_godrays_pos.w;
+    if (opacity <= 0.001)
+        return vec3(0.0);
+
+    vec4 sun_clip = u_camera.m_projection_view_matrix *
+        vec4(u_camera.m_godrays_pos.xyz, 1.0);
+    if (sun_clip.w <= 0.001 || sun_clip.z <= 0.0)
+        return vec3(0.0);
+
+    vec2 vp_xy = u_camera.m_viewport.xy;
+    vec2 vp_wh = u_camera.m_viewport.zw;
+    vec2 sun_ndc = sun_clip.xy / sun_clip.w;
+    if (abs(sun_ndc.x) > 1.1 || abs(sun_ndc.y) > 1.1)
+        return vec3(0.0);
+    vec2 sun_screen = vp_xy + (sun_ndc * 0.5 + 0.5) * vp_wh;
+
+    vec2 center = vp_xy + vp_wh * 0.5;
+    vec2 axis = center - sun_screen;
+    vec3 tint = normalize(u_camera.m_godrays_color.rgb + 0.2) * 1.2;
+    vec3 flare = vec3(0.0);
+
+    // Ghost sprites mirrored along the axis
+    const vec4 GHOSTS[5] = vec4[](
+        // [position along axis, size in viewport heights, weight, hue mix]
+        vec4(0.45, 0.045, 0.30, 0.0),
+        vec4(0.85, 0.025, 0.25, 0.5),
+        vec4(1.25, 0.070, 0.20, 0.2),
+        vec4(1.65, 0.035, 0.18, 0.8),
+        vec4(2.05, 0.100, 0.12, 0.4));
+    for (int i = 0; i < 5; i++)
+    {
+        vec2 ghost_pos = sun_screen + axis * GHOSTS[i].x;
+        float size = GHOSTS[i].y * vp_wh.y;
+        float d = length(px - ghost_pos) / size;
+        float shape = exp(-d * d * 1.8);
+        // Alternate between the sun tint and a cooler complementary
+        vec3 ghost_col = mix(tint, tint.bgr, GHOSTS[i].w);
+        flare += ghost_col * (shape * GHOSTS[i].z);
+    }
+
+    // Faint anamorphic streak across the sun
+    vec2 dp = px - sun_screen;
+    float streak = exp(-pow(dp.y / (0.006 * vp_wh.y), 2.0)) *
+        exp(-pow(dp.x / (0.22 * vp_wh.x), 2.0));
+    flare += tint * (streak * 0.35);
+
+    // Fade ghosts as the sun leaves the screen edge; overall strength comes
+    // from the settings knob (m_postfx_flags2.z).
+    float edge_fade = (1.0 - smoothstep(0.85, 1.1, abs(sun_ndc.x))) *
+        (1.0 - smoothstep(0.85, 1.1, abs(sun_ndc.y)));
+    flare *= edge_fade * opacity * u_camera.m_postfx_flags2.z;
+
+    // Only pay for the occlusion taps where flare would actually show.
+    if (dot(flare, vec3(1.0)) < 0.002)
+        return vec3(0.0);
+
+    // Soft visibility: fraction of taps around the sun centre that see
+    // past-the-sun depth (same view-space test as the god rays).
+    float sun_vz = (u_camera.m_view_matrix *
+        vec4(u_camera.m_godrays_pos.xyz, 1.0)).z;
+    float sun_margin = u_camera.m_godrays_color.w;
+    float vis = 0.0;
+    float r_vis = 0.012 * vp_wh.y;
+    const vec2 VIS_TAPS[5] = vec2[](
+        vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(-1.0, 0.0),
+        vec2(0.0, 1.0), vec2(0.0, -1.0));
+    for (int i = 0; i < 5; i++)
+    {
+        vec2 tap = clamp(sun_screen + VIS_TAPS[i] * r_vis,
+            vp_xy, vp_xy + vp_wh);
+        if (viewPosAt(tap).z >= sun_vz - sun_margin)
+            vis += 0.2;
+    }
+
+    return flare * vis;
 }
 
 // ---- Per-object glow outlines ----
@@ -548,8 +580,17 @@ void main()
     // position so black holes bend them with the rest of the scene.
     vec3 col = u_camera.m_postfx_flags.w > 0.5 ?
         antialiasScene(src_px) : sampleScene(src_px);
+    // Contrast-adaptive sharpening recovers the crispness FXAA removes
+    // (tied to the anti-aliasing toggle).
+    if (u_camera.m_postfx_flags.w > 0.5)
+        col = casSharpen(src_px, col);
+    // Ambient occlusion: bilinear upsample of the half-res blurred AO
+    // computed by the GEVulkanAOPass dispatches.
     if (u_camera.m_postfx_flags.y > 0.5)
-        col *= smoothedSSAO(src_px);
+    {
+        vec2 ao_uv = (src_px - vp_xy) / vp_wh;
+        col *= texture(u_ao, ao_uv).x;
+    }
     if (u_camera.m_postfx_flags.x > 0.5)
         col += bloomGather(src_px);
     // ---- Track distance fog ----
@@ -570,6 +611,7 @@ void main()
     // God rays are evaluated at the lens-warped source position so black
     // holes bend and smear the sun glow along with the rest of the scene.
     col += godRays(src_px);
+    col += lensFlare(src_px);
     // Per-object glow outlines and volumetric light scattering, also at the
     // lens-warped position.
     if (u_camera.m_postfx_flags2.x > 0.5)
@@ -729,6 +771,17 @@ void main()
             blur_texcoords += inc;
         }
         col /= float(NB_SAMPLES);
+    }
+
+    // ---- Vignette ----
+    // Subtle corner darkening; aspect-softened so it reads as a gentle
+    // photographic falloff rather than an oval frame. Strength from the
+    // settings knob.
+    {
+        vec2 q = (frag_px - vp_xy) / vp_wh * 2.0 - 1.0;
+        q.x *= 0.85;
+        float r = length(q) * 0.7071;
+        col *= 1.0 - u_camera.m_beauty_params.z * smoothstep(0.55, 1.0, r);
     }
 
     o_color = vec4(col, 1.0);

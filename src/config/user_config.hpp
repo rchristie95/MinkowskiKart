@@ -744,6 +744,25 @@ namespace UserConfigParams
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #endif
 
+    // Vulkan post-processing style knobs (GE Vulkan renderer only), exposed
+    // in the advanced graphics settings. Stored as scaled integers matching
+    // the dialog gauges.
+    PARAM_PREFIX IntUserConfigParam         m_vk_exposure
+        PARAM_DEFAULT(IntUserConfigParam(22, "vk_exposure",
+        &m_video_group, "Vulkan filmic tonemap exposure x0.1 (10-40)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_saturation
+        PARAM_DEFAULT(IntUserConfigParam(106, "vk_saturation",
+        &m_video_group, "Vulkan colour grade saturation x0.01 (80-140)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_vignette
+        PARAM_DEFAULT(IntUserConfigParam(22, "vk_vignette",
+        &m_video_group, "Vulkan vignette strength x0.01 (0-60)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_sharpness
+        PARAM_DEFAULT(IntUserConfigParam(30, "vk_sharpness",
+        &m_video_group, "Vulkan adaptive sharpening strength x0.01 (0-80)"));
+    PARAM_PREFIX IntUserConfigParam         m_vk_flare
+        PARAM_DEFAULT(IntUserConfigParam(45, "vk_flare",
+        &m_video_group, "Vulkan sun lens flare strength x0.01 (0-100)"));
+
 #if defined(MOBILE_STK)
     PARAM_PREFIX BoolUserConfigParam        m_vulkan_fullscreen_desktop
         PARAM_DEFAULT(BoolUserConfigParam(false, "vulkan_fullscreen_desktop",

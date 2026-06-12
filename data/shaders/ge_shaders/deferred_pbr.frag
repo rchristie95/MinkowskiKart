@@ -39,7 +39,7 @@ void main()
     if (dot(geo_normal, world_normal) < 0.0)
         geo_normal = -geo_normal;
     float sun_shadow = getSunShadowFactor(world_pos, world_normal,
-        geo_normal);
+        geo_normal, xpos.z);
     vec3 hdr = handlePBRDeferred(diffuse_color, pbr, world_normal, eyedir,
         normal, 1.0 - pbr.x, sun_shadow);
     hdr += accumulateLights(u_push_constants.m_fullscreen_light_count,

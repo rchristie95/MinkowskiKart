@@ -35,11 +35,16 @@ float m_godrays_color[4];           // [r, g, b, world_radius]
 // Post effect toggles mirroring the SP/OpenGL advanced pipeline options
 float m_postfx_flags[4];            // [bloom, ssao, dof, antialias]
 // Sun shadow mapping (filled by GEVulkanDrawCall::uploadDynamicData):
-// world position -> shadow map [uv.xy, depth01] (already bias-mapped).
+// world position -> shadow atlas [uv.xy, depth01] (already bias-mapped).
+// Near cascade matrix/params, then the far cascade.
 irr::core::matrix4 m_sun_shadow_matrix;
-float m_shadow_params[4];           // [enabled, pcss, 1/resolution, penumbra]
+float m_shadow_params[4];           // [depth range (0=off), pcss, texel, penumbra]
 // Second post effect toggle block: [glow, scatter_density, 0, 0]
 float m_postfx_flags2[4];
+irr::core::matrix4 m_sun_shadow_matrix_far;
+float m_shadow_params_far[4];       // [depth range, split distance, texel, penumbra]
+// Post-processing style knobs: [exposure, saturation, vignette, sharpness]
+float m_beauty_params[4];
 
 GEVulkanCameraUBO()
 {
@@ -54,6 +59,13 @@ GEVulkanCameraUBO()
     memset(m_postfx_flags, 0, sizeof(m_postfx_flags));
     memset(m_shadow_params, 0, sizeof(m_shadow_params));
     memset(m_postfx_flags2, 0, sizeof(m_postfx_flags2));
+    memset(m_shadow_params_far, 0, sizeof(m_shadow_params_far));
+    // Sane style defaults for cameras that are never fed per frame
+    // (RTT previews, menus)
+    m_beauty_params[0] = 2.2f;
+    m_beauty_params[1] = 1.06f;
+    m_beauty_params[2] = 0.22f;
+    m_beauty_params[3] = 0.3f;
 }
 };
 
@@ -107,22 +119,29 @@ public:
     // compactification [strength, 0, 0, 0].
     void setPostFXData(const float* motion_blur4, const float* compact4,
                        const float* postfx_flags4,
-                       const float* postfx_flags2_4 = NULL)
+                       const float* postfx_flags2_4 = NULL,
+                       const float* beauty_params4 = NULL)
     {
         memcpy(m_ubo_data.m_motion_blur, motion_blur4, 16);
         memcpy(m_ubo_data.m_compactification, compact4, 16);
         memcpy(m_ubo_data.m_postfx_flags, postfx_flags4, 16);
         if (postfx_flags2_4)
             memcpy(m_ubo_data.m_postfx_flags2, postfx_flags2_4, 16);
+        if (beauty_params4)
+            memcpy(m_ubo_data.m_beauty_params, beauty_params4, 16);
     }
     // ------------------------------------------------------------------------
-    // Sun shadow data, computed per frame by GEVulkanDrawCall before the
-    // camera UBO is uploaded.
+    // Sun shadow data (near + far cascade), computed per frame by
+    // GEVulkanDrawCall before the camera UBO is uploaded.
     void setSunShadowData(const irr::core::matrix4& world_to_shadow_uv,
-                          const float* params4)
+                          const float* params4,
+                          const irr::core::matrix4& world_to_shadow_uv_far,
+                          const float* params4_far)
     {
         m_ubo_data.m_sun_shadow_matrix = world_to_shadow_uv;
         memcpy(m_ubo_data.m_shadow_params, params4, 16);
+        m_ubo_data.m_sun_shadow_matrix_far = world_to_shadow_uv_far;
+        memcpy(m_ubo_data.m_shadow_params_far, params4_far, 16);
     }
     // ------------------------------------------------------------------------
     // Track god rays / light shafts, applied by displace_color.frag.

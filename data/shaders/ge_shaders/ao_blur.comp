@@ -1,0 +1,57 @@
+// ao_blur.comp
+//
+// Depth-aware 5x5 blur of the half-resolution AO estimate (the single-pass
+// equivalent of the GL pipeline's gaussian blur of its AO render target).
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(binding = 0) uniform sampler2D u_ao_in;
+layout(binding = 1) uniform sampler2D u_depth;
+layout(binding = 2, r32f) uniform writeonly image2D u_ao_out;
+
+layout(push_constant) uniform Constants
+{
+    mat4 m_inverse_projection;
+    vec4 m_viewport; // full-res camera viewport (x, y, w, h)
+    vec4 m_screen;   // full-res screen size
+} u_pc;
+
+float viewDepthAt(vec2 px)
+{
+    vec2 ndc = ((px - u_pc.m_viewport.xy) / u_pc.m_viewport.zw) * 2.0 - 1.0;
+    float z = texture(u_depth, px / u_pc.m_screen.xy).x;
+    vec4 clip = vec4(ndc, z, 1.0);
+    vec4 view_pos = u_pc.m_inverse_projection * clip;
+    return view_pos.z / view_pos.w;
+}
+
+void main()
+{
+    ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 out_size = imageSize(u_ao_out);
+    if (gid.x >= out_size.x || gid.y >= out_size.y)
+        return;
+
+    vec2 inv_size = 1.0 / vec2(out_size);
+    vec2 uv = (vec2(gid) + 0.5) * inv_size;
+    vec2 px = u_pc.m_viewport.xy + (vec2(gid) + 0.5) * 2.0;
+    float center_z = viewDepthAt(px);
+
+    float sum = 0.0;
+    float weight = 0.0;
+    for (int x = -2; x <= 2; x++)
+    {
+        for (int y = -2; y <= 2; y++)
+        {
+            vec2 duv = vec2(float(x), float(y));
+            float ao = texture(u_ao_in, uv + duv * inv_size).x;
+            float z = viewDepthAt(px + duv * 2.0);
+            // Gaussian-ish spatial falloff x depth similarity
+            float w = exp(-dot(duv, duv) * 0.18) *
+                exp(-abs(z - center_z) * 2.0);
+            sum += ao * w;
+            weight += w;
+        }
+    }
+    imageStore(u_ao_out, gid, vec4(sum / max(weight, 1e-4)));
+}

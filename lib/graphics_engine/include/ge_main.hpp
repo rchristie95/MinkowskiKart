@@ -80,6 +80,9 @@ bool m_pcss;
 // Per-object glow outlines (mirrors UserConfigParams::m_glow); checked per
 // frame when recording the displace mask pass.
 bool m_glow;
+// Half-res compute ambient occlusion (mirrors UserConfigParams::m_ssao);
+// checked per frame when recording the AO dispatches.
+bool m_ssao;
 };
 
 // Optional callback used to fill the per-object relativistic velocity in the
