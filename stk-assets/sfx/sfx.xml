@@ -52,6 +52,11 @@
    <sfx filename="metal_clang.ogg"      volume="0.8" positional="true" rolloff="0.5" />
    <sfx filename="nitro.ogg"            volume="1.0" positional="true" rolloff="0.15"  />
    <sfx filename="parachute.ogg"        volume="1.0" positional="true" rolloff="0.5"  />
+   <sfx filename="time_dialation.ogg"   volume="1.0" positional="true" rolloff="0.5"  />
+   <sfx filename="asteriod_impact.ogg"  volume="1.0" positional="true" rolloff="0.03" max_dist="5000"  />
+   <sfx filename="photon_fire.ogg"      volume="1.0" positional="true" rolloff="0.5"  />
+   <sfx filename="antikarticle_fire.ogg" volume="1.0" positional="true" rolloff="0.5"  />
+   <sfx filename="warpbubble_use.ogg"   volume="1.0" positional="true" rolloff="0.5"  />
    <sfx filename="portal.ogg"           volume="1.0" positional="true" />
    <sfx filename="plopp.ogg"            volume="1.0" positional="false" />
    <sfx filename="plunger.ogg"          volume="1.0" positional="false" />

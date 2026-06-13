@@ -58,6 +58,7 @@ public:
     virtual ~BlackHole();
     static  void init(const XMLNode &node, scene::IMesh *black_hole);
     virtual bool updateAndDelete(int ticks) OVERRIDE;
+    virtual void updateGraphics(float dt) OVERRIDE;
     virtual bool hit(AbstractKart* kart, PhysicalObject* obj=NULL) OVERRIDE;
     virtual HitEffect *getHitEffect() const OVERRIDE;
     // ------------------------------------------------------------------------

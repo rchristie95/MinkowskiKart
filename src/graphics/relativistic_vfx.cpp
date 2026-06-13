@@ -39,6 +39,12 @@ namespace
     constexpr float kPairForwardSpawnOffset = 1.4f;
     constexpr float kPairVerticalSpawnOffset = 0.45f;
     constexpr float kPhotonYawRange = (float)M_PI * 0.25f;
+
+    // Big blue flash that pops at the spawn point on activation. Particle
+    // based so it renders on both the GL (SP) and Vulkan (GE) backends -- the
+    // photon wave above is SP-only and is invisible under Vulkan.
+    const char *kPairFlashParticles = "antikarticle_flash.xml";
+    constexpr float kPairFlashEmitTime = 0.08f;  // burst window, then cut off
 }
 
 static RelativisticVFXManager *g_instance = nullptr;
@@ -60,7 +66,11 @@ void RelativisticVFXManager::destroy()
 }
 
 RelativisticVFXManager::RelativisticVFXManager()
-    : m_global_time(0)
+    : m_grav_wave_active(false)
+    , m_grav_wave_origin(0.0f, 0.0f, 0.0f)
+    , m_grav_wave_velocity(0.0f, 0.0f, 0.0f)
+    , m_grav_wave_age(0.0f)
+    , m_global_time(0)
 {
 }
 
@@ -134,6 +144,15 @@ void RelativisticVFXManager::reset()
     m_cosmic_strings.clear();
     m_pair_productions.clear();
     m_super_position = SuperPositionVFX();
+
+    m_grav_wave_active = false;
+    m_grav_wave_age = 0.0f;
+    m_grav_wave_origin = Vec3(0.0f, 0.0f, 0.0f);
+    m_grav_wave_velocity = Vec3(0.0f, 0.0f, 0.0f);
+#ifndef SERVER_ONLY
+    SP::clearGravWave();
+#endif
+
     m_global_time = 0;
 }
 
@@ -308,6 +327,18 @@ void RelativisticVFXManager::triggerSuperPosition(const Vec3 &origin)
     m_super_position.chromatic_split = 1.0f;
 }
 
+// ---------------------------------------------------------------------------
+// Time-dilation gravitational wave
+// ---------------------------------------------------------------------------
+void RelativisticVFXManager::triggerGravitationalWave(const Vec3 &origin,
+                                                      const Vec3 &velocity)
+{
+    m_grav_wave_active   = true;
+    m_grav_wave_origin   = origin;
+    m_grav_wave_velocity = velocity;
+    m_grav_wave_age      = 0.0f;
+}
+
 void RelativisticVFXManager::updateSuperPosition(float dt)
 {
     if (m_super_position.wave_progress >= 1.0f) return;
@@ -334,6 +365,11 @@ void RelativisticVFXManager::destroyPairProduction(PairProductionVFX &vfx)
     {
         vfx.wave_draw_call->removeFromSP();
         vfx.wave_draw_call = nullptr;
+    }
+    if (vfx.flash_emitter)
+    {
+        delete vfx.flash_emitter;
+        vfx.flash_emitter = nullptr;
     }
 #endif
 }
@@ -387,6 +423,16 @@ void RelativisticVFXManager::triggerPairProduction(const Vec3 &origin,
         for (auto &vertex : vfx.wave_draw_call->getVerticesVector())
             vertex.m_color = color;
         SP::addDynamicDrawCall(vfx.wave_draw_call);
+    }
+
+    // Big blue flash: a short particle burst. Unlike the SP wave above this
+    // uses the particle path (STKParticle), which renders on GL and Vulkan.
+    if (!GUIEngine::isNoGraphics() && ParticleKindManager::get())
+    {
+        ParticleKind *flash =
+            ParticleKindManager::get()->getParticles(kPairFlashParticles);
+        if (flash)
+            vfx.flash_emitter = new ParticleEmitter(flash, vfx.origin, NULL);
     }
 #endif
 
@@ -446,6 +492,15 @@ void RelativisticVFXManager::updatePairProduction(PairProductionVFX &vfx,
         }
         vfx.wave_draw_call->setUpdateOffset(0);
         vfx.wave_draw_call->recalculateBoundingBox();
+    }
+
+    // One-shot flash: cut emission after the initial burst so the particles
+    // pop once and fade, rather than streaming for the whole effect.
+    if (vfx.flash_emitter && !vfx.flash_stopped &&
+        vfx.age >= kPairFlashEmitTime)
+    {
+        vfx.flash_emitter->setCreationRateAbsolute(0.0f);
+        vfx.flash_stopped = true;
     }
 #endif
 }
@@ -545,6 +600,36 @@ void RelativisticVFXManager::update(float dt)
 void RelativisticVFXManager::updateGraphics(float dt)
 {
     // Graphics-only updates (particle positions already handled in update)
+#ifndef SERVER_ONLY
+    // Animate the time-dilation gravitational wave and publish its current
+    // origin + radius to the camera UBO so displace_color.frag (GE/Vulkan) can
+    // draw the expanding screen-space ring. A short fade tail past RADIUS lets
+    // the ring dissolve instead of popping out at exactly 50 m.
+    if (m_grav_wave_active)
+    {
+        m_grav_wave_age += dt;
+        const float radius = TimeDilationWave::SPEED * m_grav_wave_age;
+        const float fade_tail = 0.25f; // extra seconds after reaching the edge
+        if (m_grav_wave_age >= TimeDilationWave::TRAVEL_TIME + fade_tail)
+        {
+            m_grav_wave_active = false;
+            SP::clearGravWave();
+        }
+        else
+        {
+            // Drift the ripple centre at the emission velocity so the wave is
+            // co-moving with the shooter's frame (relativistic feel).
+            const core::vector3df center(
+                m_grav_wave_origin.getX()
+                    + m_grav_wave_velocity.getX() * m_grav_wave_age,
+                m_grav_wave_origin.getY()
+                    + m_grav_wave_velocity.getY() * m_grav_wave_age,
+                m_grav_wave_origin.getZ()
+                    + m_grav_wave_velocity.getZ() * m_grav_wave_age);
+            SP::setGravWave(center, radius);
+        }
+    }
+#endif
 }
 
 // ---------------------------------------------------------------------------

@@ -35,6 +35,9 @@
 #include "graphics/irr_driver.hpp"
 #include "graphics/material.hpp"
 #include "graphics/mesh_tools.hpp"
+#ifndef SERVER_ONLY
+#include "graphics/sp/sp_base.hpp"
+#endif
 #include "guiengine/engine.hpp"
 #include "io/xml_node.hpp"
 #include "items/projectile_manager.hpp"
@@ -276,6 +279,10 @@ void Flyable::init(const XMLNode &node, scene::IMesh *model,
 //-----------------------------------------------------------------------------
 Flyable::~Flyable()
 {
+#ifndef SERVER_ONLY
+    if (getNode())
+        SP::clearNodeRelativityVelocity(getNode());
+#endif
     removePhysics();
     if (m_animation)
     {
@@ -475,6 +482,14 @@ void Flyable::updateGraphics(float dt)
 {
     Moveable::updateSmoothedGraphics(dt);
     Moveable::updateGraphics();
+#ifndef SERVER_ONLY
+    // Feed the relativistic renderer this projectile's true physics velocity
+    // (like karts use their coordinate velocity) so it warps smoothly instead
+    // of the noisy graphics-delta estimator. Cleared in the destructor.
+    if (getNode() && getBody())
+        SP::setNodeRelativityVelocity(getNode(),
+            Vec3(getVelocity()).toIrrVector());
+#endif
 }   // updateGraphics
 
 //-----------------------------------------------------------------------------

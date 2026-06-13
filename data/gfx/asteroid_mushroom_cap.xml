@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!-- Mushroom-cloud cap: a billowing dome of smoke that rolls outward and up
+     above the stem. Spawned a few metres above the impact (see AsteroidImpact)
+     with a wide spherical spread, large growth and long life so it expands
+     into the classic rolling cap as it rises. -->
+<particles emitter="sphere" radius="1.4">
+
+    <spreading angle="72"          />
+
+    <velocity  x="0.000"
+               y="0.0040"
+               z="0.000"           />
+
+    <material  file="smoke.png"    />
+
+    <rate      min="200"
+               max="300"           />
+
+    <lifetime  min="1200"
+               max="2500"          />
+
+    <size      min="1.20"
+               max="2.60"
+               x-increase-factor="2.6"
+               y-increase-factor="2.6" />
+
+    <color     min="84 66 56"
+               max="150 122 104"   />
+
+</particles>

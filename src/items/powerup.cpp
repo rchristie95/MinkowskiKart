@@ -193,7 +193,7 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
             break;
 
         case PowerupManager::POWERUP_TIME_DILATION:
-            m_sound_use = SFXManager::get()->createSoundSource("parachute");
+            m_sound_use = SFXManager::get()->createSoundSource("time_dialation");
             break;
 
         case PowerupManager::POWERUP_WARP_BUBBLE:
@@ -208,8 +208,15 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
             m_sound_use = SFXManager::get()->createSoundSource("swap");
             break;
 
-        case PowerupManager::POWERUP_NOTHING:
         case PowerupManager::POWERUP_PHOTON:
+            m_sound_use = SFXManager::get()->createSoundSource("photon_fire");
+            break;
+
+        case PowerupManager::POWERUP_ANTI_KARTICLE:
+            m_sound_use = SFXManager::get()->createSoundSource("antikarticle_fire");
+            break;
+
+        case PowerupManager::POWERUP_NOTHING:
         default :
             m_sound_use = SFXManager::get()->createSoundSource("shoot");
             break ;
@@ -393,8 +400,8 @@ void Powerup::use()
                     m_sound_use = NULL;
                 }
                 //Extraordinary. Usually sounds are set in Powerup::set()
-                m_sound_use = SFXManager::get()->createSoundSource("inflate");
-                //In this case this is a workaround, since the bubblegum item has two different sounds.
+                m_sound_use = SFXManager::get()->createSoundSource("warpbubble_use");
+                //In this case this is a workaround, since the warp bubble item has two different sounds.
 
                 Powerup::adjustSound();
                 m_sound_use->play();
@@ -440,6 +447,13 @@ void Powerup::use()
     case PowerupManager::POWERUP_TIME_DILATION:
         {
             AbstractKart* player_kart = NULL;
+            // Emit a radial gravitational wave from the user. It expands to
+            // TimeDilationWave::RADIUS (50 m) and fades to nothing there. A kart
+            // is only affected once the wavefront reaches it (delay scales with
+            // distance), and the speed-of-light drop falls off linearly:
+            // c/2 at the blast centre -> ~c (no slow) at the 50 m edge.
+            const Vec3 wave_origin = m_kart->getXYZ();
+            const float wave_radius = TimeDilationWave::RADIUS;
             // Apply the time-dilation field to every other active kart. Karts
             // ahead keep the old rank-scaled duration bonus; karts behind use
             // the base "other kart" duration.
@@ -447,11 +461,24 @@ void Powerup::use()
             {
                 AbstractKart *kart=world->getKart(i);
                 if(kart->isEliminated() || kart== m_kart || kart->isInvulnerable()) continue;
+
+                // Distance from the blast centre decides reach, strength and
+                // arrival time.
+                const float dist = (kart->getXYZ() - wave_origin).length();
+                if (dist > wave_radius) continue;   // beyond the wave: untouched
+
                 if(kart->isShielded())
                 {
                     kart->decreaseShieldTime();
                     continue;
                 }
+
+                const float dist_frac = dist / wave_radius;        // 0..1
+                // c-light multiplier: 0.5 (c/2) at centre -> 1.0 (normal) at 50 m
+                const float c_factor = 0.5f + 0.5f * dist_frac;
+                // Ticks until the wavefront reaches this kart.
+                const int delay_ticks = stk_config->time2Ticks(
+                    dist_frac * TimeDilationWave::TRAVEL_TIME);
 
                 float rank_mult = 1.0f;
                 if(m_kart->getPosition() > kart->getPosition())
@@ -482,11 +509,18 @@ void Powerup::use()
                     ->set(Attachment::ATTACH_TIME_DILATION,
                           stk_config->time2Ticks(
                               kp->getTimeDilationDurationOther() * rank_mult),
-                          m_kart);
+                          m_kart, false, c_factor, delay_ticks);
 
                 if(kart->getController()->isLocalPlayerController())
                     player_kart = kart;
             }
+
+            // Spawn the expanding gravitational-wave visual (GE/Vulkan
+            // screen-space ring). Graphics-only; the gameplay effect above is
+            // fully deterministic.
+            if (RelativisticVFXManager::get())
+                RelativisticVFXManager::get()->triggerGravitationalWave(
+                    wave_origin, Vec3(m_kart->getVelocity()));
 
             // should we position the sound at the kart that is hit,
             // or the kart using the powerup? Ideally it should be both.

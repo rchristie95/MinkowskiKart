@@ -31,6 +31,9 @@ namespace irr
 #include "items/flyable.hpp"
 
 class XMLNode;
+#ifndef SERVER_ONLY
+class ParticleEmitter;
+#endif
 
 /**
   * \ingroup items
@@ -47,9 +50,21 @@ private:
     /** Which kart is targeted by this projectile (NULL if none). */
     Moveable*    m_target;
 
+    /** Applies the asteroid's oversized area stun on landing (see .cpp). */
+    void applyBigBlast(const AbstractKart* direct_hit);
+
+#ifndef SERVER_ONLY
+    /** Re-entry plasma tail: a bright incandescent core and a darker trailing
+     *  smoke wake, both shed along the asteroid's flight path each frame. */
+    ParticleEmitter* m_plasma_emitter;
+    ParticleEmitter* m_smoke_emitter;
+#endif
+
 public:
                  Asteroid (AbstractKart *kart);
+    virtual     ~Asteroid ();
     static  void init     (const XMLNode &node, scene::IMesh *asteroid_model);
+    virtual void updateGraphics(float dt) OVERRIDE;
     virtual bool hit(AbstractKart* kart, PhysicalObject* obj=NULL) OVERRIDE;
     virtual HitEffect* getHitEffect() const OVERRIDE;
     // ------------------------------------------------------------------------

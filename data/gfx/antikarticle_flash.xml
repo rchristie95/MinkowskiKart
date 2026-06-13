@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!-- Big blue flash burst for the anti-karticle powerup activation.
+     Uses the additive nitro glow texture; emission is cut off after a
+     short window by the VFX manager so it pops once and fades. -->
+<particles emitter="sphere" radius="0.4">
+
+    <spreading angle="180"         />
+
+    <velocity  x="0.000"
+               y="0.0015"
+               z="0.000"           />
+
+    <material  file="nitro-particle.png" />
+
+    <!-- Amount of particles emitted per second (cut to 0 after the burst) -->
+    <rate      min="320"
+               max="420"          />
+
+    <!-- Minimal and maximal lifetime of a particle, in milliseconds. -->
+    <lifetime  min="250"
+               max="420"          />
+
+    <!-- Big glow that expands as it fades. -->
+    <size      min="1.2"
+               max="2.2"
+               x-increase-factor="1.6"
+               y-increase-factor="1.6"
+               />
+
+    <!-- Bright electric blue. -->
+    <color     min="90 170 255"
+               max="170 215 255"  />
+
+</particles>

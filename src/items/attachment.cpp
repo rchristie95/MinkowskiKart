@@ -223,6 +223,8 @@ Attachment::Attachment(AbstractKart* kart)
     m_bomb_sound           = NULL;
     m_bubble_explode_sound = NULL;
     m_initial_speed        = 0;
+    m_time_dilation_c_factor    = 5000;   // 0.5 (c/2) in fixed-point
+    m_time_dilation_delay_ticks = 0;
     m_graphical_type       = ATTACH_NOTHING;
     m_scaling_end_ticks    = -1;
     m_maxwell_ticks_to_next_kick = 0;
@@ -454,7 +456,9 @@ void Attachment::updateMaxwellBoltzmann(int ticks)
  */
 void Attachment::set(AttachmentType type, int ticks,
                      AbstractKart *current_kart,
-                     bool set_by_rewind_parachute)
+                     bool set_by_rewind_parachute,
+                     float time_dilation_c_factor,
+                     int time_dilation_delay_ticks)
 {
     bool was_bomb = m_type == ATTACH_BOMB;
     int16_t prev_ticks = m_ticks_left;
@@ -483,6 +487,22 @@ void Attachment::set(AttachmentType type, int ticks,
 
     resetMaxwellBoltzmannState(type == ATTACH_MAXWELL_BOLTZMANN ? m_ticks_left : 0);
 
+    // Time dilation: store the per-victim c-light multiplier and the delay
+    // until the expanding gravitational wave reaches this kart.
+    if (type == ATTACH_TIME_DILATION)
+    {
+        int factor_round = (int)(time_dilation_c_factor * 10000.0f);
+        factor_round = irr::core::clamp(factor_round, 0, 32767);
+        m_time_dilation_c_factor    = (int16_t)factor_round;
+        m_time_dilation_delay_ticks =
+            (int16_t)irr::core::clamp(time_dilation_delay_ticks, 0, 32767);
+    }
+    else
+    {
+        m_time_dilation_c_factor    = 5000;
+        m_time_dilation_delay_ticks = 0;
+    }
+
     // Activate relativistic VFX for new attachment
     if (RelativisticVFXManager::get())
     {
@@ -494,21 +514,18 @@ void Attachment::set(AttachmentType type, int ticks,
             RelativisticVFXManager::get()->activateWarpBubble(kid);
             break;
         case ATTACH_TIME_DILATION:
-            RelativisticVFXManager::get()->activateTimeDilation(kid);
+            // Only start the per-kart redshift screen effect once the wavefront
+            // has actually arrived; while delayed the kart looks unaffected.
+            if (m_time_dilation_delay_ticks <= 0)
+                RelativisticVFXManager::get()->activateTimeDilation(kid);
             break;
         case ATTACH_ANTI_KARTICLE:
             RelativisticVFXManager::get()->activateTidalArm(kid);
             break;
         case ATTACH_COMPACTIFICATION:
             RelativisticVFXManager::get()->activateCompactification(kid);
-            // 5 m/s top-speed penalty for the duration of the effect.
-            // Fades in over 0.4 s to match the VFX strength ramp.
-            {
-                const float emax = m_kart->getKartProperties()->getEngineMaxSpeed();
-                m_kart->setSlowdown(MaxSpeed::MS_DECREASE_COMPACTIFICATION,
-                                    std::max(0.0f, (emax - 5.0f) / emax),
-                                    stk_config->time2Ticks(0.4f));
-            }
+            // No sustained top-speed penalty: the slowdown is the instant speed
+            // cut applied on pickup in hitBanana() (matching Schroedinger's cat).
             break;
         default: break;
         }
@@ -568,9 +585,6 @@ void Attachment::clear()
             break;
         case ATTACH_COMPACTIFICATION:
             RelativisticVFXManager::get()->deactivateCompactification(kid);
-            // Release the top-speed penalty (fraction=1.0 restores instantly).
-            m_kart->setSlowdown(MaxSpeed::MS_DECREASE_COMPACTIFICATION,
-                                1.0f, 0);
             break;
         default: break;
         }
@@ -585,6 +599,8 @@ void Attachment::clear()
     m_type = ATTACH_NOTHING;
     m_ticks_left = 0;
     m_initial_speed = 0;
+    m_time_dilation_c_factor    = 5000;
+    m_time_dilation_delay_ticks = 0;
     resetMaxwellBoltzmannState(0);
 }   // clear
 
@@ -609,7 +625,11 @@ void Attachment::saveState(BareNetworkString *buffer) const
     if (m_type==ATTACH_BOMB && m_previous_owner)
         buffer->addUInt8(m_previous_owner->getWorldKartId());
     if (m_type == ATTACH_TIME_DILATION)
+    {
         buffer->addUInt16(m_initial_speed);
+        buffer->addUInt16(m_time_dilation_c_factor);
+        buffer->addUInt16(m_time_dilation_delay_ticks);
+    }
     if (m_plugin)
         m_plugin->saveState(buffer);
 }   // saveState
@@ -640,9 +660,17 @@ void Attachment::rewindTo(BareNetworkString *buffer)
     }
 
     if (new_type == ATTACH_TIME_DILATION)
+    {
         m_initial_speed = buffer->getUInt16();
+        m_time_dilation_c_factor    = (int16_t)buffer->getUInt16();
+        m_time_dilation_delay_ticks = (int16_t)buffer->getUInt16();
+    }
     else
+    {
         m_initial_speed = 0;
+        m_time_dilation_c_factor    = 5000;
+        m_time_dilation_delay_ticks = 0;
+    }
 
     if (is_plugin)
     {
@@ -701,12 +729,15 @@ void Attachment::hitBanana(ItemState *item_state)
         if (m_kart->isInvulnerable() || m_kart->getKartAnimation() != NULL)
             return;
 
-        // Visual squash only (no speed reduction); doubled duration
+        // Visual squash + screen-space warp (doubled duration).
         const float compact_duration = kp->getTimeDilationDurationOther() * 2.0f;
         m_kart->setSquash(compact_duration, 1.0f);
 
         set(ATTACH_COMPACTIFICATION,
             stk_config->time2Ticks(compact_duration));
+        // Instant speed cut matching the Schroedinger's-cat (super-position)
+        // pickup, so the compactification debuff hits just as hard.
+        m_kart->adjustSpeed(kp->getMaxwellBoltzmannSpeedFactor() * 0.5f);
         return;
     }
 
@@ -870,6 +901,23 @@ void Attachment::update(int ticks)
     // same time should the bomb explode before the previous animation is done
     if (m_type == ATTACH_BOMB && m_kart->getKartAnimation() != NULL)
         return;
+
+    // Time dilation: hold the effect inert until the expanding gravitational
+    // wave reaches this kart. While delayed, the c-light reduction is off (see
+    // Kart::getCLightTarget) and the effect duration does not count down.
+    if (m_type == ATTACH_TIME_DILATION && m_time_dilation_delay_ticks > 0)
+    {
+        m_time_dilation_delay_ticks -= ticks;
+        if (m_time_dilation_delay_ticks <= 0)
+        {
+            m_time_dilation_delay_ticks = 0;
+            // The wavefront just arrived: kick off the per-kart redshift VFX.
+            if (RelativisticVFXManager::get())
+                RelativisticVFXManager::get()->activateTimeDilation(
+                    m_kart->getWorldKartId());
+        }
+        return;
+    }
 
     m_ticks_left -= ticks;
 

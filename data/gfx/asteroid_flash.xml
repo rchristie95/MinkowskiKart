@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!-- Procedural impact flash: a single brief, very large white-hot burst the
+     instant the asteroid lands. Huge initial size and near-white colour, very
+     short life, so it reads as a blinding detonation flash that vanishes
+     immediately, leaving the fireball and mushroom cloud behind. Emission is
+     stopped after a couple of frames by AsteroidImpact. -->
+<particles emitter="point">
+
+    <spreading angle="62"          />
+
+    <velocity  x="0.000"
+               y="0.000"
+               z="0.000"           />
+
+    <material  file="explode.png"  />
+
+    <rate      min="700"
+               max="950"           />
+
+    <lifetime  min="70"
+               max="170"           />
+
+    <size      min="2.6"
+               max="4.8"
+               x-increase-factor="3.0"
+               y-increase-factor="3.0" />
+
+    <color     min="255 240 210"
+               max="255 255 255"   />
+
+</particles>

@@ -28,6 +28,17 @@ namespace SP { class SPDynamicDrawCall; }
 class AbstractKart;
 class BlackboardOverlay;
 
+// Time-dilation gravitational wave tuning. Shared by the gameplay path
+// (powerup.cpp computes the per-victim activation delay from this) and the
+// visual path (the screen-space ring expands at the same speed), so the
+// c-light drop lands exactly when the wavefront passes a kart.
+namespace TimeDilationWave
+{
+    constexpr float RADIUS      = 75.0f;            // world units (~meters)
+    constexpr float TRAVEL_TIME = 3.0f;             // seconds to reach RADIUS
+    constexpr float SPEED       = RADIUS / TRAVEL_TIME; // 25 u/s
+}
+
 // Per-effect state for a single kart or projectile
 struct WarpBubbleVFX
 {
@@ -187,11 +198,17 @@ struct PairProductionVFX
     Vec3               origin;
     Vec3               axis;
     Vec3               normal;
+    bool               flash_stopped;      // emission burst already cut off
 #ifndef SERVER_ONLY
     std::shared_ptr<SP::SPDynamicDrawCall> wave_draw_call;
+    ParticleEmitter   *flash_emitter;       // big blue flash (Vulkan + GL)
 #endif
     PairProductionVFX() : age(0), lifetime(0.75f), wave_time(0),
-                          origin(0, 0, 0), axis(1, 0, 0), normal(0, 1, 0)
+                          origin(0, 0, 0), axis(1, 0, 0), normal(0, 1, 0),
+                          flash_stopped(false)
+#ifndef SERVER_ONLY
+                          , flash_emitter(nullptr)
+#endif
     {}
 };
 
@@ -219,6 +236,13 @@ private:
     std::vector<CosmicStringVFX>    m_cosmic_strings;
     std::vector<PairProductionVFX>  m_pair_productions;
     SuperPositionVFX                m_super_position;
+
+    // Time-dilation gravitational wave (transient; no game object owns it, so
+    // the manager animates it and publishes origin+radius to the camera UBO).
+    bool  m_grav_wave_active;
+    Vec3  m_grav_wave_origin;
+    Vec3  m_grav_wave_velocity;   // emission-frame drift of the ripple centre
+    float m_grav_wave_age;
 
     float m_global_time;
 
@@ -255,6 +279,12 @@ public:
 
     // Frame shift (global effect)
     void triggerSuperPosition(const Vec3 &origin);
+
+    // Time-dilation expanding gravitational wave (screen-space ripple, rendered
+    // by displace_color.frag on the GE/Vulkan renderer). The ripple centre
+    // drifts at the emission velocity (the firing kart's velocity when used),
+    // so in the shooter's own frame the wave stays centred on them.
+    void triggerGravitationalWave(const Vec3 &origin, const Vec3 &velocity);
 
     // Anti-karticle pair-production flash
     void triggerPairProduction(const Vec3 &origin, const Vec3 &forward,
