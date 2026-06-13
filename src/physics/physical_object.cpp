@@ -25,6 +25,10 @@
 #include "graphics/material_manager.hpp"
 #include "graphics/mesh_tools.hpp"
 #include "graphics/sp/sp_mesh_buffer.hpp"
+#ifndef SERVER_ONLY
+#include "graphics/sp/sp_base.hpp"
+#include "tracks/track_object_presentation.hpp"
+#endif
 #include "io/file_manager.hpp"
 #include "io/xml_node.hpp"
 #include "physics/physics.hpp"
@@ -197,6 +201,12 @@ PhysicalObject::PhysicalObject(bool is_dynamic,
 // ----------------------------------------------------------------------------
 PhysicalObject::~PhysicalObject()
 {
+#ifndef SERVER_ONLY
+    TrackObjectPresentationSceneNode* sn = m_object ?
+        m_object->getPresentation<TrackObjectPresentationSceneNode>() : NULL;
+    if (sn && sn->getNode())
+        SP::clearNodeRelativityVelocity(sn->getNode());
+#endif
     Physics::get()->removeBody(m_body);
     delete m_body;
     delete m_motion_state;
@@ -649,6 +659,17 @@ void PhysicalObject::updateGraphics(float dt)
     m_object->move(xyz.toIrrVector(), hpr.toIrrVector(),
                    m_init_scale, /*updateRigidBody*/false,
                    /* isAbsoluteCoord */true);
+
+#ifndef SERVER_ONLY
+    // Feed the relativistic renderer this object's true physics velocity so
+    // dynamic physical objects warp smoothly (like karts/flyables) instead of
+    // using the noisy graphics-delta estimator. Cleared in the destructor.
+    TrackObjectPresentationSceneNode* sn = m_object ?
+        m_object->getPresentation<TrackObjectPresentationSceneNode>() : NULL;
+    if (sn && sn->getNode())
+        SP::setNodeRelativityVelocity(sn->getNode(),
+            Vec3(m_body->getLinearVelocity()).toIrrVector());
+#endif
 }   // updateGraphics
 
 // ----------------------------------------------------------------------------

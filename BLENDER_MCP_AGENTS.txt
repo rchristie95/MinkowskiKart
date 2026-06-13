@@ -1,0 +1,160 @@
+==============================================================================
+ BLENDER MCP — AGENT INSTRUCTIONS
+==============================================================================
+Server name in Claude Code: "blender"  (tools are named mcp__blender__*)
+Backed by: ahujasid/blender-mcp v1.6.4, run via `uvx blender-mcp`.
+Bridge: the MCP server talks to a socket addon INSIDE Blender on
+localhost:9876. Nothing works unless Blender is open with the addon enabled
+and "Connect to Claude" clicked (3D viewport -> press N -> BlenderMCP tab).
+
+------------------------------------------------------------------------------
+0. PRECONDITIONS — CHECK BEFORE DOING ANYTHING
+------------------------------------------------------------------------------
+- Blender must be RUNNING with the BlenderMCP addon enabled and connected.
+- First call each session: get_scene_info. If it errors with "not connected
+  to Blender" / connection refused, STOP and tell the user to:
+    1. Open/restart Blender
+    2. Edit > Preferences > Add-ons > enable "Blender MCP"
+    3. Viewport sidebar (N) > BlenderMCP tab > click "Connect to Claude"
+- Do NOT retry in a tight loop. One probe, then report.
+- The blender tools only exist after a Claude Code restart following the
+  server's registration. If you don't see mcp__blender__*, the session
+  predates the server — ask the user to restart Claude Code.
+
+------------------------------------------------------------------------------
+1. CORE TOOLS (always available)
+------------------------------------------------------------------------------
+get_scene_info
+    Lists scene name, objects, basic stats. USE THIS FIRST to learn what
+    exists before editing. Cheap. Re-call after big changes.
+
+get_object_info(object_name)
+    Detailed info on ONE object: transform, mesh stats, materials,
+    modifiers. Use to inspect before mutating.
+
+get_viewport_screenshot(max_size=800)
+    Renders the current viewport to an image so you can SEE the result.
+    Call this after meaningful changes to verify visually. This is your
+    eyes — use it liberally instead of assuming geometry looks right.
+
+execute_blender_code(code)
+    Runs arbitrary Python (bpy) inside Blender. This is the workhorse for
+    creating/editing/deleting geometry, materials, modifiers, cameras,
+    lights, animation, import/export, etc. See section 3 for rules.
+
+------------------------------------------------------------------------------
+2. OPTIONAL ASSET TOOLS (only if enabled in the addon panel)
+------------------------------------------------------------------------------
+Each integration has a status probe — CALL THE PROBE FIRST; if it reports
+disabled, tell the user to tick the box in the BlenderMCP sidebar panel.
+Do not assume these are on.
+
+PolyHaven (free HDRIs / textures / models):
+    get_polyhaven_status
+    get_polyhaven_categories(asset_type)        asset_type: hdris|textures|models
+    search_polyhaven_assets(asset_type, categories)
+    download_polyhaven_asset(asset_id, asset_type, resolution, file_format)
+    set_texture(object_name, texture_id)        apply a downloaded texture
+
+Hyper3D Rodin (text/image -> 3D model generation):
+    get_hyper3d_status
+    generate_hyper3d_model_via_text(text_prompt, ...)
+    generate_hyper3d_model_via_images(...)
+    poll_rodin_job_status(...)                  poll until done
+    import_generated_asset(name, task_uuid/...) import the finished model
+    Flow: generate -> poll until complete -> import. Don't import early.
+
+Sketchfab (downloadable community models):
+    get_sketchfab_status
+    search_sketchfab_models(query, ...)
+    download_sketchfab_model(uid)
+
+Asset-sourcing preference order when the user wants a real-world object:
+    1. PolyHaven (if enabled) for HDRIs/textures/PBR models.
+    2. Sketchfab (if enabled) for specific existing models.
+    3. Hyper3D Rodin (if enabled) to GENERATE something that doesn't exist.
+    4. Otherwise build it by hand via execute_blender_code primitives.
+Always confirm the relevant *_status before relying on a source.
+
+------------------------------------------------------------------------------
+3. RULES FOR execute_blender_code
+------------------------------------------------------------------------------
+- `import bpy` is available; the active scene is `bpy.context.scene`.
+- Code runs in Blender's main thread context. Keep each call focused and
+  SMALL — one logical step. Big monolithic scripts are hard to debug; if a
+  call fails you lose the whole batch.
+- Make operations IDEMPOTENT where possible: name objects explicitly and
+  check existence before creating, so re-running doesn't duplicate.
+      obj = bpy.data.objects.get("Wheel_FL")
+      if obj is None: ...create...
+- Name everything you create (obj.name = "...") so later calls and
+  get_object_info can find it. Never rely on "Cube.001" autonames.
+- PRINT a short result at the end of the script (e.g. print(obj.name,
+  len(mesh.vertices))). The tool returns stdout — use it to confirm success
+  instead of guessing.
+- Avoid bpy.ops where a data-API equivalent exists; ops depend on context
+  (active object, mode, area type) and silently no-op or throw when the
+  context is wrong. Prefer bpy.data.* and bmesh for robust geometry.
+- If you must use bpy.ops that need a specific mode, set it explicitly:
+  bpy.ops.object.mode_set(mode='OBJECT') etc., and restore it after.
+- Units: Blender is +Z up, meters by default. State your assumptions.
+- Selection/active state is fragile — set bpy.context.view_layer.objects
+  .active and obj.select_set(True) explicitly when an op needs them.
+- Do NOT call code that blocks (modal operators, render with wait, input
+  dialogs) — it will hang the socket. No bpy.ops.render.render() in a way
+  that opens a blocking window; render to file instead if needed.
+
+------------------------------------------------------------------------------
+4. RECOMMENDED WORKFLOW (the loop)
+------------------------------------------------------------------------------
+1. get_scene_info                      -> understand current state
+2. (if sourcing assets) check *_status, search, download
+3. Plan the change in your head; describe it to the user if non-trivial.
+4. execute_blender_code in small steps -> build/modify
+5. get_viewport_screenshot            -> LOOK at the result
+6. get_object_info on key objects     -> verify transforms/materials
+7. Iterate 4-6 until correct, then summarize what you made.
+
+VERIFY VISUALLY. The #1 failure mode is assuming geometry is right without
+screenshotting. Take a screenshot after each meaningful step.
+
+------------------------------------------------------------------------------
+5. SAFETY / ETIQUETTE
+------------------------------------------------------------------------------
+- This edits the user's LIVE Blender session. Before destructive actions
+  (deleting objects, clearing the scene, joining/applying modifiers that
+  lose data), confirm with the user unless they clearly asked for it.
+- Don't save the .blend file unless asked. If you do, prefer Save As / a
+  copy so you never clobber the user's original.
+- Big imports/generations cost time and (Sketchfab/Hyper3D) may need
+  accounts/credits — confirm before kicking them off.
+- If something fails, report the actual Python error from the tool output;
+  don't silently retry. Most failures are context/mode issues (section 3).
+
+------------------------------------------------------------------------------
+6. QUICK SNIPPETS
+------------------------------------------------------------------------------
+# Add a named cube at a location, no ops:
+import bpy, bmesh
+mesh = bpy.data.meshes.new("MyCube_mesh")
+obj  = bpy.data.objects.get("MyCube") or bpy.data.objects.new("MyCube", mesh)
+if obj.name not in bpy.context.collection.objects:
+    bpy.context.collection.objects.link(obj)
+bm = bmesh.new(); bmesh.ops.create_cube(bm, size=2.0); bm.to_mesh(mesh); bm.free()
+obj.location = (0, 0, 1)
+print("made", obj.name)
+
+# Simple material:
+import bpy
+mat = bpy.data.materials.get("RedM") or bpy.data.materials.new("RedM")
+mat.use_nodes = True
+bsdf = mat.node_tree.nodes.get("Principled BSDF")
+bsdf.inputs["Base Color"].default_value = (0.8, 0.05, 0.05, 1.0)
+obj = bpy.data.objects["MyCube"]
+if obj.data.materials: obj.data.materials[0] = mat
+else: obj.data.materials.append(mat)
+print("material on", obj.name)
+
+==============================================================================
+ END
+==============================================================================

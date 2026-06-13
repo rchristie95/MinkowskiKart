@@ -122,7 +122,7 @@ void prepareDrawCalls();
 // Relativity bridge for the GE (Vulkan) renderer. These let the fixed
 // pipeline renderer feed the same relativistic parameters into the GE camera
 // UBO / per-object data that the SP pipeline uploads under OpenGL.
-std::array<float, 38> getRelativityUBOTail(unsigned player_index);
+std::array<float, 42> getRelativityUBOTail(unsigned player_index);
 // ----------------------------------------------------------------------------
 // Registers / removes one live black hole for screen-space lensing. Keyed by
 // owner so several black holes can lens the screen at the same time.
@@ -131,11 +131,24 @@ void setBlackHoleLens(const void* owner, const irr::core::vector3df& pos,
 // ----------------------------------------------------------------------------
 void removeBlackHoleLens(const void* owner);
 // ----------------------------------------------------------------------------
+// Publishes / clears the time-dilation gravitational wave (expanding ring)
+// for the screen-space effect in displace_color.frag.
+void setGravWave(const irr::core::vector3df& pos, float radius);
+// ----------------------------------------------------------------------------
+void clearGravWave();
+// ----------------------------------------------------------------------------
 void updateRelativityKartVelocities(unsigned player_index);
 // ----------------------------------------------------------------------------
 void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
                                 const irr::video::SMaterial* irr_material,
                                 float* out);
+// ----------------------------------------------------------------------------
+// Register/refresh a node's true world-space velocity so the relativistic warp
+// uses it instead of the graphics-delta estimator (call each frame); clear on
+// teardown. Used for flyables (rigid-body velocity) and the raptor props.
+void setNodeRelativityVelocity(const irr::scene::ISceneNode* node,
+                               const irr::core::vector3df& velocity);
+void clearNodeRelativityVelocity(const irr::scene::ISceneNode* node);
 // ----------------------------------------------------------------------------
 // Per-node glow colours for the GE Vulkan renderer. Under OpenGL the glow
 // colour lives on SPMeshNode; under Vulkan the game registers it here and

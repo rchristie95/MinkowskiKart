@@ -131,11 +131,23 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
             static const bool test_blur = getenv("MK_TEST_BLUR") != NULL;
             static const bool test_compact =
                 getenv("MK_TEST_COMPACT") != NULL;
+            static const bool test_wave = getenv("MK_TEST_WAVE") != NULL;
 
             SP::sp_cur_player = i;
             SP::updateRelativityKartVelocities(i);
-            std::array<float, 38> relativity_tail =
+            std::array<float, 42> relativity_tail =
                 SP::getRelativityUBOTail(i);
+            if (test_wave && camera->getKart())
+            {
+                // Force a static time-dilation wave ring centred on the player
+                // so the screen-space effect can be inspected without firing
+                // the powerup.
+                const Vec3& kp = camera->getKart()->getSmoothedXYZ();
+                relativity_tail[38] = kp.getX();
+                relativity_tail[39] = kp.getY();
+                relativity_tail[40] = kp.getZ();
+                relativity_tail[41] = 35.0f; // mid-expansion radius
+            }
             if (test_fx && camera->getKart())
             {
                 const Vec3& kp = camera->getKart()->getSmoothedXYZ();

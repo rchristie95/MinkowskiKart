@@ -98,6 +98,16 @@ private:
     /** For parachutes only, stored in cm/s for networking. */
     int16_t         m_initial_speed;
 
+    /** Time dilation: per-victim speed-of-light multiplier, stored as a
+     *  fixed-point value (factor * 10000) for networking. 0.5 == c/2 (strongest
+     *  hit at the blast centre), 1.0 == normal c (grazing hit at 50 m). */
+    int16_t         m_time_dilation_c_factor;
+
+    /** Time dilation: ticks until the expanding wavefront reaches this kart.
+     *  While > 0 the attachment is present but inert (no c-light change, the
+     *  effect duration does not count down yet). */
+    int16_t         m_time_dilation_delay_ticks;
+
     /** For zoom-in animation */
     int             m_scaling_end_ticks;
 
@@ -142,7 +152,9 @@ public:
     void  handleCollisionWithKart(AbstractKart *other);
     void  set (AttachmentType type, int ticks,
                AbstractKart *previous_kart=NULL,
-               bool set_by_rewind_parachute = false);
+               bool set_by_rewind_parachute = false,
+               float time_dilation_c_factor = 0.5f,
+               int time_dilation_delay_ticks = 0);
     void rewindTo(BareNetworkString *buffer);
     void saveState(BareNetworkString *buffer) const;
     static bool applySwatterStyleSquash(AbstractKart* attacker,
@@ -160,6 +172,16 @@ public:
     /** Returns how much time (in ticks) is left before this attachment is
      *  removed. */
     int16_t getTicksLeft() const                       { return m_ticks_left; }
+    // ------------------------------------------------------------------------
+    /** Time dilation: speed-of-light multiplier applied to this kart while the
+     *  effect is active (0.5 == c/2, 1.0 == normal c). */
+    float getTimeDilationCFactor() const
+                              { return (float)m_time_dilation_c_factor / 10000.f; }
+    // ------------------------------------------------------------------------
+    /** Time dilation: true once the expanding wavefront has reached this kart
+     *  and the c-light reduction is in effect. */
+    bool isTimeDilationActive() const
+                                  { return m_time_dilation_delay_ticks <= 0; }
     // ------------------------------------------------------------------------
     int getMaxwellKickFlashTicks() const { return m_maxwell_kick_flash_ticks; }
     // ------------------------------------------------------------------------

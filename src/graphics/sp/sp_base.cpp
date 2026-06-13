@@ -86,9 +86,9 @@ extern unsigned sp_cur_player;
 namespace
 {
 const size_t SP_MATRIX_UBO_BASE_FLOATS = 16 * 9 + 2;
-const size_t SP_MATRIX_UBO_FLOATS = 184;   // +16 for u_black_holes[4], +4 for u_wormhole vec4
+const size_t SP_MATRIX_UBO_FLOATS = 188;   // +16 black_holes[4], +4 wormhole, +4 grav_wave
 const size_t SP_RELATIVITY_UBO_FLOAT_OFFSET = 146;
-const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 38; // +16 for u_black_holes[4], +4 for u_wormhole
+const size_t SP_RELATIVITY_UBO_FLOAT_COUNT = 42; // +16 black_holes[4], +4 wormhole, +4 grav_wave
 
 struct RelativityMotionState
 {
@@ -119,10 +119,24 @@ std::unordered_set<const scene::ISceneNode*> g_presentation_nodes;
 std::unordered_map<const scene::ISceneNode*, core::vector3df>
     g_kart_root_velocities;
 
+// Explicit per-node velocity overrides for objects that have a true physical
+// velocity available (flyables -> rigid-body velocity; raptor props ->
+// analytic velocity). Fed each frame so they share the karts' smooth, accurate
+// retarded-position transform instead of the noisy graphics-delta estimator
+// (which jitters/ghosts under non-constant velocity).
+std::unordered_map<const scene::ISceneNode*, core::vector3df>
+    g_node_velocity_overrides;
+
 // Live black holes that lens the screen, keyed by their BlackHole flyable so
 // several can be active at once. Values are (world position, world radius).
 std::map<const void*, std::pair<core::vector3df, float> >
     g_black_hole_lenses;
+
+// Single active time-dilation gravitational wave: expanding ripple centre and
+// current world radius (radius <= 0 means inactive). Published each frame by
+// RelativisticVFXManager and consumed by displace_color.frag.
+core::vector3df g_grav_wave_pos(0.0f, 0.0f, 0.0f);
+float           g_grav_wave_radius = 0.0f;
 
 bool isFiniteVector(const core::vector3df& v)
 {
@@ -247,6 +261,28 @@ bool findKartVelocityForNode(const scene::ISceneNode* node,
     return false;
 }   // findKartVelocityForNode
 
+// Mirrors findKartVelocityForNode for the explicit override map (flyables /
+// raptor props): returns true and the velocity if the node or any ancestor has
+// a registered physical velocity.
+bool findNodeOverrideVelocity(const scene::ISceneNode* node,
+                              core::vector3df& out_velocity)
+{
+    if (g_node_velocity_overrides.empty() || !node)
+        return false;
+    const scene::ISceneNode* current = node;
+    while (current)
+    {
+        auto it = g_node_velocity_overrides.find(current);
+        if (it != g_node_velocity_overrides.end())
+        {
+            out_velocity = it->second;
+            return true;
+        }
+        current = current->getParent();
+    }
+    return false;
+}   // findNodeOverrideVelocity
+
 // Texture -> no-relativity-warp flag of its STK material. The GE Vulkan
 // draw call asks once per object per frame, and resolving the STK material
 // walks every loaded material doing string compares, so cache by texture.
@@ -344,6 +380,12 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
     tail[35] = sp_wormhole_world_pos.Y;
     tail[36] = sp_wormhole_world_pos.Z;
     tail[37] = sp_wormhole_active ? sp_wormhole_radius : 0.0f;
+    // u_grav_wave: time-dilation expanding ripple, world-space centre (xyz) +
+    // current radius (w). w <= 0 marks it inactive.
+    tail[38] = g_grav_wave_pos.X;
+    tail[39] = g_grav_wave_pos.Y;
+    tail[40] = g_grav_wave_pos.Z;
+    tail[41] = g_grav_wave_radius;
     return tail;
 }   // buildRelativityUBOTail
 
@@ -352,9 +394,9 @@ std::array<float, SP_RELATIVITY_UBO_FLOAT_COUNT> buildRelativityUBOTail(
 // ----------------------------------------------------------------------------
 /** Public wrapper so the GE (Vulkan) renderer can build the same relativity
  *  UBO tail that uploadAll() writes for the SP/OpenGL pipeline. */
-std::array<float, 38> getRelativityUBOTail(unsigned player_index)
+std::array<float, 42> getRelativityUBOTail(unsigned player_index)
 {
-    static_assert(SP_RELATIVITY_UBO_FLOAT_COUNT == 38,
+    static_assert(SP_RELATIVITY_UBO_FLOAT_COUNT == 42,
                   "Relativity UBO tail size changed");
     return buildRelativityUBOTail(player_index);
 }   // getRelativityUBOTail
@@ -373,6 +415,21 @@ void removeBlackHoleLens(const void* owner)
 {
     g_black_hole_lenses.erase(owner);
 }   // removeBlackHoleLens
+
+// ----------------------------------------------------------------------------
+/** Publishes the current state of the time-dilation gravitational wave so the
+ *  screen-space ripple in displace_color.frag can follow it. */
+void setGravWave(const irr::core::vector3df& pos, float radius)
+{
+    g_grav_wave_pos = pos;
+    g_grav_wave_radius = radius;
+}   // setGravWave
+
+// ----------------------------------------------------------------------------
+void clearGravWave()
+{
+    g_grav_wave_radius = 0.0f;
+}   // clearGravWave
 
 // ----------------------------------------------------------------------------
 /** Refreshes the per-camera kart root -> visual velocity cache. Called from
@@ -431,7 +488,11 @@ void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
     if (!Relativity::isEnabled() || !node)
         return;
     core::vector3df velocity;
-    if (!findKartVelocityForNode(node, velocity))
+    // Prefer a true physical velocity (kart coordinate velocity, then explicit
+    // flyable/prop override); only fall back to the graphics-delta estimator
+    // for nodes that have neither.
+    if (!findKartVelocityForNode(node, velocity) &&
+        !findNodeOverrideVelocity(node, velocity))
     {
         const core::matrix4& model_matrix =
             node->getAbsoluteTransformation();
@@ -450,6 +511,24 @@ void fillNodeRelativityVelocity(const irr::scene::ISceneNode* node,
         disable_relativity_visual = materialHasNoRelativityWarp(irr_material);
     out[3] = disable_relativity_visual ? 1.0f : 0.0f;
 }   // fillNodeRelativityVelocity
+
+// ----------------------------------------------------------------------------
+/** Registers/refreshes a node's true physical velocity so the relativistic
+ *  warp uses it (like a kart's) instead of the noisy graphics-delta estimator.
+ *  Call each frame with the current world-space velocity. */
+void setNodeRelativityVelocity(const irr::scene::ISceneNode* node,
+                               const irr::core::vector3df& velocity)
+{
+    if (node)
+        g_node_velocity_overrides[node] = velocity;
+}   // setNodeRelativityVelocity
+
+// ----------------------------------------------------------------------------
+void clearNodeRelativityVelocity(const irr::scene::ISceneNode* node)
+{
+    if (node)
+        g_node_velocity_overrides.erase(node);
+}   // clearNodeRelativityVelocity
 
 // ----------------------------------------------------------------------------
 ShaderBasedRenderer* g_stk_sbr = NULL;
@@ -1895,6 +1974,7 @@ void resetRelativityNodeCaches()
 {
     g_no_warp_texture_cache.clear();
     g_relativity_motion_states.clear();
+    g_node_velocity_overrides.clear();
 }   // resetRelativityNodeCaches
 
 // ----------------------------------------------------------------------------

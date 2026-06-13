@@ -25,6 +25,7 @@ float m_relativity_observer_pos[4]; // [ox, oy, oz, scanner_active]
 float m_relativity_bubble[4];       // [bubble.x, bubble.y, bubble.z, warp_radius]
 float m_black_holes[16];            // 4x [wx, wy, wz, radius] (radius=0 = slot inactive)
 float m_wormhole[4];                // [wx, wy, wz, radius] (radius=0 = inactive)
+float m_grav_wave[4];               // [origin.xyz, radius] (radius<=0 = inactive)
 // Screen-space post effect parameters (displace_color.frag)
 irr::core::matrix4 m_previous_pv_matrix; // previous frame projection*view
 float m_motion_blur[4];             // [boost_amount, center_x, center_y, mask_radius]
@@ -51,7 +52,9 @@ GEVulkanCameraUBO()
     // The float parameter blocks are only refreshed per frame during races;
     // make sure cameras that never get fed (RTT previews, menus) read all
     // effects as disabled instead of stack garbage.
-    memset(m_relativity_params, 0, sizeof(float) * (4 * 5 + 16 + 4));
+    // Contiguous relativity block: params/beta/observer/bubble (4 vec4 = 16) +
+    // black_holes (16) + wormhole (4) + grav_wave (4) = 40 floats.
+    memset(m_relativity_params, 0, sizeof(float) * (4 * 4 + 16 + 4 + 4));
     memset(m_motion_blur, 0, sizeof(m_motion_blur));
     memset(m_compactification, 0, sizeof(m_compactification));
     memset(m_godrays_pos, 0, sizeof(m_godrays_pos));
@@ -95,10 +98,10 @@ public:
     // ------------------------------------------------------------------------
     const GEVulkanCameraUBO* const getUBOData() const   { return &m_ubo_data; }
     // ------------------------------------------------------------------------
-    // Feed the 38-float array produced by buildRelativityUBOTail() into the
+    // Feed the 42-float array produced by buildRelativityUBOTail() into the
     // camera UBO so Vulkan shaders can read the same relativistic parameters
     // that the SP/OpenGL pipeline writes to its own UBO.
-    void setRelativityData(const float* tail38)
+    void setRelativityData(const float* tail)
     {
         // tail[2..5]  = relativity_params
         // tail[6..9]  = relativity_beta
@@ -106,12 +109,14 @@ public:
         // tail[14..17]= relativity_bubble
         // tail[18..33]= black_holes[4]
         // tail[34..37]= wormhole
-        memcpy(m_ubo_data.m_relativity_params,       tail38 + 2,  16);
-        memcpy(m_ubo_data.m_relativity_beta,          tail38 + 6,  16);
-        memcpy(m_ubo_data.m_relativity_observer_pos,  tail38 + 10, 16);
-        memcpy(m_ubo_data.m_relativity_bubble,         tail38 + 14, 16);
-        memcpy(m_ubo_data.m_black_holes,               tail38 + 18, 64);
-        memcpy(m_ubo_data.m_wormhole,                  tail38 + 34, 16);
+        // tail[38..41]= grav_wave
+        memcpy(m_ubo_data.m_relativity_params,       tail + 2,  16);
+        memcpy(m_ubo_data.m_relativity_beta,          tail + 6,  16);
+        memcpy(m_ubo_data.m_relativity_observer_pos,  tail + 10, 16);
+        memcpy(m_ubo_data.m_relativity_bubble,         tail + 14, 16);
+        memcpy(m_ubo_data.m_black_holes,               tail + 18, 64);
+        memcpy(m_ubo_data.m_wormhole,                  tail + 34, 16);
+        memcpy(m_ubo_data.m_grav_wave,                 tail + 38, 16);
     }
     // ------------------------------------------------------------------------
     // Per-camera screen-space post effect parameters, applied by

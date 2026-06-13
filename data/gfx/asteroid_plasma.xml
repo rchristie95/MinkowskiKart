@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!-- Hot atmospheric-re-entry plasma for the thrown asteroid: a dense, bright
+     orange-to-white core shed continuously as the rock flies, forming a
+     glowing comet tail. Short-lived and additive so it reads as incandescent
+     gas rather than smoke. The trail shape comes from the emitter being moved
+     along the asteroid's path each frame (see Asteroid::updateGraphics). -->
+<particles emitter="point">
+
+    <spreading angle="32"          />
+
+    <velocity  x="0.000"
+               y="0.0015"
+               z="0.000"           />
+
+    <material  file="explode.png"  />
+
+    <!-- Dense core so the tail stays continuous at projectile speed. -->
+    <rate      min="280"
+               max="360"           />
+
+    <!-- Short life: plasma cools/fades fast, leaving a tapering tail. -->
+    <lifetime  min="220"
+               max="480"           />
+
+    <!-- Expands a little as it cools. -->
+    <size      min="0.45"
+               max="0.80"
+               x-increase-factor="1.4"
+               y-increase-factor="1.4" />
+
+    <!-- Incandescent: deep orange up to yellow-white at the hottest. -->
+    <color     min="255 120 28"
+               max="255 235 140"   />
+
+</particles>

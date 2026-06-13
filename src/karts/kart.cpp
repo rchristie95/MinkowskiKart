@@ -1953,11 +1953,16 @@ bool Kart::isUsingNitro() const
 //-----------------------------------------------------------------------------
 float Kart::getCLightTarget(CLightTargetKind* kind) const
 {
-    if (m_attachment && m_attachment->getType() == Attachment::ATTACH_TIME_DILATION)
+    if (m_attachment &&
+        m_attachment->getType() == Attachment::ATTACH_TIME_DILATION &&
+        m_attachment->isTimeDilationActive())
     {
+        // Distance-scaled by the gravitational wave: 0.5 (c/2) at the blast
+        // centre, rising toward 1.0 (normal c) at the 50 m edge.
         if (kind)
             *kind = C_LIGHT_TARGET_HALF_NORMAL;
-        return 0.5f * Relativity::getConfiguredNormalCLight();
+        return m_attachment->getTimeDilationCFactor() *
+               Relativity::getConfiguredNormalCLight();
     }
 
     if (m_max_speed->isSpeedIncreaseActive(MaxSpeed::MS_INCREASE_WARP_BUBBLE))

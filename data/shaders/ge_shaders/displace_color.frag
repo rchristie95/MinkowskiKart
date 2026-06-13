@@ -529,17 +529,45 @@ float bhFbm(vec2 p)
     return v;
 }
 
+// bhBlackbody(): cheap blackbody-locus colour from a normalised temperature
+// t01 in [0,1]. 0 = cool deep-red outer rim, ~0.6 = orange/white-hot,
+// 1 = blue-white inner edge. Brighter than 1.0 in the hot range so the inner
+// disk blooms on the tonemapped target. Piecewise fit avoids the cost of a
+// full Planck integral while keeping the physical hot->cool hue ordering.
+vec3 bhBlackbody(float t01)
+{
+    t01 = clamp(t01, 0.0, 1.0);
+    vec3 c0 = vec3(0.75, 0.10, 0.02);   // coolest rim (deep red)
+    vec3 c1 = vec3(1.20, 0.45, 0.10);   // orange
+    vec3 c2 = vec3(1.35, 1.18, 0.88);   // white-hot
+    vec3 c3 = vec3(1.05, 1.20, 1.55);   // blue-white inner edge
+    if (t01 < 0.40)
+        return mix(c0, c1, t01 / 0.40);
+    if (t01 < 0.75)
+        return mix(c1, c2, (t01 - 0.40) / 0.35);
+    return mix(c2, c3, (t01 - 0.75) / 0.25);
+}
+
 // diskSample(): brightness/colour of the equatorial disk annulus sampled in
 // the disk's local screen frame. a = along the disk (major axis), b =
 // across it (minor axis, already un-squashed by the inclination). doppler
-// is +1 on the approaching (boosted) side, -1 on the receding side. The
-// plasma is a churning procedural field: domain-warped fbm scrolled by a
-// differential (Keplerian) orbital flow so it visibly swirls and boils
-// rather than reading as a static texture stapled to the hole.
+// is +1 on the approaching (boosted) side, -1 on the receding side.
+//
+// Physical model (thin relativistic accretion disk, evaluated analytically so
+// it runs in the post-process budget — no per-pixel geodesic march):
+//  - Shakura-Sunyaev effective temperature  T(r) ~ r^-3/4 (1-sqrt(r_in/r))^1/4
+//    mapped through bhBlackbody() for the hue (hot blue-white in, red rim).
+//  - Keplerian orbital speed beta(r) ~ r^-1/2, capped for stability.
+//  - Relativistic Doppler factor D = 1/(gamma(1 - beta*cos_los)) plus a
+//    gravitational redshift g = sqrt(1 - r_s/r); the combined shift blue/red
+//    shifts the temperature and drives bolometric beaming I_obs ~ shift^4
+//    (the "headlight effect" — approaching side bright/blue, receding dim/red).
+// The churning plasma is procedural: domain-warped fbm scrolled by the same
+// Keplerian flow (Omega ~ r^-3/2) so inner annuli visibly shear faster.
 vec3 diskSample(float a, float b, float doppler, out float bright)
 {
-    const float DISK_IN = 1.45;
-    const float DISK_OUT = 3.6;
+    const float DISK_IN = 1.45;   // inner edge (~ISCO) in R_E units
+    const float DISK_OUT = 3.6;   // nominal outer radius
     float rho = sqrt(a * a + b * b);
     bright = 0.0;
     // Wide guard: the outer envelope is a long exponential tail, so cut off
@@ -549,12 +577,12 @@ vec3 diskSample(float a, float b, float doppler, out float bright)
     float t = u_camera.m_postfx_flags2.w;
     float phi = atan(b, a);
 
-    // Orbital flow: angle advances slowly over time (same handedness so the
-    // rotation never reverses), gently faster toward the inner edge, with a
-    // slow inward drift. Kept low-frequency and low-speed so the plasma
-    // churns smoothly instead of strobing/flickering.
-    float ang_vel = 0.22 + 0.45 / max(rho, 1.1);
-    float u = phi + t * ang_vel;             // along-orbit coordinate
+    // Procedural plasma scrolled by the Keplerian angular rate Omega ~ r^-3/2
+    // (so v ~ r^-1/2). Same handedness so it never reverses; low-frequency so
+    // it boils smoothly instead of strobing. Slow inward drift on top.
+    float r_phys  = max(rho, DISK_IN);
+    float omega   = 1.6 * pow(r_phys / DISK_IN, -1.5);
+    float u = phi + t * omega;               // along-orbit coordinate
     float v = rho * 0.8 - t * 0.16;          // slow inward drift
     // Sample the noise on a slowly orbiting ring (seamless around the disk).
     vec2 tc = vec2(cos(u), sin(u)) * (1.2 + rho * 0.5) + vec2(0.0, v);
@@ -566,8 +594,7 @@ vec3 diskSample(float a, float b, float doppler, out float bright)
 
     // Radial envelope: soft turbulent inner ramp, then a long exponential
     // outer tail so the disk fades out smoothly with no fixed-size hard
-    // boundary. x is the colour-ramp coordinate (still 0..1 over the core).
-    float x = clamp((rho - DISK_IN) / (DISK_OUT - DISK_IN), 0.0, 1.0);
+    // boundary.
     float inner = smoothstep(DISK_IN * 0.6, DISK_IN * 1.08, rho + turb * 0.45);
     float outer = exp(-pow(max(rho - DISK_IN, 0.0) / (DISK_OUT - DISK_IN),
                   1.25) * 1.35);
@@ -575,18 +602,30 @@ vec3 diskSample(float a, float b, float doppler, out float bright)
     // Strong plasma but with a solid base so it doesn't flicker dark.
     float prof = env * (0.7 + 1.0 * turb);
 
-    // Temperature ramp: white-hot inner -> orange -> deep red rim.
-    vec3 col = mix(vec3(1.3, 1.15, 0.95), vec3(1.2, 0.5, 0.12),
-        smoothstep(0.0, 0.5, x));
-    col = mix(col, vec3(0.7, 0.13, 0.03), smoothstep(0.5, 1.0, x));
+    // --- Relativistic shading ---------------------------------------------
+    // Shakura-Sunyaev effective temperature, remapped to a 0..1 ramp.
+    float t_ss   = pow(r_phys / DISK_IN, -0.75) *
+                   pow(max(1.0 - sqrt(DISK_IN / r_phys), 0.0), 0.25);
+    float temp01 = clamp(t_ss * 1.35, 0.0, 1.0);
+
+    // Keplerian orbital speed (fraction of c), capped for numerical stability.
+    float beta   = clamp(0.55 * sqrt(DISK_IN / r_phys), 0.0, 0.85);
+    float gamma  = 1.0 / sqrt(max(1.0 - beta * beta, 1e-3));
+    // Relativistic Doppler factor along the projected line of sight, and the
+    // gravitational redshift climbing out of the well near the inner edge.
+    float D      = 1.0 / (gamma * (1.0 - beta * doppler));
+    float g_grav = sqrt(max(1.0 - DISK_IN / (r_phys + DISK_IN * 0.5), 0.05));
+    float shift  = D * g_grav;               // >1 boosted/blue, <1 dim/red
+
+    // Blue/red-shift the temperature, then colour it on the blackbody locus.
+    float temp_obs = clamp(temp01 * (0.6 + 0.4 * shift), 0.0, 1.0);
+    vec3  col = bhBlackbody(temp_obs);
     // Hotter cores in the bright turbulent knots.
-    col = mix(col, vec3(1.4, 1.32, 1.15), clamp((turb - 0.6) * 1.5, 0.0, 0.6));
-    // Relativistic Doppler beaming + boosting on the approaching side
-    // (the receding side keeps a dim floor so the disk reads all the way
-    // round rather than vanishing on one side).
-    float beam = pow(clamp(1.0 + 0.7 * doppler, 0.45, 2.0), 2.6);
-    col = mix(col, vec3(1.35, 1.3, 1.2), clamp(doppler * 0.5, 0.0, 0.5));
-    col = mix(col, col.bgr * 0.6, clamp(-doppler * 0.6, 0.0, 0.45));
+    col = mix(col, vec3(1.4, 1.34, 1.25), clamp((turb - 0.6) * 1.5, 0.0, 0.6));
+
+    // Bolometric beaming (headlight effect), with a dim floor so the receding
+    // side still reads all the way round rather than vanishing.
+    float beam = clamp(pow(shift, 4.0), 0.3, 4.0);
     bright = max(prof, 0.0) * beam;
     return col;
 }
@@ -695,10 +734,15 @@ vec3 bhEmissionAt(vec2 px)
             dwarm);
         bh_em += arc_warm * (top_arc + bot_arc) * mix(0.6, 1.7, dwarm);
 
-        // Photon ring: thin bright circle at the shadow edge, Doppler-tinted.
-        float ring = exp(-pow((rr - 1.04) * 11.0, 2.0));
-        vec3 ring_col = mix(vec3(1.1, 0.8, 0.5), vec3(1.4, 1.3, 1.1), dwarm);
-        bh_em += ring_col * ring * mix(0.5, 1.5, dwarm);
+        // Photon ring / Einstein ring: thin bright circle at the shadow edge,
+        // Doppler-tinted. Widened, boosted and azimuthally modulated (same
+        // 0.85 + 0.15*cos(2*theta) profile as the wormhole) so the rim reads
+        // as a luminous lensed ring rather than a flat hoop.
+        float theta_r = atan(d.y, d.x);
+        float mod_az  = 0.85 + 0.15 * cos(theta_r * 2.0);
+        float ring = exp(-pow((rr - 1.04) * 9.0, 2.0));
+        vec3 ring_col = mix(vec3(1.1, 0.8, 0.5), vec3(1.45, 1.35, 1.15), dwarm);
+        bh_em += ring_col * ring * mod_az * mix(0.8, 2.1, dwarm);
 
         emission += bh_em * close_fade;
     }
@@ -857,6 +901,10 @@ void main()
     vec2 src_px = frag_px;
     bool in_event_horizon = false;
     float distortion_strength = 0.0;
+    // Chromatic aberration of the lensed background (wormhole-style): radial
+    // direction and fringe magnitude of the strongest lensing at this pixel.
+    vec2  bh_chroma_dir = vec2(0.0);
+    float bh_chroma_amt = 0.0;
 
     // ---- Gravitational lensing from the active black holes ----
     // u_black_holes[i].w = world-space sphere radius (0 = slot inactive).
@@ -883,14 +931,19 @@ void main()
             vec2 rim_ndc = rim_clip.xy / max(rim_clip.w, 0.001);
             vec2 rim_screen = vp_xy + (rim_ndc * 0.5 + 0.5) * vp_wh;
             float R_E = max(length(rim_screen - bh_screen), 2.0);
+            // Effective lensing reach, pushed well past the shadow so the
+            // deflection is as dramatic as the wormhole's. The black shadow
+            // itself stays at R_E (the ball); only the warp strengthens.
+            // Tunable: raise for stronger bending (recompiles on launch).
+            const float BH_LENS_STRENGTH = 1.55;
+            float R_L = R_E * BH_LENS_STRENGTH;
 
             vec2 delta = src_px - bh_screen;
             float r = length(delta);
 
-            // Outer bound extended so the deflection can ease off gradually
-            // rather than snapping at a hard radius (the visible lensing
-            // boundary).
-            if (r > 0.5 && r < R_E * 9.0)
+            // Outer bound scales with the boosted reach so the wider warp
+            // isn't clipped; the deflection eases off gradually toward it.
+            if (r > 0.5 && r < R_L * 6.0)
             {
                 // Skip lensing where scene is in front of the black hole
                 // (view-space compare: raw depth01 epsilons let distant
@@ -903,26 +956,37 @@ void main()
                     // Frame dragging (Kerr): the deflection direction is
                     // swirled around the spin axis, strongest near the
                     // horizon.
-                    float drag = min(0.9 * (R_E * R_E) / (r * r), 0.8);
+                    float drag = min(0.9 * (R_L * R_L) / (r * r), 0.9);
                     float cd = cos(drag), sd = sin(drag);
                     vec2 dragged = vec2(cd * delta.x - sd * delta.y,
                                         sd * delta.x + cd * delta.y);
-                    float r_src = r - (R_E * R_E) / r;
-                    if (r_src <= 0.0)
+                    if (r < R_E)
                     {
+                        // True shadow (ball-sized) stays pure black.
                         in_event_horizon = true;
                     }
                     else
                     {
-                        // Ease the deflection (and its darkening) smoothly to
-                        // zero toward the outer edge so the lensed region
-                        // blends into the scene with no hard ring/seam.
+                        // Strong Schwarzschild deflection: scene wraps tightly
+                        // around the shadow rim (clamped positive like the
+                        // wormhole) so a pronounced ring of lensed scenery
+                        // smears around the hole.
+                        float r_src = max(r - (R_L * R_L) / r, R_E * 0.05);
                         vec2 deflected = bh_screen + (dragged / r) * r_src;
-                        float fade = 1.0 - smoothstep(R_E * 3.0, R_E * 9.0, r);
+                        float fade = 1.0 - smoothstep(R_L * 2.5, R_L * 6.0, r);
                         src_px = mix(src_px, deflected, fade);
                         distortion_strength = max(distortion_strength,
-                            clamp(1.0 - (r_src / (R_E * 3.0)), 0.0, 1.0) *
+                            clamp(1.0 - (r_src / (R_L * 2.0)), 0.0, 1.0) *
                             fade);
+                        // Chromatic fringe near the rim, at wormhole strength.
+                        float ring_dist = abs(r - R_E) / R_E;
+                        float ca = min(2.0 / max(ring_dist + 0.15, 0.15),
+                            12.0) * fade;
+                        if (ca > bh_chroma_amt)
+                        {
+                            bh_chroma_amt = ca;
+                            bh_chroma_dir = dragged / r;
+                        }
                     }
                     src_px = clamp(src_px, vp_xy, vp_xy + vp_wh);
                 }
@@ -967,12 +1031,26 @@ void main()
     // Base scene sample with the SP/OpenGL advanced-pipeline post effects:
     // anti-aliasing, SSAO and bloom, all evaluated at the lens-warped source
     // position so black holes bend them with the rest of the scene.
-    vec3 col = u_camera.m_postfx_flags.w > 0.5 ?
-        antialiasScene(src_px) : sampleScene(src_px);
-    // Contrast-adaptive sharpening recovers the crispness FXAA removes
-    // (tied to the anti-aliasing toggle).
-    if (u_camera.m_postfx_flags.w > 0.5)
-        col = casSharpen(src_px, col);
+    vec3 col;
+    if (bh_chroma_amt > 0.01)
+    {
+        // Per-channel radial split of the lensed background: it fringes into
+        // colour near the ring, matching the wormhole's chromatic lensing.
+        // (AA/CAS skipped for these few near-hole pixels.)
+        vec2 ca = bh_chroma_dir * bh_chroma_amt;
+        col.r = sampleScene(clamp(src_px + ca, vp_xy, vp_xy + vp_wh)).r;
+        col.g = sampleScene(src_px).g;
+        col.b = sampleScene(clamp(src_px - ca, vp_xy, vp_xy + vp_wh)).b;
+    }
+    else
+    {
+        col = u_camera.m_postfx_flags.w > 0.5 ?
+            antialiasScene(src_px) : sampleScene(src_px);
+        // Contrast-adaptive sharpening recovers the crispness FXAA removes
+        // (tied to the anti-aliasing toggle).
+        if (u_camera.m_postfx_flags.w > 0.5)
+            col = casSharpen(src_px, col);
+    }
     if (u_camera.m_postfx_flags.x > 0.5)
         col += bloomGather(src_px);
     // ---- Track distance fog ----
@@ -1163,6 +1241,76 @@ void main()
             blur_texcoords += inc;
         }
         col /= float(NB_SAMPLES);
+    }
+
+    // ---- Time-dilation gravitational wave (expanding ring) ----
+    // u_grav_wave.xyz = world-space origin, .w = current radius (<=0 inactive).
+    // A spacetime shockwave that rolls outward to ~50 m and fades to nothing
+    // there; the c-light drop on each kart lands as this ring passes them.
+    // Pond-ripple shockwave: concentric sinusoidal waves trailing an expanding
+    // front (radius m_grav_wave.w, 0 -> 75 m). The wave is evaluated in world
+    // space on the track surface (reconstructed from depth) so it looks like
+    // ripples spreading across a pond; each ripple slope refracts the scene
+    // (gravitational lensing) with radial chromatic aberration. Because it
+    // fills the whole disturbed disc - not just a thin rim - it is clearly
+    // visible even from the centre, where the firing kart sits.
+    if (u_camera.m_grav_wave.w > 0.0)
+    {
+        float wave_r = u_camera.m_grav_wave.w;
+        float zc = texture(u_depth, frag_px / u_camera.m_screensize).x;
+        if (zc < 1.0) // ripples live on the ground, not the sky
+        {
+            vec2 tc = (frag_px - vp_xy) / vp_wh;
+            vec4 clip = vec4(tc * 2.0 - 1.0, zc, 1.0);
+            vec4 vpos = u_camera.m_inverse_projection_matrix * clip;
+            vpos /= vpos.w;
+            vec3 wpos = (u_camera.m_inverse_view_matrix * vpos).xyz;
+            float d = distance(wpos, u_camera.m_grav_wave.xyz);
+
+            if (d < wave_r + 3.0) // only inside the expanding front
+            {
+                const float K = 6.2831853 / 6.0;        // 6 m wavelength
+                float phase = (d - wave_r) * K;          // crests trail the front
+                // Amplitude: peaks at the front, ripples decay toward the calm
+                // centre, and the whole disturbance dissipates by 75 m.
+                float trail     = exp(-max(0.0, wave_r - d) / 22.0);
+                float lead      = smoothstep(wave_r + 3.0, wave_r - 1.0, d);
+                float edge_fade = clamp(1.0 - wave_r / 75.0, 0.0, 1.0);
+                float in_fade   = smoothstep(0.0, 4.0, wave_r);
+                float amp = trail * lead * edge_fade * in_fade;
+                if (amp > 0.003)
+                {
+                    // Pond-surface slope drives the refraction; max bend on the
+                    // wave flanks, none at crest/trough (like real water).
+                    float slope = cos(phase) * amp;
+                    // Screen-space radial direction from the wave centre.
+                    vec4 oc = u_camera.m_projection_view_matrix *
+                              vec4(u_camera.m_grav_wave.xyz, 1.0);
+                    vec2 rdir = vec2(0.0, 1.0);
+                    if (oc.w > 0.001)
+                    {
+                        vec2 ondc = oc.xy / oc.w;
+                        vec2 osc = vp_xy + (ondc * 0.5 + 0.5) * vp_wh;
+                        vec2 v = frag_px - osc;
+                        if (dot(v, v) > 1.0) rdir = normalize(v);
+                    }
+                    float disp = slope * 60.0;            // refraction (pixels)
+                    float ca   = abs(slope) * 28.0;       // chromatic split
+                    vec2 base = frag_px + rdir * disp;
+                    vec3 refr = vec3(
+                        sampleScene(clamp(base + rdir * ca,
+                            vp_xy, vp_xy + vp_wh)).r,
+                        sampleScene(clamp(base,
+                            vp_xy, vp_xy + vp_wh)).g,
+                        sampleScene(clamp(base - rdir * ca,
+                            vp_xy, vp_xy + vp_wh)).b);
+                    col = mix(col, refr, clamp(amp * 2.0, 0.0, 1.0));
+                    // Bluish sheen riding the crests for readability.
+                    float crest = max(0.0, sin(phase)) * amp;
+                    col += vec3(0.16, 0.28, 0.55) * (crest * 0.9);
+                }
+            }
+        }
     }
 
     // ---- Vignette ----
