@@ -996,7 +996,15 @@ void unitTesting()
     test_observer.m_c_light = (float)c_light;
     const btVector3 warped = applyVisualPosition(
         btVector3(5.0f, 1.0f, 0.0f), test_observer, btVector3(0.0f, 0.0f, 0.0f));
-    MK_CHECK(warped.x() > 4.0f && warped.x() < 5.0f);
+    // Aberration only changes the ray direction, so the apparent point stays
+    // on the sphere of radius |world_pos| = sqrt(26) ~= 5.099 around the
+    // observer. With the observer moving +x, forward beaming tilts the
+    // apparent direction toward +x: x increases above its original 5.0 (toward
+    // the 5.099 radius) and the y offset is compressed below its original 1.0.
+    // (The earlier bound asserted x < 5.0, which is incompatible with
+    // distance-preserving forward beaming; measured here as ~(5.074, 0.504).)
+    MK_CHECK(warped.x() > 5.0f && warped.x() < 5.1f);
+    MK_CHECK(warped.y() > 0.0f && warped.y() < 1.0f);
 
     MK_CHECK(std::fabs(betaForSpeed(0.0, c_light)) < 0.000001);
     MK_CHECK(std::fabs(betaForSpeed(0.6 * c_light, c_light) - 0.6) < 0.000001);

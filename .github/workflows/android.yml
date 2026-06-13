@@ -85,6 +85,19 @@ jobs:
         run: |
           sed -i 's/"${CMAKE_COMMAND}"/cmake/g' lib/libpng/CMakeLists.txt
 
+      - name: Refresh tracked in-repo libraries over the restored cache
+        shell: bash
+        run: |
+          # The dependency cache stores all of lib/, including the tracked
+          # in-repo engine sources (graphics_engine, irrlicht, bullet, ...).
+          # Its key does not hash those sources, so on a cache hit the stale
+          # cached copies overwrite the fresh checkout and the NDK then compiles
+          # current src/ against an out-of-date GEConfig/ge_main.hpp (e.g.
+          # "no member named 'm_glow' in 'GE::GEConfig'"). Restore the tracked
+          # files to this commit; untracked downloaded deps (libpng, etc.) and
+          # the libpng patch above are left untouched.
+          git checkout -- lib
+
       - name: Build MinkowskiKart APK
         shell: bash
         env:
