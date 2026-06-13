@@ -341,8 +341,12 @@ void TrackObject::init(const XMLNode &xml_node, scene::ISceneNode* parent,
             else
             {
                 // GE Vulkan renderer: nodes are not SPMeshNodes; register
-                // the glow colour for the GE glow pass instead.
+                // the glow colour for the GE glow pass instead. Defined in
+                // sp_base.cpp, which is excluded from SERVER_ONLY builds, so
+                // the call must be guarded or it fails to link there.
+#ifndef SERVER_ONLY
                 SP::setVulkanNodeGlowColor(glownode, video::SColorf(r, g, b));
+#endif
             }
         }
 
