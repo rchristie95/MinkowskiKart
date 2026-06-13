@@ -309,6 +309,11 @@ namespace GE
         bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                           VmaAllocationCreateInfo& alloc_create_info,
                           VkBuffer& buffer, VmaAllocation& buffer_allocation);
+        //! Queue a buffer + its VMA allocation to be destroyed once no
+        //! in-flight frame can still reference it (getMaxFrameInFlight()+1
+        //! frames later). Lets callers grow buffers without a full device
+        //! stall. Thread-safe.
+        void scheduleBufferDeletion(VkBuffer buffer, VmaAllocation allocation);
         VkPhysicalDevice getPhysicalDevice() const { return m_physical_device; }
         const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() const
                                                           { return m_features; }
@@ -539,6 +544,20 @@ namespace GE
         GESPM* m_billboard_quad;
         int m_current_buffer_idx;
         std::set<GEVulkanDynamicSPMBuffer*> m_dynamic_spm_buffers;
+
+        // Deferred destruction of orphaned dynamic-buffer allocations, so a
+        // growing GEVulkanDynamicBuffer never has to vkDeviceWaitIdle.
+        struct DeferredBufferDeletion
+        {
+            VkBuffer m_buffer;
+            VmaAllocation m_allocation;
+            int m_frames_left;
+        };
+        std::vector<DeferredBufferDeletion> m_deferred_buffer_deletions;
+        std::mutex m_deferred_buffer_deletions_mutex;
+        //! Tick the deferred-deletion queue once per frame; \p force frees
+        //! everything immediately (used at shutdown after the device is idle).
+        void handleDeferredBufferDeletions(bool force);
 
         void createInstance(SDL_Window* window);
         void findPhysicalDevice();

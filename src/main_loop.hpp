@@ -53,6 +53,12 @@ private:
 
     bool m_download_assets;
 
+    /** Low-pass filtered graphical timestep (seconds). Decouples visual
+     *  interpolation from a jittery present cadence (e.g. the Vulkan FIFO
+     *  fast/slow frame oscillation) so motion stays smooth. Negative means
+     *  "not yet primed". Only used for non-networked play. */
+    float m_graphics_dt_smoothed;
+
     Synchronised<int> m_ticks_adjustment;
 
     TimePoint m_curr_time;

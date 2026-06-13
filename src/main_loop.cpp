@@ -111,6 +111,7 @@ MainLoop::MainLoop(unsigned parent_pid, bool download_assets)
     m_allow_large_dt  = false;
     m_frame_before_loading_world = false;
     m_download_assets = download_assets;
+    m_graphics_dt_smoothed = -1.0f;
 #ifdef WIN32
     if (parent_pid != 0)
     {
@@ -568,7 +569,30 @@ void MainLoop::run()
             {
                 PROFILER_PUSH_CPU_MARKER("Update race", 0, 255, 255);
                 if (World::getWorld())
-                    World::getWorld()->updateGraphics(frame_duration);
+                {
+                    // Visual interpolation (camera smoothing, suspension,
+                    // particles, ...) only. Physics still advances on the exact
+                    // accumulated time via the fixed-timestep loop below, so a
+                    // smoothed graphical dt cannot affect gameplay determinism.
+                    // For networked play keep the raw value (rewind smoothing
+                    // handles motion there).
+                    float graphics_dt = frame_duration;
+                    if (!NetworkConfig::get()->isNetworking())
+                    {
+                        if (m_graphics_dt_smoothed < 0.0f)
+                            m_graphics_dt_smoothed = frame_duration;
+                        else
+                        {
+                            // EMA: tracks real frame time with zero steady-state
+                            // bias, but evens out the fast/slow present beat.
+                            const float alpha = 0.2f;
+                            m_graphics_dt_smoothed = alpha * frame_duration +
+                                (1.0f - alpha) * m_graphics_dt_smoothed;
+                        }
+                        graphics_dt = m_graphics_dt_smoothed;
+                    }
+                    World::getWorld()->updateGraphics(graphics_dt);
+                }
                 PROFILER_POP_CPU_MARKER();
 
                 // Render the previous frame, and also handle all user input.

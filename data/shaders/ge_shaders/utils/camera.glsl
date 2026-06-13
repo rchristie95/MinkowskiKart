@@ -29,7 +29,7 @@ layout(std140, set = 1, binding = 0) uniform CameraBuffer
     // near cascade then far cascade
     mat4 m_sun_shadow_matrix;
     vec4 m_shadow_params;           // [depth range (0=off), pcss, texel, penumbra]
-    // Second post effect toggle block: [glow, scatter_density, 0, 0]
+    // Second post effect block: [glow, scatter_density, lens_flare, time_s]
     vec4 m_postfx_flags2;
     mat4 m_sun_shadow_matrix_far;
     vec4 m_shadow_params_far;       // [depth range, split distance, texel, penumbra]

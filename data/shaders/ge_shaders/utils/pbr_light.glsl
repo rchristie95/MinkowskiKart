@@ -45,7 +45,8 @@ vec3 PBRSunAmbientEmitLight(
     vec3 ambient_color,
     float perceptual_roughness,
     float metallic,
-    float emissive)
+    float emissive,
+    float ambient_occlusion)
 {
     // Copied from PBRLight to use F_ab and F90 again
     float NdotV = max(dot(normal, eyedir), 0.0001);
@@ -95,9 +96,14 @@ vec3 PBRSunAmbientEmitLight(
 
     vec3 emit = emissive * color * 4.0;
 
+    float diffuse_ao = clamp(ambient_occlusion, 0.0, 1.0);
+    float specular_ao = clamp(pow(diffuse_ao,
+        mix(0.45, 1.0, perceptual_roughness)), 0.0, 1.0);
+
     return sun_color * sunlight
-          + environment + emit
-          + (diffuse_ambient + specular_ambient) * ambient_color;
+          + environment * diffuse_ao + emit
+          + (diffuse_ambient * diffuse_ao + specular_ambient * specular_ao) *
+            ambient_color;
 }
 
 vec3 accumulateLights(int light_count, vec3 diffuse_color, vec3 normal,

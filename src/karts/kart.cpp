@@ -45,6 +45,7 @@
 #include "items/attachment.hpp"
 #include "items/item_manager.hpp"
 #include "items/powerup.hpp"
+#include "items/powerup_manager.hpp"
 #include "items/projectile_manager.hpp"
 #include "karts/abstract_characteristic.hpp"
 #include "karts/abstract_kart_animation.hpp"
@@ -1451,6 +1452,23 @@ void Kart::update(int ticks)
     }
 
     m_powerup->update(ticks);
+
+    // Debug: MK_GIVE_POWERUP=<name> keeps every kart stocked with one
+    // powerup type so it can be tested / fired on demand (e.g. black-hole,
+    // wormhole, zipper, photon, asteroid, anti-karticle, time-dilation,
+    // maxwell-boltzmann, super_position, warp-bubble). Aids visual debugging
+    // of the powerup effects without grinding for item boxes.
+    static const PowerupManager::PowerupType debug_powerup = []()
+    {
+        const char* n = getenv("MK_GIVE_POWERUP");
+        return n ? powerup_manager->getPowerupType(n) :
+            PowerupManager::POWERUP_NOTHING;
+    }();
+    if (debug_powerup != PowerupManager::POWERUP_NOTHING &&
+        m_powerup->getType() == PowerupManager::POWERUP_NOTHING)
+    {
+        setPowerup(debug_powerup, 5);
+    }
 
     // Reset any instant speed increase or speed floor in the bullet kart
     m_vehicle->resetMaxSpeed();

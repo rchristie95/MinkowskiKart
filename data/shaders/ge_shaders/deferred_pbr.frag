@@ -1,6 +1,7 @@
-layout (input_attachment_index = 0, binding = 0) uniform subpassInput u_color;
-layout (input_attachment_index = 1, binding = 1) uniform subpassInput u_normal;
-layout (input_attachment_index = 2, binding = 2) uniform subpassInput u_depth;
+layout(binding = 0) uniform sampler2D u_color;
+layout(binding = 1) uniform sampler2D u_normal;
+layout(binding = 2) uniform sampler2D u_depth;
+layout(set = 1, binding = 7) uniform sampler2D u_ao;
 
 layout(location = 0) out vec4 o_color;
 
@@ -16,12 +17,15 @@ layout(push_constant) uniform Constants
 
 void main()
 {
-    float depth = subpassLoad(u_depth).x;
+    ivec2 px = ivec2(gl_FragCoord.xy);
+    float depth = texelFetch(u_depth, px, 0).x;
     if (!u_has_skybox && depth == 1.0)
         discard;
-    vec3 diffuse_color = subpassLoad(u_color).xyz;
-    vec3 pbr = vec3(subpassLoad(u_normal).zw, subpassLoad(u_color).w);
-    vec3 world_normal = DecodeNormal(subpassLoad(u_normal).xy);
+    vec4 color_data = texelFetch(u_color, px, 0);
+    vec4 normal_data = texelFetch(u_normal, px, 0);
+    vec3 diffuse_color = color_data.xyz;
+    vec3 pbr = vec3(normal_data.zw, color_data.w);
+    vec3 world_normal = DecodeNormal(normal_data.xy);
     vec3 xpos = getPosFromUVDepth(vec3(gl_FragCoord.xy, depth),
         u_camera.m_viewport, u_camera.m_inverse_projection_matrix);
     vec3 eyedir = -normalize(xpos);
@@ -40,8 +44,11 @@ void main()
         geo_normal = -geo_normal;
     float sun_shadow = getSunShadowFactor(world_pos, world_normal,
         geo_normal, xpos.z);
+    vec2 ao_uv = (gl_FragCoord.xy - u_camera.m_viewport.xy) /
+        u_camera.m_viewport.zw;
+    float ao = clamp(texture(u_ao, ao_uv).r, 0.0, 1.0);
     vec3 hdr = handlePBRDeferred(diffuse_color, pbr, world_normal, eyedir,
-        normal, 1.0 - pbr.x, sun_shadow);
+        normal, 1.0 - pbr.x, sun_shadow, ao);
     hdr += accumulateLights(u_push_constants.m_fullscreen_light_count,
         diffuse_color, normal, xpos, eyedir, 1.0 - pbr.x, pbr.y);
     o_color = vec4(hdr, 1.0);

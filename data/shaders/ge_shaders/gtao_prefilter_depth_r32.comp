@@ -1,0 +1,2 @@
+#define AO_IMAGE_FORMAT r32f
+#include "utils/gtao_prefilter_depth_impl.glsl"

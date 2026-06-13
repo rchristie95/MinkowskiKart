@@ -42,6 +42,11 @@ float BlackHole::m_st_max_distance;   // maximum distance for a black hole to be
 float BlackHole::m_st_max_distance_squared;
 float BlackHole::m_st_force_to_target;
 
+// Overall scale of the black hole relative to the base model extent, applied
+// to both the collision sphere and the visual lens radius so gameplay and
+// appearance stay consistent.
+static const float BH_VISUAL_SCALE = 1.2f;
+
 // -----------------------------------------------------------------------------
 BlackHole::BlackHole(AbstractKart *kart)
         : Flyable(kart, PowerupManager::POWERUP_BLACK_HOLE, 50.0f /* mass */)
@@ -108,9 +113,15 @@ bool BlackHole::updateAndDelete(int ticks)
     const float collapse = remaining < 1.0f ? std::max(0.0f, remaining) : 1.0f;
 
     // Pass world-space sphere radius; shader projects this to screen pixels for R_E.
+    // Lift the rendered singularity ~one radius above the rolling ball so it
+    // sits around kart height as thrown (not hovering high), while the
+    // generous shader occlusion margin keeps the disk from clipping into the
+    // ground. BH_VISUAL_SCALE matches the enlarged collision sphere (see
+    // onFireFlyable) so the lens tracks the bigger ball.
+    const float vis_r = 0.5f * m_extend.getY() * BH_VISUAL_SCALE * collapse;
     SP::setBlackHoleLens(this, irr::core::vector3df(
-        bhpos.getX(), bhpos.getY() + 0.1f, bhpos.getZ()),
-        0.5f * m_extend.getY() * collapse);
+        bhpos.getX(), bhpos.getY() + vis_r * 1.0f, bhpos.getZ()),
+        vis_r);
 #endif
 
     bool can_be_deleted = Flyable::updateAndDelete(ticks);
@@ -261,10 +272,13 @@ void BlackHole::onFireFlyable()
     Flyable::onFireFlyable();
 
     m_has_hit_kart = false;
-    // Register this black hole for screen-space lensing in tonemap.frag
+    // Register this black hole for screen-space lensing in tonemap.frag.
+    // Float the lens above the rolling ball so the disk clears the ground
+    // (see updateAndDelete); visual only, physics unchanged.
 #ifndef SERVER_ONLY
+    const float vis_r = 0.5f * m_extend.getY() * BH_VISUAL_SCALE;
     SP::setBlackHoleLens(this, irr::core::vector3df(getXYZ().getX(),
-        getXYZ().getY() + 0.1f, getXYZ().getZ()), 0.5f * m_extend.getY());
+        getXYZ().getY() + vis_r * 1.0f, getXYZ().getZ()), vis_r);
 #endif
     m_expiry_ticks = World::getWorld()->getTicksSinceStart()
                    + stk_config->time2Ticks(20);
@@ -288,7 +302,7 @@ void BlackHole::onFireFlyable()
 
     const Vec3& normal = m_owner->getNormal();
     createPhysics(y_offset, btVector3(0.0f, 0.0f, m_speed*2),
-                  new btSphereShape(0.5f*m_extend.getY()),
+                  new btSphereShape(0.5f*m_extend.getY()*BH_VISUAL_SCALE),
                   0.4f /*restitution*/,
                   -70.0f*normal /*gravity*/,
                   true /*rotates*/);

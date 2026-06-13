@@ -2,8 +2,6 @@ layout(binding = 0) uniform sampler2D u_displace_mask;
 layout(binding = 2) uniform sampler2D u_displace_color;
 layout(binding = 3) uniform sampler2D u_depth;
 layout(binding = 4) uniform sampler2D u_glow;
-// Half-res blurred ambient occlusion (GEVulkanAOPass, data descriptor)
-layout(set = 1, binding = 7) uniform sampler2D u_ao;
 
 layout(location = 0) in vec2 f_uv;
 
@@ -16,7 +14,24 @@ layout(push_constant) uniform Constants
 
 #include "utils/camera.glsl"
 #include "utils/global_light_data.glsl"
+#include "utils/relativity_bridge.glsl"
+#include "../utils/relativity_visual.vert"
 #include "../utils/displace_utils.frag"
+
+// The skybox is aberrated by the observer's relativistic motion
+// (skybox.frag bends each view ray with transformObserverRayToWorldDirection),
+// so the sun baked into the sky swings as the observer's beta changes. The
+// god-ray / lens-flare sun, however, is projected straight from its world
+// position - without that aberration it ignores the warp and slides around
+// like a foreground object. Aberrate the sun position the exact same way the
+// rest of the scene geometry is (same observer-frame mapping, same distance)
+// so the glow stays locked onto the sky sun. A no-op when relativity visuals
+// are disabled, so non-relativistic behaviour is unchanged.
+vec3 relativisticSunWorldPos()
+{
+    return applyRelativisticVisualPosition(
+        vec4(u_camera.m_godrays_pos.xyz, 1.0)).xyz;
+}
 
 // Screen-space post effects, ported from the SP/OpenGL pipeline so both
 // renderers look identical:
@@ -211,8 +226,10 @@ vec3 godRays(vec2 px)
     if (opacity <= 0.001)
         return vec3(0.0);
 
+    // Aberrate the sun like the sky so the shaft origin tracks the warp.
+    vec3 sun_world = relativisticSunWorldPos();
     vec4 sun_clip = u_camera.m_projection_view_matrix *
-        vec4(u_camera.m_godrays_pos.xyz, 1.0);
+        vec4(sun_world, 1.0);
     if (sun_clip.w <= 0.001 || sun_clip.z <= 0.0)
         return vec3(0.0);
 
@@ -224,7 +241,7 @@ vec3 godRays(vec2 px)
     // any fixed epsilon lets distant walls pass (shafts leaked through
     // geometry). The interposer world radius doubles as the margin.
     float sun_vz = (u_camera.m_view_matrix *
-        vec4(u_camera.m_godrays_pos.xyz, 1.0)).z;
+        vec4(sun_world, 1.0)).z;
     float sun_margin = u_camera.m_godrays_color.w;
 
     // Project the interposer's world radius to pixels (robust to FOV/aspect).
@@ -232,7 +249,7 @@ vec3 godRays(vec2 px)
                           u_camera.m_view_matrix[1][0],
                           u_camera.m_view_matrix[2][0]);
     vec4 rim_clip = u_camera.m_projection_view_matrix *
-        vec4(u_camera.m_godrays_pos.xyz +
+        vec4(sun_world +
              cam_right * u_camera.m_godrays_color.w, 1.0);
     vec2 rim_ndc = rim_clip.xy / max(rim_clip.w, 0.001);
     vec2 rim_screen = vp_xy + (rim_ndc * 0.5 + 0.5) * vp_wh;
@@ -280,8 +297,10 @@ vec3 lensFlare(vec2 px)
     if (opacity <= 0.001)
         return vec3(0.0);
 
+    // Aberrate the sun like the sky so the flare tracks the warp (see godRays).
+    vec3 sun_world = relativisticSunWorldPos();
     vec4 sun_clip = u_camera.m_projection_view_matrix *
-        vec4(u_camera.m_godrays_pos.xyz, 1.0);
+        vec4(sun_world, 1.0);
     if (sun_clip.w <= 0.001 || sun_clip.z <= 0.0)
         return vec3(0.0);
 
@@ -335,7 +354,7 @@ vec3 lensFlare(vec2 px)
     // Soft visibility: fraction of taps around the sun centre that see
     // past-the-sun depth (same view-space test as the god rays).
     float sun_vz = (u_camera.m_view_matrix *
-        vec4(u_camera.m_godrays_pos.xyz, 1.0)).z;
+        vec4(sun_world, 1.0)).z;
     float sun_margin = u_camera.m_godrays_color.w;
     float vis = 0.0;
     float r_vis = 0.012 * vp_wh.y;
@@ -476,6 +495,357 @@ vec3 lightScatter(vec2 px)
     return fog;
 }
 
+// ---- Kerr black hole accretion ----
+// Visuals for the thrown black hole powerup: an inclined accretion disk
+// (the iconic Interstellar look) built in a screen-space frame aligned to
+// the disk's real orientation, with a gravitationally lensed top arc,
+// relativistic Doppler beaming and a thin photon ring. The gameplay
+// position/radius are untouched; everything here is additive on top of the
+// existing screen-space lensing.
+//
+// Cheap value noise + fbm for the procedural accretion plasma.
+float bhHash(vec2 p)
+{
+    return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453);
+}
+float bhNoise(vec2 p)
+{
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(bhHash(i), bhHash(i + vec2(1.0, 0.0)), f.x),
+               mix(bhHash(i + vec2(0.0, 1.0)), bhHash(i + vec2(1.0, 1.0)),
+               f.x), f.y);
+}
+float bhFbm(vec2 p)
+{
+    float v = 0.0, amp = 0.5;
+    for (int i = 0; i < 4; i++)
+    {
+        v += amp * bhNoise(p);
+        p *= 2.02;
+        amp *= 0.5;
+    }
+    return v;
+}
+
+// diskSample(): brightness/colour of the equatorial disk annulus sampled in
+// the disk's local screen frame. a = along the disk (major axis), b =
+// across it (minor axis, already un-squashed by the inclination). doppler
+// is +1 on the approaching (boosted) side, -1 on the receding side. The
+// plasma is a churning procedural field: domain-warped fbm scrolled by a
+// differential (Keplerian) orbital flow so it visibly swirls and boils
+// rather than reading as a static texture stapled to the hole.
+vec3 diskSample(float a, float b, float doppler, out float bright)
+{
+    const float DISK_IN = 1.45;
+    const float DISK_OUT = 3.6;
+    float rho = sqrt(a * a + b * b);
+    bright = 0.0;
+    // Wide guard: the outer envelope is a long exponential tail, so cut off
+    // only far out where it has already faded to nothing (no hard ring).
+    if (rho < DISK_IN * 0.6 || rho > DISK_OUT * 2.4)
+        return vec3(0.0);
+    float t = u_camera.m_postfx_flags2.w;
+    float phi = atan(b, a);
+
+    // Orbital flow: angle advances slowly over time (same handedness so the
+    // rotation never reverses), gently faster toward the inner edge, with a
+    // slow inward drift. Kept low-frequency and low-speed so the plasma
+    // churns smoothly instead of strobing/flickering.
+    float ang_vel = 0.22 + 0.45 / max(rho, 1.1);
+    float u = phi + t * ang_vel;             // along-orbit coordinate
+    float v = rho * 0.8 - t * 0.16;          // slow inward drift
+    // Sample the noise on a slowly orbiting ring (seamless around the disk).
+    vec2 tc = vec2(cos(u), sin(u)) * (1.2 + rho * 0.5) + vec2(0.0, v);
+    float warp = bhFbm(tc * 1.1);
+    float turb = bhFbm(tc * 2.0 + warp * 1.0);
+    // Keep a base level so the brightness modulation never drops to zero
+    // (which read as flicker); the noise rides on top.
+    turb = mix(0.55, turb, 0.8);
+
+    // Radial envelope: soft turbulent inner ramp, then a long exponential
+    // outer tail so the disk fades out smoothly with no fixed-size hard
+    // boundary. x is the colour-ramp coordinate (still 0..1 over the core).
+    float x = clamp((rho - DISK_IN) / (DISK_OUT - DISK_IN), 0.0, 1.0);
+    float inner = smoothstep(DISK_IN * 0.6, DISK_IN * 1.08, rho + turb * 0.45);
+    float outer = exp(-pow(max(rho - DISK_IN, 0.0) / (DISK_OUT - DISK_IN),
+                  1.25) * 1.35);
+    float env = inner * outer;
+    // Strong plasma but with a solid base so it doesn't flicker dark.
+    float prof = env * (0.7 + 1.0 * turb);
+
+    // Temperature ramp: white-hot inner -> orange -> deep red rim.
+    vec3 col = mix(vec3(1.3, 1.15, 0.95), vec3(1.2, 0.5, 0.12),
+        smoothstep(0.0, 0.5, x));
+    col = mix(col, vec3(0.7, 0.13, 0.03), smoothstep(0.5, 1.0, x));
+    // Hotter cores in the bright turbulent knots.
+    col = mix(col, vec3(1.4, 1.32, 1.15), clamp((turb - 0.6) * 1.5, 0.0, 0.6));
+    // Relativistic Doppler beaming + boosting on the approaching side
+    // (the receding side keeps a dim floor so the disk reads all the way
+    // round rather than vanishing on one side).
+    float beam = pow(clamp(1.0 + 0.7 * doppler, 0.45, 2.0), 2.6);
+    col = mix(col, vec3(1.35, 1.3, 1.2), clamp(doppler * 0.5, 0.0, 0.5));
+    col = mix(col, col.bgr * 0.6, clamp(-doppler * 0.6, 0.0, 0.45));
+    bright = max(prof, 0.0) * beam;
+    return col;
+}
+
+// bhEmissionAt(): raw additive emission (disk + lensed arcs + photon ring)
+// of every active black hole, evaluated at an arbitrary screen pixel. Kept
+// separate from the compression/flare so the motion-trail can resample it
+// along the hole's screen-space velocity.
+vec3 bhEmissionAt(vec2 px)
+{
+    vec3 emission = vec3(0.0);
+    vec2 vp_xy = u_camera.m_viewport.xy;
+    vec2 vp_wh = u_camera.m_viewport.zw;
+    vec3 cam_pos = u_camera.m_inverse_view_matrix[3].xyz;
+
+    for (int i = 0; i < 4; i++)
+    {
+        float bh_r = u_camera.m_black_holes[i].w;
+        if (bh_r <= 0.001)
+            continue;
+        vec3 bh_pos = u_camera.m_black_holes[i].xyz;
+
+        vec4 bh_clip = u_camera.m_projection_view_matrix * vec4(bh_pos, 1.0);
+        if (bh_clip.w <= 0.001 || bh_clip.z <= 0.0)
+            continue;
+        vec2 bh_screen = vp_xy + (bh_clip.xy / bh_clip.w * 0.5 + 0.5) * vp_wh;
+
+        // Shadow radius in pixels (R_E), from the world sphere radius.
+        vec3 cam_right = vec3(u_camera.m_view_matrix[0][0],
+                              u_camera.m_view_matrix[1][0],
+                              u_camera.m_view_matrix[2][0]);
+        vec4 rim_clip = u_camera.m_projection_view_matrix *
+            vec4(bh_pos + cam_right * bh_r, 1.0);
+        vec2 rim_screen = vp_xy +
+            (rim_clip.xy / max(rim_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
+        float R_E = max(length(rim_screen - bh_screen), 2.0);
+
+        vec2 d = px - bh_screen;
+        float rr = length(d) / R_E;
+        // Reach past the disk's long outer tail (see diskSample) so it isn't
+        // clipped to a hard circle.
+        if (rr > 9.0)
+            continue;
+        // Fade the disk when the hole is almost on top of the camera: the
+        // shadow then fills the screen and the pure lensing should take
+        // over (otherwise the disk math degenerates into a bright ring).
+        float close_fade = 1.0 - smoothstep(0.32, 0.5, R_E / vp_wh.y);
+        if (close_fade <= 0.0)
+            continue;
+
+        // Occlusion: hide the disk only where scene geometry is clearly in
+        // front of the whole hole (walls, karts). The generous margin (the
+        // disk spans ~3.6 radii and floats above the ball) lets the disk draw
+        // over the surrounding dunes instead of being clipped - matching the
+        // lenient hovering wormhole.
+        float bh_vz = (u_camera.m_view_matrix * vec4(bh_pos, 1.0)).z;
+        bool is_sky = texture(u_depth, px / u_camera.m_screensize).x >= 1.0;
+        if (!is_sky && viewPosAt(px).z < bh_vz - bh_r * 10.0)
+            continue;
+
+        // Disk orientation on screen: project the disk's world normal
+        // (equatorial plane -> world up) to get the minor (across) axis.
+        vec4 up_clip = u_camera.m_projection_view_matrix *
+            vec4(bh_pos + vec3(0.0, bh_r, 0.0), 1.0);
+        vec2 up_screen = vp_xy +
+            (up_clip.xy / max(up_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
+        vec2 minor = normalize(up_screen - bh_screen + vec2(0.0, 1e-4));
+        vec2 major = vec2(-minor.y, minor.x);
+
+        // Inclination: 0 edge-on, 1 face-on. Clamped so the disk always
+        // reads as a clear ellipse (never a degenerate edge-on line).
+        vec3 to_bh = normalize(bh_pos - cam_pos);
+        float incl = clamp(abs(to_bh.y), 0.42, 0.85);
+
+        // Local disk coordinates (un-squash the across axis by inclination).
+        float a = dot(d, major) / R_E;
+        float b = dot(d, minor) / R_E;
+        // Constant spin: the disk always orbits the same way about world up,
+        // so the approaching (Doppler-boosted) side is a stable world
+        // direction projected to screen - it tracks smoothly as the camera
+        // moves instead of flipping.
+        vec3 bw = cross(vec3(0.0, 1.0, 0.0), to_bh);
+        vec4 bw_clip = u_camera.m_projection_view_matrix *
+            vec4(bh_pos + bw * bh_r, 1.0);
+        vec2 bw_screen = vp_xy +
+            (bw_clip.xy / max(bw_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
+        vec2 bright_dir = normalize(bw_screen - bh_screen + vec2(1e-4, 0.0));
+        float doppler = dot(d / max(length(d), 1e-3), bright_dir);
+        float dwarm = clamp(doppler * 0.5 + 0.5, 0.0, 1.0);
+
+        vec3 bh_em = vec3(0.0);
+
+        // Primary (direct) disk image: the inclined annulus ellipse.
+        float bd;
+        vec3 dcol = diskSample(a, b / incl, doppler, bd);
+        bh_em += dcol * bd;
+
+        // Lensed arcs: the far side of the disk is bent up and over the top
+        // of the shadow, the near underside under the bottom. Warm bands
+        // hugging the shadow edge along the minor (vertical) axis.
+        float vert = b / max(rr, 1e-3);            // +1 top, -1 bottom
+        float arc_band = exp(-pow((rr - 1.22) * 3.0, 2.0));
+        float top_arc = arc_band * smoothstep(0.0, 0.55, vert) * 1.35;
+        float bot_arc = arc_band * smoothstep(0.1, 0.7, -vert) * 0.8;
+        vec3 arc_warm = mix(vec3(1.15, 0.55, 0.18), vec3(1.4, 1.3, 1.15),
+            dwarm);
+        bh_em += arc_warm * (top_arc + bot_arc) * mix(0.6, 1.7, dwarm);
+
+        // Photon ring: thin bright circle at the shadow edge, Doppler-tinted.
+        float ring = exp(-pow((rr - 1.04) * 11.0, 2.0));
+        vec3 ring_col = mix(vec3(1.1, 0.8, 0.5), vec3(1.4, 1.3, 1.1), dwarm);
+        bh_em += ring_col * ring * mix(0.5, 1.5, dwarm);
+
+        emission += bh_em * close_fade;
+    }
+    return emission;
+}
+
+// Screen-space velocity of the black hole nearest to px, from camera
+// reprojection (previous projection*view). Drives the disk's ghost trail:
+// as the kart sweeps the hole across the screen the luminous disk smears
+// behind its motion.
+vec2 bhScreenVelocity(vec2 px)
+{
+    vec2 vp_xy = u_camera.m_viewport.xy;
+    vec2 vp_wh = u_camera.m_viewport.zw;
+    float best = 1e9;
+    vec2 vel = vec2(0.0);
+    for (int i = 0; i < 4; i++)
+    {
+        if (u_camera.m_black_holes[i].w <= 0.001)
+            continue;
+        vec3 p = u_camera.m_black_holes[i].xyz;
+        vec4 cur_clip = u_camera.m_projection_view_matrix * vec4(p, 1.0);
+        if (cur_clip.w <= 0.001 || cur_clip.z <= 0.0)
+            continue;
+        vec2 cur = vp_xy + (cur_clip.xy / cur_clip.w * 0.5 + 0.5) * vp_wh;
+        vec4 prev_clip = u_camera.m_previous_pv_matrix * vec4(p, 1.0);
+        if (prev_clip.w <= 0.001)
+            continue;
+        vec2 prev = vp_xy +
+            (prev_clip.xy / prev_clip.w * 0.5 + 0.5) * vp_wh;
+        float dsc = length(px - cur);
+        if (dsc < best)
+        {
+            best = dsc;
+            vel = cur - prev;
+        }
+    }
+    return vel;
+}
+
+// Warm anamorphic lens flare emitted by the accretion disk, so the hole
+// reads as a genuine light source. Ghost sprites stride along the line from
+// the hole through the screen centre, tinted by the disk and faded by depth
+// occlusion; strength shares the lens-flare settings knob.
+vec3 bhLensFlare(vec2 px)
+{
+    float knob = u_camera.m_postfx_flags2.z;
+    if (knob <= 0.001)
+        return vec3(0.0);
+    vec2 vp_xy = u_camera.m_viewport.xy;
+    vec2 vp_wh = u_camera.m_viewport.zw;
+    vec2 center = vp_xy + vp_wh * 0.5;
+    vec3 flare = vec3(0.0);
+
+    for (int i = 0; i < 4; i++)
+    {
+        float bh_r = u_camera.m_black_holes[i].w;
+        if (bh_r <= 0.001)
+            continue;
+        vec3 bh_pos = u_camera.m_black_holes[i].xyz;
+        vec4 bh_clip = u_camera.m_projection_view_matrix * vec4(bh_pos, 1.0);
+        if (bh_clip.w <= 0.001 || bh_clip.z <= 0.0)
+            continue;
+        vec2 bh_ndc = bh_clip.xy / bh_clip.w;
+        if (abs(bh_ndc.x) > 1.2 || abs(bh_ndc.y) > 1.2)
+            continue;
+        vec2 bh_screen = vp_xy + (bh_ndc * 0.5 + 0.5) * vp_wh;
+
+        // Depth occlusion: no flare when scene geometry hides the hole.
+        float bh_vz = (u_camera.m_view_matrix * vec4(bh_pos, 1.0)).z;
+        bool is_sky = texture(u_depth,
+            bh_screen / u_camera.m_screensize).x >= 1.0;
+        if (!is_sky && viewPosAt(bh_screen).z < bh_vz - bh_r * 10.0)
+            continue;
+
+        // Fade the flare out as the hole fills the screen (the disk fades
+        // too at point-blank range) and as it nears the screen edge.
+        vec4 rim_clip = u_camera.m_projection_view_matrix * vec4(bh_pos +
+            vec3(u_camera.m_view_matrix[0][0], u_camera.m_view_matrix[1][0],
+            u_camera.m_view_matrix[2][0]) * bh_r, 1.0);
+        vec2 rim_screen = vp_xy +
+            (rim_clip.xy / max(rim_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
+        float R_E = max(length(rim_screen - bh_screen), 2.0);
+        float close_fade = 1.0 - smoothstep(0.30, 0.5, R_E / vp_wh.y);
+        float edge = (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.x))) *
+            (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.y)));
+        float vis = close_fade * edge;
+        if (vis <= 0.0)
+            continue;
+
+        vec2 axis = center - bh_screen;
+        vec3 warm = vec3(1.25, 0.7, 0.3);
+        vec3 f = vec3(0.0);
+        // A few ghosts mirrored along the flare axis.
+        const vec4 G[4] = vec4[](
+            vec4(0.30, 0.05, 0.18, 0.0),
+            vec4(0.62, 0.028, 0.14, 0.6),
+            vec4(1.15, 0.07, 0.10, 0.2),
+            vec4(1.55, 0.04, 0.07, 0.8));
+        for (int g = 0; g < 4; g++)
+        {
+            vec2 gp = bh_screen + axis * G[g].x;
+            float sz = G[g].y * vp_wh.y;
+            float d = length(px - gp) / sz;
+            float shape = exp(-d * d * 1.8);
+            vec3 gc = mix(warm, warm.bgr, G[g].w);
+            f += gc * (shape * G[g].z);
+        }
+        // Soft halo right at the hole + faint anamorphic streak.
+        float hd = length(px - bh_screen);
+        f += warm * exp(-pow(hd / (0.045 * vp_wh.y), 2.0)) * 0.10;
+        vec2 dp = px - bh_screen;
+        float streak = exp(-pow(dp.y / (0.004 * vp_wh.y), 2.0)) *
+            exp(-pow(dp.x / (0.16 * vp_wh.x), 2.0));
+        f += vec3(1.3, 1.0, 0.7) * streak * 0.14;
+
+        flare += f * vis;
+    }
+    return flare * knob;
+}
+
+vec3 kerrAccretion(vec2 px)
+{
+    // Ghost trail: smear the disk emission along the hole's screen velocity
+    // (a crisp head plus a decaying after-image), so a moving hole drags a
+    // luminous tail instead of looking stapled in place.
+    vec3 em = bhEmissionAt(px);
+    vec2 vel = bhScreenVelocity(px);
+    if (dot(vel, vel) > 0.25)
+    {
+        const int N = 5;
+        const float TRAIL = 4.0;   // frames of smear
+        for (int k = 1; k <= N; k++)
+        {
+            float t = float(k) / float(N);
+            em += bhEmissionAt(px + vel * (t * TRAIL)) * (0.3 * (1.0 - t));
+        }
+    }
+
+    // The disk is a light source: emit a warm lens flare.
+    em += bhLensFlare(px);
+
+    // Compress so the additive plasma keeps detail on this tonemapped
+    // input instead of clipping to white.
+    return em / (1.0 + sceneLuma(em) * 0.4);
+}
+
 void main()
 {
 #ifdef PBR_ENABLED
@@ -514,18 +884,29 @@ void main()
             vec2 rim_screen = vp_xy + (rim_ndc * 0.5 + 0.5) * vp_wh;
             float R_E = max(length(rim_screen - bh_screen), 2.0);
 
-            float bh_depth01 = bh_clip.z / bh_clip.w;
-
             vec2 delta = src_px - bh_screen;
             float r = length(delta);
 
-            if (r > 0.5 && r < R_E * 6.0)
+            // Outer bound extended so the deflection can ease off gradually
+            // rather than snapping at a hard radius (the visible lensing
+            // boundary).
+            if (r > 0.5 && r < R_E * 9.0)
             {
-                // Skip lensing where scene is in front of the black hole.
-                float this_depth =
-                    texture(u_depth, frag_px / u_camera.m_screensize).x;
-                if (this_depth >= bh_depth01 - 0.02)
+                // Skip lensing where scene is in front of the black hole
+                // (view-space compare: raw depth01 epsilons let distant
+                // walls pass).
+                float bh_vz = (u_camera.m_view_matrix *
+                    vec4(u_camera.m_black_holes[bh_i].xyz, 1.0)).z;
+                if (viewPosAt(frag_px).z >=
+                    bh_vz - u_camera.m_black_holes[bh_i].w * 10.0)
                 {
+                    // Frame dragging (Kerr): the deflection direction is
+                    // swirled around the spin axis, strongest near the
+                    // horizon.
+                    float drag = min(0.9 * (R_E * R_E) / (r * r), 0.8);
+                    float cd = cos(drag), sd = sin(drag);
+                    vec2 dragged = vec2(cd * delta.x - sd * delta.y,
+                                        sd * delta.x + cd * delta.y);
                     float r_src = r - (R_E * R_E) / r;
                     if (r_src <= 0.0)
                     {
@@ -533,9 +914,15 @@ void main()
                     }
                     else
                     {
-                        src_px = bh_screen + normalize(delta) * r_src;
+                        // Ease the deflection (and its darkening) smoothly to
+                        // zero toward the outer edge so the lensed region
+                        // blends into the scene with no hard ring/seam.
+                        vec2 deflected = bh_screen + (dragged / r) * r_src;
+                        float fade = 1.0 - smoothstep(R_E * 3.0, R_E * 9.0, r);
+                        src_px = mix(src_px, deflected, fade);
                         distortion_strength = max(distortion_strength,
-                            clamp(1.0 - (r_src / (R_E * 3.0)), 0.0, 1.0));
+                            clamp(1.0 - (r_src / (R_E * 3.0)), 0.0, 1.0) *
+                            fade);
                     }
                     src_px = clamp(src_px, vp_xy, vp_xy + vp_wh);
                 }
@@ -545,7 +932,9 @@ void main()
 
     if (in_event_horizon)
     {
-        o_color = vec4(0.0, 0.0, 0.0, 1.0);
+        // Inside the shadow: pure black, but the front rim of the accretion
+        // disk (matter between camera and hole) still occludes it.
+        o_color = vec4(kerrAccretion(frag_px), 1.0);
         return;
     }
 
@@ -584,13 +973,6 @@ void main()
     // (tied to the anti-aliasing toggle).
     if (u_camera.m_postfx_flags.w > 0.5)
         col = casSharpen(src_px, col);
-    // Ambient occlusion: bilinear upsample of the half-res blurred AO
-    // computed by the GEVulkanAOPass dispatches.
-    if (u_camera.m_postfx_flags.y > 0.5)
-    {
-        vec2 ao_uv = (src_px - vp_xy) / vp_wh;
-        col *= texture(u_ao, ao_uv).x;
-    }
     if (u_camera.m_postfx_flags.x > 0.5)
         col += bloomGather(src_px);
     // ---- Track distance fog ----
@@ -629,6 +1011,10 @@ void main()
     if (distortion_strength > 0.01)
         col *= (1.0 - distortion_strength * 0.4);
 
+    // Kerr accretion disk, photon ring and lensed arcs (additive, computed
+    // at the true pixel direction rather than the lens-warped lookup).
+    col += kerrAccretion(frag_px);
+
     // ---- Wormhole: Interstellar-style lensing mouth ----
     // u_wormhole.xyz = world-space mouth centre, .w = radius (>0 iff active).
     if (u_camera.m_wormhole.w > 0.01)
@@ -657,10 +1043,16 @@ void main()
 
             if (r > 0.1 && r < R_LENS_OUTER)
             {
-                // Skip lensing where scene is in front of the wormhole.
-                float this_depth =
-                    texture(u_depth, frag_px / u_camera.m_screensize).x;
-                if (this_depth >= wh_depth01 - 0.02)
+                // Skip lensing only where scene geometry is clearly in front
+                // of the whole mouth (view-space compare with a margin that
+                // spans the mouth radius), so the road the wormhole sits on
+                // does not clip it - matching the black hole.
+                float wh_vz = (u_camera.m_view_matrix *
+                    vec4(u_camera.m_wormhole.xyz, 1.0)).z;
+                bool wh_sky =
+                    texture(u_depth, frag_px / u_camera.m_screensize).x >= 1.0;
+                if (wh_sky || viewPosAt(frag_px).z >=
+                    wh_vz - u_camera.m_wormhole.w * 4.0)
                 {
                     vec2 dir = delta / max(r, 0.001);
                     // Gentle static swirl around the mouth.

@@ -193,11 +193,23 @@ void GEVulkanSceneManager::drawAll(irr::u32 flags)
         cf.getRed(), cf.getGreen(), cf.getBlue(), cf.getAlpha()
     };
     clear_values[1].depthStencil = {1.0f, 0};
-    unsigned count = rtt->getZeroClearCountForPass(GVDFP_HDR);
-    VkClearValue zero;
+    VkClearValue zero = {};
     zero.color = {0, 0, 0, 0};
-    for (unsigned c = 0; c < count; c++)
+    if (rtt->isDeferredFBO())
+    {
+        clear_values.clear();
         clear_values.push_back(zero);
+        VkClearValue depth = {};
+        depth.depthStencil = {1.0f, 0};
+        clear_values.push_back(depth);
+        clear_values.push_back(zero);
+    }
+    else
+    {
+        unsigned count = rtt->getZeroClearCountForPass(GVDFP_HDR);
+        for (unsigned c = 0; c < count; c++)
+            clear_values.push_back(zero);
+    }
 
     VkCommandBuffer cmd = GEVulkanCommandLoader::beginSingleTimeCommands();
 

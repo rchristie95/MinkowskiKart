@@ -1,4 +1,4 @@
-layout (input_attachment_index = 0, binding = 0) uniform subpassInput u_hdr;
+layout(binding = 0) uniform sampler2D u_hdr;
 
 layout(location = 0) out vec4 o_color;
 
@@ -28,7 +28,8 @@ vec3 gradeColor(vec3 c)
 
 void main()
 {
-    vec3 hdr = gradeColor(filmicToneMap(subpassLoad(u_hdr).xyz));
+    vec3 hdr = gradeColor(filmicToneMap(
+        texelFetch(u_hdr, ivec2(gl_FragCoord.xy), 0).xyz));
 
     // Apply Doppler colour shift when relativistic visuals are active.
     // Compute the world-space view direction for this pixel from NDC.

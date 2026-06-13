@@ -25,6 +25,7 @@
 #include "graphics/sp/sp_base.hpp"
 #include "guiengine/engine.hpp"
 #include "guiengine/event_handler.hpp"
+#include "guiengine/message_queue.hpp"
 #include "guiengine/modaldialog.hpp"
 #include "guiengine/screen.hpp"
 #include "guiengine/screen_keyboard.hpp"
@@ -36,6 +37,7 @@
 #include "input/sdl_controller.hpp"
 #include "input/wiimote_manager.hpp"
 #include "karts/abstract_kart.hpp"
+#include "items/powerup_manager.hpp"
 #include "karts/controller/controller.hpp"
 #include "modes/demo_world.hpp"
 #include "modes/world.hpp"
@@ -306,6 +308,74 @@ void InputManager::handleStaticAction(int key, int value)
     if (world != NULL && UserConfigParams::m_artist_debug_mode)
     {
         Debug::handleStaticAction(key, value, control_is_pressed, shift_is_pressed);
+    }
+
+    // ---- Powerup test console (single-player only) ----
+    // F9 toggles it; while open, the number keys grant a powerup to the
+    // local player so effects can be tested without item boxes. Fire with
+    // your normal fire control. Disabled in networked / multiplayer games to
+    // avoid being a cheat there.
+    static bool s_powerup_console = false;
+    if (value > 0 && world != NULL && !NetworkConfig::get()->isNetworking())
+    {
+        if (key == IRR_KEY_F9)
+        {
+            s_powerup_console = !s_powerup_console;
+            if (s_powerup_console)
+            {
+                MessageQueue::add(MessageQueue::MT_GENERIC, core::stringw(
+                    L"Powerup test: 1 BlackHole  2 Wormhole  3 Zipper  "
+                    L"4 Photon  5 Asteroid  6 AntiKarticle  7 TimeDilation  "
+                    L"8 MaxwellB  9 SuperPosition  0 WarpBubble  -  fire with "
+                    L"your fire key, F9 to close"));
+            }
+            else
+            {
+                MessageQueue::add(MessageQueue::MT_GENERIC,
+                    core::stringw(L"Powerup test console closed"));
+            }
+            return;
+        }
+        if (s_powerup_console)
+        {
+            PowerupManager::PowerupType t = PowerupManager::POWERUP_NOTHING;
+            const wchar_t* nm = L"";
+            switch (key)
+            {
+            case IRR_KEY_1: t = PowerupManager::POWERUP_BLACK_HOLE;
+                nm = L"Black Hole"; break;
+            case IRR_KEY_2: t = PowerupManager::POWERUP_WORMHOLE;
+                nm = L"Wormhole"; break;
+            case IRR_KEY_3: t = PowerupManager::POWERUP_ZIPPER;
+                nm = L"Zipper"; break;
+            case IRR_KEY_4: t = PowerupManager::POWERUP_PHOTON;
+                nm = L"Photon"; break;
+            case IRR_KEY_5: t = PowerupManager::POWERUP_ASTEROID;
+                nm = L"Asteroid"; break;
+            case IRR_KEY_6: t = PowerupManager::POWERUP_ANTI_KARTICLE;
+                nm = L"Anti-Karticle"; break;
+            case IRR_KEY_7: t = PowerupManager::POWERUP_TIME_DILATION;
+                nm = L"Time Dilation"; break;
+            case IRR_KEY_8: t = PowerupManager::POWERUP_MAXWELL_BOLTZMANN;
+                nm = L"Maxwell-Boltzmann"; break;
+            case IRR_KEY_9: t = PowerupManager::POWERUP_SUPER_POSITION;
+                nm = L"Super Position"; break;
+            case IRR_KEY_0: t = PowerupManager::POWERUP_WARP_BUBBLE;
+                nm = L"Warp Bubble"; break;
+            default: break;
+            }
+            if (t != PowerupManager::POWERUP_NOTHING)
+            {
+                AbstractKart* k = world->getLocalPlayerKart(0);
+                if (k)
+                {
+                    k->setPowerup(t, 5);
+                    MessageQueue::add(MessageQueue::MT_GENERIC,
+                        core::stringw(L"Granted: ") + nm);
+                }
+                return;
+            }
+        }
     }
 
     switch (key)

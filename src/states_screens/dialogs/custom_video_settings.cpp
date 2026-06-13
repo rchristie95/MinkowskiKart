@@ -117,7 +117,14 @@ void CustomVideoSettingsDialog::beforeAddingWidgets()
     getWidget<CheckBoxWidget>("motionblur")->setState(UserConfigParams::m_motionblur);
     getWidget<CheckBoxWidget>("mlaa")->setState(UserConfigParams::m_mlaa);
     getWidget<CheckBoxWidget>("glow")->setState(UserConfigParams::m_glow);
-    getWidget<CheckBoxWidget>("ssao")->setState(UserConfigParams::m_ssao);
+    // Under Vulkan the ambient-occlusion checkbox drives the experimental GE
+    // AO path (m_vk_debug_ao); under OpenGL it drives the SP SSAO (m_ssao).
+    {
+        const bool vk_cfg =
+            std::string(UserConfigParams::m_render_driver) == "vulkan";
+        getWidget<CheckBoxWidget>("ssao")->setState(vk_cfg ?
+            UserConfigParams::m_vk_debug_ao : UserConfigParams::m_ssao);
+    }
     getWidget<CheckBoxWidget>("ssr")->setState(UserConfigParams::m_ssr);
     getWidget<CheckBoxWidget>("bloom")->setState(UserConfigParams::m_bloom);
     getWidget<CheckBoxWidget>("lightscattering")->setState(UserConfigParams::m_light_scatter);
@@ -216,8 +223,22 @@ GUIEngine::EventPropagation CustomVideoSettingsDialog::processEvent(const std::s
             UserConfigParams::m_mlaa =
                 advanced_pipeline && getWidget<CheckBoxWidget>("mlaa")->getState();
 
-            UserConfigParams::m_ssao =
-                advanced_pipeline && getWidget<CheckBoxWidget>("ssao")->getState();
+            // Ambient occlusion: under OpenGL this is the SP SSAO pass
+            // (m_ssao); under Vulkan it drives the experimental GE AO path
+            // (m_vk_debug_ao, also settable via --enable-vulkan-ao). Write
+            // whichever matches the renderer being applied so neither
+            // clobbers the other.
+            {
+                const bool vk_selected = StringUtils::wideToUtf8(
+                    getWidget<GUIEngine::SpinnerWidget>("render_driver")
+                    ->getStringValue().make_lower()) == "vulkan";
+                const bool ao_on = advanced_pipeline &&
+                    getWidget<CheckBoxWidget>("ssao")->getState();
+                if (vk_selected)
+                    UserConfigParams::m_vk_debug_ao = ao_on;
+                else
+                    UserConfigParams::m_ssao = ao_on;
+            }
             UserConfigParams::m_ssr =
                 advanced_pipeline && getWidget<CheckBoxWidget>("ssr")->getState();
             UserConfigParams::m_light_shaft =
@@ -368,9 +389,10 @@ void CustomVideoSettingsDialog::updateActivation(const std::string& renderer)
     getWidget<CheckBoxWidget>("motionblur")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("dof")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("mlaa")->setActive(light || (vk && real_light));
-    // Ambient occlusion is not offered under Vulkan; the renderer also
-    // ignores it there.
-    getWidget<CheckBoxWidget>("ssao")->setActive(light && !vk);
+    // Ambient occlusion: the SP/OpenGL SSAO pass, or under Vulkan the
+    // experimental GE ambient-occlusion path (m_vk_debug_ao). Offered for
+    // both renderers whenever the advanced (dynamic-light) pipeline is on.
+    getWidget<CheckBoxWidget>("ssao")->setActive(light || (vk && real_light));
     // Vulkan post-processing style knobs (the GL pipeline ignores them)
     getWidget<SpinnerWidget>("vk_exposure")->setActive(vk && real_light);
     getWidget<SpinnerWidget>("vk_saturation")->setActive(vk && real_light);

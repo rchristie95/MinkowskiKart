@@ -712,6 +712,7 @@ void cmdLineHelp()
     "       --disable-texture-compression Disable texture compression.\n"
     "       --enable-ssao      Enable screen space ambient occlusion.\n"
     "       --disable-ssao     Disable screen space ambient occlusion.\n"
+    "       --enable-vulkan-ao Enable hidden Vulkan ambient occlusion test path.\n"
     "       --enable-ibl       Enable image based lighting.\n"
     "       --disable-ibl      Disable image based lighting.\n"
     "       --enable-hd-textures Enable high definition textures.\n"
@@ -1025,6 +1026,8 @@ int handleCmdLinePreliminary()
         UserConfigParams::m_ssao = true;
     else if (CommandLine::has("--disable-ssao"))
         UserConfigParams::m_ssao = false;
+    if (CommandLine::has("--enable-vulkan-ao"))
+        UserConfigParams::m_vk_debug_ao = true;
     // image based lighting
     if (CommandLine::has("--enable-ibl"))
         UserConfigParams::m_degraded_IBL = false;

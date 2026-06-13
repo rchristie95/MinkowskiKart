@@ -21,7 +21,8 @@ enum GEVulkanDeferredFBOType : unsigned
 
 enum GEVulkanDeferredFBOPass : unsigned
 {
-    GVDFP_HDR = 0,
+    GVDFP_GBUFFER = 0,
+    GVDFP_HDR,
     GVDFP_CONVERT_COLOR,
     GVDFP_DISPLACE_MASK,
     GVDFP_DISPLACE_COLOR,
@@ -63,19 +64,11 @@ public:
     {
         switch (pass)
         {
+        case GVDFP_GBUFFER:
+            return 2;
         case GVDFP_HDR:
-        {
-            unsigned count = 0;
-            for (unsigned i = 0; i < m_attachments.size(); i++)
-            {
-                if (i == GVDFT_HDR)
-                    break;
-                GEVulkanAttachmentTexture* t = m_attachments[i];
-                if (t)
-                    count++;
-            }
-            return count;
-        }
+        case GVDFP_CONVERT_COLOR:
+            return 1;
         case GVDFP_DISPLACE_MASK:
             return (getAttachment<GVDFT_DISPLACE_SSR>() ? 2 : 1) +
                 (getAttachment<GVDFT_GLOW>() ? 1 : 0);

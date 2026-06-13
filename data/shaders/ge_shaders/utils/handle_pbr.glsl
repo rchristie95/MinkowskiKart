@@ -12,7 +12,7 @@ layout (set = 2, binding = 1) uniform samplerCube u_specular;
 
 vec3 handlePBRDeferred(vec3 diffuse_color, vec3 pbr, vec3 world_normal,
                        vec3 eyedir, vec3 normal, float perceptual_roughness,
-                       float sun_shadow)
+                       float sun_shadow, float ambient_occlusion)
 {
     float radiance_level = perceptual_roughness * u_specular_levels_minus_one;
     vec3 reflection = reflect(-eyedir, normal);
@@ -36,9 +36,17 @@ vec3 handlePBRDeferred(vec3 diffuse_color, vec3 pbr, vec3 world_normal,
         irradiance, radiance,
         u_global_light.m_sun_color * sun_shadow,
         u_global_light.m_ambient_color,
-        perceptual_roughness, pbr.y, pbr.z);
+        perceptual_roughness, pbr.y, pbr.z, ambient_occlusion);
 
     return mixed_color;
+}
+
+vec3 handlePBRDeferred(vec3 diffuse_color, vec3 pbr, vec3 world_normal,
+                       vec3 eyedir, vec3 normal, float perceptual_roughness,
+                       float sun_shadow)
+{
+    return handlePBRDeferred(diffuse_color, pbr, world_normal, eyedir,
+        normal, perceptual_roughness, sun_shadow, 1.0);
 }
 
 vec3 handlePBRDeferred(vec3 diffuse_color, vec3 pbr, vec3 world_normal,

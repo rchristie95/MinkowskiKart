@@ -3,6 +3,7 @@
 #include "ge_vulkan_driver.hpp"
 #include "ge_main.hpp"
 
+#include <algorithm>
 #include <array>
 #include <vector>
 #include <functional>
@@ -193,8 +194,14 @@ bool GEVulkanDynamicBuffer::resizeIfNeeded(size_t new_size)
 {
     if (new_size > m_size)
     {
-        destroy();
-        m_size = new_size + 100;
+        // Orphan the current allocations for deferred deletion rather than
+        // calling vkDeviceWaitIdle (full GPU stall) on every growth.
+        orphanBuffers();
+        // Grow geometrically so a per-frame size that creeps upward as the
+        // scene gets busier does not reallocate almost every frame (which
+        // used to thrash and produce recurring ~0.5s hitches). Always reserve
+        // at least the requested size (+100 slack to match the old margin).
+        m_size = std::max(new_size + 100, m_size + m_size / 2);
         for (unsigned i = 0; i < m_host_buffer.size(); i++)
             initHostBuffer(i, m_local_buffer.size() == 0);
         for (unsigned i = 0; i < m_local_buffer.size(); i++)
@@ -203,6 +210,25 @@ bool GEVulkanDynamicBuffer::resizeIfNeeded(size_t new_size)
     }
     return false;
 }   // resizeIfNeeded
+
+// ----------------------------------------------------------------------------
+void GEVulkanDynamicBuffer::orphanBuffers()
+{
+    GEVulkanDriver* vk = getVKDriver();
+    for (unsigned i = 0; i < m_host_buffer.size(); i++)
+    {
+        vk->scheduleBufferDeletion(m_host_buffer[i], m_host_memory[i]);
+        m_host_buffer[i] = VK_NULL_HANDLE;
+        m_host_memory[i] = VK_NULL_HANDLE;
+        m_mapped_addr[i] = NULL;
+    }
+    for (unsigned i = 0; i < m_local_buffer.size(); i++)
+    {
+        vk->scheduleBufferDeletion(m_local_buffer[i], m_local_memory[i]);
+        m_local_buffer[i] = VK_NULL_HANDLE;
+        m_local_memory[i] = VK_NULL_HANDLE;
+    }
+}   // orphanBuffers
 
 // ----------------------------------------------------------------------------
 VkBuffer GEVulkanDynamicBuffer::getCurrentBuffer() const

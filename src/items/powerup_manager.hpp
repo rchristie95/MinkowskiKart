@@ -163,14 +163,16 @@ private:
     /** The weight distribution to be used for the current race. */
     WeightsData m_current_item_weights;
 
-    PowerupType   getPowerupType(const std::string &name) const;
-
     /** Seed for random powerup, for local game it will use a random number,
      *  for network games it will use the start time from server. */
     std::atomic<uint64_t> m_random_seed;
 
 public:
     static void unitTesting();
+    // ------------------------------------------------------------------------
+    /** Maps a powerup name (e.g. "black-hole") to its type; used by the
+     *  MK_GIVE_POWERUP debug hook. POWERUP_NOTHING for an unknown name. */
+    PowerupType   getPowerupType(const std::string &name) const;
 
                   PowerupManager  ();
                  ~PowerupManager  ();

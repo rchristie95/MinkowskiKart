@@ -3,7 +3,7 @@
 #include "ge_culling_tool.hpp"
 #include "ge_main.hpp"
 #include "ge_material_manager.hpp"
-#include "ge_vulkan_ao_pass.hpp"
+#include "ge_vulkan_gtao_pass.hpp"
 #include "ge_vulkan_attachment_texture.hpp"
 #include "ge_vulkan_command_loader.hpp"
 #include "ge_render_info.hpp"
@@ -282,10 +282,10 @@ GEVulkanDrawCall::GEVulkanDrawCall()
         m_hiz_depth = new GEVulkanHiZDepth(vk);
     else
         m_hiz_depth = NULL;
-    if (dfbo && dfbo->getAttachment<GVDFT_DISPLACE_COLOR>())
-        m_ao_pass = new GEVulkanAOPass(vk);
+    if (dfbo)
+        m_gtao_pass = new GEVulkanGTAOPass(vk);
     else
-        m_ao_pass = NULL;
+        m_gtao_pass = NULL;
 }   // GEVulkanDrawCall
 
 // ----------------------------------------------------------------------------
@@ -317,7 +317,7 @@ GEVulkanDrawCall::~GEVulkanDrawCall()
         delete m_shadow_map;
     }
     delete m_hiz_depth;
-    delete m_ao_pass;
+    delete m_gtao_pass;
 }   // ~GEVulkanDrawCall
 
 // ----------------------------------------------------------------------------
@@ -963,10 +963,10 @@ void GEVulkanDrawCall::prepare(GEVulkanCameraSceneNode* cam)
     m_billboard_rotation = MiniGLM::getBulletQuaternion(cam->getViewMatrix());
     if (m_hiz_depth)
         m_hiz_depth->prepare(cam);
-    if (m_ao_pass)
+    if (m_gtao_pass)
     {
         m_update_data_descriptor_sets =
-            m_ao_pass->prepare(cam) || m_update_data_descriptor_sets;
+            m_gtao_pass->prepare(cam) || m_update_data_descriptor_sets;
     }
 }   // prepare
 
@@ -1983,7 +1983,7 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
         case GVPT_DEPTH:
         case GVPT_SOLID:
             color_blend_attachment.resize(vk->getRTTTexture()
-                ->getZeroClearCountForPass(GVDFP_HDR),
+                ->getZeroClearCountForPass(GVDFP_GBUFFER),
                 color_blend_attachment[0]);
             break;
         case GVPT_DISPLACE_MASK:
@@ -2360,7 +2360,8 @@ void GEVulkanDrawCall::createVulkanData()
     shadow_raw_binding.binding = 6;
     bindings.push_back(shadow_raw_binding);
 
-    // Half-res ambient occlusion result (displace_color.frag)
+    // Full-res GTAO result (deferred_pbr.frag), or a white fallback when the
+    // hidden Vulkan AO path is disabled.
     VkDescriptorSetLayoutBinding ao_binding = shadow_pcf_binding;
     ao_binding.binding = 7;
     bindings.push_back(ao_binding);
@@ -3105,24 +3106,25 @@ void GEVulkanDrawCall::updateDataDescriptorSets(GEVulkanDriver* vk)
             }
         }
 
-        // Half-res ambient occlusion result (binding 7)
+        // GTAO result (binding 7). Always write a valid descriptor; when AO
+        // is disabled deferred_pbr.frag samples white/no-occlusion.
         VkDescriptorImageInfo ao_info = {};
-        if (m_ao_pass && m_ao_pass->getResult())
-        {
-            ao_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            ao_info.imageView =
-                (VkImageView)m_ao_pass->getResult()->getTextureHandler();
-            ao_info.sampler = vk->getSampler(GVS_2D_RENDER);
-            data_set.push_back({});
-            VkWriteDescriptorSet& ds = data_set.back();
-            ds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            ds.dstSet = m_data_descriptor_sets[i];
-            ds.dstBinding = 7;
-            ds.dstArrayElement = 0;
-            ds.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            ds.descriptorCount = 1;
-            ds.pImageInfo = &ao_info;
-        }
+        ao_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        GEVulkanTexture* ao_result = m_gtao_pass ?
+            m_gtao_pass->getResult() : NULL;
+        ao_info.imageView = ao_result ?
+            (VkImageView)ao_result->getTextureHandler() :
+            (VkImageView)vk->getWhiteTexture()->getTextureHandler();
+        ao_info.sampler = vk->getSampler(GVS_2D_RENDER);
+        data_set.push_back({});
+        VkWriteDescriptorSet& ds = data_set.back();
+        ds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        ds.dstSet = m_data_descriptor_sets[i];
+        ds.dstBinding = 7;
+        ds.dstArrayElement = 0;
+        ds.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        ds.descriptorCount = 1;
+        ds.pImageInfo = &ao_info;
 
         vkUpdateDescriptorSets(vk->getDevice(), data_set.size(),
             data_set.data(), 0, NULL);
@@ -3437,6 +3439,16 @@ VkRenderPass GEVulkanDrawCall::getRenderPassForPipelineCreation(
         {
             switch (type)
             {
+            case GVPT_DEPTH:
+            case GVPT_SOLID:
+                return fbo->getRTTRenderPass(GVDFP_GBUFFER);
+            case GVPT_DEFERRED_LIGHTING:
+            case GVPT_SKYBOX:
+                return fbo->getRTTRenderPass(GVDFP_HDR);
+            case GVPT_DEFERRED_CONVERT_COLOR:
+            case GVPT_GHOST_DEPTH:
+            case GVPT_TRANSPARENT:
+                return fbo->getRTTRenderPass(GVDFP_CONVERT_COLOR);
             case GVPT_DISPLACE_MASK:
                 return fbo->getRTTRenderPass(GVDFP_DISPLACE_MASK);
             case GVPT_DISPLACE_COLOR:
@@ -3463,8 +3475,7 @@ uint32_t GEVulkanDrawCall::getSubpassForPipelineCreation(
             if (type == GVPT_DISPLACE_MASK || type == GVPT_DISPLACE_COLOR)
                 return 0;
         }
-        return type == GVPT_DEFERRED_LIGHTING || type == GVPT_SKYBOX ? 1 :
-            type >= GVPT_DEFERRED_CONVERT_COLOR ? 2 : 0;
+        return 0;
     }
     return 0;
 }   // getSubpassForPipelineCreation

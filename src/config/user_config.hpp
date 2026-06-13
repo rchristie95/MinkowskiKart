@@ -758,6 +758,10 @@ namespace UserConfigParams
     PARAM_PREFIX IntUserConfigParam         m_vk_flare
         PARAM_DEFAULT(IntUserConfigParam(45, "vk_flare",
         &m_video_group, "Vulkan sun lens flare strength x0.01 (0-100)"));
+    PARAM_PREFIX BoolUserConfigParam        m_vk_debug_ao
+        PARAM_DEFAULT(BoolUserConfigParam(false, "vk_debug_ao",
+        &m_video_group, "Experimental Vulkan ambient occlusion (custom video "
+        "settings toggle); off by default"));
 
 #if defined(MOBILE_STK)
     PARAM_PREFIX BoolUserConfigParam        m_vulkan_fullscreen_desktop

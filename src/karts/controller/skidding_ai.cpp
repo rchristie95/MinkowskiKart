@@ -354,6 +354,17 @@ void SkiddingAI::update(int ticks)
     if(RaceManager::get()->isTimeTrialMode() && (m_world->getTime()<5.0f) )
         m_controls->setFire(false);
 
+    // Debug: MK_AI_FIRE=1 makes every AI kart fire its current powerup on a
+    // fixed cadence, so debug-granted items (see MK_GIVE_POWERUP) are
+    // actually launched and their flight / effect can be observed.
+    static const bool debug_ai_fire = getenv("MK_AI_FIRE") != NULL;
+    if (debug_ai_fire && !m_world->isStartPhase() &&
+        m_kart->getPowerup()->getType() != PowerupManager::POWERUP_NOTHING &&
+        std::fmod(m_world->getTime(), 1.5) < dt)
+    {
+        m_controls->setFire(true);
+    }
+
     /*And obviously general kart stuff*/
     AIBaseLapController::update(ticks);
 }   // update

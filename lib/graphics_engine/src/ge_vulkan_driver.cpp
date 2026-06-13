@@ -17,7 +17,7 @@
 #include "ge_vulkan_draw_call.hpp"
 #include "ge_vulkan_dynamic_spm_buffer.hpp"
 #include "ge_vulkan_features.hpp"
-#include "ge_vulkan_ao_pass.hpp"
+#include "ge_vulkan_gtao_pass.hpp"
 #include "ge_vulkan_hiz_depth.hpp"
 #include "ge_vulkan_mesh_cache.hpp"
 #include "ge_vulkan_scene_manager.hpp"
@@ -710,6 +710,13 @@ void GEVulkanDriver::destroyVulkan()
     GEVulkanShaderManager::destroy();
 
     GEVulkanCommandLoader::destroy();
+
+    // Free any dynamic-buffer allocations still pending deferred deletion
+    // while the device (and VMA allocator) are still alive. The scene manager
+    // clear above destroyed all draw calls, so the GPU no longer references
+    // them; the GEVulkanDynamicBuffer destructors already wait idle.
+    handleDeferredBufferDeletions(true/*force*/);
+
     for (std::mutex* m : m_graphics_queue_mutexes)
         delete m;
     m_graphics_queue_mutexes.clear();
@@ -1817,6 +1824,10 @@ bool GEVulkanDriver::endScene()
     vkResetFences(m_vk->device, 1, &fence);
     vkResetCommandPool(m_vk->device, m_vk->command_pools[m_current_frame], 0);
 
+    // The fence above guarantees this frame slot's previous GPU work is done,
+    // so it is safe to retire any buffers orphaned long enough ago.
+    handleDeferredBufferDeletions(false/*force*/);
+
     VkSemaphore semaphore = m_vk->image_available_semaphores[m_current_semaphore];
     VkResult result = vkAcquireNextImageKHR(m_vk->device, m_vk->swap_chain,
         std::numeric_limits<uint64_t>::max(), semaphore, VK_NULL_HANDLE,
@@ -2451,6 +2462,36 @@ void GEVulkanDriver::waitIdle(bool flush_command_loader)
 }   // waitIdle
 
 // ----------------------------------------------------------------------------
+void GEVulkanDriver::scheduleBufferDeletion(VkBuffer buffer,
+                                            VmaAllocation allocation)
+{
+    if (buffer == VK_NULL_HANDLE && allocation == VK_NULL_HANDLE)
+        return;
+    std::lock_guard<std::mutex> lock(m_deferred_buffer_deletions_mutex);
+    // Survive getMaxFrameInFlight() + 1 frames: by then every fence slot that
+    // could have referenced this buffer has been waited on at least once.
+    m_deferred_buffer_deletions.push_back(
+        { buffer, allocation, (int)getMaxFrameInFlight() + 1 });
+}   // scheduleBufferDeletion
+
+// ----------------------------------------------------------------------------
+void GEVulkanDriver::handleDeferredBufferDeletions(bool force)
+{
+    std::lock_guard<std::mutex> lock(m_deferred_buffer_deletions_mutex);
+    for (auto it = m_deferred_buffer_deletions.begin();
+        it != m_deferred_buffer_deletions.end();)
+    {
+        if (force || --it->m_frames_left <= 0)
+        {
+            vmaDestroyBuffer(m_vk->allocator, it->m_buffer, it->m_allocation);
+            it = m_deferred_buffer_deletions.erase(it);
+        }
+        else
+            ++it;
+    }
+}   // handleDeferredBufferDeletions
+
+// ----------------------------------------------------------------------------
 GEVulkanMeshCache* GEVulkanDriver::getVulkanMeshCache() const
 {
     return static_cast<GEVulkanMeshCache*>
@@ -2469,13 +2510,24 @@ void GEVulkanDriver::buildCommandBuffers()
     clear_values[1].depthStencil = {1.0f, 0};
     if (m_rtt_texture)
     {
-        unsigned count = m_rtt_texture->getZeroClearCountForPass(GVDFP_HDR);
-        VkClearValue zero;
+        VkClearValue zero = {};
         zero.color = {0, 0, 0, 0};
-        for (unsigned c = 0; c < count; c++)
-            clear_values.push_back(zero);
         if (m_rtt_texture->isDeferredFBO())
+        {
+            clear_values.clear();
             clear_values.push_back(zero);
+            VkClearValue depth = {};
+            depth.depthStencil = {1.0f, 0};
+            clear_values.push_back(depth);
+            clear_values.push_back(zero);
+        }
+        else
+        {
+            unsigned count =
+                m_rtt_texture->getZeroClearCountForPass(GVDFP_HDR);
+            for (unsigned c = 0; c < count; c++)
+                clear_values.push_back(zero);
+        }
     }
 
     VkRenderPassBeginInfo render_pass_info = {};
@@ -2602,7 +2654,25 @@ void GEVulkanDriver::renderDrawCalls(
             q.first->renderPipeline(this, cmd, GVPT_SOLID, rebind_base_vertex);
             PrimitivesDrawn += q.first->getPolyCount();
         }
-        vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdEndRenderPass(cmd);
+        if (getGEConfig()->m_ssao)
+        {
+            for (auto& q : p)
+            {
+                GEVulkanGTAOPass* ao = q.first->getGTAOPass();
+                if (ao)
+                    ao->generate(cmd);
+            }
+        }
+
+        render_pass_info.clearValueCount =
+            m_rtt_texture->getZeroClearCountForPass(GVDFP_HDR);
+        render_pass_info.renderPass =
+            m_rtt_texture->getRTTRenderPass(GVDFP_HDR);
+        render_pass_info.framebuffer =
+            m_rtt_texture->getRTTFramebuffer(GVDFP_HDR);
+        vkCmdBeginRenderPass(cmd, &render_pass_info,
+            VK_SUBPASS_CONTENTS_INLINE);
         for (auto& q : p)
         {
             if (multiple_viewports)
@@ -2610,7 +2680,26 @@ void GEVulkanDriver::renderDrawCalls(
             q.first->renderDeferredLighting(this, cmd);
             q.first->renderSkyBox(this, cmd);
         }
-        vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdEndRenderPass(cmd);
+
+        render_pass_info.clearValueCount =
+            m_rtt_texture->getZeroClearCountForPass(GVDFP_CONVERT_COLOR);
+        render_pass_info.renderPass =
+            m_rtt_texture->getRTTRenderPass(GVDFP_CONVERT_COLOR);
+        if (m_rtt_texture->useSwapChainOutput() &&
+            !dfbo->getAttachment<GVDFT_DISPLACE_COLOR>())
+        {
+            render_pass_info.framebuffer =
+                m_rtt_texture->getRTTFramebuffer(
+                GVDFP_CONVERT_COLOR + getCurrentImageIndex());
+        }
+        else
+        {
+            render_pass_info.framebuffer =
+                m_rtt_texture->getRTTFramebuffer(GVDFP_CONVERT_COLOR);
+        }
+        vkCmdBeginRenderPass(cmd, &render_pass_info,
+            VK_SUBPASS_CONTENTS_INLINE);
         for (auto& q : p)
         {
             if (multiple_viewports)
@@ -2682,17 +2771,9 @@ void GEVulkanDriver::renderDrawCalls(
                     }
                 }
             }
-            vkCmdEndRenderPass(cmd);
-            // Half-res ambient occlusion dispatches (sampled by
-            // displace_color.frag); recorded outside any render pass.
-            if (getGEConfig()->m_ssao)
+            else
             {
-                for (auto& q : p)
-                {
-                    GEVulkanAOPass* ao = q.first->getAOPass();
-                    if (ao)
-                        ao->generate(cmd);
-                }
+                vkCmdEndRenderPass(cmd);
             }
             render_pass_info.clearValueCount =
                 m_rtt_texture->getZeroClearCountForPass(GVDFP_DISPLACE_COLOR);

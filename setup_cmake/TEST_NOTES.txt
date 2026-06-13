@@ -1,0 +1,153 @@
+============================================================================
+ MinkowskiKart - CLI-only graphics test notes (Vulkan/OpenGL renderer work)
+============================================================================
+No mouse / window control needed. Everything below is command line only.
+The game drives itself in --profile mode (player kart is AI-controlled), so
+AI karts race on their own and you just capture / read logs.
+
+----------------------------------------------------------------------------
+1. BUILD
+----------------------------------------------------------------------------
+  "C:\Users\robso\MinkowskiKart\.build-tools\cmake\cmake-4.3.1-windows-x86_64\bin\cmake.exe" ^
+      --build C:\Users\robso\MinkowskiKart\build-dev --target supertuxkart -j 12
+
+  Output binary: build-dev\bin\MinkowskiKart.exe
+  - Kill any running MinkowskiKart.exe FIRST, or the linker fails with
+    "Permission denied" (the exe is locked):  taskkill /IM MinkowskiKart.exe /F
+  - Shaders in data/shaders/ge_shaders/*.frag|vert|comp are compiled at
+    runtime (shaderc): editing them needs NO rebuild, just relaunch.
+  - C++ changes (lib/graphics_engine, src/) need the build above.
+
+----------------------------------------------------------------------------
+2. RUN (standard test: Shifting Sands, 4 AI karts)
+----------------------------------------------------------------------------
+  Run FROM THE REPO ROOT (C:\Users\robso\MinkowskiKart) - the game resolves
+  data/ relative to the working directory; running elsewhere gives
+  "Could not find file 'supertuxkart.git'".
+
+  build-dev\bin\MinkowskiKart.exe -N --track=sandtrack --numkarts=4 --profile-laps=2
+
+    -N                 no graphics restrictions / benchmark-ish headless-ish
+    --track=sandtrack  Shifting Sands (desert, bright, fog enabled)
+    --numkarts=4       1 player (AI-driven in profile) + 3 AI
+    --profile-laps=N   run N laps then print FPS and exit 0
+
+  Other useful tracks:
+    --track=black_forest   fog + 97 point lights (light scattering / fog test)
+
+  At the end the log prints:  profile: Number of frames: ... Average FPS: ...
+
+----------------------------------------------------------------------------
+3. RENDER DRIVER  (cannot be changed on the CLI - edit config.xml)
+----------------------------------------------------------------------------
+  Config: C:\Users\robso\AppData\Roaming\supertuxkart\config-0.10\config.xml
+
+  Switch driver:
+    sed -i 's/render_driver="opengl"/render_driver="vulkan"/' <config.xml>
+    sed -i 's/render_driver="vulkan"/render_driver="opengl"/' <config.xml>
+
+  Feature toggles in the same file (bisect artifacts by flipping one):
+    enable_dynamic_lights   advanced pipeline / PBR master switch
+    shadows_resolution      0 / 512 / 1024 / 2048   (0 = shadows off)
+    pcss                    true = PCSS soft shadows, false = PCF
+    enable_glow             per-object glow outlines
+    enable_bloom            bloom
+    ssao                    ambient occlusion (OpenGL only; Vulkan ignores)
+    light_scatter           volumetric light scattering (needs foggy track)
+    ssr                     screen space reflection
+    enable_light_shaft      god rays / sun shafts
+    Vulkan style knobs (x scale): vk_exposure(10-40 /10), vk_saturation
+      (80-140 /100), vk_vignette(0-60 /100), vk_sharpness(0-80 /100),
+      vk_flare(0-100 /100)
+
+  ALWAYS restore render_driver="opengl" (or the user's choice) when done.
+
+----------------------------------------------------------------------------
+4. SCREENSHOTS  (in-game, works under both GL and Vulkan)
+----------------------------------------------------------------------------
+  Env var:  MK_AUTO_SHOT="<first_seconds>,<interval_seconds>"
+    Saves a screenshot <first>s after a world loads, then every <interval>s.
+  Example:
+    MK_AUTO_SHOT="15,12" build-dev\bin\MinkowskiKart.exe -N --track=sandtrack ^
+        --numkarts=4 --profile-laps=1
+
+  Output: C:\Users\robso\AppData\Roaming\supertuxkart\config-0.10\screenshots\
+          <track>-<timestamp>.png   (full window resolution)
+
+  Do NOT use OS screen-grab (CopyFromScreen / PrintWindow): they return white
+  when another window has focus. MK_AUTO_SHOT reads the swapchain directly.
+
+  Inspect grain / detail at native res (chat downscales full frames):
+    powershell -File setup_cmake\cropzoom.ps1 -In shot.png -Out z.png ^
+        -X 1100 -Y 800 -W 400 -H 300 -Scale 3
+  (note: window/shot resolution varies, e.g. 2560x1334 or 3840x2001 - check
+   the PNG size before picking crop coords.)
+
+----------------------------------------------------------------------------
+5. EFFECT DEBUG HOOKS (env vars, force effects without the gameplay item)
+----------------------------------------------------------------------------
+  MK_TEST_FX        spawn 2 black holes + 1 wormhole near the player kart
+                    (static placement, for iterating on lensing visuals)
+  MK_TEST_BLUR      force boost motion blur on
+  MK_TEST_COMPACT   force the compactification screen warp on
+  MK_TEST_ZIP       auto-zipper every 4s (exercises boost -> blur decay),
+                    prints boost/blur debug lines
+
+  Powerup debugging (real flyables, not static placement):
+  MK_GIVE_POWERUP=<name>  keep every kart stocked with one powerup so it can
+                    be fired on demand. Names (powerup_manager.cpp):
+                    black-hole, wormhole, zipper, photon, asteroid,
+                    anti-karticle, time-dilation, maxwell-boltzmann,
+                    super_position, warp-bubble.
+  MK_AI_FIRE=1      AI karts fire their current powerup every ~1.5s, so the
+                    granted item is actually launched and its flight/effect
+                    can be observed.
+
+  Example (watch black holes fly/roll through the scene):
+    MK_GIVE_POWERUP=black-hole MK_AI_FIRE=1 MK_AUTO_SHOT="10,2" ^
+        build-dev\bin\MinkowskiKart.exe -N --track=sandtrack ^
+        --numkarts=4 --profile-laps=1
+  (the thrown black hole is a heavy ground projectile - it rolls along the
+   track; look low / near other karts.)
+
+  In-game powerup test console (interactive play, single-player only):
+    F9            toggle the console (shows the key list on screen)
+    1..0          while open, grant a powerup to your kart:
+                  1 BlackHole 2 Wormhole 3 Zipper 4 Photon 5 Asteroid
+                  6 AntiKarticle 7 TimeDilation 8 MaxwellB 9 SuperPosition
+                  0 WarpBubble
+    (fire with your normal fire control.)
+  Disabled automatically in networked / multiplayer games.
+  Implemented in InputManager::handleStaticAction (src/input/input_manager.cpp);
+  needs no artist-debug-mode and is always available offline.
+
+  Example (black hole look):
+    MK_TEST_FX=1 MK_AUTO_SHOT="14,7" build-dev\bin\MinkowskiKart.exe -N ^
+        --track=sandtrack --numkarts=4 --profile-laps=1
+  Note: MK_TEST_FX glues the holes ~8-14 units to the kart, so you mostly
+  see them up close / at varying angles; a really thrown hole travels away.
+
+----------------------------------------------------------------------------
+6. GOTCHAS
+----------------------------------------------------------------------------
+  - exit code 124 from `timeout` is just the SIGTERM kill (lap took longer
+    than the timeout); a clean finish is exit 0 with the "Average FPS" line.
+  - On SIGTERM Vulkan shutdown can print "terminating" / a StackTrace; that
+    is shutdown noise, not a crash, if screenshots/FPS were produced.
+  - Rare "vkQueueSubmit failed" during a run is usually a display-sleep /
+    session event - check Windows Event Log (nvlddmkm) and just rerun.
+  - No Vulkan validation layers installed (no SDK); bisect GPU issues with
+    the config.xml toggles above.
+  - Full game log: config-0.10\stdout.log
+
+----------------------------------------------------------------------------
+7. TYPICAL VERIFY LOOP
+----------------------------------------------------------------------------
+  1) edit shader/code  ->  (rebuild if C++)
+  2) set render_driver="vulkan"
+  3) MK_AUTO_SHOT (+ MK_TEST_FX if testing lensing) profile-laps=1 on sandtrack
+  4) move shots out, cropzoom, read PNGs, compare vs an OpenGL run
+  5) black_forest run for fog / light-scatter cases
+  6) final: 2-lap vulkan run (clean exit, ~115-120 FPS) + 1 OpenGL sanity run
+  7) restore render_driver="opengl"
+============================================================================

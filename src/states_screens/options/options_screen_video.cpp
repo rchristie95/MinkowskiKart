@@ -383,9 +383,14 @@ void OptionsScreenVideo::updateTooltip()
         (UserConfigParams::m_bloom ? _("Bloom: Enabled") :
                                      _("Bloom: Disabled"));
     //I18N: in the graphical options
+    // Under Vulkan, ambient occlusion is the experimental GE path
+    // (m_vk_debug_ao); under OpenGL it is the SP SSAO (m_ssao).
+    const bool ao_on =
+        (std::string(UserConfigParams::m_render_driver) == "vulkan") ?
+        UserConfigParams::m_vk_debug_ao : UserConfigParams::m_ssao;
     tooltip = tooltip + L"\n" +
-        (UserConfigParams::m_ssao ? _("Ambient occlusion: Enabled") :
-                                    _("Ambient occlusion: Disabled"));
+        (ao_on ? _("Ambient occlusion: Enabled") :
+                 _("Ambient occlusion: Disabled"));
     tooltip = tooltip + L"\n" +
         (UserConfigParams::m_ssr ? _("Screen space reflection: Enabled") :
                                    _("Screen space reflection: Disabled"));

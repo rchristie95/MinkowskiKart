@@ -32,6 +32,11 @@ private:
     void initLocalBuffer(unsigned frame);
     // ------------------------------------------------------------------------
     void destroy();
+    // ------------------------------------------------------------------------
+    /** Hands the current buffers/allocations to the driver for deferred
+     *  deletion (freed once no in-flight frame can reference them) instead of
+     *  stalling the whole device with vkDeviceWaitIdle, then nulls them. */
+    void orphanBuffers();
 public:
     // ------------------------------------------------------------------------
     GEVulkanDynamicBuffer(VkBufferUsageFlags usage, size_t initial_size,

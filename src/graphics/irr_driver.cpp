@@ -589,8 +589,11 @@ begin:
                 (int)UserConfigParams::m_shadows_resolution : 0;
             GE::getGEConfig()->m_pcss = UserConfigParams::m_pcss;
             GE::getGEConfig()->m_glow = UserConfigParams::m_glow;
-            // AO is not offered under Vulkan
-            GE::getGEConfig()->m_ssao = false;
+            // Vulkan AO is a hidden developer path until it is tuned enough
+            // for the user-facing graphics settings.
+            GE::getGEConfig()->m_ssao =
+                UserConfigParams::m_dynamic_lights &&
+                UserConfigParams::m_vk_debug_ao;
 #endif
         }
         else

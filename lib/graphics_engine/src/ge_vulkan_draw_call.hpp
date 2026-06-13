@@ -36,7 +36,7 @@ namespace GE
 class GECullingTool;
 class GESPMBuffer;
 class GEVulkanAnimatedMeshSceneNode;
-class GEVulkanAOPass;
+class GEVulkanGTAOPass;
 class GEVulkanAttachmentTexture;
 class GEVulkanCameraSceneNode;
 class GEVulkanDriver;
@@ -213,9 +213,9 @@ private:
 
     GEVulkanHiZDepth* m_hiz_depth;
 
-    // Half-res compute ambient occlusion (sampled via data descriptor
-    // binding 7 by displace_color.frag)
-    GEVulkanAOPass* m_ao_pass;
+    // Hidden Vulkan GTAO path. Deferred lighting samples binding 7; when
+    // disabled the descriptor is a white texture.
+    GEVulkanGTAOPass* m_gtao_pass;
 
     // Sun shadow map pass resources (deferred PBR only). The shadow map is
     // rendered with the GVPT_SHADOW depth-only pipelines before the main
@@ -404,7 +404,7 @@ public:
     // ------------------------------------------------------------------------
     GEVulkanHiZDepth* getHiZDepth() const               { return m_hiz_depth; }
     // ------------------------------------------------------------------------
-    GEVulkanAOPass* getAOPass() const                     { return m_ao_pass; }
+    GEVulkanGTAOPass* getGTAOPass() const              { return m_gtao_pass; }
 };   // GEVulkanDrawCall
 
 }

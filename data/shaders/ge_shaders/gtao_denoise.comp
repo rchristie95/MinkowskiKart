@@ -1,0 +1,2 @@
+#define AO_IMAGE_FORMAT r16f
+#include "utils/gtao_denoise_impl.glsl"

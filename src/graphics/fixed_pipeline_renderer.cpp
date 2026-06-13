@@ -223,8 +223,8 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                 if (test_compact)
                     compactification[0] = 0.7f;
                 // Screen-space ports of the SP/OpenGL advanced pipeline
-                // options (bloom, SSAO, depth of field, anti-aliasing),
-                // applied by displace_color.frag.
+                // options (bloom, depth of field, anti-aliasing), applied by
+                // displace_color.frag. Vulkan AO is handled in deferred PBR.
                 float postfx_flags[4] =
                 {
                     UserConfigParams::m_bloom ? 1.0f : 0.0f,
@@ -251,7 +251,9 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                     scatter_density,
                     // Sun lens flare strength (settings gauge, x0.01)
                     (float)UserConfigParams::m_vk_flare * 0.01f,
-                    0.0f
+                    // Animation clock (seconds, wraps at 3600s) for the
+                    // swirling Kerr accretion disk.
+                    (float)(GE::getMonoTimeMs() % 3600000) * 0.001f
                 };
                 // Post-processing style knobs from the settings gauges
                 float beauty_params[4] =
@@ -266,8 +268,11 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                 // changes settings mid-race (the shadow map resolution
                 // itself applies from the next race).
                 GE::getGEConfig()->m_glow = UserConfigParams::m_glow;
-                // AO is not offered under Vulkan; skip its dispatches
-                GE::getGEConfig()->m_ssao = false;
+                // Vulkan AO is hidden behind a developer toggle and is
+                // applied in deferred lighting, not in displace_color.frag.
+                GE::getGEConfig()->m_ssao =
+                    UserConfigParams::m_dynamic_lights &&
+                    UserConfigParams::m_vk_debug_ao;
                 GE::getGEConfig()->m_pcss = UserConfigParams::m_pcss;
                 GE::getGEConfig()->m_shadow_map_size =
                     UserConfigParams::m_dynamic_lights ?

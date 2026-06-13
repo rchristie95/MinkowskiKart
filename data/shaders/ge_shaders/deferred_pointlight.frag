@@ -1,6 +1,6 @@
-layout (input_attachment_index = 0, binding = 0) uniform subpassInput u_color;
-layout (input_attachment_index = 1, binding = 1) uniform subpassInput u_normal;
-layout (input_attachment_index = 2, binding = 2) uniform subpassInput u_depth;
+layout(binding = 0) uniform sampler2D u_color;
+layout(binding = 1) uniform sampler2D u_normal;
+layout(binding = 2) uniform sampler2D u_depth;
 
 layout(location = 0) flat in int light_idx;
 
@@ -12,15 +12,18 @@ layout(location = 0) out vec4 o_color;
 
 void main()
 {
-    float depth = subpassLoad(u_depth).x;
+    ivec2 px = ivec2(gl_FragCoord.xy);
+    float depth = texelFetch(u_depth, px, 0).x;
     if (depth == 1.0)
     {
         o_color = vec4(0.0, 0.0, 0.0, 1.0);
         return;
     }
-    vec3 diffuse_color = subpassLoad(u_color).xyz;
-    vec3 pbr = vec3(subpassLoad(u_normal).zw, subpassLoad(u_color).w);
-    vec3 world_normal = DecodeNormal(subpassLoad(u_normal).xy);
+    vec4 color_data = texelFetch(u_color, px, 0);
+    vec4 normal_data = texelFetch(u_normal, px, 0);
+    vec3 diffuse_color = color_data.xyz;
+    vec3 pbr = vec3(normal_data.zw, color_data.w);
+    vec3 world_normal = DecodeNormal(normal_data.xy);
     vec3 xpos = getPosFromUVDepth(vec3(gl_FragCoord.xy, depth),
         u_camera.m_viewport, u_camera.m_inverse_projection_matrix);
     vec3 eyedir = -normalize(xpos);

@@ -15,8 +15,7 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
                                          const core::dimension2d<u32>& size,
                                          bool swapchain_output)
                    : GEVulkanFBOTexture(vk, size,
-                     !(!vk->getSeparateRTTTexture() &&
-                     getGEConfig()->m_auto_deferred_type == GADT_DISPLACE)),
+                     false/*lazy_depth*/),
                      m_swapchain_output(swapchain_output)
 {
     m_attachments = {};
@@ -27,8 +26,7 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
     {
         m_attachments[i] = new GEVulkanAttachmentTexture(vk, size,
             VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+            VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT);
     }
     std::vector<VkFormat> hdr_formats =
@@ -42,8 +40,7 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
         VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT);
     m_attachments[GVDFT_HDR] = new GEVulkanAttachmentTexture(vk, size,
         hdr_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+        VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_COLOR_BIT);
 
     if (!vk->getSeparateRTTTexture() &&
@@ -104,7 +101,7 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
     texture_layout_binding[0].binding = 0;
     texture_layout_binding[0].descriptorCount = 1;
     texture_layout_binding[0].descriptorType =
-        VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     texture_layout_binding[0].pImmutableSamplers = NULL;
     texture_layout_binding[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     texture_layout_binding[1] = texture_layout_binding[0];
@@ -127,7 +124,7 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
 
     // m_descriptor_pool[GVDFP_HDR]
     VkDescriptorPoolSize pool_size;
-    pool_size.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_size.descriptorCount = texture_layout_binding.size();
 
     VkDescriptorPoolCreateInfo pool_info = {};
@@ -164,20 +161,23 @@ GEVulkanDeferredFBO::GEVulkanDeferredFBO(GEVulkanDriver* vk,
     image_infos[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_infos[0].imageView =
         (VkImageView)m_attachments[GVDFT_COLOR]->getTextureHandler();
+    image_infos[0].sampler = m_vk->getSampler(GVS_NEAREST);
     image_infos[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_infos[1].imageView =
         (VkImageView)m_attachments[GVDFT_NORMAL]->getTextureHandler();
+    image_infos[1].sampler = m_vk->getSampler(GVS_NEAREST);
     image_infos[2].imageLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     image_infos[2].imageView =
         (VkImageView)m_depth_texture->getTextureHandler();
+    image_infos[2].sampler = m_vk->getSampler(GVS_NEAREST);
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write_descriptor_set.dstBinding = 0;
     write_descriptor_set.dstArrayElement = 0;
     write_descriptor_set.descriptorType =
-        VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     write_descriptor_set.descriptorCount = image_infos.size();
     write_descriptor_set.pBufferInfo = 0;
     write_descriptor_set.dstSet = m_descriptor_set[GVDFP_HDR];
@@ -219,7 +219,7 @@ void GEVulkanDeferredFBO::initConvertColorDescriptor(GEVulkanDriver* vk)
     texture_layout_binding[0].binding = 0;
     texture_layout_binding[0].descriptorCount = 1;
     texture_layout_binding[0].descriptorType =
-        VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     texture_layout_binding[0].pImmutableSamplers = NULL;
     texture_layout_binding[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -238,7 +238,7 @@ void GEVulkanDeferredFBO::initConvertColorDescriptor(GEVulkanDriver* vk)
 
     // m_descriptor_pool[GVDFP_CONVERT_COLOR]
     VkDescriptorPoolSize pool_size;
-    pool_size.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_size.descriptorCount = texture_layout_binding.size();
 
     VkDescriptorPoolCreateInfo pool_info = {};
@@ -275,13 +275,14 @@ void GEVulkanDeferredFBO::initConvertColorDescriptor(GEVulkanDriver* vk)
     image_infos[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_infos[0].imageView =
         (VkImageView)m_attachments[GVDFT_HDR]->getTextureHandler();
+    image_infos[0].sampler = m_vk->getSampler(GVS_NEAREST);
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write_descriptor_set.dstBinding = 0;
     write_descriptor_set.dstArrayElement = 0;
     write_descriptor_set.descriptorType =
-        VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     write_descriptor_set.descriptorCount = image_infos.size();
     write_descriptor_set.pBufferInfo = 0;
     write_descriptor_set.dstSet = m_descriptor_set[GVDFP_CONVERT_COLOR];
@@ -432,232 +433,320 @@ void GEVulkanDeferredFBO::createRTT()
     if (!useSwapChainOutput())
         createOutputImage();
 
-    std::array<VkAttachmentDescription, 5> attachment_desc = {};
-    // HDR attachment
-    attachment_desc[0].format = m_attachments[GVDFT_HDR]->getInternalFormat();
-    attachment_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_desc[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    // Depth attachment
-    attachment_desc[1].format = m_depth_texture->getInternalFormat();
-    attachment_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    if (getAttachment<GVDFT_DISPLACE_COLOR>())
-        attachment_desc[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    else
-        attachment_desc[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_desc[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    if (getAttachment<GVDFT_DISPLACE_COLOR>())
-        attachment_desc[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    else
-        attachment_desc[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    // Color / normal (mixed with pbr data) attachment
-    attachment_desc[2].format = VK_FORMAT_B8G8R8A8_UNORM;
-    attachment_desc[2].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_desc[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment_desc[2].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_desc[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_desc[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_desc[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    attachment_desc[3] = attachment_desc[2];
-    // Output / swapchain attachment
-    bool single_pass_swapchain =
-        useSwapChainOutput() && !getAttachment<GVDFT_DISPLACE_COLOR>();
-    attachment_desc[4] = attachment_desc[2];
-    attachment_desc[4].format = single_pass_swapchain ?
-        m_vk->getSwapChainImageFormat() : VK_FORMAT_B8G8R8A8_UNORM;
-    attachment_desc[4].finalLayout = single_pass_swapchain ?
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR :
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    attachment_desc[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-    VkAttachmentReference hdr_reference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-    VkAttachmentReference depth_reference = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
-    std::array<VkAttachmentReference, 2> pbr_reference =
-        {{
-            { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
-            { 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL }
-        }};
-
-    std::array<VkSubpassDescription, 3> subpass_desc = {};
-    subpass_desc[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_desc[0].colorAttachmentCount = pbr_reference.size();
-    subpass_desc[0].pColorAttachments = pbr_reference.data();
-    subpass_desc[0].pDepthStencilAttachment = &depth_reference;
-
-    std::array<VkAttachmentReference, 3> input_reference =
-        {{
-            { 2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-            { 3, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-            { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL },
-        }};
-    subpass_desc[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_desc[1].colorAttachmentCount = 1;
-    subpass_desc[1].pColorAttachments = &hdr_reference;
-    VkAttachmentReference depth_reference_read_only = depth_reference;
-    depth_reference_read_only.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    subpass_desc[1].pDepthStencilAttachment = &depth_reference_read_only;
-    subpass_desc[1].inputAttachmentCount = input_reference.size();
-    subpass_desc[1].pInputAttachments = input_reference.data();
-
-    VkAttachmentReference final_reference = { 4, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-    subpass_desc[2].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_desc[2].colorAttachmentCount = 1;
-    subpass_desc[2].pColorAttachments = &final_reference;
-    VkAttachmentReference final_input_reference = { 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-    subpass_desc[2].inputAttachmentCount = 1;
-    subpass_desc[2].pInputAttachments = &final_input_reference;
-    subpass_desc[2].pDepthStencilAttachment = &depth_reference;
-
-    // Create the actual render pass
-    VkRenderPassCreateInfo render_pass_info = {};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = attachment_desc.size();
-    render_pass_info.pAttachments = attachment_desc.data();
-    render_pass_info.subpassCount = subpass_desc.size();
-    render_pass_info.pSubpasses = subpass_desc.data();
-    std::vector<VkSubpassDependency> dependencies(4);
-
-    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].dstStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[1].dstSubpass = 1;
-    dependencies[1].srcStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[1].srcAccessMask = 0;
-    dependencies[1].dstStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    dependencies[2].srcSubpass = 0;
-    dependencies[2].dstSubpass = 1;
-    dependencies[2].srcStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[2].dstStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    dependencies[3].srcSubpass = 1;
-    dependencies[3].dstSubpass = 2;
-    dependencies[3].srcStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[3].dstStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[3].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    if (single_pass_swapchain)
-    {
-        VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 2;
-        dependency.srcStageMask =
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask =
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-        dependencies.push_back(dependency);
-    }
-
-    if (getAttachment<GVDFT_DISPLACE_COLOR>())
-    {
-        VkSubpassDependency dependency = {};
-        dependency.srcSubpass = 2;
-        dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.srcStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-        dependencies.push_back(dependency);
-    }
-
-    render_pass_info.dependencyCount = dependencies.size();
-    render_pass_info.pDependencies = dependencies.data();
-
-    m_rtt_render_pass.resize(1, VK_NULL_HANDLE);
-    if (vkCreateRenderPass(m_vk->getDevice(), &render_pass_info, NULL,
-        &m_rtt_render_pass[0]) != VK_SUCCESS)
-        throw std::runtime_error("vkCreateRenderPass failed in createRTT");
-
-    std::vector<std::array<VkImageView, attachment_desc.size()> > attachments(1);
+    m_rtt_render_pass.resize(GVDFP_COUNT, VK_NULL_HANDLE);
+    m_rtt_frame_buffer.resize(GVDFP_COUNT, VK_NULL_HANDLE);
     auto& sciv = m_vk->getSwapChainImageViews();
-    if (single_pass_swapchain)
-        attachments.resize(sciv.size());
-    m_rtt_frame_buffer.resize(attachments.size(), VK_NULL_HANDLE);
-    for (unsigned i = 0; i < attachments.size(); i++)
-    {
-        attachments[i] =
-        {{
-            (VkImageView)m_attachments[GVDFT_HDR]->getTextureHandler(),
-            (VkImageView)m_depth_texture->getTextureHandler(),
-            (VkImageView)m_attachments[GVDFT_COLOR]->getTextureHandler(),
-            (VkImageView)m_attachments[GVDFT_NORMAL]->getTextureHandler(),
-            VK_NULL_HANDLE
-        }};
-        if (getAttachment<GVDFT_DISPLACE_COLOR>())
+
+    auto create_framebuffer =
+        [this](unsigned id, const std::vector<VkImageView>& attachments)
         {
-            attachments[i][4] = (VkImageView)
-                getAttachment<GVDFT_DISPLACE_COLOR>()->getTextureHandler();
+            VkFramebufferCreateInfo framebuffer_info = {};
+            framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebuffer_info.renderPass = m_rtt_render_pass[id];
+            framebuffer_info.attachmentCount = attachments.size();
+            framebuffer_info.pAttachments = attachments.data();
+            framebuffer_info.width = m_depth_texture->getSize().Width;
+            framebuffer_info.height = m_depth_texture->getSize().Height;
+            framebuffer_info.layers = 1;
+
+            if (vkCreateFramebuffer(m_vk->getDevice(), &framebuffer_info,
+                NULL, &m_rtt_frame_buffer[id]) != VK_SUCCESS)
+                throw std::runtime_error("vkCreateFramebuffer failed in createRTT");
+        };
+
+    // GVDFP_GBUFFER: color, depth, normal. The attachments are stored and
+    // sampled by compute AO and deferred lighting after the pass ends.
+    {
+        std::array<VkAttachmentDescription, 3> attachment_desc = {};
+        attachment_desc[0].format =
+            m_attachments[GVDFT_COLOR]->getInternalFormat();
+        attachment_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment_desc[0].finalLayout =
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachment_desc[1].format = m_depth_texture->getInternalFormat();
+        attachment_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment_desc[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment_desc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment_desc[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment_desc[1].finalLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        attachment_desc[2] = attachment_desc[0];
+        attachment_desc[2].format =
+            m_attachments[GVDFT_NORMAL]->getInternalFormat();
+
+        std::array<VkAttachmentReference, 2> color_references =
+        {{
+            { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
+            { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL }
+        }};
+        VkAttachmentReference depth_reference =
+            { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = color_references.size();
+        subpass.pColorAttachments = color_references.data();
+        subpass.pDepthStencilAttachment = &depth_reference;
+
+        std::array<VkSubpassDependency, 2> dependencies = {};
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask =
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        dependencies[0].dstStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT |
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        dependencies[1].dstStageMask =
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        VkRenderPassCreateInfo render_pass_info = {};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount = attachment_desc.size();
+        render_pass_info.pAttachments = attachment_desc.data();
+        render_pass_info.subpassCount = 1;
+        render_pass_info.pSubpasses = &subpass;
+        render_pass_info.dependencyCount = dependencies.size();
+        render_pass_info.pDependencies = dependencies.data();
+
+        if (vkCreateRenderPass(m_vk->getDevice(), &render_pass_info, NULL,
+            &m_rtt_render_pass[GVDFP_GBUFFER]) != VK_SUCCESS)
+            throw std::runtime_error("vkCreateRenderPass failed for GVDFP_GBUFFER");
+
+        create_framebuffer(GVDFP_GBUFFER,
+        {
+            (VkImageView)m_attachments[GVDFT_COLOR]->getTextureHandler(),
+            (VkImageView)m_depth_texture->getTextureHandler(),
+            (VkImageView)m_attachments[GVDFT_NORMAL]->getTextureHandler()
+        });
+    }
+
+    // GVDFP_HDR: deferred lighting writes HDR while sampling stored G-buffer.
+    {
+        std::array<VkAttachmentDescription, 2> attachment_desc = {};
+        attachment_desc[0].format =
+            m_attachments[GVDFT_HDR]->getInternalFormat();
+        attachment_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment_desc[0].finalLayout =
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachment_desc[1].format = m_depth_texture->getInternalFormat();
+        attachment_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        attachment_desc[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment_desc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment_desc[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment_desc[1].initialLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        attachment_desc[1].finalLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+        VkAttachmentReference hdr_reference =
+            { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        VkAttachmentReference depth_reference =
+            { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL };
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &hdr_reference;
+        subpass.pDepthStencilAttachment = &depth_reference;
+
+        std::array<VkSubpassDependency, 2> dependencies = {};
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask =
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[0].dstStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT |
+            VK_ACCESS_SHADER_WRITE_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_SHADER_READ_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        VkRenderPassCreateInfo render_pass_info = {};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount = attachment_desc.size();
+        render_pass_info.pAttachments = attachment_desc.data();
+        render_pass_info.subpassCount = 1;
+        render_pass_info.pSubpasses = &subpass;
+        render_pass_info.dependencyCount = dependencies.size();
+        render_pass_info.pDependencies = dependencies.data();
+
+        if (vkCreateRenderPass(m_vk->getDevice(), &render_pass_info, NULL,
+            &m_rtt_render_pass[GVDFP_HDR]) != VK_SUCCESS)
+            throw std::runtime_error("vkCreateRenderPass failed for GVDFP_HDR");
+
+        create_framebuffer(GVDFP_HDR,
+        {
+            (VkImageView)m_attachments[GVDFT_HDR]->getTextureHandler(),
+            (VkImageView)m_depth_texture->getTextureHandler()
+        });
+    }
+
+    // GVDFP_CONVERT_COLOR: tonemap HDR to the scene color/displace-color
+    // target, then draw ghosts and normal transparencies against the depth.
+    {
+        bool swapchain_output =
+            useSwapChainOutput() && !getAttachment<GVDFT_DISPLACE_COLOR>();
+        std::array<VkAttachmentDescription, 2> attachment_desc = {};
+        attachment_desc[0].format = swapchain_output ?
+            m_vk->getSwapChainImageFormat() : VK_FORMAT_B8G8R8A8_UNORM;
+        attachment_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment_desc[0].finalLayout = swapchain_output ?
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR :
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachment_desc[1].format = m_depth_texture->getInternalFormat();
+        attachment_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        attachment_desc[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment_desc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment_desc[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment_desc[1].initialLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        attachment_desc[1].finalLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+        VkAttachmentReference color_reference =
+            { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        VkAttachmentReference depth_reference =
+            { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL };
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &color_reference;
+        subpass.pDepthStencilAttachment = &depth_reference;
+
+        std::array<VkSubpassDependency, 2> dependencies = {};
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask =
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[0].dstStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT |
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        VkRenderPassCreateInfo render_pass_info = {};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount = attachment_desc.size();
+        render_pass_info.pAttachments = attachment_desc.data();
+        render_pass_info.subpassCount = 1;
+        render_pass_info.pSubpasses = &subpass;
+        render_pass_info.dependencyCount = dependencies.size();
+        render_pass_info.pDependencies = dependencies.data();
+
+        if (vkCreateRenderPass(m_vk->getDevice(), &render_pass_info, NULL,
+            &m_rtt_render_pass[GVDFP_CONVERT_COLOR]) != VK_SUCCESS)
+            throw std::runtime_error("vkCreateRenderPass failed for GVDFP_CONVERT_COLOR");
+
+        if (swapchain_output)
+        {
+            m_rtt_frame_buffer.resize(GVDFP_CONVERT_COLOR + sciv.size(),
+                VK_NULL_HANDLE);
+            for (unsigned i = 0; i < sciv.size(); i++)
+            {
+                std::vector<VkImageView> fb_attachments =
+                {
+                    sciv[i],
+                    (VkImageView)m_depth_texture->getTextureHandler()
+                };
+                VkFramebufferCreateInfo framebuffer_info = {};
+                framebuffer_info.sType =
+                    VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+                framebuffer_info.renderPass =
+                    m_rtt_render_pass[GVDFP_CONVERT_COLOR];
+                framebuffer_info.attachmentCount = fb_attachments.size();
+                framebuffer_info.pAttachments = fb_attachments.data();
+                framebuffer_info.width = m_depth_texture->getSize().Width;
+                framebuffer_info.height = m_depth_texture->getSize().Height;
+                framebuffer_info.layers = 1;
+                if (vkCreateFramebuffer(m_vk->getDevice(), &framebuffer_info,
+                    NULL, &m_rtt_frame_buffer[GVDFP_CONVERT_COLOR + i]) !=
+                    VK_SUCCESS)
+                {
+                    throw std::runtime_error(
+                        "vkCreateFramebuffer failed for GVDFP_CONVERT_COLOR");
+                }
+            }
         }
-        else if (useSwapChainOutput())
-            attachments[i][4] = sciv[i];
         else
-            attachments[i][4] = (VkImageView)getTextureHandler();
-
-        VkFramebufferCreateInfo framebuffer_info = {};
-        framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebuffer_info.renderPass = m_rtt_render_pass[0];
-        framebuffer_info.attachmentCount = attachments[i].size();
-        framebuffer_info.pAttachments = attachments[i].data();
-        framebuffer_info.width = m_depth_texture->getSize().Width;
-        framebuffer_info.height = m_depth_texture->getSize().Height;
-        framebuffer_info.layers = 1;
-
-        if (vkCreateFramebuffer(m_vk->getDevice(), &framebuffer_info,
-            NULL, &m_rtt_frame_buffer[i]) != VK_SUCCESS)
-            throw std::runtime_error("vkCreateFramebuffer failed in createRTT");
+        {
+            VkImageView color_view = getAttachment<GVDFT_DISPLACE_COLOR>() ?
+                (VkImageView)getAttachment<GVDFT_DISPLACE_COLOR>()
+                    ->getTextureHandler() :
+                (VkImageView)getTextureHandler();
+            create_framebuffer(GVDFP_CONVERT_COLOR,
+            {
+                color_view,
+                (VkImageView)m_depth_texture->getTextureHandler()
+            });
+        }
     }
 
     if (getAttachment<GVDFT_DISPLACE_COLOR>())
@@ -771,7 +860,8 @@ void GEVulkanDeferredFBO::createDisplacePasses()
         attachment_desc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment_desc[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachment_desc[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        attachment_desc[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachment_desc[1].finalLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
         VkAttachmentReference color_reference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
         VkAttachmentReference depth_reference = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL };
