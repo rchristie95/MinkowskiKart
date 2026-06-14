@@ -1,0 +1,6 @@
+Spontaneous Breakdown
+
+Runtime meshes/textures generated locally for this project.
+Meshy AI source assets generated and retextured through Meshy AI MCP for this user request.
+Synthetic donkey_bray.ogg generated locally for the Buridan's Ass impact event.
+Project/game code remains under the repository's existing license.

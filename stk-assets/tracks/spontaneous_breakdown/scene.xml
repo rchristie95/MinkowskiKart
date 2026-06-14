@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<scene>
+  <sky-color rgb="3 6 13"/>
+  <camera far="650"/>
+  <sun xyz="-40 110 55" sun-diffuse="220 230 255" sun-specular="255 240 200" ambient="110 115 130" fog="true" fog-color="4 8 16" fog-start="70" fog-end="360"/>
+  <light xyz="46.0 5.0 0.0" id="vl0" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="23.0 5.0 39.8" id="vl1" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="-23.0 5.0 39.8" id="vl2" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="-46.0 5.0 0.0" id="vl3" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="-23.0 5.0 -39.8" id="vl4" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="23.0 5.0 -39.8" id="vl5" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="0.0 10.0 0.0" id="vl6" distance="40.0" energy="1.5" color="255 220 160"/>
+  <track model="spontaneous_breakdown_arena.spm" x="0" y="0" z="0">
+  </track>
+  <object id="sb_goldstone_boson" type="animation" model="goldstone_boson_hazard.spm" xyz="46.000 3.400 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.2" skeletal-animation="false"/>
+  <object id="sb_buridan_donkey" type="animation" model="donkey_hazard.spm" xyz="0.000 15.950 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.5" skeletal-animation="false"/>
+  <object id="sb_bray_sfx" type="sfx-emitter" sound="donkey_bray.ogg" rolloff="0.35" volume="1.0" max_dist="125.0" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" conditions="manual"/>
+  <start position="0" x="33.669" y="4.337" z="4.732" h="82.00"/>
+  <start position="1" x="27.335" y="2.763" z="26.397" h="46.00"/>
+  <start position="2" x="5.904" y="4.337" z="33.483" h="10.00"/>
+  <start position="3" x="-16.658" y="2.763" z="34.154" h="-26.00"/>
+  <start position="4" x="-30.020" y="4.337" z="15.962" h="-62.00"/>
+  <start position="5" x="-37.630" y="2.763" z="-5.289" h="-98.00"/>
+  <start position="6" x="-24.458" y="4.337" z="-23.618" h="-134.00"/>
+  <start position="7" x="-6.599" y="2.763" z="-37.423" h="-170.00"/>
+  <start position="8" x="14.905" y="4.337" z="-30.559" h="-206.00"/>
+  <start position="9" x="33.552" y="2.763" z="-17.840" h="-242.00"/>
+  <big-nitro x="36.705" y="2.163" z="9.835" drop="false"/>
+  <item x="35.355" y="1.144" z="35.355" drop="false"/>
+  <item x="9.835" y="2.163" z="36.705" drop="false"/>
+  <item x="-12.941" y="1.144" z="48.296" drop="false"/>
+  <big-nitro x="-26.870" y="2.163" z="26.870" drop="false"/>
+  <item x="-48.296" y="1.144" z="12.941" drop="false"/>
+  <item x="-36.705" y="2.163" z="-9.835" drop="false"/>
+  <item x="-35.355" y="1.144" z="-35.355" drop="false"/>
+  <big-nitro x="-9.835" y="2.163" z="-36.705" drop="false"/>
+  <item x="12.941" y="1.144" z="-48.296" drop="false"/>
+  <item x="26.870" y="2.163" z="-26.870" drop="false"/>
+  <item x="48.296" y="1.144" z="-12.941" drop="false"/>
+</scene>

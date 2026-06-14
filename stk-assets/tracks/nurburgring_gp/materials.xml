@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<materials>
+  <material name="nurburgring_asphalt.png" ignore="Y" backface-culling="N"/>
+  <material name="nurburgring_collision.png" high-adhesion="Y" has-gravity="Y" backface-culling="N"/>
+  <material name="nurburgring_curb.png" high-adhesion="Y" backface-culling="N"/>
+  <material name="nurburgring_grass.png" backface-culling="N"/>
+</materials>

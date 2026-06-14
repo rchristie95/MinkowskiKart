@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<scene>
+  <sky-color rgb="120 150 190"/>
+  <camera far="1600"/>
+  <sun xyz="200 400 -150" sun-diffuse="255 252 240" sun-specular="255 255 250" ambient="120 122 130" fog="false"/>
+  <track model="nurburgring_road_visual.spm" x="0" y="0" z="0">
+    <static-object model="nurburgring_ground_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>
+    <static-object model="nurburgring_grass_left.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+    <static-object model="nurburgring_grass_right.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+    <static-object model="nurburgring_curb_left.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+    <static-object model="nurburgring_curb_right.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
+  </track>
+  <checks>
+    <check-lap kind="lap" active="true" same-group="0" other-ids="1"/>
+    <check-line kind="activate" same-group="1" other-ids="2" p1="-79.500 18.000 12.468" p2="-81.615 18.000 25.295"/>
+    <check-line kind="activate" same-group="2" other-ids="3" p1="-195.436 18.880 -257.364" p2="-182.956 18.880 -261.006"/>
+    <check-line kind="activate" same-group="3" other-ids="4" p1="101.337 8.240 309.744" p2="104.661 8.240 297.176"/>
+    <check-line kind="lap" active="false" same-group="4" other-ids="1" p1="423.976 35.760 201.443" p2="414.730 35.760 210.581"/>
+  </checks>
+  <start position="0" x="427.253" y="36.480" z="209.451" h="-135.32"/>
+  <start position="1" x="424.977" y="36.480" z="211.701" h="-135.32"/>
+  <start position="2" x="422.702" y="36.480" z="213.951" h="-135.32"/>
+  <start position="3" x="432.885" y="36.600" z="215.145" h="-135.32"/>
+  <start position="4" x="430.609" y="36.600" z="217.395" h="-135.32"/>
+  <start position="5" x="428.334" y="36.600" z="219.645" h="-135.32"/>
+  <start position="6" x="438.517" y="36.720" z="220.840" h="-135.34"/>
+  <start position="7" x="436.240" y="36.720" z="223.090" h="-135.34"/>
+  <start position="8" x="433.964" y="36.720" z="225.339" h="-135.34"/>
+  <start position="9" x="444.145" y="36.840" z="226.539" h="-135.39"/>
+  <start position="10" x="441.867" y="36.840" z="228.787" h="-135.39"/>
+  <start position="11" x="439.589" y="36.840" z="231.034" h="-135.39"/>
+</scene>

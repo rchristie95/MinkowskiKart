@@ -1,8 +1,12 @@
 # Build artifacts
 build/
 build-dev/
+dl_apk/
 /MinkowskiKart-debug.apk
+/android/build/outputs/**/*.apk
+/android/build/outputs/**/*.aab
 /android/converted_textures
+/android/mesa/
 /reports/
 
 # Android source dependencies downloaded for local native builds
@@ -66,3 +70,6 @@ tools/windows_installer/
 
 # Local developer environment file (contains credentials)
 /.mk_local.env
+
+# Large Blender source art exceeds GitHub 100MB limit (keep local)
+SpontaneousBreakdown/Spontaneous_Breakdown.blend

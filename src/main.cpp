@@ -1636,6 +1636,8 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
         }    // for i
     }   // --kartsize-debug
 
+    bool command_line_ai_karts = false;
+
     if(CommandLine::has("--kart", &s))
     {
         const KartProperties *prop = kart_properties_manager->getKart(s);
@@ -1665,6 +1667,7 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
         RaceManager::get()->setDefaultAIKartList(l);
         // Add 1 for the player kart
         RaceManager::get()->setNumKarts((int)l.size()+1);
+        command_line_ai_karts = true;
     }   // --ai
 
     if(CommandLine::has("--aiNP", &s))
@@ -1672,6 +1675,7 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
         const std::vector<std::string> l=StringUtils::split(std::string(s),',');
         RaceManager::get()->setDefaultAIKartList(l);
         RaceManager::get()->setNumKarts((int)l.size());
+        command_line_ai_karts = true;
     }   // --aiNP
 
     if(CommandLine::has("--reverse"))
@@ -1700,11 +1704,14 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
         }
         else if (t->isArena())
         {
-            //if it's arena, don't create AI karts
-            const std::vector<std::string> l;
-            RaceManager::get()->setDefaultAIKartList(l);
-            // Add 1 for the player kart
-            RaceManager::get()->setNumKarts(1);
+            if (!command_line_ai_karts)
+            {
+                // If no test setup was requested, preserve the old one-player
+                // arena shortcut.
+                const std::vector<std::string> l;
+                RaceManager::get()->setDefaultAIKartList(l);
+                RaceManager::get()->setNumKarts(1);
+            }
             RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_3_STRIKES);
         }
         else if (t->isSoccer())
