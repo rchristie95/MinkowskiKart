@@ -2554,6 +2554,12 @@ scene::ISceneNode *IrrDriver::addLight(const core::vector3df &pos,
                 video::SColorf(r, g, b, 0.2f), 0.26f * M_PI / 180.0f);
             light->setRotation(-pos);
             light->setLightType(video::ELT_DIRECTIONAL);
+            // The GE light handler reads l.Direction to build m_sun_direction
+            // (-dir.normalize()).  setRotation doesn't propagate to Direction,
+            // so set it explicitly: direction FROM origin TOWARD the sun position
+            // maps to m_sun_direction pointing from the surface toward the sun.
+            if (pos.getLengthSQ() > 0.01f)
+                light->getLightData().Direction = (-pos).normalize();
         }
         else
         {
@@ -2564,6 +2570,13 @@ scene::ISceneNode *IrrDriver::addLight(const core::vector3df &pos,
             {
                 video::SLight& data = light->getLightData();
                 data.Attenuation.X = energy;
+                // The GE light handler derives m_inverse_range_squared from
+                // Attenuation.Y^2.  The Irrlicht default is 1.0, which makes
+                // the range check (dist_sq * invrange > 1) cull every fragment
+                // beyond 1 unit.  Set 1/radius so the light reaches its full
+                // declared range.
+                if (radius > 0.0f)
+                    data.Attenuation.Y = 1.0f / radius;
             }
         }
         return light;

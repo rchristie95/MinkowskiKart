@@ -2,7 +2,8 @@
 <scene>
   <sky-color rgb="0 0 0"/>
   <camera far="900"/>
-  <sun xyz="0 0 0" sun-diffuse="255 246 210" sun-specular="255 250 225" ambient="44 40 36" fog="false"/>
+  <sun xyz="0 0 0" sun-diffuse="255 255 238" sun-specular="255 255 245" ambient="90 80 65" fog="false"/>
+  <lightshaft opacity="1.35" color="255 225 150" xyz="0 0 0"/>
   <track model="mobius_visual.spm" x="0" y="0" z="0">
     <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>
     <static-object model="mobius_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>
@@ -17,31 +18,31 @@
     <static-object model="mobius_start_gate.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false"/>
     <static-object model="mobius_zippers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost-texture" shadow-pass="false"/>
   </track>
-  <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+  <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1.18 1.18 1.18" interaction="ghost" glow="255 225 130" forcedbloom="true" bloompower="4.0" shadow-pass="false">
     <curve channel="RotY" interpolation="linear" extend="cyclic">
       <p c="1.000 0.000"/>
       <p c="450.000 360.000"/>
     </curve>
   </object>
-  <object id="mobius_sun_corona_inner" type="animation" model="mobius_sun_corona_inner.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+  <object id="mobius_sun_corona_inner" type="animation" model="mobius_sun_corona_inner.spm" xyz="0 0 0" hpr="0 0 0" scale="1.24 1.24 1.24" interaction="ghost" glow="255 196 90" forcedbloom="true" bloompower="3.5" shadow-pass="false">
     <curve channel="RotZ" interpolation="linear" extend="cyclic">
       <p c="1.000 0.000"/>
       <p c="300.000 360.000"/>
     </curve>
   </object>
-  <object id="mobius_sun_corona_outer" type="animation" model="mobius_sun_corona_outer.spm" xyz="0 0 0" hpr="18 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+  <object id="mobius_sun_corona_outer" type="animation" model="mobius_sun_corona_outer.spm" xyz="0 0 0" hpr="18 0 0" scale="1.30 1.30 1.30" interaction="ghost" glow="255 184 70" forcedbloom="true" bloompower="3.0" shadow-pass="false">
     <curve channel="RotY" interpolation="linear" extend="cyclic">
       <p c="1.000 0.000"/>
       <p c="525.000 -360.000"/>
     </curve>
   </object>
-  <object id="mobius_sun_prominence" type="animation" model="mobius_sun_prominence.spm" xyz="0 0 0" hpr="-12 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">
+  <object id="mobius_sun_prominence" type="animation" model="mobius_sun_prominence.spm" xyz="0 0 0" hpr="-12 0 0" scale="1.36 1.36 1.36" interaction="ghost" glow="255 160 55" forcedbloom="true" bloompower="2.6" shadow-pass="false">
     <curve channel="RotZ" interpolation="linear" extend="cyclic">
       <p c="1.000 0.000"/>
       <p c="420.000 360.000"/>
     </curve>
   </object>
-  <light xyz="0 0 0" id="mobius_sun_light" distance="420.00" energy="8.00" color="255 226 150" type="point"/>
+  <light xyz="0 0 0" id="mobius_sun_light" distance="520.00" energy="600.00" color="255 238 170" type="point"/>
   <object id="mobius_planet_mercury" type="animation" model="mobius_planet_mercury.spm" x="72.349" y="14.263" z="44.020" hpr="0 0 0" scale="2.000 2.000 2.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
   <object id="mobius_planet_venus" type="animation" model="mobius_planet_venus.spm" x="-24.804" y="2.536" z="62.020" hpr="0 0 0" scale="2.800 2.800 2.800" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
   <object id="mobius_planet_earth" type="animation" model="mobius_planet_earth.spm" x="-66.296" y="-7.931" z="-13.856" hpr="0 0 0" scale="3.000 3.000 3.000" interaction="ghost" shadow-pass="false" skeletal-animation="false"/>
