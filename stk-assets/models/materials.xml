@@ -15,6 +15,8 @@
   <material name="traffic_light.png" shader="unlit"/>
   <material name="einstein-referee.png"/>
   <material name="hawking-helicopter.png"/>
+  <material name="calabi-yau.png"/>
+  <material name="superposition-cat.png"/>
   
   <material name="bowling.png" gloss-map="bowling_spec.png"/>
   

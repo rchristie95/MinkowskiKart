@@ -241,7 +241,8 @@ void SPMeshBuffer::uploadGLMesh()
             v_size += pitch;
         }
     }
-    glUnmapBuffer(GL_ARRAY_BUFFER);
+    if (ptr)
+        glUnmapBuffer(GL_ARRAY_BUFFER);
 
     SPTextureManager::get()->increaseGLCommandFunctionCount(1);
     std::weak_ptr<int> life_token = m_life_token;
