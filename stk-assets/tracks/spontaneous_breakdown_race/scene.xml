@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<scene>
+  <sky-color rgb="3 6 13"/>
+  <camera far="650"/>
+  <sun xyz="-40 110 55" sun-diffuse="220 230 255" sun-specular="255 240 200" ambient="110 115 130" fog="true" fog-color="4 8 16" fog-start="70" fog-end="360"/>
+  <light xyz="46.0 5.0 0.0" id="vl0" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="23.0 5.0 39.8" id="vl1" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="-23.0 5.0 39.8" id="vl2" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="-46.0 5.0 0.0" id="vl3" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="-23.0 5.0 -39.8" id="vl4" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="23.0 5.0 -39.8" id="vl5" distance="60.0" energy="2.0" color="200 210 255"/>
+  <light xyz="0.0 10.0 0.0" id="vl6" distance="40.0" energy="1.5" color="255 220 160"/>
+  <track model="spontaneous_breakdown_arena.spm" x="0" y="0" z="0">
+  </track>
+  <object id="race_arches" type="animation" model="race_arch.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" glow="90 200 255" forcedbloom="true" bloompower="1.4" skeletal-animation="false"/>
+  <object id="race_arch_finish" type="animation" model="race_arch_finish.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" glow="255 200 80" forcedbloom="true" bloompower="1.6" skeletal-animation="false"/>
+  <object id="race_lap_banner" type="animation" model="race_lap_banner.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" forcedbloom="true" bloompower="1.2" skeletal-animation="false"/>
+  <object id="sb_goldstone_boson" type="animation" model="goldstone_boson_hazard.spm" xyz="46.000 2.900 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.2" fps="25" skeletal-animation="false">
+    <curve channel="LocX" interpolation="linear" extend="cyclic">
+      <p c="1.000 46.000"/>
+      <p c="7.000 45.301"/>
+      <p c="13.000 43.226"/>
+      <p c="19.000 39.837"/>
+      <p c="25.000 35.238"/>
+      <p c="31.000 29.568"/>
+      <p c="37.000 23.000"/>
+      <p c="43.000 15.733"/>
+      <p c="49.000 7.988"/>
+      <p c="55.000 0.000"/>
+      <p c="61.000 -7.988"/>
+      <p c="67.000 -15.733"/>
+      <p c="73.000 -23.000"/>
+      <p c="79.000 -29.568"/>
+      <p c="85.000 -35.238"/>
+      <p c="91.000 -39.837"/>
+      <p c="97.000 -43.226"/>
+      <p c="103.000 -45.301"/>
+      <p c="109.000 -46.000"/>
+      <p c="115.000 -45.301"/>
+      <p c="121.000 -43.226"/>
+      <p c="127.000 -39.837"/>
+      <p c="133.000 -35.238"/>
+      <p c="139.000 -29.568"/>
+      <p c="145.000 -23.000"/>
+      <p c="151.000 -15.733"/>
+      <p c="157.000 -7.988"/>
+      <p c="163.000 -0.000"/>
+      <p c="169.000 7.988"/>
+      <p c="175.000 15.733"/>
+      <p c="181.000 23.000"/>
+      <p c="187.000 29.568"/>
+      <p c="193.000 35.238"/>
+      <p c="199.000 39.837"/>
+      <p c="205.000 43.226"/>
+      <p c="211.000 45.301"/>
+      <p c="217.000 46.000"/>
+    </curve>
+    <curve channel="LocZ" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="7.000 7.988"/>
+      <p c="13.000 15.733"/>
+      <p c="19.000 23.000"/>
+      <p c="25.000 29.568"/>
+      <p c="31.000 35.238"/>
+      <p c="37.000 39.837"/>
+      <p c="43.000 43.226"/>
+      <p c="49.000 45.301"/>
+      <p c="55.000 46.000"/>
+      <p c="61.000 45.301"/>
+      <p c="67.000 43.226"/>
+      <p c="73.000 39.837"/>
+      <p c="79.000 35.238"/>
+      <p c="85.000 29.568"/>
+      <p c="91.000 23.000"/>
+      <p c="97.000 15.733"/>
+      <p c="103.000 7.988"/>
+      <p c="109.000 0.000"/>
+      <p c="115.000 -7.988"/>
+      <p c="121.000 -15.733"/>
+      <p c="127.000 -23.000"/>
+      <p c="133.000 -29.568"/>
+      <p c="139.000 -35.238"/>
+      <p c="145.000 -39.837"/>
+      <p c="151.000 -43.226"/>
+      <p c="157.000 -45.301"/>
+      <p c="163.000 -46.000"/>
+      <p c="169.000 -45.301"/>
+      <p c="175.000 -43.226"/>
+      <p c="181.000 -39.837"/>
+      <p c="187.000 -35.238"/>
+      <p c="193.000 -29.568"/>
+      <p c="199.000 -23.000"/>
+      <p c="205.000 -15.733"/>
+      <p c="211.000 -7.988"/>
+      <p c="217.000 -0.000"/>
+    </curve>
+    <curve channel="RotY" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="76.000 360.000"/>
+    </curve>
+    <curve channel="RotX" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="131.000 360.000"/>
+    </curve>
+  </object>
+  <object id="sb_buridan_donkey" type="animation" model="donkey_hazard.spm" xyz="0.000 15.950 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.5" fps="25" skeletal-animation="false">
+    <curve channel="LocX" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="40.000 0.000"/>
+      <p c="55.000 14.000"/>
+      <p c="70.000 30.000"/>
+      <p c="85.000 46.000"/>
+      <p c="100.000 55.000"/>
+      <p c="112.000 55.000"/>
+      <p c="127.000 46.000"/>
+      <p c="142.000 30.000"/>
+      <p c="157.000 14.000"/>
+      <p c="172.000 0.000"/>
+      <p c="200.000 0.000"/>
+    </curve>
+    <curve channel="LocY" interpolation="linear" extend="cyclic">
+      <p c="1.000 15.950"/>
+      <p c="40.000 15.950"/>
+      <p c="55.000 13.300"/>
+      <p c="70.000 5.904"/>
+      <p c="85.000 0.950"/>
+      <p c="100.000 3.718"/>
+      <p c="112.000 3.718"/>
+      <p c="127.000 0.950"/>
+      <p c="142.000 5.904"/>
+      <p c="157.000 13.300"/>
+      <p c="172.000 15.950"/>
+      <p c="200.000 15.950"/>
+    </curve>
+    <curve channel="RotZ" interpolation="linear" extend="cyclic">
+      <p c="1.000 0.000"/>
+      <p c="200.000 1440.000"/>
+    </curve>
+  </object>
+  <checks>
+    <check-lap kind="lap" active="true" same-group="0" other-ids="1"/>
+    <check-line kind="activate" same-group="1" other-ids="2" p1="0.000 1.869 37.000" p2="0.000 2.768 55.000"/>
+    <check-line kind="activate" same-group="2" other-ids="3" p1="-37.000 1.869 0.000" p2="-55.000 2.768 0.000"/>
+    <check-line kind="activate" same-group="3" other-ids="4" p1="-0.000 1.869 -37.000" p2="-0.000 2.768 -55.000"/>
+    <check-line kind="lap" active="false" same-group="4" other-ids="1" p1="37.000 1.869 0.000" p2="55.000 2.768 0.000"/>
+  </checks>
+  <start position="0" x="42.582" y="1.239" z="5.984" h="-8.00"/>
+  <start position="1" x="48.523" y="1.272" z="6.819" h="-8.00"/>
+  <start position="2" x="42.320" y="1.239" z="7.615" h="-10.20"/>
+  <start position="3" x="48.226" y="1.272" z="8.677" h="-10.20"/>
+  <start position="4" x="41.997" y="1.239" z="9.234" h="-12.40"/>
+  <start position="5" x="47.857" y="1.272" z="10.522" h="-12.40"/>
+  <start position="6" x="41.611" y="1.239" z="10.839" h="-14.60"/>
+  <start position="7" x="47.418" y="1.272" z="12.351" h="-14.60"/>
+  <start position="8" x="41.165" y="1.239" z="12.428" h="-16.80"/>
+  <start position="9" x="46.909" y="1.272" z="14.163" h="-16.80"/>
+  <small-nitro x="-4.808" y="0.600" z="45.748"/>
+  <small-nitro x="-7.988" y="0.600" z="45.301"/>
+  <small-nitro x="-11.128" y="0.600" z="44.634"/>
+  <small-nitro x="-45.748" y="0.600" z="-4.808"/>
+  <small-nitro x="-45.301" y="0.600" z="-7.988"/>
+  <small-nitro x="-44.634" y="0.600" z="-11.128"/>
+  <small-nitro x="4.808" y="0.600" z="-45.748"/>
+  <small-nitro x="7.988" y="0.600" z="-45.301"/>
+  <small-nitro x="11.128" y="0.600" z="-44.634"/>
+  <small-nitro x="45.748" y="0.600" z="4.808"/>
+  <small-nitro x="45.301" y="0.600" z="7.988"/>
+  <small-nitro x="44.634" y="0.600" z="11.128"/>
+  <big-nitro x="28.638" y="1.458" z="28.638"/>
+  <big-nitro x="-49.745" y="1.663" z="13.329"/>
+  <big-nitro x="20.250" y="1.458" z="-35.074"/>
+  <item x="-32.527" y="0.600" z="32.527"/>
+  <item x="-32.527" y="0.600" z="-32.527"/>
+  <item x="45.301" y="0.600" z="-7.988"/>
+  <banana x="36.201" y="1.034" z="19.248"/>
+  <banana x="-19.248" y="1.034" z="36.201"/>
+  <banana x="-36.201" y="1.034" z="-19.248"/>
+  <banana x="19.248" y="1.034" z="-36.201"/>
+</scene>

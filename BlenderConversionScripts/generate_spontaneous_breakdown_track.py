@@ -498,12 +498,12 @@ def write_scene_xml():
 
     # Signs sit just outside the valley on the gentle outer slope (r=52: V≈0.54 m)
     lines += [
-        # y = ring_height(VALLEY_R) + octahedron_bound_radius(1.0)*scale(2.4) + hover(1.0)
-        # = 0 + 2.4 + 1.0 = 3.4, a constant-height circle that clearly rides above
-        # the (radially symmetric, flat-at-r=46) valley floor with 1.0 m clearance.
+        # y = ring_height(VALLEY_R) + octahedron_bound_radius(1.0)*scale(2.4) + hover(0.5)
+        # = 0 + 2.4 + 0.5 = 2.9, a constant-height circle that rides above the
+        # (radially symmetric, flat-at-r=46) valley floor with 0.5 m clearance.
         # Kept in sync with updateSpontaneousBreakdownEvents(). The golden-glow
         # GLB carries its own baked colour, so no engine glow/forcedbloom here.
-        '  <object id="sb_goldstone_boson" type="animation" model="goldstone_boson_hazard.spm" xyz="46.000 3.400 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.2" skeletal-animation="false"/>\n',
+        '  <object id="sb_goldstone_boson" type="animation" model="goldstone_boson_hazard.spm" xyz="46.000 2.900 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.2" skeletal-animation="false"/>\n',
         # Buridan's donkey rests on the unstable central crown (ring_height(0)=PEAK_H).
         # C++ repositions it to getSpontaneousBreakdownHeight(0)+0.95 each tick; match here.
         f'  <object id="sb_buridan_donkey" type="animation" model="donkey_hazard.spm" xyz="0.000 {ring_height(0.0)+0.95:.3f} 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.5" skeletal-animation="false"/>\n',
@@ -530,7 +530,7 @@ def write_track_xml():
         version        = "7"
         groups         = "standard minkowski"
         designer       = "Robson Christie"
-        music          = "highway_gravel.music"
+        music          = "grid_burn.music"
         arena          = "Y"
         max-arena-players = "10"
         screenshot     = "spontaneous_breakdown_screenshot.png"

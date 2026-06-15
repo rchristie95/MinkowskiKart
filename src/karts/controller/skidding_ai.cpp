@@ -30,6 +30,7 @@
 #include "items/item_manager.hpp"
 #include "items/powerup.hpp"
 #include "items/projectile_manager.hpp"
+#include "items/wormhole.hpp"
 #include "karts/abstract_kart.hpp"
 #include "karts/controller/kart_control.hpp"
 #include "karts/controller/ai_properties.hpp"
@@ -412,6 +413,19 @@ void SkiddingAI::handleSteering(float dt)
 
     float steer_angle = 0.0f;
 
+    // Top priority: stay clear of wormhole exits. The teleporter is
+    // bidirectional, so touching an exit throws the kart backwards to the
+    // entrance; since the exit sits on the racing line ahead, an unaware AI
+    // drives back into it and loops forever. This overrides the crash/off-track
+    // handling below - a brief detour is far better than the loop, and it must
+    // run even while the AI is busy dodging the crowd of karts firing them.
+    Vec3 wormhole_avoid_point;
+    if (steerToAvoidWormholeExit(&wormhole_avoid_point))
+    {
+        setSteering(steerToPoint(wormhole_avoid_point), dt);
+        return;
+    }
+
     /*The AI responds based on the information we just gathered, using a
      *finite state machine.
      */
@@ -504,6 +518,11 @@ void SkiddingAI::handleSteering(float dt)
         // aim to collect item, or steer to avoid a bad item.
         if(m_ai_properties->m_collect_avoid_items && m_kart->getBlockedByPhotonTicks()<=0)
             handleItemCollectionAndAvoidance(&aim_point, last_node);
+
+        // Aim for a wormhole entrance if one is conveniently ahead: driving
+        // through it is a forward shortcut. (Exit avoidance is handled with
+        // higher priority at the top of this function.)
+        steerToCollectWormholeEntrance(&aim_point);
 
         steer_angle = steerToPoint(aim_point);
     }  // if m_current_track_direction!=LEFT/RIGHT
@@ -760,6 +779,117 @@ void SkiddingAI::handleItemCollectionAndAvoidance(Vec3 *aim_point,
     }   // if item to consider was found
 
 }   // handleItemCollectionAndAvoidance
+
+//-----------------------------------------------------------------------------
+/** Checks for a wormhole exit lying ahead on our path and, if found, returns an
+ *  aim point that steers the kart to pass it at a safe lateral distance.
+ *
+ *  A wormhole teleporter is bidirectional: entering the entrance jumps the kart
+ *  forwards (a useful shortcut), but entering the *exit* jumps it backwards to
+ *  the entrance. The exit is placed on the racing line ahead, so an unaware AI
+ *  drives straight into it, is thrown back, drives into it again, and loops
+ *  forever. To break that, we aim at a point beside the exit (at the exit's own
+ *  distance, like steerToAvoid() does for items) rather than nudging the far
+ *  aim point - a distant nudge barely moves the kart near the exit and is too
+ *  weak to clear the trigger zone.
+ *  \param aim_point Set to the avoidance point when this returns true.
+ *  \return True if an exit is close enough ahead that we must steer around it.
+ */
+bool SkiddingAI::steerToAvoidWormholeExit(Vec3 *aim_point)
+{
+    std::vector<Vec3> entries;
+    std::vector<Vec3> exits;
+    ProjectileManager::get()->getWormholeEndpoints(&entries, &exits);
+    if (exits.empty())
+        return false;
+
+    // Maps a world point into the kart's local frame: +z ahead, x lateral
+    // (see steerToPoint()).
+    const btTransform to_local = m_kart->getTrans().inverse();
+    // Keep the kart centre this far from the exit; the teleport triggers within
+    // getTriggerRadius() of the endpoint, so clear that plus a safety margin.
+    const float clearance = Wormhole::getTriggerRadius()
+                          + 0.5f * m_kart->getKartWidth() + 1.5f;
+    const float lookahead = 35.0f;
+
+    // Find the closest exit that is ahead of us and roughly in our path.
+    int   nearest      = -1;
+    float nearest_dist = lookahead;
+    for (unsigned int i = 0; i < exits.size(); i++)
+    {
+        const Vec3 local = to_local(exits[i]);
+        if (local.getZ() <= 0.0f || local.getZ() > lookahead) // behind/too far
+            continue;
+        if (fabsf(local.getX()) > clearance)         // safely off to the side
+            continue;
+        if (local.getZ() < nearest_dist)
+        {
+            nearest_dist = local.getZ();
+            nearest      = i;
+        }
+    }
+    if (nearest == -1)
+        return false;
+
+    // Horizontal vector pointing to the kart's side (perpendicular to heading).
+    btVector3 forward = m_kart->getTrans().getBasis().getColumn(2);
+    forward.setY(0.0f);
+    if (forward.length2() < 0.0001f)
+        return false;
+    forward.normalize();
+    const btVector3 lateral(forward.getZ(), 0.0f, -forward.getX());
+
+    // Offset the exit to either side and aim for whichever keeps us closest to
+    // the racing line (the centre of the node we are heading for).
+    const Vec3 racing_ref =
+        DriveGraph::get()->getNode(m_next_node_index[m_track_node])->getCenter();
+    const Vec3 candidate_a = exits[nearest] + lateral * clearance;
+    const Vec3 candidate_b = exits[nearest] - lateral * clearance;
+    *aim_point = candidate_a.distance2(racing_ref)
+               < candidate_b.distance2(racing_ref) ? candidate_a : candidate_b;
+    return true;
+}   // steerToAvoidWormholeExit
+
+//-----------------------------------------------------------------------------
+/** Aims for a wormhole entrance when one is conveniently ahead. Driving through
+ *  an entrance teleports the kart forwards along the track, so it is a free
+ *  shortcut. Exit avoidance is handled separately and with higher priority (see
+ *  steerToAvoidWormholeExit()).
+ *  \param aim_point The current aim point, redirected to an entrance if useful.
+ */
+void SkiddingAI::steerToCollectWormholeEntrance(Vec3 *aim_point)
+{
+    std::vector<Vec3> entries;
+    std::vector<Vec3> exits;
+    ProjectileManager::get()->getWormholeEndpoints(&entries, &exits);
+    if (entries.empty())
+        return;
+
+    const Vec3 kart_xyz = m_kart->getXYZ();
+    const btTransform to_local = m_kart->getTrans().inverse();
+
+    // Only divert for an entrance we can reach without a sharp, racing-line-
+    // wrecking turn (about 35 degrees off our heading).
+    const float attract_distance = 30.0f;
+    float best_dist2 = attract_distance * attract_distance;
+    int   best       = -1;
+    for (unsigned int i = 0; i < entries.size(); i++)
+    {
+        const Vec3 local = to_local(entries[i]);
+        if (local.getZ() <= 0.0f)                       // behind the kart
+            continue;
+        if (fabsf(local.getX()) > 0.7f * local.getZ())  // too far to the side
+            continue;
+        const float dist2 = kart_xyz.distance2(entries[i]);
+        if (dist2 < best_dist2)
+        {
+            best_dist2 = dist2;
+            best       = i;
+        }
+    }
+    if (best != -1)
+        *aim_point = entries[best];
+}   // steerToCollectWormholeEntrance
 
 //-----------------------------------------------------------------------------
 /** Returns true if the AI would hit any of the listed bad items when trying

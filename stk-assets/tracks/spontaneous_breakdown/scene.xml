@@ -12,7 +12,7 @@
   <light xyz="0.0 10.0 0.0" id="vl6" distance="40.0" energy="1.5" color="255 220 160"/>
   <track model="spontaneous_breakdown_arena.spm" x="0" y="0" z="0">
   </track>
-  <object id="sb_goldstone_boson" type="animation" model="goldstone_boson_hazard.spm" xyz="46.000 3.400 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.2" skeletal-animation="false"/>
+  <object id="sb_goldstone_boson" type="animation" model="goldstone_boson_hazard.spm" xyz="46.000 2.900 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.2" skeletal-animation="false"/>
   <object id="sb_buridan_donkey" type="animation" model="donkey_hazard.spm" xyz="0.000 15.950 0.000" hpr="0 0 0" scale="2.4 2.4 2.4" interaction="explode" explode="y" shape="sphere" radius="2.5" skeletal-animation="false"/>
   <object id="sb_bray_sfx" type="sfx-emitter" sound="donkey_bray.ogg" rolloff="0.35" volume="1.0" max_dist="125.0" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" conditions="manual"/>
   <start position="0" x="33.669" y="4.337" z="4.732" h="82.00"/>

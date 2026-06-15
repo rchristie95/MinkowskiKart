@@ -124,6 +124,23 @@ public:
     virtual void     restoreState(BareNetworkString *buffer, int count) OVERRIDE;
 
     void             getMinimapPositions(std::vector<Vec3>* positions) const;
+
+    // ------------------------------------------------------------------------
+    /** Returns true once both endpoints have been placed. */
+    bool             hasEndpoints() const             { return m_have_endpoints; }
+    // ------------------------------------------------------------------------
+    /** World position of the entrance (endpoint 0). Driving into it jumps the
+     *  kart forwards. */
+    const btVector3& getEntryPosition() const
+                                 { return m_endpoint_transforms[0].getOrigin(); }
+    // ------------------------------------------------------------------------
+    /** World position of the exit (endpoint 1). Note the teleporter is
+     *  bidirectional, so driving into the exit jumps the kart backwards. */
+    const btVector3& getExitPosition() const
+                                 { return m_endpoint_transforms[1].getOrigin(); }
+    // ------------------------------------------------------------------------
+    /** The radius around an endpoint within which a kart is teleported. */
+    static float     getTriggerRadius()           { return m_st_trigger_radius; }
 };   // Wormhole
 
 #endif

@@ -498,12 +498,12 @@ void ThreeStrikesBattle::updateSpontaneousBreakdownEvents(int ticks)
     // can swing straight down -- its lowest reach below the object origin is
     // therefore (bounding radius)*scale, not just the bottom vertex. Float the
     // origin that far above the surface plus a hover margin so the orbiting
-    // boson clearly rides above the valley floor (1.0 m worst-case clearance,
-    // verified at 8 points) instead of skimming/clipping it.
+    // boson rides above the valley floor (0.5 m worst-case clearance) instead
+    // of skimming/clipping it.
     const float valley_r        = 46.0f;
     const float goldstone_scale = m_sb_goldstone->getInitScale().Y;
     const float goldstone_reach = 1.0f * goldstone_scale; // octahedron bound radius
-    const float goldstone_hover = 1.0f;
+    const float goldstone_hover = 0.5f;
     const float goldstone_y = getSpontaneousBreakdownHeight(valley_r)
                             + goldstone_reach + goldstone_hover;
     const float goldstone_angular_speed = 0.72f;

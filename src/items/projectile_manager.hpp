@@ -95,6 +95,9 @@ public:
     // ------------------------------------------------------------------------
     std::vector<Vec3> getWormholePositions();
     // ------------------------------------------------------------------------
+    void              getWormholeEndpoints(std::vector<Vec3>* entries,
+                                           std::vector<Vec3>* exits);
+    // ------------------------------------------------------------------------
     void addByUID(const std::string& uid, std::shared_ptr<Flyable> f)
                                              { m_active_projectiles[uid] = f; }
     // ------------------------------------------------------------------------

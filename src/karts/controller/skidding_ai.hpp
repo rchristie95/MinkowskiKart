@@ -276,6 +276,8 @@ private:
     void  computeNearestKarts();
     void  handleItemCollectionAndAvoidance(Vec3 *aim_point,
                                            int last_node);
+    bool  steerToAvoidWormholeExit(Vec3 *aim_point);
+    void  steerToCollectWormholeEntrance(Vec3 *aim_point);
     bool  handleSelectedItem(Vec3 kart_aim_direction, Vec3 *aim_point);
     bool  steerToAvoid(const std::vector<const ItemState *> &items_to_avoid,
                        const core::line3df &line_to_target,

@@ -7,10 +7,13 @@
   "geometry_source": "OpenStreetMap (ODbL)",
   "meshes": {
     "road_visual": "nurburgring_road_visual.spm",
-    "ground_collision": "nurburgring_ground_collision.spm",
+    "road_collision": "nurburgring_road_collision.spm",
+    "grass_col_left": "nurburgring_grass_col_left.spm",
+    "grass_col_right": "nurburgring_grass_col_right.spm",
     "grass_left": "nurburgring_grass_left.spm",
     "grass_right": "nurburgring_grass_right.spm",
     "curb_left": "nurburgring_curb_left.spm",
-    "curb_right": "nurburgring_curb_right.spm"
+    "curb_right": "nurburgring_curb_right.spm",
+    "zippers": "nurburgring_zippers.spm"
   }
 }
