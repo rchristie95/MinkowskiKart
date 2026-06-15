@@ -10,6 +10,7 @@ from sqlalchemy import select
 from .config import Settings
 from .database import create_session_factory, init_schema
 from .directory import MemoryDirectory, RedisDirectory
+from .ratelimit import create_rate_limiter
 from .models import AdminAudit, User, UserSession, utc_now
 from .security import (
     hash_password,
@@ -37,6 +38,14 @@ def xml_response(success: bool = True, info: str = "",
 async def get_form(request: Request) -> dict[str, str]:
     form = await request.form()
     return {str(key): str(value) for key, value in form.items()}
+
+
+def client_ip(request: Request) -> str:
+    """Best-effort client IP, honouring the proxy header set by Caddy."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 def server_info_element(record: dict[str, Any]) -> ET.Element:
@@ -67,6 +76,7 @@ def server_info_element(record: dict[str, Any]) -> ET.Element:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
     engine, session_factory = create_session_factory(settings.database_url)
+    rate_limiter = create_rate_limiter(settings.redis_url)
     directory = (
         RedisDirectory(settings.redis_url, settings.listing_ttl_seconds,
                        settings.join_ttl_seconds)
@@ -113,7 +123,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/account-help")
     def account_help() -> Response:
-        return Response("<html><body style='font-family:sans-serif;max-width:600px;margin:40px auto;line-height:1.6'><h1>Account Help</h1><p>If you've lost your password, use the in-game 'Recover' button. <strong>Note:</strong> Email delivery is disabled. If your details match, your new password will be displayed directly on the recovery screen.</p></body></html>", media_type="text/html")
+        return Response("<html><body style='font-family:sans-serif;max-width:600px;margin:40px auto;line-height:1.6'><h1>Account Help</h1><p>If you've lost your password, please contact the server administrator. <strong>Note:</strong> Email delivery is disabled, so self-service password recovery is not available on this server.</p></body></html>", media_type="text/html")
 
     @app.post("/telemetry")
     async def telemetry() -> Response:
@@ -140,7 +150,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """
 
     @app.post("/admin/login")
-    async def admin_login_post(username: str = Form(...), password: str = Form(...)):
+    async def admin_login_post(request: Request, username: str = Form(...), password: str = Form(...)):
+        if not rate_limiter.hit("admin-login", client_ip(request),
+                                limit=10, window=300):
+            return RedirectResponse(
+                url="/admin/login?error=Too+many+attempts.+Try+again+later.",
+                status_code=303)
         username = username.strip().lower()
         with session_factory() as db:
             user = db.scalar(select(User).where((User.username == username) | (User.email == username)))
@@ -241,6 +256,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/v2/user/connect/")
     async def connect(request: Request) -> Response:
+        if not rate_limiter.hit("connect", client_ip(request),
+                                limit=20, window=300):
+            return xml_response(False, "Too many sign-in attempts. "
+                                "Please wait a few minutes and try again.")
         values = await get_form(request)
         username = values.get("username", "").strip().lower()
         password = values.get("password", "")
@@ -344,12 +363,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def register(request: Request) -> Response:
         import re
         from sqlalchemy.exc import IntegrityError
-        
+
+        if not rate_limiter.hit("register", client_ip(request),
+                                limit=5, window=3600):
+            return xml_response(False, "Too many registration attempts. "
+                                "Please try again later.")
         values = await get_form(request)
         username = values.get("username", "").strip().lower()
         password = values.get("password", "")
         password_confirm = values.get("password_confirm", "")
-        email = values.get("email", "no-email@minkowskikart.internal").strip().lower()
+        email = values.get("email", "").strip().lower()
         terms = values.get("terms", "on")
 
         if terms != "on":
@@ -362,8 +385,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return xml_response(False, "Username must be between 3 and 30 characters.")
         if not re.match(r"^[a-z][a-z0-9._-]*$", username):
             return xml_response(False, "Username is invalid.")
-        if "@" not in email or "." not in email:
+        if email and ("@" not in email or "." not in email):
             return xml_response(False, "Email address is invalid.")
+        # The in-game client does not collect an email. The column is unique, so
+        # emailless accounts get a per-user placeholder rather than a single
+        # shared address (which would let only one account ever register).
+        if not email:
+            email = f"{username}@minkowskikart.internal"
 
         with session_factory() as db:
             try:
@@ -382,25 +410,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/v2/user/recover/")
     async def recover(request: Request) -> Response:
-        import secrets
-        values = await get_form(request)
-        username = values.get("username", "").strip().lower()
-        email = values.get("email", "").strip().lower()
-
-        with session_factory() as db:
-            user = db.scalar(select(User).where(
-                (User.username == username) & (User.email == email)
-            ))
-            if not user:
-                return xml_response(False, "No account found with that username and email.")
-            
-            new_password = secrets.token_urlsafe(8)
-            user.password_hash = hash_password(new_password)
-            db.commit()
-            
-            # We return success=False so that the C++ client displays this text immediately
-            # on the recovery screen, since we don't have an email server configured.
-            return xml_response(False, f"Password reset! Your new password is: {new_password}")
+        # Self-service password recovery is intentionally disabled.
+        #
+        # This deployment has no email delivery, and accounts registered in-game
+        # all share the placeholder address ``no-email@minkowskikart.internal``.
+        # An email-based reset therefore cannot prove account ownership: anyone
+        # who knows a username (usernames are public in server player lists)
+        # could otherwise reset and read the password, taking over the account.
+        #
+        # Account holders must contact the server administrator, who can reset a
+        # password with ``python -m app.admin reset-password``. We return
+        # ``success=no`` so the in-game recovery screen displays this message.
+        if not rate_limiter.hit("recover", client_ip(request),
+                                limit=5, window=3600):
+            return xml_response(False, "Too many attempts. Please try again later.")
+        await request.form()  # drain the request body
+        return xml_response(False,
+            "Password recovery is unavailable on this server. Please contact "
+            "the server administrator to reset your password.")
 
     @app.post("/api/v2/user/change-email/")
     @app.post("/api/v2/user/friend-request/")

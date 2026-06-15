@@ -27,7 +27,7 @@ services:
     environment:
       MK_DATABASE_URL: postgresql+psycopg://minkowski:${POSTGRES_PASSWORD}@postgres/minkowski
       MK_REDIS_URL: redis://redis:6379/0
-      MK_ALLOWED_GAME_VERSION: "7"
+      MK_ALLOWED_GAME_VERSION: ${MK_ALLOWED_GAME_VERSION:-7}
     depends_on:
       postgres:
         condition: service_healthy
