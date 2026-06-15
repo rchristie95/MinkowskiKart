@@ -313,17 +313,17 @@ vec3 lensFlare(vec2 px)
 
     vec2 center = vp_xy + vp_wh * 0.5;
     vec2 axis = center - sun_screen;
-    vec3 tint = normalize(u_camera.m_godrays_color.rgb + 0.2) * 1.2;
+    vec3 tint = normalize(u_camera.m_godrays_color.rgb + 0.24) * 1.45;
     vec3 flare = vec3(0.0);
 
     // Ghost sprites mirrored along the axis
     const vec4 GHOSTS[5] = vec4[](
         // [position along axis, size in viewport heights, weight, hue mix]
-        vec4(0.45, 0.045, 0.30, 0.0),
-        vec4(0.85, 0.025, 0.25, 0.5),
-        vec4(1.25, 0.070, 0.20, 0.2),
-        vec4(1.65, 0.035, 0.18, 0.8),
-        vec4(2.05, 0.100, 0.12, 0.4));
+        vec4(0.45, 0.055, 0.42, 0.0),
+        vec4(0.85, 0.032, 0.34, 0.5),
+        vec4(1.25, 0.085, 0.28, 0.2),
+        vec4(1.65, 0.044, 0.24, 0.8),
+        vec4(2.05, 0.120, 0.18, 0.4));
     for (int i = 0; i < 5; i++)
     {
         vec2 ghost_pos = sun_screen + axis * GHOSTS[i].x;
@@ -339,7 +339,7 @@ vec3 lensFlare(vec2 px)
     vec2 dp = px - sun_screen;
     float streak = exp(-pow(dp.y / (0.006 * vp_wh.y), 2.0)) *
         exp(-pow(dp.x / (0.22 * vp_wh.x), 2.0));
-    flare += tint * (streak * 0.35);
+    flare += tint * (streak * 0.58);
 
     // Fade ghosts as the sun leaves the screen edge; overall strength comes
     // from the settings knob (m_postfx_flags2.z).

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<materials>
+  <material name="sb_arena_surface.png" high-adhesion="Y" has-gravity="Y" backface-culling="N"/>
+  <material name="sb_collision.png" high-adhesion="Y" has-gravity="Y" backface-culling="N"/>
+  <material name="donkey_hazard.png" backface-culling="N"/>
+  <material name="goldstone_boson_hazard.png" backface-culling="N"/>
+</materials>

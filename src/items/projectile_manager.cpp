@@ -286,6 +286,35 @@ std::vector<Vec3> ProjectileManager::getWormholePositions()
 
     return positions;
 } // getWormholePositions
+
+// -----------------------------------------------------------------------------
+/** Collects the entrance (endpoint 0) and exit (endpoint 1) of every active
+ *  wormhole into two parallel lists, so the entries[i]/exits[i] pair belongs to
+ *  the same wormhole. Unlike getWormholePositions() (which interleaves both
+ *  endpoints for the minimap) this keeps them apart, which the AI needs to tell
+ *  a forward shortcut (entrance) from a backward trap (exit).
+ *  \param entries Filled with the entrance positions (may not be NULL).
+ *  \param exits   Filled with the exit positions (may not be NULL). */
+void ProjectileManager::getWormholeEndpoints(std::vector<Vec3>* entries,
+                                             std::vector<Vec3>* exits)
+{
+    if (!entries || !exits)
+        return;
+    for (auto i = m_active_projectiles.begin(); i != m_active_projectiles.end(); i++)
+    {
+        if (!i->second->hasServerState())
+            continue;
+        if (i->second->getType() != PowerupManager::POWERUP_WORMHOLE)
+            continue;
+
+        Wormhole* wormhole = dynamic_cast<Wormhole*>(i->second.get());
+        if (!wormhole || !wormhole->hasEndpoints())
+            continue;
+        entries->emplace_back(wormhole->getEntryPosition());
+        exits->emplace_back(wormhole->getExitPosition());
+    } // loop over projectiles
+} // getWormholeEndpoints
+
 // -----------------------------------------------------------------------------
 std::string ProjectileManager::getUniqueIdentity(AbstractKart* kart,
                                                  PowerupManager::PowerupType t)

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<materials>
+  <material name="nurburgring_asphalt.png" ignore="Y" backface-culling="N"/>
+  <material name="nurburgring_collision.png" high-adhesion="Y" has-gravity="Y" backface-culling="N"/>
+  <material name="nurburgring_curb.png" high-adhesion="Y" backface-culling="N"/>
+  <material name="nurburgring_grass.png" has-gravity="Y" slowdown-time="1.5" max-speed="0.5" backface-culling="N"/>
+  <material name="nurburgring_zipper.png" shader="alphablend" ignore="N" backface-culling="N">
+    <zipper duration="2.5" max-speed-increase="12.0" fade-out-time="2.0" speed-gain="5.0" min-speed="0.0"/>
+  </material>
+  <material name="nbr_building.png" ignore="Y" backface-culling="N"/>
+  <material name="nbr_medical.png" ignore="Y" backface-culling="N"/>
+  <material name="nbr_parking.png" ignore="Y" backface-culling="N"/>
+  <material name="nbr_access.png" ignore="Y" backface-culling="N"/>
+  <material name="nbr_water.png" ignore="Y" backface-culling="N"/>
+</materials>

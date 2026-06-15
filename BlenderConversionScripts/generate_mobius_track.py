@@ -35,10 +35,10 @@ COLLISION_U_SEGMENTS = VISUAL_U_SEGMENTS
 COLLISION_V_SEGMENTS = VISUAL_V_SEGMENTS
 SAFETY_SURFACE_OFFSET = -0.42
 SEAM_BRIDGE_SURFACE_OFFSET = 0.045
-SUN_RADIUS = 12.0
-SUN_CORONA_INNER_RADIUS = 14.2
-SUN_CORONA_OUTER_RADIUS = 18.5
-SUN_PROMINENCE_RADIUS = 23.5
+SUN_RADIUS = 14.0
+SUN_CORONA_INNER_RADIUS = 17.0
+SUN_CORONA_OUTER_RADIUS = 23.0
+SUN_PROMINENCE_RADIUS = 31.0
 BLACK_HOLE_CORE_RADIUS = 8.0
 BLACK_HOLE_INNER_GLOW_RADIUS = 9.4
 BLACK_HOLE_PHOTON_RING_RADIUS = 10.5
@@ -1806,17 +1806,17 @@ def create_textures(track_dir):
         granules += 0.18 * math.sin((u + v) * 177.0)
         granules += 0.10 * math.sin(u * 211.0 - v * 89.0)
         limb = 1.0 - abs(v - 0.5) * 0.8
-        flare = 0.10 * math.sin(u * 13.0) * math.sin(v * math.pi)
-        heat = max(0.0, min(1.0, 0.88 + granules + flare))
-        return (1.0, 0.54 + 0.34 * heat, 0.10 + 0.18 * limb, 1.0)
+        flare = 0.16 * math.sin(u * 13.0) * math.sin(v * math.pi)
+        heat = max(0.0, min(1.0, 0.96 + granules + flare))
+        return (1.0, 0.64 + 0.34 * heat, 0.18 + 0.28 * limb, 1.0)
 
     def sun_corona(u, v):
         strand = 0.45 + 0.35 * math.sin(u * 47.0 + v * 9.0)
         strand += 0.20 * math.sin(u * 113.0)
         strand += 0.12 * math.sin((u - v) * 181.0)
         edge = math.sin(math.pi * max(0.0, min(1.0, v)))
-        alpha = max(0.0, min(0.92, edge * (0.34 + 0.34 * strand)))
-        return (1.0, 0.64 + 0.24 * strand, 0.18, alpha)
+        alpha = max(0.0, min(0.98, edge * (0.48 + 0.42 * strand)))
+        return (1.0, 0.72 + 0.22 * strand, 0.24 + 0.10 * strand, alpha)
 
     def black_hole_core(u, v):
         band = abs(v - 0.5) * 2.0
@@ -2172,7 +2172,8 @@ def write_scene_xml(track_dir):
         '<scene>',
         '  <sky-color rgb="0 0 0"/>',
         '  <camera far="900"/>',
-        '  <sun xyz="0 0 0" sun-diffuse="255 246 210" sun-specular="255 250 225" ambient="44 40 36" fog="false"/>',
+        '  <sun xyz="0 0 0" sun-diffuse="255 255 238" sun-specular="255 255 245" ambient="54 48 40" fog="false"/>',
+        '  <lightshaft opacity="1.35" color="255 225 150" xyz="0 0 0"/>',
         '  <track model="mobius_visual.spm" x="0" y="0" z="0">',
         '    <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
         '    <static-object model="mobius_collision.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="physics-only"/>',
@@ -2189,31 +2190,31 @@ def write_scene_xml(track_dir):
     lines.extend([
         '    <static-object model="mobius_zippers.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost-texture" shadow-pass="false"/>',
         '  </track>',
-        '  <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">',
+        '  <object id="mobius_sun_core" type="animation" model="mobius_sun_core.spm" xyz="0 0 0" hpr="0 0 0" scale="1.18 1.18 1.18" interaction="ghost" glow="255 225 130" forcedbloom="true" bloompower="4.0" shadow-pass="false">',
         '    <curve channel="RotY" interpolation="linear" extend="cyclic">',
         '      <p c="1.000 0.000"/>',
         '      <p c="450.000 360.000"/>',
         '    </curve>',
         '  </object>',
-        '  <object id="mobius_sun_corona_inner" type="animation" model="mobius_sun_corona_inner.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">',
+        '  <object id="mobius_sun_corona_inner" type="animation" model="mobius_sun_corona_inner.spm" xyz="0 0 0" hpr="0 0 0" scale="1.24 1.24 1.24" interaction="ghost" glow="255 196 90" forcedbloom="true" bloompower="3.5" shadow-pass="false">',
         '    <curve channel="RotZ" interpolation="linear" extend="cyclic">',
         '      <p c="1.000 0.000"/>',
         '      <p c="300.000 360.000"/>',
         '    </curve>',
         '  </object>',
-        '  <object id="mobius_sun_corona_outer" type="animation" model="mobius_sun_corona_outer.spm" xyz="0 0 0" hpr="18 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">',
+        '  <object id="mobius_sun_corona_outer" type="animation" model="mobius_sun_corona_outer.spm" xyz="0 0 0" hpr="18 0 0" scale="1.30 1.30 1.30" interaction="ghost" glow="255 184 70" forcedbloom="true" bloompower="3.0" shadow-pass="false">',
         '    <curve channel="RotY" interpolation="linear" extend="cyclic">',
         '      <p c="1.000 0.000"/>',
         '      <p c="525.000 -360.000"/>',
         '    </curve>',
         '  </object>',
-        '  <object id="mobius_sun_prominence" type="animation" model="mobius_sun_prominence.spm" xyz="0 0 0" hpr="-12 0 0" scale="1 1 1" interaction="ghost" shadow-pass="false">',
+        '  <object id="mobius_sun_prominence" type="animation" model="mobius_sun_prominence.spm" xyz="0 0 0" hpr="-12 0 0" scale="1.36 1.36 1.36" interaction="ghost" glow="255 160 55" forcedbloom="true" bloompower="2.6" shadow-pass="false">',
         '    <curve channel="RotZ" interpolation="linear" extend="cyclic">',
         '      <p c="1.000 0.000"/>',
         '      <p c="420.000 360.000"/>',
         '    </curve>',
         '  </object>',
-        '  <light xyz="0 0 0" id="mobius_sun_light" distance="420.00" energy="8.00" color="255 226 150" type="point"/>',
+        '  <light xyz="0 0 0" id="mobius_sun_light" distance="520.00" energy="13.00" color="255 238 170" type="point"/>',
     ])
     for spec in PLANET_SPECS:
         p = planet_scene_position(spec)

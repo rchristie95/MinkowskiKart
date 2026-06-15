@@ -1,0 +1,71 @@
+{
+  "map_name": "Spontaneous Breakdown",
+  "runtime_track_path": "C:\\Users\\robso\\MinkowskiKart\\stk-assets\\tracks\\spontaneous_breakdown",
+  "blender_scene": "C:\\Users\\robso\\MinkowskiKart\\SpontaneousBreakdown\\Spontaneous_Breakdown.blend",
+  "art_exports": {
+    "glb": null,
+    "fbx": null,
+    "note": "Deleted locally to save disk; regenerate from the Blender source scene if needed."
+  },
+  "meshy_budget": {
+    "hard_cap_credits": 1500,
+    "actual_generation_credits": 500,
+    "actual_retexture_credits": 250,
+    "actual_total_credits": 750,
+    "remaining_credits": 750
+  },
+  "arena": {
+    "source": "Blender/procedural primitive mesh for runtime",
+    "runtime_spm": "C:\\Users\\robso\\MinkowskiKart\\stk-assets\\tracks\\spontaneous_breakdown\\spontaneous_breakdown_arena.spm",
+    "estimated_polygon_count": 3648,
+    "collision_type": "driveable_static_mesh",
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "intended_gameplay_role": "Higgs Mexican-hat arena with unstable peak, slopes, and circular degenerate vacuum valley battle track."
+  },
+  "scripted_events": [
+    "Goldstone boson orbits the vacuum valley at constant radius.",
+    "Buridan's Ass respawns at the unstable center, hesitates, rolls downhill in a random direction, and triggers donkey_bray.ogg on impact."
+  ],
+  "assets": [
+    {
+      "name": "donkey_hazard",
+      "source": "Meshy AI MCP retextured GLB; runtime SPM counterpart generated locally",
+      "meshy_task_id": "019ec34c-7766-7fe0-a948-6f5b1dd79ceb",
+      "meshy_retexture_task_id": null,
+      "meshy_credit_cost": 40,
+      "source_glb": "C:\\Users\\robso\\MinkowskiKart\\SpontaneousBreakdown\\assets\\meshy_textured\\donkey_hazard.glb",
+      "runtime_spm": "C:\\Users\\robso\\MinkowskiKart\\stk-assets\\tracks\\spontaneous_breakdown\\donkey_hazard.spm",
+      "runtime_texture": "C:\\Users\\robso\\MinkowskiKart\\stk-assets\\tracks\\spontaneous_breakdown\\donkey_hazard.png",
+      "estimated_polygon_count": 108,
+      "scale": [
+        0.95,
+        0.42,
+        0.68
+      ],
+      "collision_type": "dynamic_sphere",
+      "intended_gameplay_role": "Buridan's Ass respawns at the unstable center, hesitates, then rolls downhill in a random direction and brays on impact."
+    },
+    {
+      "name": "goldstone_boson_hazard",
+      "source": "Meshy AI MCP retextured GLB; runtime SPM counterpart generated locally",
+      "meshy_task_id": "019ec34c-8ea0-7c4c-be53-b62b69326b2d",
+      "meshy_retexture_task_id": null,
+      "meshy_credit_cost": 40,
+      "source_glb": "C:\\Users\\robso\\MinkowskiKart\\SpontaneousBreakdown\\assets\\meshy_textured\\goldstone_boson_hazard.glb",
+      "runtime_spm": "C:\\Users\\robso\\MinkowskiKart\\stk-assets\\tracks\\spontaneous_breakdown\\goldstone_boson_hazard.spm",
+      "runtime_texture": "C:\\Users\\robso\\MinkowskiKart\\stk-assets\\tracks\\spontaneous_breakdown\\goldstone_boson_hazard.png",
+      "estimated_polygon_count": 8,
+      "scale": [
+        1.24,
+        1.24,
+        1.24
+      ],
+      "collision_type": "kinematic_orbit_sphere",
+      "intended_gameplay_role": "Gold hazard constrained to orbit around the circular degenerate vacuum valley, never rolling down the slope."
+    }
+  ]
+}

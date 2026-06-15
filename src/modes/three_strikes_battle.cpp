@@ -22,6 +22,9 @@
 #include "config/user_config.hpp"
 #include "graphics/camera/camera.hpp"
 #include "graphics/irr_driver.hpp"
+#ifndef SERVER_ONLY
+#include "graphics/sp/sp_base.hpp"
+#endif
 #include <ge_render_info.hpp>
 #include "io/file_manager.hpp"
 #include "karts/kart.hpp"
@@ -41,9 +44,38 @@
 #include "utils/translation.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <deque>
 #include <string>
 #include <IMeshSceneNode.h>
+
+#ifndef SERVER_ONLY
+namespace
+{
+// The Goldstone boson and Buridan's donkey are precise collision hazards that
+// we drive around the arena with move() each tick. Their orbital speed is a
+// large fraction of the game's c_light, so feeding it to the relativistic
+// position warp flings the *rendered* position tens-to-hundreds of metres off
+// the true (physics) orbit -- it visibly smears out through the outer rim.
+// Treat them like the static track (and like animated balloons): register the
+// node so the relativity shader uses zero velocity, keeping the visual locked
+// to the hitbox. Renderer-agnostic (covers both the SP/GL estimator and the
+// GE/Vulkan override+estimator paths).
+void setTrackObjectRelativityExempt(TrackObject* object, bool exempt)
+{
+    TrackObjectPresentationSceneNode* presentation = object ?
+        object->getPresentation<TrackObjectPresentationSceneNode>() : NULL;
+    if (!presentation || !presentation->getNode())
+        return;
+    SP::clearNodeRelativityVelocity(presentation->getNode());
+    if (exempt)
+        SP::registerAnimatedTrackNode(presentation->getNode());
+    else
+        SP::unregisterAnimatedTrackNode(presentation->getNode());
+}   // setTrackObjectRelativityExempt
+
+}   // namespace
+#endif
 
 //-----------------------------------------------------------------------------
 /** Constructor. Sets up the clock mode etc.
@@ -62,6 +94,14 @@ ThreeStrikesBattle::ThreeStrikesBattle() : WorldWithRank()
     m_frame_count = 0;
     m_start_time = irr_driver->getRealTime();
     m_total_hit = 0;
+    m_spontaneous_breakdown_events = false;
+    m_sb_goldstone = NULL;
+    m_sb_donkey = NULL;
+    m_sb_bray_sfx = NULL;
+    m_sb_donkey_state = 0;
+    m_sb_donkey_state_ticks = 0;
+    m_sb_donkey_angle = 0.0f;
+    m_sb_goldstone_angle = 0.0f;
 
 }   // ThreeStrikesBattle
 
@@ -82,6 +122,10 @@ void ThreeStrikesBattle::init()
  */
 ThreeStrikesBattle::~ThreeStrikesBattle()
 {
+#ifndef SERVER_ONLY
+    setTrackObjectRelativityExempt(m_sb_goldstone, false);
+    setTrackObjectRelativityExempt(m_sb_donkey, false);
+#endif
     m_tires.clearWithoutDeleting();
     m_spare_tire_karts.clear();
 
@@ -107,6 +151,8 @@ void ThreeStrikesBattle::reset(bool restart)
     m_next_sta_spawn_ticks = stk_config->time2Ticks(next_spawn_time);
 
     const unsigned int kart_amount = (unsigned int)m_karts.size();
+    if (m_kart_info.size() < kart_amount)
+        m_kart_info.resize(kart_amount);
     for(unsigned int n=0; n<kart_amount; n++)
     {
         if (dynamic_cast<SpareTireAI*>(m_karts[n]->getController()) != NULL)
@@ -123,6 +169,8 @@ void ThreeStrikesBattle::reset(bool restart)
         m_karts[n]->setPosition(-1);
 
         scene::ISceneNode* kart_node = m_karts[n]->getNode();
+        if (!kart_node)
+            continue;
 
         for (unsigned i = 0; i < kart_node->getChildren().size(); i++)
         {
@@ -167,6 +215,8 @@ void ThreeStrikesBattle::reset(bool restart)
              m_eliminated_karts++;
         }
     }
+
+    setupSpontaneousBreakdownEvents();
 }   // reset
 
 //-----------------------------------------------------------------------------
@@ -217,6 +267,12 @@ bool ThreeStrikesBattle::kartHit(int kart_id, int hitter)
 {
     if (isRaceOver()) return false;
 
+    assert(kart_id >= 0 && kart_id < (int)m_karts.size());
+    if (kart_id < 0 || kart_id >= (int)m_karts.size())
+        return false;
+    if (m_kart_info.size() < m_karts.size())
+        m_kart_info.resize(m_karts.size());
+
     SpareTireAI* sta =
         dynamic_cast<SpareTireAI*>(m_karts[kart_id]->getController());
     if (sta)
@@ -226,7 +282,6 @@ bool ThreeStrikesBattle::kartHit(int kart_id, int hitter)
         return false;
     }
 
-    assert(kart_id < (int)m_karts.size());
     // make kart lose a life, ignore if in profiling mode
     if (!UserConfigParams::m_arena_ai_stats)
         m_kart_info[kart_id].m_lives--;
@@ -300,45 +355,48 @@ bool ThreeStrikesBattle::kartHit(int kart_id, int hitter)
     }
 
     scene::ISceneNode* kart_node = m_karts[kart_id]->getNode();
-    for (unsigned i = 0; i < kart_node->getChildren().size(); i++)
+    if (kart_node)
     {
-        scene::ISceneNode* curr = kart_node->getChildren()[i];
-
-        if (core::stringc(curr->getName()) == "tire1")
+        for (unsigned i = 0; i < kart_node->getChildren().size(); i++)
         {
-            curr->setVisible(m_kart_info[kart_id].m_lives >= 3);
+            scene::ISceneNode* curr = kart_node->getChildren()[i];
+
+            if (core::stringc(curr->getName()) == "tire1")
+            {
+                curr->setVisible(m_kart_info[kart_id].m_lives >= 3);
+            }
+            else if (core::stringc(curr->getName()) == "tire2")
+            {
+                curr->setVisible(m_kart_info[kart_id].m_lives >= 2);
+            }
         }
-        else if (core::stringc(curr->getName()) == "tire2")
+
+        // schedule a tire to be thrown away (but can't do it in this callback
+        // because the caller is currently iterating the list of track objects)
+        m_insert_tire++;
+        core::vector3df wheel_pos(m_karts[kart_id]->getKartWidth()*0.5f,
+                                  0.0f, 0.0f);
+        m_tire_position = kart_node->getPosition() + wheel_pos;
+        m_tire_rotation = 0;
+        if(m_insert_tire > 1)
         {
-            curr->setVisible(m_kart_info[kart_id].m_lives >= 2);
+            m_tire_position = kart_node->getPosition();
+            m_tire_rotation = m_karts[kart_id]->getHeading();
         }
-    }
 
-    // schedule a tire to be thrown away (but can't do it in this callback
-    // because the caller is currently iterating the list of track objects)
-    m_insert_tire++;
-    core::vector3df wheel_pos(m_karts[kart_id]->getKartWidth()*0.5f,
-                              0.0f, 0.0f);
-    m_tire_position = kart_node->getPosition() + wheel_pos;
-    m_tire_rotation = 0;
-    if(m_insert_tire > 1)
-    {
-        m_tire_position = kart_node->getPosition();
-        m_tire_rotation = m_karts[kart_id]->getHeading();
-    }
+        for(unsigned int i=0; i<4; i++)
+        {
+            m_tire_offsets[i] = m_karts[kart_id]->getKartModel()
+                                ->getWheelGraphicsPosition(i).toIrrVector();
+            m_tire_offsets[i].rotateXZBy(-m_tire_rotation / M_PI * 180 + 180);
+            m_tire_radius[i] = m_karts[kart_id]->getKartModel()
+                                               ->getWheelGraphicsRadius(i);
+        }
 
-    for(unsigned int i=0; i<4; i++)
-    {
-        m_tire_offsets[i] = m_karts[kart_id]->getKartModel()
-                            ->getWheelGraphicsPosition(i).toIrrVector();
-        m_tire_offsets[i].rotateXZBy(-m_tire_rotation / M_PI * 180 + 180);
-        m_tire_radius[i] = m_karts[kart_id]->getKartModel()
-                                           ->getWheelGraphicsRadius(i);
+        m_tire_dir = m_karts[kart_id]->getKartProperties()->getKartDir();
+        if(m_insert_tire == 5 && m_karts[kart_id]->isWheeless())
+            m_insert_tire = 0;
     }
-
-    m_tire_dir = m_karts[kart_id]->getKartProperties()->getKartDir();
-    if(m_insert_tire == 5 && m_karts[kart_id]->isWheeless())
-        m_insert_tire = 0;
     return true;
 }   // kartHit
 
@@ -351,6 +409,196 @@ const std::string& ThreeStrikesBattle::getIdent() const
 }   // getIdent
 
 //-----------------------------------------------------------------------------
+// V(r) = A*(r²-R²)² — proper Higgs/Mexican-hat double-well.
+// A = PEAK_H / VALLEY_R^4 so V(0)=PEAK_H and V(VALLEY_R)=0.
+// PEAK_H MUST match generate_spontaneous_breakdown_track.py (PEAK_H).
+static const float SB_PEAK_H = 15.0f;
+static inline float sb_ring_height(float radius)
+{
+    const float R  = 46.0f;
+    const float A  = SB_PEAK_H / (R * R * R * R);
+    const float d  = radius * radius - R * R;
+    return A * d * d;
+}
+
+float ThreeStrikesBattle::getSpontaneousBreakdownHeight(float radius) const
+{
+    return sb_ring_height(radius);
+}   // getSpontaneousBreakdownHeight
+
+//-----------------------------------------------------------------------------
+// dV/dr = 4*A*r*(r²-R²)
+float ThreeStrikesBattle::getSpontaneousBreakdownSlope(float radius) const
+{
+    const float R = 46.0f;
+    const float A = SB_PEAK_H / (R * R * R * R);
+    return 4.0f * A * radius * (radius * radius - R * R);
+}   // getSpontaneousBreakdownSlope
+
+//-----------------------------------------------------------------------------
+void ThreeStrikesBattle::setupSpontaneousBreakdownEvents()
+{
+#ifndef SERVER_ONLY
+    setTrackObjectRelativityExempt(m_sb_goldstone, false);
+    setTrackObjectRelativityExempt(m_sb_donkey, false);
+#endif
+    m_spontaneous_breakdown_events = false;
+    m_sb_goldstone = NULL;
+    m_sb_donkey = NULL;
+    m_sb_bray_sfx = NULL;
+    m_sb_donkey_state = 0;
+    m_sb_donkey_state_ticks = 0;
+    m_sb_donkey_angle = 0.0f;
+    m_sb_goldstone_angle = 0.0f;
+
+    Track* track = Track::getCurrentTrack();
+    if (!track || track->getIdent() != "spontaneous_breakdown")
+        return;
+
+    TrackObjectManager* tom = track->getTrackObjectManager();
+    if (!tom)
+        return;
+
+    m_sb_goldstone = tom->getTrackObject("", "sb_goldstone_boson");
+    m_sb_donkey = tom->getTrackObject("", "sb_buridan_donkey");
+    m_sb_bray_sfx = tom->getTrackObject("", "sb_bray_sfx");
+
+    if (!m_sb_goldstone || !m_sb_donkey)
+        return;
+
+#ifndef SERVER_ONLY
+    // Lock the hazards' rendered position to their physics position (see
+    // setTrackObjectRelativityExempt): their orbital speed is near c_light, so
+    // the relativistic position warp would otherwise smear them through the rim.
+    setTrackObjectRelativityExempt(m_sb_goldstone, true);
+    setTrackObjectRelativityExempt(m_sb_donkey, true);
+#endif
+
+    m_sb_donkey_angle = m_random.get(360) * DEGREE_TO_RAD;
+    m_spontaneous_breakdown_events = true;
+    updateSpontaneousBreakdownEvents(0);
+}   // setupSpontaneousBreakdownEvents
+
+//-----------------------------------------------------------------------------
+void ThreeStrikesBattle::updateSpontaneousBreakdownEvents(int ticks)
+{
+    if (!m_spontaneous_breakdown_events || !m_sb_goldstone || !m_sb_donkey)
+        return;
+
+    const float dt = stk_config->ticks2Time(ticks);
+
+    // --- Goldstone boson orbit -------------------------------------------
+    // The boson rides the floor of the Mexican-hat valley. It orbits at a
+    // constant radius valley_r, which is exactly the minimum of the potential
+    // V(r) = A*(r^2 - R^2)^2 (with R = valley_r), so getSpontaneousBreakdownHeight()
+    // returns 0 all the way around and the terrain under the orbit is flat.
+    // The mesh is an octahedron whose bounding sphere has radius 1.0 in model
+    // space (its equatorial vertices sit at distance 1.0; the top/bottom at
+    // 0.95). The boson tumbles in pitch and roll as it orbits, so any vertex
+    // can swing straight down -- its lowest reach below the object origin is
+    // therefore (bounding radius)*scale, not just the bottom vertex. Float the
+    // origin that far above the surface plus a hover margin so the orbiting
+    // boson rides above the valley floor (0.5 m worst-case clearance) instead
+    // of skimming/clipping it.
+    const float valley_r        = 46.0f;
+    const float goldstone_scale = m_sb_goldstone->getInitScale().Y;
+    const float goldstone_reach = 1.0f * goldstone_scale; // octahedron bound radius
+    const float goldstone_hover = 0.5f;
+    const float goldstone_y = getSpontaneousBreakdownHeight(valley_r)
+                            + goldstone_reach + goldstone_hover;
+    const float goldstone_angular_speed = 0.72f;
+
+    m_sb_goldstone_angle += dt * goldstone_angular_speed;
+    if (m_sb_goldstone_angle > 2.0f * M_PI)
+        m_sb_goldstone_angle -= 2.0f * M_PI;
+
+    core::vector3df goldstone_xyz(
+        std::cos(m_sb_goldstone_angle) * valley_r,
+        goldstone_y,
+        std::sin(m_sb_goldstone_angle) * valley_r);
+    core::vector3df goldstone_hpr(
+        dt * 720.0f,
+        90.0f - m_sb_goldstone_angle * RAD_TO_DEGREE,
+        m_sb_goldstone_angle * RAD_TO_DEGREE);
+    m_sb_goldstone->move(goldstone_xyz, goldstone_hpr,
+        m_sb_goldstone->getInitScale(), true, true);
+    // No relativity velocity: the boson is relativity-exempt (see setup) so its
+    // visual stays locked to its hitbox instead of smearing through the rim.
+
+    const int hesitate_ticks = stk_config->time2Ticks(1.8f);
+    const int roll_ticks = stk_config->time2Ticks(3.2f);
+    const int cooldown_ticks = stk_config->time2Ticks(1.4f);
+    const float impact_r = 57.0f;
+    m_sb_donkey_state_ticks += ticks;
+
+    float donkey_r = 0.0f;
+    float donkey_roll = 0.0f;
+    if (m_sb_donkey_state == 0)
+    {
+        if (m_sb_donkey_state_ticks >= hesitate_ticks)
+        {
+            m_sb_donkey_angle = m_random.get(360) * DEGREE_TO_RAD;
+            m_sb_donkey_state = 1;
+            m_sb_donkey_state_ticks = 0;
+        }
+    }
+
+    if (m_sb_donkey_state == 1)
+    {
+        const float t = std::max(0.0f,
+            std::min(1.0f, (float)m_sb_donkey_state_ticks / roll_ticks));
+        const float ease = t * t * (3.0f - 2.0f * t);
+        donkey_r = 3.0f + ease * (impact_r - 3.0f);
+        donkey_roll = ease * 1080.0f;
+        if (m_sb_donkey_state_ticks >= roll_ticks)
+        {
+            m_sb_donkey_state = 2;
+            m_sb_donkey_state_ticks = 0;
+            if (m_sb_bray_sfx)
+            {
+                const core::vector3df bray_xyz(
+                    std::cos(m_sb_donkey_angle) * impact_r,
+                    getSpontaneousBreakdownHeight(impact_r) + 1.0f,
+                    std::sin(m_sb_donkey_angle) * impact_r);
+                m_sb_bray_sfx->move(bray_xyz, core::vector3df(0, 0, 0),
+                    m_sb_bray_sfx->getInitScale(), false, true);
+                TrackObjectPresentationSound* sound =
+                    m_sb_bray_sfx->getSoundEmitter();
+                if (sound)
+                    sound->triggerSound(false);
+            }
+        }
+    }
+    else if (m_sb_donkey_state == 2)
+    {
+        donkey_r = impact_r;
+        donkey_roll = 1080.0f;
+        if (m_sb_donkey_state_ticks >= cooldown_ticks)
+        {
+            m_sb_donkey_state = 0;
+            m_sb_donkey_state_ticks = 0;
+            donkey_r = 0.0f;
+            donkey_roll = 0.0f;
+        }
+    }
+
+    const float donkey_y = getSpontaneousBreakdownHeight(donkey_r) + 0.95f;
+    core::vector3df donkey_xyz(
+        std::cos(m_sb_donkey_angle) * donkey_r,
+        donkey_y,
+        std::sin(m_sb_donkey_angle) * donkey_r);
+    core::vector3df donkey_hpr(
+        donkey_roll,
+        90.0f - m_sb_donkey_angle * RAD_TO_DEGREE,
+        0.0f);
+    m_sb_donkey->move(donkey_xyz, donkey_hpr, m_sb_donkey->getInitScale(),
+        true, true);
+    // No relativity velocity: the donkey is relativity-exempt (see setup); its
+    // roll reaches a large fraction of c_light, which would otherwise smear its
+    // rendered position off the hitbox.
+}   // updateSpontaneousBreakdownEvents
+
+//-----------------------------------------------------------------------------
 /** Update the world and the track.
  *  \param ticks Number of physics time step - should be 1.
  */
@@ -358,6 +606,7 @@ void ThreeStrikesBattle::update(int ticks)
 {
     WorldWithRank::update(ticks);
     WorldWithRank::updateTrack(ticks);
+    updateSpontaneousBreakdownEvents(ticks);
 
     spawnSpareTireKarts();
     if (Track::getCurrentTrack()->hasNavMesh())

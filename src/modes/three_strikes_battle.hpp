@@ -92,6 +92,20 @@ private:
     std::vector<AbstractKart*> m_spare_tire_karts;
     int m_next_sta_spawn_ticks;
 
+    bool m_spontaneous_breakdown_events;
+    TrackObject* m_sb_goldstone;
+    TrackObject* m_sb_donkey;
+    TrackObject* m_sb_bray_sfx;
+    int m_sb_donkey_state;
+    int m_sb_donkey_state_ticks;
+    float m_sb_donkey_angle;
+    float m_sb_goldstone_angle;
+
+    void setupSpontaneousBreakdownEvents();
+    void updateSpontaneousBreakdownEvents(int ticks);
+    float getSpontaneousBreakdownHeight(float radius) const;
+    float getSpontaneousBreakdownSlope(float radius) const;
+
 public:
     /** Used to show a nice graph when battle is over */
     struct BattleEvent

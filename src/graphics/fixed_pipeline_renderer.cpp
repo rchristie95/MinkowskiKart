@@ -257,12 +257,23 @@ void FixedPipelineRenderer::render(float dt, bool is_loading)
                     scatter_density =
                         1.0f / (40.0f * (fx_track->getFogStart() + 0.001f));
                 }
+                float lens_flare_strength =
+                    (float)UserConfigParams::m_vk_flare * 0.01f;
+                if (fx_track && fx_track->hasGodRays() &&
+                    UserConfigParams::m_light_shaft)
+                {
+                    const float track_flare =
+                        fx_track->getGodRaysOpacity() * 0.85f;
+                    if (lens_flare_strength < track_flare)
+                        lens_flare_strength = track_flare;
+                }
                 float postfx_flags2[4] =
                 {
                     UserConfigParams::m_glow ? 1.0f : 0.0f,
                     scatter_density,
-                    // Sun lens flare strength (settings gauge, x0.01)
-                    (float)UserConfigParams::m_vk_flare * 0.01f,
+                    // Sun lens flare strength, with a floor for tracks that
+                    // explicitly declare a bright lightshaft source.
+                    lens_flare_strength,
                     // Animation clock (seconds, wraps at 3600s) for the
                     // swirling Kerr accretion disk.
                     (float)(GE::getMonoTimeMs() % 3600000) * 0.001f
