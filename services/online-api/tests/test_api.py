@@ -29,8 +29,10 @@ def test_invite_auth_host_listing_and_rendezvous(tmp_path):
     with TestClient(app) as client:
         with app.state.session_factory() as db:
             db.add_all([
-                User(username="host", password_hash=hash_password("host-pass-123")),
-                User(username="driver", password_hash=hash_password("drive-pass-123")),
+                User(username="host", email="host@minkowskikart.internal",
+                     password_hash=hash_password("host-pass-123")),
+                User(username="driver", email="driver@minkowskikart.internal",
+                     password_hash=hash_password("drive-pass-123")),
             ])
             db.commit()
 
@@ -76,9 +78,45 @@ def test_invite_auth_host_listing_and_rendezvous(tmp_path):
         assert rendezvous.attrib["aes-key"] == "secret-key"
 
 
-def test_registration_is_invite_only(tmp_path):
+def test_registration_validates_input(tmp_path):
     app = create_app(Settings(database_url=f"sqlite:///{tmp_path / 'online.db'}"))
     with TestClient(app) as client:
         root = parse(client.post("/api/v2/user/register/", data={}))
         assert root.attrib["success"] == "no"
-        assert "invite-only" in root.attrib["info"]
+
+
+def test_open_registration_allows_multiple_emailless_accounts(tmp_path):
+    # The in-game client never sends an email; each account must still get a
+    # distinct placeholder so more than one player can register.
+    app = create_app(Settings(database_url=f"sqlite:///{tmp_path / 'online.db'}"))
+    with TestClient(app) as client:
+        for name in ("alice", "bob"):
+            root = parse(client.post("/api/v2/user/register/", data={
+                "username": name, "password": "password-123",
+                "password_confirm": "password-123", "terms": "on",
+            }))
+            assert root.attrib["success"] == "yes", root.attrib.get("info")
+        # Re-using a username is still rejected.
+        dupe = parse(client.post("/api/v2/user/register/", data={
+            "username": "alice", "password": "password-123",
+            "password_confirm": "password-123", "terms": "on",
+        }))
+        assert dupe.attrib["success"] == "no"
+
+
+def test_recovery_is_disabled_and_does_not_reset_password(tmp_path):
+    app = create_app(Settings(database_url=f"sqlite:///{tmp_path / 'online.db'}"))
+    with TestClient(app) as client:
+        with app.state.session_factory() as db:
+            db.add(User(username="victim",
+                        email="victim@minkowskikart.internal",
+                        password_hash=hash_password("original-pass-123")))
+            db.commit()
+        recover = parse(client.post("/api/v2/user/recover/", data={
+            "username": "victim", "email": "victim@minkowskikart.internal",
+        }))
+        assert recover.attrib["success"] == "no"
+        # No new password is leaked in the response...
+        assert "password is:" not in recover.attrib.get("info", "")
+        # ...and the original password still works.
+        assert login(client, "victim", "original-pass-123")["userid"]

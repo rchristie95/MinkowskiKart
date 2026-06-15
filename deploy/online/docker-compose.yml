@@ -7,6 +7,8 @@ services:
       MK_PERSONAL_DOMAIN: ${MK_PERSONAL_DOMAIN}
       MK_PERSONAL_WWW_DOMAIN: ${MK_PERSONAL_WWW_DOMAIN}
       MK_SITE_DOMAIN: ${MK_SITE_DOMAIN}
+      MK_GEEKLOVE_DOMAIN: ${MK_GEEKLOVE_DOMAIN}
+      MK_GEEKLOVE_WWW_DOMAIN: ${MK_GEEKLOVE_WWW_DOMAIN}
     ports:
       - "80:80"
       - "443:443"
@@ -27,7 +29,7 @@ services:
     environment:
       MK_DATABASE_URL: postgresql+psycopg://minkowski:${POSTGRES_PASSWORD}@postgres/minkowski
       MK_REDIS_URL: redis://redis:6379/0
-      MK_ALLOWED_GAME_VERSION: "7"
+      MK_ALLOWED_GAME_VERSION: ${MK_ALLOWED_GAME_VERSION:-7}
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,7 +81,7 @@ services:
       - "3478:3478/tcp"
       - "3478:3478/udp"
     volumes:
-      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro        
 
   official-server:
     build:
@@ -94,9 +96,9 @@ services:
       MK_ONLINE_DOMAIN: ${MK_ONLINE_DOMAIN}
       MK_OFFICIAL_USERNAME: ${MK_OFFICIAL_USERNAME}
       MK_OFFICIAL_PASSWORD: ${MK_OFFICIAL_PASSWORD}
-      MK_OFFICIAL_TRACK: ${MK_OFFICIAL_TRACK:-mobius_track}
+      MK_OFFICIAL_TRACK: ${MK_OFFICIAL_TRACK:-mobius_track}     
       MK_OFFICIAL_BOTS: ${MK_OFFICIAL_BOTS:-3}
-      MK_OFFICIAL_MIN_PLAYERS: ${MK_OFFICIAL_MIN_PLAYERS:-1}
+      MK_OFFICIAL_MIN_PLAYERS: ${MK_OFFICIAL_MIN_PLAYERS:-1}    
     ports:
       - "2759:2759/udp"
     volumes:

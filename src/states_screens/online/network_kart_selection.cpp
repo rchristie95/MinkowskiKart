@@ -63,11 +63,20 @@ void NetworkKartSelectionScreen::init()
     assert(w != NULL);
     for (auto& p : NetworkConfig::get()->getNetworkPlayers())
     {
-        joinPlayer(std::get<0>(p), std::get<1>(p));
+        bool joined = joinPlayer(std::get<0>(p), std::get<1>(p));
+        if (!joined)
+        {
+            Log::warn("NetworkKartSelectionScreen", "joinPlayer returned false!");
+            continue;
+        }
+
         if (std::get<2>(p) == HANDICAP_MEDIUM)
         {
-            m_kart_widgets.get(m_kart_widgets.size() -1)
-                ->enableHandicapForNetwork();
+            if (m_kart_widgets.size() > 0)
+            {
+                m_kart_widgets.get(m_kart_widgets.size() - 1)
+                    ->enableHandicapForNetwork();
+            }
         }
         w->updateItemDisplay();
         if (!w->setSelection(UserConfigParams::m_default_kart, 0, true))

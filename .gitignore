@@ -71,5 +71,17 @@ tools/windows_installer/
 # Local developer environment file (contains credentials)
 /.mk_local.env
 
-# Large Blender source art exceeds GitHub 100MB limit (keep local)
+# Deployment / signing credentials (SSH keys, keystores, recovery codes) - never commit
+/minkowskikart-upload-credentials/
+
+# Large Blender source art and generated assets (keep local)
 SpontaneousBreakdown/Spontaneous_Breakdown.blend
+SpontaneousBreakdown/assets/meshy_textured/
+SpontaneousBreakdown/assets/blender_proxies/
+
+# Temporary scripts and exports (one-off conversions, test outputs)
+temp_gen.py
+converted_models.png
+hat_final.png
+convert_minkowski_karts.py
+find_planets.py

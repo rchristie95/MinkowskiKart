@@ -22,6 +22,10 @@ def main() -> None:
     delete = subparsers.add_parser("delete-user")
     delete.add_argument("--username", required=True)
 
+    reset = subparsers.add_parser("reset-password")
+    reset.add_argument("--username", required=True)
+    reset.add_argument("--password")
+
     args = parser.parse_args()
 
     settings = Settings.from_env()
@@ -63,6 +67,23 @@ def main() -> None:
             db.add(AdminAudit(action="delete-user", target_user_id=user.id, detail=username))
             db.commit()
             print(f"Deleted account '{username}' (id {user.id}).")
+
+    elif args.command == "reset-password":
+        username = args.username.strip().lower()
+        password = args.password or getpass("New password: ")
+        if not 8 <= len(password) <= 60:
+            raise SystemExit("Password must contain between 8 and 60 characters.")
+        with session_factory() as db:
+            user = db.scalar(select(User).where(User.username == username))
+            if not user:
+                raise SystemExit(f"User '{username}' not found.")
+            user.password_hash = hash_password(password)
+            # Invalidate existing sessions so the old password cannot linger.
+            db.execute(sa.delete(UserSession).where(UserSession.user_id == user.id))
+            db.add(AdminAudit(action="reset-password", target_user_id=user.id,
+                              detail=username))
+            db.commit()
+            print(f"Reset password for '{username}' (id {user.id}).")
 
 
 if __name__ == "__main__":

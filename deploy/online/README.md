@@ -46,10 +46,15 @@ outbound SSH.
 
 ## 2. Configure DNS And Secrets
 
-Create these records in the OVH DNS zone for `robsonchristie.com`:
+Create these records in the OVH DNS zone for `robsonchristie.com` (see also
+`DNS_RECORDS.md`). All of them must resolve to the VPS, because Caddy requests a
+TLS certificate for every domain in the `Caddyfile`, including the personal
+homepage at the apex (`@`) and `www`:
 
 | Type | Subdomain | Target |
 | --- | --- | --- |
+| `A` | `@` | VPS IPv4 |
+| `A` | `www` | VPS IPv4 |
 | `A` | `online` | VPS IPv4 |
 | `A` | `minkowskikart` | VPS IPv4 |
 | `A` | `play` | VPS IPv4 |
@@ -96,6 +101,14 @@ Create additional invited player accounts with:
 
 ```bash
 docker compose exec api python -m app.admin create-user --username PLAYER_NAME
+```
+
+Self-service password recovery is disabled (this stack has no email delivery, so
+an email-based reset cannot prove account ownership). When a player loses their
+password, reset it for them and share the new one over a trusted channel:
+
+```bash
+docker compose exec api python -m app.admin reset-password --username PLAYER_NAME
 ```
 
 ## 4. Start The Persistent Race

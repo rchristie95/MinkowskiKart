@@ -6,6 +6,10 @@
 {$MK_PERSONAL_DOMAIN}, {$MK_PERSONAL_WWW_DOMAIN} {
     encode zstd gzip
     root * /srv/robsonchristie
+    # Always revalidate HTML so paper updates show up immediately.
+    # Caddy still sends an ETag, so unchanged pages return a cheap 304.
+    @html path / /*.html
+    header @html Cache-Control "no-cache"
     file_server
 }
 
