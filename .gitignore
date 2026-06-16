@@ -85,3 +85,6 @@ converted_models.png
 hat_final.png
 convert_minkowski_karts.py
 find_planets.py
+
+# Cloudflare Origin Certificate + private key for the online stack (never commit secrets)
+deploy/online/certs/

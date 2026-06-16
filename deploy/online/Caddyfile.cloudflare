@@ -1,0 +1,43 @@
+# Caddyfile variant for running the static websites BEHIND Cloudflare.
+#
+# Use this instead of ./Caddyfile when robsonchristie.com / www /
+# minkowskikart are proxied by Cloudflare (orange cloud). Cloudflare
+# terminates TLS at its edge and connects back to this origin over HTTPS
+# using a Cloudflare *Origin Certificate* (SSL/TLS mode: Full (strict)).
+#
+# IMPORTANT — keep these DNS records "DNS only" (grey cloud) in Cloudflare so
+# the game is untouched and keeps publicly-trusted Let's Encrypt certs / direct
+# UDP:
+#   - online.robsonchristie.com   (matchmaking API, HTTPS)  -> stays automatic LE below
+#   - play.robsonchristie.com     (gameplay, UDP 2759)      -> not served by Caddy at all
+#
+# See CLOUDFLARE.md for the full migration runbook.
+
+# Matchmaking API — DNS-only / direct, so it must present a real publicly
+# trusted certificate. Leave Caddy's automatic HTTPS (Let's Encrypt) here.
+{$MK_ONLINE_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy api:8000
+}
+
+# Personal homepage — proxied by Cloudflare. Serve the Cloudflare Origin
+# Certificate (only trusted by Cloudflare, which is the only thing that talks
+# to this origin once the record is orange-clouded).
+{$MK_PERSONAL_DOMAIN}, {$MK_PERSONAL_WWW_DOMAIN} {
+    encode zstd gzip
+    tls /certs/cf-origin.pem /certs/cf-origin.key
+    root * /srv/robsonchristie
+    # Always revalidate HTML so paper updates show up immediately.
+    # Caddy still sends an ETag, so unchanged pages return a cheap 304.
+    @html path / /*.html
+    header @html Cache-Control "no-cache"
+    file_server
+}
+
+# Game website — also proxied by Cloudflare.
+{$MK_SITE_DOMAIN} {
+    encode zstd gzip
+    tls /certs/cf-origin.pem /certs/cf-origin.key
+    root * /srv/minkowskikart
+    file_server
+}
