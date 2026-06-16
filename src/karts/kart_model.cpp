@@ -1275,9 +1275,13 @@ void KartModel::update(float dt, float distance, float steer, float speed,
             {
                 suspension_length = gk->getSuspensionLength(gt_replay_index, i);
             }
-            else
+            // getVehicle() can be null here when this model is a clone bound to
+            // a kart whose physics body has been torn down (see AntiKarticle's
+            // clone model). Fall back to the cached default suspension instead
+            // of dereferencing a dangling vehicle.
+            else if (auto* vehicle = m_kart->getVehicle())
             {
-                suspension_length = m_kart->getVehicle()->getWheelInfo(i).
+                suspension_length = vehicle->getWheelInfo(i).
                                     m_raycastInfo.m_suspensionLength;
             }
         }

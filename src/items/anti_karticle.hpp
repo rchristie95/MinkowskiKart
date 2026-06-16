@@ -233,7 +233,15 @@ inline void AntiKarticle::updateGraphics(float dt)
     Flyable::updateGraphics(dt);
 
 #ifndef SERVER_ONLY
-    if (m_clone_model)
+    // The clone model is bound to (but not owned by) the firing kart and can
+    // outlive it (the projectile lives up to lifetime() seconds, easily past
+    // an owner that finishes, is eliminated, or is rescued). Driving the clone
+    // dereferences m_owner->getVehicle() down in KartModel::update(), so only
+    // do it while the owner and its physics body are still alive - otherwise
+    // we read a torn-down vehicle and crash (intermittently, depending on
+    // whether the freed memory has been reused).
+    if (m_clone_model && m_owner && !m_owner->isEliminated() &&
+        m_owner->getVehicle())
     {
         const float distance = m_last_speed * dt;
         m_visual_distance += distance;
