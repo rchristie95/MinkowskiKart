@@ -20,6 +20,14 @@ until curl --fail --silent --show-error --max-time 5 "$api_health_url" >/dev/nul
 done
 
 mkdir -p "$HOME/logs"
+
+# Self-healing: a stale saved session left in the data volume from a previous
+# run hijacks sign-in - the server keeps retrying an invalid saved-session
+# token, never reaches OS_SIGNED_IN, times out after 20s and exits, which makes
+# the container crash-loop. Drop any saved profile so --init-user always does a
+# fresh password login (and writes a fresh, valid session).
+rm -rf "$HOME"/.config/supertuxkart/config-* 2>/dev/null || true
+
 echo "Initializing the official host profile..."
 /opt/minkowskikart/bin/MinkowskiKart \
     --init-user \

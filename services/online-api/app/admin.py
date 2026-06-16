@@ -1,4 +1,5 @@
 import argparse
+import os
 from getpass import getpass
 
 import sqlalchemy as sa
@@ -7,7 +8,7 @@ from sqlalchemy import select
 from .config import Settings
 from .database import create_session_factory, init_schema
 from .models import AdminAudit, User, UserSession
-from .security import hash_password
+from .security import hash_password, verify_password
 
 
 def main() -> None:
@@ -25,6 +26,11 @@ def main() -> None:
     reset = subparsers.add_parser("reset-password")
     reset.add_argument("--username", required=True)
     reset.add_argument("--password")
+
+    # Idempotent boot-time provisioning for the official host account. Reads
+    # MK_OFFICIAL_USERNAME / MK_OFFICIAL_PASSWORD from the environment so the
+    # API can self-heal the account the dedicated server logs in with.
+    subparsers.add_parser("ensure-official-host")
 
     args = parser.parse_args()
 
@@ -84,6 +90,58 @@ def main() -> None:
                               detail=username))
             db.commit()
             print(f"Reset password for '{username}' (id {user.id}).")
+
+    elif args.command == "ensure-official-host":
+        # Best-effort: this runs on every API boot, so it must never raise
+        # (a non-zero exit would block uvicorn from starting). The caller is
+        # expected to guard with `|| true` as well.
+        username = (os.environ.get("MK_OFFICIAL_USERNAME")
+                    or "official-host").strip().lower()
+        password = os.environ.get("MK_OFFICIAL_PASSWORD") or ""
+        if not 8 <= len(password) <= 60:
+            print("ensure-official-host: MK_OFFICIAL_PASSWORD is unset or not "
+                  "8-60 chars; skipping.")
+            return
+        try:
+            with session_factory() as db:
+                user = db.scalar(select(User).where(User.username == username))
+                if user is None:
+                    user = User(username=username,
+                                password_hash=hash_password(password),
+                                official_host=True, is_admin=False,
+                                email=f"{username}@minkowskikart.internal")
+                    db.add(user)
+                    db.flush()
+                    db.add(AdminAudit(action="ensure-official-host",
+                                      target_user_id=user.id, detail="created"))
+                    db.commit()
+                    print(f"ensure-official-host: created '{username}' "
+                          f"(id {user.id}).")
+                    return
+                changed = []
+                if not user.official_host:
+                    user.official_host = True
+                    changed.append("official_host")
+                if not user.active:
+                    user.active = True
+                    changed.append("active")
+                if not verify_password(user.password_hash, password):
+                    user.password_hash = hash_password(password)
+                    # Drop sessions tied to the old password.
+                    db.execute(sa.delete(UserSession)
+                               .where(UserSession.user_id == user.id))
+                    changed.append("password")
+                if changed:
+                    db.add(AdminAudit(action="ensure-official-host",
+                                      target_user_id=user.id,
+                                      detail=",".join(changed)))
+                    db.commit()
+                    print(f"ensure-official-host: repaired '{username}' "
+                          f"({', '.join(changed)}).")
+                else:
+                    print(f"ensure-official-host: '{username}' already correct.")
+        except Exception as exc:  # noqa: BLE001 - never block API startup
+            print(f"ensure-official-host: skipped due to error: {exc}")
 
 
 if __name__ == "__main__":

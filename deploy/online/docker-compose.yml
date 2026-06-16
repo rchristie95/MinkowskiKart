@@ -30,6 +30,10 @@ services:
       MK_DATABASE_URL: postgresql+psycopg://minkowski:${POSTGRES_PASSWORD}@postgres/minkowski
       MK_REDIS_URL: redis://redis:6379/0
       MK_ALLOWED_GAME_VERSION: ${MK_ALLOWED_GAME_VERSION:-7}
+      # Used by `app.admin ensure-official-host` on boot to idempotently
+      # provision the account the dedicated server signs in with.
+      MK_OFFICIAL_USERNAME: ${MK_OFFICIAL_USERNAME:-official-host}
+      MK_OFFICIAL_PASSWORD: ${MK_OFFICIAL_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy
