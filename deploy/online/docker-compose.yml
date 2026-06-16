@@ -13,7 +13,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Behind Cloudflare: serve the Cloudflare Origin Certificate for the
+      # proxied sites (see Caddyfile.cloudflare + CLOUDFLARE.md). To run
+      # without Cloudflare, point this back at ./Caddyfile and drop ./certs.
+      - ./Caddyfile.cloudflare:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
       - ./site/robsonchristie:/srv/robsonchristie:ro
       - ./site/minkowskikart:/srv/minkowskikart:ro
       - caddy_data:/data
