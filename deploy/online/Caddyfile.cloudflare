@@ -14,9 +14,15 @@
 # See CLOUDFLARE.md for the full migration runbook.
 
 # Matchmaking API — DNS-only / direct, so it must present a real publicly
-# trusted certificate. Leave Caddy's automatic HTTPS (Let's Encrypt) here.
+# trusted certificate to the (non-browser) game client. Force ACME/Let's
+# Encrypt so Caddy doesn't fall back to the wildcard Cloudflare Origin cert
+# loaded below (which only Cloudflare trusts). Requires this host to be
+# DNS-only in Cloudflare so the ACME challenge reaches Caddy directly.
 {$MK_ONLINE_DOMAIN} {
     encode zstd gzip
+    tls {
+        issuer acme
+    }
     reverse_proxy api:8000
 }
 
