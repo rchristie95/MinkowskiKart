@@ -362,7 +362,7 @@ def write_track_xml():
         '        version        = "7"\n'
         '        groups         = "standard minkowski"\n'
         '        designer       = "Robson Christie"\n'
-        '        music          = "highway_gravel.music"\n'
+        '        music          = "grid_burn.music"\n'
         '        screenshot     = "spontaneous_breakdown_screenshot.png"\n'
         '        smooth-normals = "false"\n'
         '        default-number-of-laps = "3"\n'

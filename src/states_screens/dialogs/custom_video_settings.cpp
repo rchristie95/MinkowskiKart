@@ -411,5 +411,24 @@ void CustomVideoSettingsDialog::updateActivation(const std::string& renderer)
     getWidget<SpinnerWidget>("shadows")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("glow")->setActive(light || (vk && real_light));
     getWidget<CheckBoxWidget>("lightscattering")->setActive(light || (vk && real_light));
+
+    // Powerup visuals (black hole / wormhole gravitational lensing and the
+    // other relativity effects) are screen-space passes that ride on the
+    // advanced lighting pipeline. To stop players from disabling something the
+    // powerups depend on, lock every effect that is currently enabled: a
+    // checked box is greyed out and can no longer be turned off, while
+    // unchecked boxes stay freely toggleable. Run this last so it overrides
+    // the renderer-availability setActive() calls above.
+    static const char* const s_lock_when_checked[] =
+    {
+        "dynamiclight", "lightshaft", "ibl", "motionblur", "mlaa", "glow",
+        "ssao", "ssr", "bloom", "lightscattering", "dof"
+    };
+    for (const char* id : s_lock_when_checked)
+    {
+        CheckBoxWidget* cb = getWidget<CheckBoxWidget>(id);
+        if (cb && cb->getState())
+            cb->setActive(false);
+    }
 #endif
 }   // updateActivation

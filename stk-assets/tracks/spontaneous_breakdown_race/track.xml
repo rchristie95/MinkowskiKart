@@ -3,7 +3,7 @@
         version        = "7"
         groups         = "standard minkowski"
         designer       = "Robson Christie"
-        music          = "highway_gravel.music"
+        music          = "grid_burn.music"
         screenshot     = "spontaneous_breakdown_screenshot.png"
         smooth-normals = "false"
         default-number-of-laps = "3"
