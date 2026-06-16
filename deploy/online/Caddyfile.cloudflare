@@ -13,6 +13,15 @@
 #
 # See CLOUDFLARE.md for the full migration runbook.
 
+{
+    # The proxied sites below manually load the wildcard Cloudflare Origin
+    # cert (*.robsonchristie.com). Without this, Caddy would also serve that
+    # wildcard for online.robsonchristie.com, which is DNS-only and needs a
+    # publicly trusted Let's Encrypt cert for the (non-browser) game client.
+    # ignore_loaded_certs makes Caddy still manage + serve LE for online.
+    auto_https ignore_loaded_certs
+}
+
 # Matchmaking API — DNS-only / direct, so it must present a real publicly
 # trusted certificate to the (non-browser) game client. Force ACME/Let's
 # Encrypt so Caddy doesn't fall back to the wildcard Cloudflare Origin cert
