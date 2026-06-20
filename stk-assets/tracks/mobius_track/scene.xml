@@ -2,7 +2,12 @@
 <scene>
   <sky-color rgb="0 0 0"/>
   <camera far="900"/>
-  <sun xyz="0 0 0" sun-diffuse="255 255 238" sun-specular="255 255 245" ambient="90 80 65" fog="false"/>
+  <!-- The real sun is the point light at the loop centre (mobius_sun_light, below).
+       The directional <sun> is kept black on purpose: a single directional light
+       cannot radiate from the centre of a loop, so any non-zero value lights the
+       back-faces of the track ("sun shining through") and casts a fixed-direction
+       highlight that detaches from the sun ball as you drive. -->
+  <sun xyz="0 0 0" sun-diffuse="0 0 0" sun-specular="0 0 0" ambient="90 80 65" fog="false"/>
   <lightshaft opacity="1.35" color="255 225 150" xyz="0 0 0"/>
   <track model="mobius_visual.spm" x="0" y="0" z="0">
     <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>

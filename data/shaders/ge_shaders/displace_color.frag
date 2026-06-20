@@ -239,10 +239,13 @@ vec3 godRays(vec2 px)
     vec2 sun_screen = vp_xy + (sun_ndc * 0.5 + 0.5) * vp_wh;
     // Occlusion is tested in view space: raw depth01 is so non-linear that
     // any fixed epsilon lets distant walls pass (shafts leaked through
-    // geometry). The interposer world radius doubles as the margin.
+    // geometry). A tight linear-depth margin keeps the test sharp; the old
+    // ~20-unit interposer radius was so generous that track sitting between
+    // the camera and the central sun failed to occlude, so the shafts bled
+    // straight through it.
     float sun_vz = (u_camera.m_view_matrix *
         vec4(sun_world, 1.0)).z;
-    float sun_margin = u_camera.m_godrays_color.w;
+    float sun_margin = 3.0;
 
     // Project the interposer's world radius to pixels (robust to FOV/aspect).
     vec3 cam_right = vec3(u_camera.m_view_matrix[0][0],
@@ -254,6 +257,24 @@ vec3 godRays(vec2 px)
     vec2 rim_ndc = rim_clip.xy / max(rim_clip.w, 0.001);
     vec2 rim_screen = vp_xy + (rim_ndc * 0.5 + 0.5) * vp_wh;
     float R_px = max(length(rim_screen - sun_screen), 4.0);
+
+    // Hard occlusion gate: probe a small disc at the sun's (aberrated) screen
+    // centre. When scene geometry sits in front of it - e.g. the track band
+    // between the camera and the central sun - the sun is hidden, so suppress
+    // the shafts entirely instead of letting the screen-space march leak them
+    // around the occluder and bleed through the track.
+    float sun_vis = 0.0;
+    float r_occ = 0.01 * vp_wh.y;
+    for (int k = 0; k < 8; k++)
+    {
+        float a = float(k) * 0.7853981634;
+        vec2 t = clamp(sun_screen + vec2(cos(a), sin(a)) * r_occ,
+                       vp_xy, vp_xy + vp_wh);
+        if (viewPosAt(t).z >= sun_vz - sun_margin)
+            sun_vis += 0.125;
+    }
+    if (sun_vis <= 0.001)
+        return vec3(0.0);
 
     // Skip pixels far outside the shaft range to keep the pass cheap.
     float px_dist = length(px - sun_screen);
@@ -283,7 +304,7 @@ vec3 godRays(vec2 px)
 
     // Normalised march sum peaks around ~9 at the disc centre; the gain maps
     // that to roughly the additive brightness the GL chain produces.
-    return u_camera.m_godrays_color.rgb * (accum * 0.30 * opacity);
+    return u_camera.m_godrays_color.rgb * (accum * 0.30 * opacity * sun_vis);
 }
 
 // ---- Sun lens flare ----
@@ -352,10 +373,11 @@ vec3 lensFlare(vec2 px)
         return vec3(0.0);
 
     // Soft visibility: fraction of taps around the sun centre that see
-    // past-the-sun depth (same view-space test as the god rays).
+    // past-the-sun depth (same tight view-space margin as the god rays, so
+    // the flare is killed when the track hides the sun).
     float sun_vz = (u_camera.m_view_matrix *
         vec4(sun_world, 1.0)).z;
-    float sun_margin = u_camera.m_godrays_color.w;
+    float sun_margin = 3.0;
     float vis = 0.0;
     float r_vis = 0.012 * vp_wh.y;
     const vec2 VIS_TAPS[5] = vec2[](

@@ -2172,7 +2172,14 @@ def write_scene_xml(track_dir):
         '<scene>',
         '  <sky-color rgb="0 0 0"/>',
         '  <camera far="900"/>',
-        '  <sun xyz="0 0 0" sun-diffuse="255 255 238" sun-specular="255 255 245" ambient="54 48 40" fog="false"/>',
+        # The real sun is the point light at the centre of the loop
+        # (mobius_sun_light, emitted later). The directional <sun> is kept black
+        # on purpose: one directional light cannot radiate from the loop's centre,
+        # so any non-zero value lights the track's back-faces ("sun shining through")
+        # and casts a fixed-direction highlight that detaches from the sun ball
+        # while driving. Tune brightness via the point light / ambient, not here.
+        '  <!-- directional sun zeroed: the central point light (mobius_sun_light) is the real sun -->',
+        '  <sun xyz="0 0 0" sun-diffuse="0 0 0" sun-specular="0 0 0" ambient="54 48 40" fog="false"/>',
         '  <lightshaft opacity="1.35" color="255 225 150" xyz="0 0 0"/>',
         '  <track model="mobius_visual.spm" x="0" y="0" z="0">',
         '    <static-object model="mobius_star_sphere.spm" xyz="0 0 0" hpr="0 0 0" scale="1 1 1" interaction="ghost"/>',
