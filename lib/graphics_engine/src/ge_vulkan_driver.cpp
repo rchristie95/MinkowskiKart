@@ -834,6 +834,9 @@ void GEVulkanDriver::createInstance(SDL_Window* window)
     settings[0].pLayerName = "MoltenVK";
     settings[0].pSettingName = "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS";
     settings[0].type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+    // Keep Metal argument buffers OFF: enabling them lifts Metal's 16-sampler
+    // limit but breaks this renderer's descriptor binding (blank/purple frames).
+    // The displace shaders are instead kept within 16 samplers per stage.
     settings[0].pValues = &setting_false;
     settings[0].valueCount = 1;
     settings[1] = settings[0];
@@ -1798,10 +1801,17 @@ bool GEVulkanDriver::endScene()
         return false;
     }
 
+    // The first use of a heavy pipeline (e.g. the displace_color megashader)
+    // can stall this fence for several seconds while MoltenVK compiles it to a
+    // Metal pipeline. A 2s timeout misfires the swapchain-recreate "recovery"
+    // path below, which re-invalidates pipelines and spins into a per-frame
+    // recreate death-spiral (~1 fps / blank frames). Use a generous timeout so
+    // a legitimate one-off compile stall is not mistaken for a lost surface.
     if (m_vk->in_flight_fences.empty() || vkWaitForFences(m_vk->device, 1,
-        &m_vk->in_flight_fences[m_current_frame], VK_TRUE, 2000000000) ==
+        &m_vk->in_flight_fences[m_current_frame], VK_TRUE, 20000000000ULL) ==
         VK_TIMEOUT)
     {
+        printf("GEVulkanDriver: fence wait timed out -> recreating swapchain\n");
         // Attempt to restore after out focus in gnome fullscreen
         video::CNullDriver::endScene();
         GEVulkan2dRenderer::clear();
