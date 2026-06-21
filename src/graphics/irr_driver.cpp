@@ -672,6 +672,17 @@ begin:
             m_device = createDeviceEx(params);
             if (!m_device && driver_created == video::EDT_VULKAN)
             {
+#if defined(__APPLE__) && !defined(SERVER_ONLY)
+                // macOS is Vulkan/MoltenVK only: OpenGL 4.1 is deprecated and
+                // there is no GL fallback. Fail loudly with a clear message
+                // instead of reverting to the (Vulkan) default and jumping back
+                // to 'begin', which would retry Vulkan forever (infinite loop).
+                Log::fatal("irr_driver",
+                    "Vulkan/MoltenVK could not be initialised. MinkowskiKart "
+                    "requires MoltenVK on macOS (libMoltenVK.dylib must be "
+                    "bundled in <App>/Contents/libs). Aborting instead of "
+                    "falling back to OpenGL.");
+#endif
                 display_msg = L"Vulkan unsupported";
                 UserConfigParams::m_render_driver.revertToDefaults();
                 goto begin;

@@ -20,11 +20,19 @@ layout(push_constant) uniform Constants
 
 layout (set = 2, binding = 2) uniform samplerCube u_skybox_texture;
 layout (set = 3, binding = 0) uniform sampler2D u_displace_color;
+// NOTE(macOS/MoltenVK): u_depth and u_hiz_depth flatten to Metal sampler
+// indices 16 and 17, exceeding Metal's hard limit of 16 samplers per stage,
+// so the "displace" pipeline fails to compile. They are only used by the
+// screen-space-reflection ray-march below; drop them on Metal and fall back to
+// the skybox reflection (u_displace_color at 15 and u_skybox_texture at 13 fit).
+#ifndef GE_DISABLE_DISPLACE_SSR
 layout (set = 3, binding = 1) uniform sampler2DShadow u_depth;
 layout (set = 3, binding = 2) uniform sampler2D u_hiz_depth;
+#endif
 
 #ifdef PBR_ENABLED
 
+#ifndef GE_DISABLE_DISPLACE_SSR
 // Start tracing in this level.
 #define HIZ_START_LEVEL      0
 // Stop tracing if current level is higher than this. (higher level means lower value)
@@ -190,6 +198,7 @@ bool traceHiZ(vec3 p, vec3 v, out vec2 hitPointSS)
     hitPointSS = ray.xy;
     return level < HIZ_STOP_LEVEL && iterations < u_hiz_iterations;
 }
+#endif // !GE_DISABLE_DISPLACE_SSR
 
 #endif
 
@@ -241,6 +250,12 @@ void main()
             return;
         }
 
+#ifdef GE_DISABLE_DISPLACE_SSR
+        // No depth / Hi-Z samplers available on Metal: use the skybox
+        // reflection only (the screen-space ray-march needs u_depth/u_hiz_depth).
+        o_displace_ssr = fallback;
+        return;
+#else
         vec4 result;
         vec2 viewport_scale = u_camera.m_viewport.zw / u_camera.m_screensize;
         vec2 viewport_offset = u_camera.m_viewport.xy / u_camera.m_screensize;
@@ -283,6 +298,7 @@ void main()
             result = mix(fallback, result, blend_weight);
         }
         o_displace_ssr = result;
+#endif // GE_DISABLE_DISPLACE_SSR
     }
 #endif
 }

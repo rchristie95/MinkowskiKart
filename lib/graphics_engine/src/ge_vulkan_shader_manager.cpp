@@ -109,6 +109,12 @@ void GEVulkanShaderManager::loadAllShaders(const std::string& match_filename)
 
 #if defined(TILED_GPU)
     oss << "#define TILED_GPU\n";
+    // Metal permits at most 16 samplers per shader stage (indices 0-15).
+    // displace_transparent.frag would otherwise bind u_displace_ssr at the
+    // flattened sampler index 16 (material array 0-14 + u_displace_mask at 15),
+    // which makes vkCreateGraphicsPipelines("displace") fail under MoltenVK.
+    // Drop the SSR reflection sampler on tile-based (Metal) GPUs.
+    oss << "#define GE_DISABLE_DISPLACE_SSR\n";
 #endif
     g_predefines = oss.str();
 

@@ -568,7 +568,8 @@ void GEVulkanTexture::reloadInternal(const core::dimension2du& max_size)
         else
         {
             throw std::runtime_error(
-                "Missing texture_image in getResizedImageFullPath");
+                std::string("Missing texture_image in getResizedImageFullPath: ")
+                + m_full_path.c_str());
         }
     }
 
