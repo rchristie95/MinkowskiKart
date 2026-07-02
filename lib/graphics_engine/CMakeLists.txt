@@ -113,6 +113,8 @@ endif()
 if(METAL_NATIVE)
     set(GE_METAL_SOURCES
         src/ge_metal_driver.mm
+        src/ge_metal_features.mm
+        src/ge_metal_shader_manager.mm
     )
     set_source_files_properties(${GE_METAL_SOURCES} PROPERTIES
         COMPILE_FLAGS "-x objective-c++ -fobjc-arc"

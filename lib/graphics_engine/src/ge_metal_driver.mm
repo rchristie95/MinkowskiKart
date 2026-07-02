@@ -5,7 +5,9 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 
+#include "ge_metal_features.hpp"
 #include "SDL_metal.h"
+#include "../source/Irrlicht/os.h"
 
 #include <stdexcept>
 #include <string>
@@ -52,6 +54,8 @@ struct GEMetalDriver::Impl
 
     id<MTLRenderPipelineState> spike_pipeline = nil;
 
+    GEMetalFeatures features;
+
     // Per-frame transient state, retained between beginScene and endScene.
     id<CAMetalDrawable> drawable = nil;
     id<MTLCommandBuffer> command_buffer = nil;
@@ -75,6 +79,9 @@ GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
             "(no Metal-capable GPU?)");
     }
     m_impl->queue = [m_impl->device newCommandQueue];
+
+    geMetalPopulateFeatures((__bridge void*)m_impl->device, &m_impl->features);
+    geMetalPrintFeatures(m_impl->features);
 
     m_impl->sdl_view = SDL_Metal_CreateView(window);
     if (m_impl->sdl_view == nullptr)
@@ -180,6 +187,13 @@ bool GEMetalDriver::endScene()
     m_impl->command_buffer = nil;
     return true;
 }   // endScene
+
+// ----------------------------------------------------------------------------
+const GEMetalFeatures& GEMetalDriver::getMetalFeatures() const
+{
+    static const GEMetalFeatures s_empty;
+    return m_impl ? m_impl->features : s_empty;
+}   // getMetalFeatures
 
 // ----------------------------------------------------------------------------
 void GEMetalDriver::OnResize(const core::dimension2d<u32>& size)

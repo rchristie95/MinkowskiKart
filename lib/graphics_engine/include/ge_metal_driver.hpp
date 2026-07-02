@@ -6,6 +6,7 @@
 #ifdef _IRR_COMPILE_WITH_METAL_
 
 #include "ge_driver.hpp"
+#include "ge_metal_features.hpp"
 #include "../source/Irrlicht/CNullDriver.h"
 #include "SIrrCreationParameters.h"
 #include "SColor.h"
@@ -53,6 +54,9 @@ public:
     virtual u32 getMaximalPrimitiveCount() const { return 0x7fffffff; }
 
     IrrlichtDevice* getIrrlichtDevice() const { return m_irrlicht_device; }
+
+    // Detected capabilities of the active Metal device (valid after construction).
+    const GEMetalFeatures& getMetalFeatures() const;
 
 private:
     struct Impl;
