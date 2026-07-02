@@ -47,11 +47,58 @@ public:
 
     virtual bool queryFeature(E_VIDEO_DRIVER_FEATURE feature) const { return true; }
 
-    virtual void setMaterial(const SMaterial& material) {}
+    virtual void setMaterial(const SMaterial& material) { Material = material; }
 
     virtual void OnResize(const core::dimension2d<u32>& size);
 
     virtual u32 getMaximalPrimitiveCount() const { return 0x7fffffff; }
+
+    // ---- 2D rendering (UI / text / HUD) --------------------------------------
+    virtual void draw2DVertexPrimitiveList(const void* vertices, u32 vertexCount,
+        const void* indexList, u32 primitiveCount, E_VERTEX_TYPE vType,
+        scene::E_PRIMITIVE_TYPE pType, E_INDEX_TYPE iType);
+
+    virtual void draw2DImage(const video::ITexture* texture,
+        const core::position2d<s32>& destPos, const core::rect<s32>& sourceRect,
+        const core::rect<s32>* clipRect = 0,
+        SColor color = SColor(255, 255, 255, 255),
+        bool useAlphaChannelOfTexture = false);
+
+    virtual void draw2DImage(const video::ITexture* texture,
+        const core::rect<s32>& destRect, const core::rect<s32>& sourceRect,
+        const core::rect<s32>* clipRect = 0,
+        const video::SColor* const colors = 0,
+        bool useAlphaChannelOfTexture = false);
+
+    virtual void draw2DImageBatch(const video::ITexture* texture,
+        const core::array<core::position2d<s32> >& positions,
+        const core::array<core::rect<s32> >& sourceRects,
+        const core::rect<s32>* clipRect = 0,
+        SColor color = SColor(255, 255, 255, 255),
+        bool useAlphaChannelOfTexture = false);
+
+    virtual void draw2DRectangle(const core::rect<s32>& pos,
+        SColor colorLeftUp, SColor colorRightUp, SColor colorLeftDown,
+        SColor colorRightDown, const core::rect<s32>* clip);
+
+    virtual void draw2DRectangle(SColor color, const core::rect<s32>& pos,
+        const core::rect<s32>* clip)
+    {
+        draw2DRectangle(pos, color, color, color, color, clip);
+    }
+
+    // ---- Scissor / clip state read by the 2D batcher -------------------------
+    virtual void enableScissorTest(const core::rect<s32>& r) { m_clip = r; }
+    virtual void disableScissorTest() { m_clip = getFullscreenClip(); }
+    core::rect<s32> getFullscreenClip() const
+    {
+        return core::rect<s32>(0, 0, ScreenSize.Width, ScreenSize.Height);
+    }
+    const core::rect<s32>& getCurrentClip() const { return m_clip; }
+    virtual const core::dimension2d<u32>& getCurrentRenderTargetSize() const
+    {
+        return ScreenSize;
+    }
 
     IrrlichtDevice* getIrrlichtDevice() const { return m_irrlicht_device; }
 
@@ -71,6 +118,19 @@ private:
     IrrlichtDevice* m_irrlicht_device;
 
     SDL_Window* m_window;
+
+    SMaterial Material;
+
+    core::rect<s32> m_clip;
+
+    // Append a batch of screen-space textured triangles to the 2D queue.
+    void add2DVerticesIndices(const video::S3DVertex* vertices,
+        unsigned vertices_count, const uint16_t* indices,
+        unsigned indices_count, const video::ITexture* texture);
+
+    // Debug: re-render this frame's 2D batches to an offscreen readable texture,
+    // log stats + a luminance grid, and write raw {w,h,BGRA} to path.
+    void dumpScreenshot(int w, int h, const char* path);
 };   // GEMetalDriver
 
 }   // namespace GE
