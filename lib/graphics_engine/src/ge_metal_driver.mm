@@ -196,6 +196,18 @@ const GEMetalFeatures& GEMetalDriver::getMetalFeatures() const
 }   // getMetalFeatures
 
 // ----------------------------------------------------------------------------
+void* GEMetalDriver::getMetalDevice() const
+{
+    return m_impl ? (__bridge void*)m_impl->device : nullptr;
+}   // getMetalDevice
+
+// ----------------------------------------------------------------------------
+void* GEMetalDriver::getMetalCommandQueue() const
+{
+    return m_impl ? (__bridge void*)m_impl->queue : nullptr;
+}   // getMetalCommandQueue
+
+// ----------------------------------------------------------------------------
 void GEMetalDriver::OnResize(const core::dimension2d<u32>& size)
 {
     CNullDriver::OnResize(size);

@@ -58,6 +58,12 @@ public:
     // Detected capabilities of the active Metal device (valid after construction).
     const GEMetalFeatures& getMetalFeatures() const;
 
+    // The id<MTLDevice> / id<MTLCommandQueue> as opaque void* (bridge back with
+    // (__bridge id<MTL...>) in .mm translation units). Used by the resource
+    // layer (textures, buffers, pipelines) to create Metal objects.
+    void* getMetalDevice() const;
+    void* getMetalCommandQueue() const;
+
 private:
     struct Impl;
     Impl* m_impl;
