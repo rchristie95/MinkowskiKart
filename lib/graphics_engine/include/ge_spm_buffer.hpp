@@ -71,6 +71,16 @@ public:
     virtual const irr::core::aabbox3d<irr::f32>& getBoundingBox() const
                                                      { return m_bounding_box; }
     // ------------------------------------------------------------------------
+    // CPU pre-subdivision for smooth relativistic warping without GPU
+    // tessellation (used on Apple/MoltenVK, where emulated tessellation is far
+    // too slow). Repeatedly midpoint-subdivides (crack-free, shared edge
+    // midpoints) until this buffer's LONGEST triangle edge drops below a fixed
+    // world-space target - the same absolute criterion for every buffer, so
+    // seams shared between buffers subdivide to the same depth. Bounded by the
+    // 16-bit index limit. No-op for dense or skinned buffers. Must run before
+    // the geometry is uploaded to the GPU.
+    void subdivideForRelativity();
+    // ------------------------------------------------------------------------
     virtual void setBoundingBox(const irr::core::aabbox3df& box)
                                                       { m_bounding_box = box; }
     // ------------------------------------------------------------------------

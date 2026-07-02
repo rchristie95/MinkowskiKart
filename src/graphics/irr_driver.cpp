@@ -579,9 +579,18 @@ begin:
                 Relativity::isEnabled();
             // Route static geometry through the adaptively tessellated
             // material variants so large triangles (ocean planes etc.)
-            // subdivide and warp smoothly instead of rigidly.
+            // subdivide and warp smoothly instead of rigidly. NOT on
+            // Apple/MoltenVK: emulated tessellation needs a per-draw compute
+            // pre-pass (a TBDR tile flush) that crawled at ~0.3 fps. Coarse
+            // geometry is instead pre-subdivided on the CPU at load
+            // (GESPMBuffer::subdivideForRelativity), so the per-vertex warp is
+            // just as smooth at full framerate.
+#if defined(__APPLE__)
+            GE::getGEConfig()->m_adaptive_tessellation = false;
+#else
             GE::getGEConfig()->m_adaptive_tessellation =
                 Relativity::isEnabled();
+#endif
             // Sun shadow mapping, per-object glow and light scattering
             // (ported from the SP/OpenGL advanced pipeline).
             GE::getGEConfig()->m_shadow_map_size =
