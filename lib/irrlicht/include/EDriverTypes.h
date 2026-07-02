@@ -59,6 +59,11 @@ namespace video
 		//! A driver using vulkan coded by STK
 		EDT_VULKAN,
 
+		//! A native Metal driver for macOS coded by STK (GEMetalDriver).
+		/** Alternative to the MoltenVK-backed EDT_VULKAN path on Apple GPUs;
+		reimplements the GE renderer directly on Metal. */
+		EDT_METAL,
+
 		//! No driver, just for counting the elements
 		EDT_COUNT
 	};

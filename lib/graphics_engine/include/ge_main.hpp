@@ -23,6 +23,7 @@ namespace GE
 class GEOcclusionCulling;
 class GESPMBuffer;
 class GEVulkanDriver;
+class GEMetalDriver;
 enum GEAutoDeferredType : unsigned
 {
     GADT_DISABLED = 0,
@@ -106,6 +107,9 @@ void setVideoDriver(irr::video::IVideoDriver* driver);
 void setShaderFolder(const std::string& path);
 irr::video::IVideoDriver* getDriver();
 GE::GEVulkanDriver* getVKDriver();
+// Returns the active native Metal driver, or NULL when the current backend is
+// not the native Metal one (mirrors getVKDriver()).
+GE::GEMetalDriver* getMTLDriver();
 const std::string& getShaderFolder();
 GEConfig* getGEConfig();
 void deinit();

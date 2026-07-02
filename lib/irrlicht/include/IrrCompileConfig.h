@@ -49,6 +49,14 @@
 #define _IRR_COMPILE_WITH_VULKAN_
 #endif
 
+//! _IRR_COMPILE_WITH_METAL_ for the native Metal backend on macOS (GEMetalDriver).
+//! Opt-in: enabled only when the build passes ENABLE_METAL_STK, which the
+//! METAL_NATIVE CMake option defines. Unlike Vulkan it is OFF by default so
+//! existing (MoltenVK) builds are unaffected.
+#if defined(ENABLE_METAL_STK)
+#define _IRR_COMPILE_WITH_METAL_
+#endif
+
 //! Uncomment this line to compile with the SDL device
 //#define _IRR_COMPILE_WITH_SDL_DEVICE_
 // Always use SDL2 in STK unless server only compilation

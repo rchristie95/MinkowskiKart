@@ -3,6 +3,9 @@
 #include "ge_spm.hpp"
 #include "ge_spm_buffer.hpp"
 #include "ge_vulkan_driver.hpp"
+#ifdef _IRR_COMPILE_WITH_METAL_
+#include "ge_metal_driver.hpp"
+#endif
 #include "mini_glm.hpp"
 
 #include "IMesh.h"
@@ -86,6 +89,15 @@ irr::video::IVideoDriver* getDriver()
 GE::GEVulkanDriver* getVKDriver()
 {
     return dynamic_cast<GE::GEVulkanDriver*>(g_driver);
+}
+
+GE::GEMetalDriver* getMTLDriver()
+{
+#ifdef _IRR_COMPILE_WITH_METAL_
+    return dynamic_cast<GE::GEMetalDriver*>(g_driver);
+#else
+    return NULL;
+#endif
 }
 
 GEConfig* getGEConfig()

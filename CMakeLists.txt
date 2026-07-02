@@ -38,6 +38,10 @@ option(USE_SQLITE3 "Use sqlite to manage server stats and ban list." ON)
 if(APPLE)
     CMAKE_DEPENDENT_OPTION(DLOPEN_MOLTENVK "Use dlopen to load MoltenVK for Apple." ON
         "NOT IOS;NOT SERVER_ONLY" OFF)
+    # Native Metal GE backend (GEMetalDriver), selectable at runtime alongside
+    # the MoltenVK-backed Vulkan path. Off by default; opt-in for macOS desktop.
+    CMAKE_DEPENDENT_OPTION(METAL_NATIVE "Build the native Metal GE backend (macOS desktop)." OFF
+        "NOT IOS;NOT SERVER_ONLY" OFF)
 endif()
 
 CMAKE_DEPENDENT_OPTION(USE_CRYPTO_OPENSSL "Use OpenSSL instead of MbedTLS for cryptography in STK." ON
@@ -55,6 +59,11 @@ CMAKE_DEPENDENT_OPTION(HAVE_OPUS "Enable Opus audio codec support (requires libo
 
 if (DLOPEN_MOLTENVK)
     ADD_DEFINITIONS(-DDLOPEN_MOLTENVK)
+endif()
+
+if (METAL_NATIVE)
+    # Translated to _IRR_COMPILE_WITH_METAL_ in IrrCompileConfig.h.
+    ADD_DEFINITIONS(-DENABLE_METAL_STK)
 endif()
 
 if((UNIX AND NOT APPLE) OR NINTENDO_SWITCH)
@@ -795,6 +804,12 @@ if(NOT SERVER_ONLY)
     if (APPLE AND NOT DLOPEN_MOLTENVK)
         find_library(MOLTENVK_LIBRARY NAMES MoltenVK libMoltenVK REQUIRED)
         target_link_libraries(supertuxkart "-framework Metal -weak_framework IOSurface -framework QuartzCore ${MOLTENVK_LIBRARY}")
+    endif()
+    if (METAL_NATIVE)
+        # The native Metal backend needs these frameworks linked explicitly.
+        # (In the default DLOPEN_MOLTENVK build, Metal is otherwise only loaded
+        # dynamically for MoltenVK and not linked.)
+        target_link_libraries(supertuxkart "-framework Metal -framework QuartzCore -framework Foundation -framework CoreGraphics")
     endif()
     if (IOS)
         target_link_libraries(supertuxkart "-weak_framework CoreHaptics -framework QuartzCore -framework CoreGraphics -framework AVFoundation -framework AudioToolbox -framework Metal -framework GameController -framework OpenGLES -framework UIKit -framework CoreAudio -framework Foundation -framework GLKit")

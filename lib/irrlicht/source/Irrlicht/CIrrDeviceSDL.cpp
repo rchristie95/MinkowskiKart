@@ -48,6 +48,10 @@ namespace irr
 		IVideoDriver* createVulkanDriver(const SIrrlichtCreationParameters& params,
 			io::IFileSystem* io, SDL_Window* win, IrrlichtDevice* device);
 #endif
+#ifdef _IRR_COMPILE_WITH_METAL_
+		IVideoDriver* createMetalDriver(const SIrrlichtCreationParameters& params,
+			io::IFileSystem* io, SDL_Window* win, IrrlichtDevice* device);
+#endif
 	} // end namespace video
 
 } // end namespace irr
@@ -460,6 +464,15 @@ bool CIrrDeviceSDL::createWindow()
 #endif
 		flags |= SDL_WINDOW_VULKAN;
 	}
+	else if (CreationParams.DriverType == video::EDT_METAL)
+	{
+		// Native Metal backend: SDL creates a window whose contentView is
+		// backed by a CAMetalLayer; GEMetalDriver fetches it via
+		// SDL_Metal_GetLayer(SDL_Metal_CreateView(window)).
+#if SDL_VERSION_ATLEAST(2, 0, 12)
+		flags |= SDL_WINDOW_METAL;
+#endif
+	}
 
 #ifdef MOBILE_STK
 	flags |= SDL_WINDOW_BORDERLESS | SDL_WINDOW_MAXIMIZED;
@@ -707,6 +720,23 @@ void CIrrDeviceSDL::createDriver()
 		}
 		#else
 		os::Printer::log("No Vulkan support compiled in.", ELL_ERROR);
+		#endif
+		break;
+	}
+
+	case video::EDT_METAL:
+	{
+		#ifdef _IRR_COMPILE_WITH_METAL_
+		try
+		{
+			VideoDriver = video::createMetalDriver(CreationParams, FileSystem, Window, this);
+		}
+		catch (std::exception& e)
+		{
+			os::Printer::log("createMetalDriver failed", e.what(), ELL_ERROR);
+		}
+		#else
+		os::Printer::log("No native Metal support compiled in.", ELL_ERROR);
 		#endif
 		break;
 	}

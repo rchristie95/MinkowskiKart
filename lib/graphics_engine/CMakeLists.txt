@@ -108,6 +108,18 @@ if(NOT APPLE OR DLOPEN_MOLTENVK)
     set(GE_SOURCES ${GE_SOURCES} src/vulkan.c)
 endif()
 
+# Native Metal backend (macOS desktop, opt-in via -DMETAL_NATIVE=ON). These are
+# Objective-C++ (.mm) sources compiled with ARC.
+if(METAL_NATIVE)
+    set(GE_METAL_SOURCES
+        src/ge_metal_driver.mm
+    )
+    set_source_files_properties(${GE_METAL_SOURCES} PROPERTIES
+        COMPILE_FLAGS "-x objective-c++ -fobjc-arc"
+        LANGUAGE CXX)
+    set(GE_SOURCES ${GE_SOURCES} ${GE_METAL_SOURCES})
+endif()
+
 option(BC7_ISPC "Enable BC7 (BPTC) support (requires ispc and cmake >= 3.19)" OFF)
 if(BC7_ISPC AND NOT ISPC_ARCH MATCHES "unknown")
     add_definitions(-DBC7_ISPC)

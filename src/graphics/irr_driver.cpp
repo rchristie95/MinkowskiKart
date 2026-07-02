@@ -545,9 +545,16 @@ begin:
             driver_created = video::EDT_DIRECT3D9;
         }
         else if (std::string(UserConfigParams::m_render_driver) == "vulkan" ||
-            std::string(UserConfigParams::m_render_driver) == "directx12")
+            std::string(UserConfigParams::m_render_driver) == "directx12" ||
+            std::string(UserConfigParams::m_render_driver) == "metal")
         {
-            driver_created = video::EDT_VULKAN;
+            // "metal" selects the native Metal backend (GEMetalDriver); every
+            // other value here uses the Vulkan backend (MoltenVK on Apple).
+            // Both are GE drivers and share the GEConfig setup below.
+            if (std::string(UserConfigParams::m_render_driver) == "metal")
+                driver_created = video::EDT_METAL;
+            else
+                driver_created = video::EDT_VULKAN;
 #if defined(WIN32) && !defined(SERVER_ONLY)
             if (std::string(UserConfigParams::m_render_driver) == "directx12")
             {
@@ -586,7 +593,12 @@ begin:
             // (GESPMBuffer::subdivideForRelativity), so the per-vertex warp is
             // just as smooth at full framerate.
 #if defined(__APPLE__)
-            GE::getGEConfig()->m_adaptive_tessellation = false;
+            // MoltenVK (EDT_VULKAN) emulates tessellation with an expensive
+            // per-draw compute pre-pass, so it stays off there. The native
+            // Metal backend (EDT_METAL) implements tessellation natively, so
+            // it can turn the adaptive relativistic tessellation back on.
+            GE::getGEConfig()->m_adaptive_tessellation =
+                (driver_created == video::EDT_METAL) && Relativity::isEnabled();
 #else
             GE::getGEConfig()->m_adaptive_tessellation =
                 Relativity::isEnabled();
@@ -616,7 +628,8 @@ begin:
 
 #ifndef SERVER_ONLY
         GE::getGEConfig()->m_fullscreen_desktop =
-            (driver_created == video::EDT_VULKAN &&
+            ((driver_created == video::EDT_VULKAN ||
+              driver_created == video::EDT_METAL) &&
             UserConfigParams::m_vulkan_fullscreen_desktop) ||
             UserConfigParams::m_non_ge_fullscreen_desktop;
 #endif
@@ -679,6 +692,16 @@ begin:
             }
             */
             m_device = createDeviceEx(params);
+            if (!m_device && driver_created == video::EDT_METAL)
+            {
+                // Native Metal failed to initialise: fall back to the
+                // Vulkan/MoltenVK backend rather than aborting, since that is
+                // the supported baseline on macOS.
+                Log::warn("irr_driver", "Native Metal backend could not be "
+                    "initialised, falling back to Vulkan/MoltenVK.");
+                UserConfigParams::m_render_driver = "vulkan";
+                goto begin;
+            }
             if (!m_device && driver_created == video::EDT_VULKAN)
             {
 #if defined(__APPLE__) && !defined(SERVER_ONLY)
