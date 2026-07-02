@@ -1525,7 +1525,7 @@ scene::ISceneNode *IrrDriver::addSphere(float radius,
 #endif
 
 #ifndef SERVER_ONLY
-    bool vk = (GE::getVKDriver() != NULL);
+    bool vk = (GE::getGEDriver() != NULL);
     if (vk)
         GE::getGEConfig()->m_convert_irrlicht_mesh = true;
 #endif

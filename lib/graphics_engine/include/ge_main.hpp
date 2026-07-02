@@ -22,6 +22,7 @@ namespace GE
 {
 class GEOcclusionCulling;
 class GESPMBuffer;
+class GEDriver;
 class GEVulkanDriver;
 class GEMetalDriver;
 enum GEAutoDeferredType : unsigned
@@ -110,6 +111,10 @@ GE::GEVulkanDriver* getVKDriver();
 // Returns the active native Metal driver, or NULL when the current backend is
 // not the native Metal one (mirrors getVKDriver()).
 GE::GEMetalDriver* getMTLDriver();
+// Returns the active GE backend driver (Vulkan or Metal), or NULL when the
+// current driver is not a GE backend. Use this for backend-agnostic checks
+// such as "should meshes be converted to the GE SPM format?".
+GE::GEDriver* getGEDriver();
 const std::string& getShaderFolder();
 GEConfig* getGEConfig();
 void deinit();

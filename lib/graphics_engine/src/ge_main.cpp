@@ -100,6 +100,11 @@ GE::GEMetalDriver* getMTLDriver()
 #endif
 }
 
+GE::GEDriver* getGEDriver()
+{
+    return dynamic_cast<GE::GEDriver*>(g_driver);
+}
+
 GEConfig* getGEConfig()
 {
     return &g_config;

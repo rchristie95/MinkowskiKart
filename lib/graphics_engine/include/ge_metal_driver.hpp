@@ -5,6 +5,7 @@
 
 #ifdef _IRR_COMPILE_WITH_METAL_
 
+#include "ge_driver.hpp"
 #include "../source/Irrlicht/CNullDriver.h"
 #include "SIrrCreationParameters.h"
 #include "SColor.h"
@@ -24,7 +25,7 @@ namespace GE
 // both this and GEVulkanDriver onto a shared GE::GEDriver interface. All
 // Objective-C / Metal state is hidden behind an opaque Impl so this header stays
 // includable from plain C++ translation units.
-class GEMetalDriver : public video::CNullDriver
+class GEMetalDriver : public GE::GEDriver
 {
 public:
     GEMetalDriver(const SIrrlichtCreationParameters& params, io::IFileSystem* io,

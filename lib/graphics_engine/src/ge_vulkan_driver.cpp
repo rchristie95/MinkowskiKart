@@ -512,7 +512,7 @@ bool g_debug_print = false;
 GEVulkanDriver::GEVulkanDriver(const SIrrlichtCreationParameters& params,
                                io::IFileSystem* io, SDL_Window* window,
                                IrrlichtDevice* device)
-              : CNullDriver(io, core::dimension2d<u32>(0, 0)),
+              : GE::GEDriver(io, core::dimension2d<u32>(0, 0)),
                 m_params(params), m_irrlicht_device(device),
                 m_depth_texture(NULL), m_skybox_renderer(NULL),
                 m_mesh_texture_descriptor(NULL), m_rtt_texture(NULL),

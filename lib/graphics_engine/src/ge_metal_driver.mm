@@ -61,7 +61,7 @@ struct GEMetalDriver::Impl
 GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
                              io::IFileSystem* io, SDL_Window* window,
                              IrrlichtDevice* device)
-    : CNullDriver(io, params.WindowSize), m_irrlicht_device(device),
+    : GE::GEDriver(io, params.WindowSize), m_irrlicht_device(device),
       m_window(window)
 {
     m_impl = new Impl();

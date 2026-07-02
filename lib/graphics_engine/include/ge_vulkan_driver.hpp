@@ -7,6 +7,7 @@
 
 #include "vulkan_wrapper.h"
 #include "ge_vma.hpp"
+#include "ge_driver.hpp"
 #include "SDL_video.h"
 
 #include "../source/Irrlicht/CNullDriver.h"
@@ -45,7 +46,7 @@ namespace GE
         GVS_SHADOW,
         GVS_COUNT,
     };
-    class GEVulkanDriver : public video::CNullDriver
+    class GEVulkanDriver : public GE::GEDriver
     {
     public:
 
