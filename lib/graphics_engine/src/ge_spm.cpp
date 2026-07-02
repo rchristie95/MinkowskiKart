@@ -46,6 +46,14 @@ void GESPM::finalize()
     m_bounding_box.reset(0.0f, 0.0f, 0.0f);
     for (unsigned i = 0; i < m_buffer.size(); i++)
     {
+#if defined(__APPLE__)
+        // Apple/MoltenVK has no affordable GPU tessellation, so bake the
+        // subdivision into coarse static geometry at load time; the per-vertex
+        // relativistic warp (spm.vert) then renders it smoothly at full speed,
+        // instead of the emulated per-frame tessellation that crawled at
+        // ~0.3 fps. No-op for dense/skinned buffers.
+        m_buffer[i]->subdivideForRelativity();
+#endif
         m_bounding_box.addInternalBox(m_buffer[i]->getBoundingBox());
         m_buffer[i]->createVertexIndexBuffer();
     }
