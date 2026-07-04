@@ -8,7 +8,7 @@
 // std140 uniform block instance named u_camera. MSL has no global uniform
 // blocks: the camera UBO is a `constant CameraBuffer&` argument bound at the
 // camera buffer index (set=1, binding=0 in GLSL). The relativity helpers take
-// that buffer as an explicit `thread const CameraBuffer& u_camera` parameter;
+// that buffer as an explicit `constant CameraBuffer& u_camera` parameter;
 // the field aliases below then resolve against that parameter exactly like the
 // GLSL originals resolved against the global block. Usage:
 //
@@ -80,7 +80,7 @@ struct CameraBuffer
 // u_camera.m_relativity_params`; those cannot work in MSL because there is no
 // implicit global u_camera. Instead the aliases expand to member accesses on a
 // caller-supplied reference named `u_camera`. The relativity helper functions
-// declare a `thread const CameraBuffer& u_camera` parameter, so within those
+// declare a `constant CameraBuffer& u_camera` parameter, so within those
 // functions the aliases below resolve exactly like the GLSL originals.
 // ---------------------------------------------------------------------------
 #define u_relativity_params       u_camera.m_relativity_params

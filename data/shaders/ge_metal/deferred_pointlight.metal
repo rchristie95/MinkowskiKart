@@ -140,7 +140,6 @@ vertex PointLightVOut ge_deferred_pointlight_vertex(
 // ---------------------------------------------------------------------------
 fragment float4 ge_deferred_pointlight_fragment(
     PointLightVOut                in             [[stage_in]],
-    float4                        frag_coord     [[position]],
     texture2d<float>              u_color        [[texture(0)]],
     texture2d<float>              u_normal       [[texture(1)]],
     texture2d<float>              u_depth        [[texture(2)]],
@@ -148,7 +147,7 @@ fragment float4 ge_deferred_pointlight_fragment(
     constant GEGlobalLightBuffer& u_global_light [[buffer(GE_MTL_BUF_GLOBAL_LIGHT)]])
 {
     // GLSL: ivec2 px = ivec2(gl_FragCoord.xy);
-    uint2 px = uint2(frag_coord.xy);
+    uint2 px = uint2(in.position.xy);
 
     float depth = u_depth.read(px, 0).x;
     if (depth == 1.0)
@@ -166,7 +165,7 @@ fragment float4 ge_deferred_pointlight_fragment(
     // getPosFromUVDepth. Metal's [[position]].xy is window-space like
     // gl_FragCoord.xy. The inverse-projection matrix bakes the [0,1] device-Z,
     // so `depth` (raw device depth) is passed straight through as in the GLSL.
-    float3 xpos = getPosFromUVDepth(float3(frag_coord.xy, depth),
+    float3 xpos = getPosFromUVDepth(float3(in.position.xy, depth),
         u_camera.m_viewport, u_camera.m_inverse_projection_matrix);
 
     float3 eyedir = -normalize(xpos);

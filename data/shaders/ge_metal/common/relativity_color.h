@@ -8,7 +8,7 @@
 //   * gl_FragCoord.xy is not a global in MSL. The scanner helpers that need it
 //     take a `float2 frag_coord` (the fragment [[position]].xy) as an explicit
 //     argument. applyDopplerShift threads it through.
-//   * The camera UBO is passed as `thread const CameraBuffer& u_camera`; the
+//   * The camera UBO is passed as `constant CameraBuffer& u_camera`; the
 //     relativity_bridge.h aliases make the bodies read like the GLSL originals.
 //
 // Include order:
@@ -24,17 +24,17 @@ using namespace metal;
 // ---------------------------------------------------------------------------
 // Enable flags
 // ---------------------------------------------------------------------------
-inline bool relativityVisualsEnabled(thread const CameraBuffer& u_camera)
+inline bool relativityVisualsEnabled(constant CameraBuffer& u_camera)
 {
     return u_relativity_params.x > 0.5;
 }
 
-inline bool dopplerVisualsEnabled(thread const CameraBuffer& u_camera)
+inline bool dopplerVisualsEnabled(constant CameraBuffer& u_camera)
 {
     return u_relativity_params.y > 0.5;
 }
 
-inline bool dopplerScannerEnabled(thread const CameraBuffer& u_camera)
+inline bool dopplerScannerEnabled(constant CameraBuffer& u_camera)
 {
     return u_relativity_observer_pos.w > 0.5;
 }
@@ -43,7 +43,7 @@ inline bool dopplerScannerEnabled(thread const CameraBuffer& u_camera)
 // circle radii below are comparable across arbitrary resolutions.
 // frag_coord is the fragment's window-space xy (MSL [[position]].xy), i.e.
 // the equivalent of gl_FragCoord.xy in the GLSL original.
-inline float dopplerScannerRadius(thread const CameraBuffer& u_camera,
+inline float dopplerScannerRadius(constant CameraBuffer& u_camera,
                                   float2 frag_coord)
 {
     float2 uv = frag_coord / u_screen;
@@ -62,7 +62,7 @@ inline float dopplerScannerRadius(thread const CameraBuffer& u_camera,
 // 1.0 outside the scanner ring (full Doppler), 0.0 inside the inner radius.
 // Returns a constant 1.0 when scanner mode is off so the existing Doppler
 // shift on other triggers (banana squash, attachments, plunger) is unaffected.
-inline float dopplerScannerMask(thread const CameraBuffer& u_camera,
+inline float dopplerScannerMask(constant CameraBuffer& u_camera,
                                 float2 frag_coord)
 {
     if (!dopplerScannerEnabled(u_camera)) return 1.0;
@@ -81,7 +81,7 @@ inline float3 dopplerScannerMonochrome(float3 color)
 
 // Bright ring drawn at the boundary of the scanner window to frame the view
 // like instrumentation. Returns intensity in [0, 1] for additive mixing.
-inline float dopplerScannerRing(thread const CameraBuffer& u_camera,
+inline float dopplerScannerRing(constant CameraBuffer& u_camera,
                                 float2 frag_coord)
 {
     if (!dopplerScannerEnabled(u_camera)) return 0.0;
@@ -195,7 +195,7 @@ inline float3 constrainRGB(float r, float g, float b)
 // straight pass-through of `shifted`, so every early-return below can just
 // run its own result through this helper and still draw the ring / interior
 // when the shift itself is a no-op (low speed, view-aligned, etc.).
-inline float3 applyScannerOverlay(thread const CameraBuffer& u_camera,
+inline float3 applyScannerOverlay(constant CameraBuffer& u_camera,
                                   float2 frag_coord, float3 shifted,
                                   float3 color)
 {
@@ -207,7 +207,7 @@ inline float3 applyScannerOverlay(thread const CameraBuffer& u_camera,
                dopplerScannerRing(u_camera, frag_coord));
 }
 
-inline float3 applyDopplerShift(thread const CameraBuffer& u_camera,
+inline float3 applyDopplerShift(constant CameraBuffer& u_camera,
                                 float2 frag_coord, float3 color,
                                 float3 view_dir)
 {

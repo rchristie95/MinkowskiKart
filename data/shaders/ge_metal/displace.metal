@@ -231,13 +231,13 @@ namespace displace_color_ns
 
 // The skybox is aberrated by the observer's relativistic motion, so the god-ray
 // / lens-flare sun must be aberrated the same way to stay locked to the sky sun.
-inline float3 relativisticSunWorldPos(thread const CameraBuffer& u_camera)
+inline float3 relativisticSunWorldPos(constant CameraBuffer& u_camera)
 {
     return applyRelativisticVisualPosition(u_camera,
         float4(u_camera.m_godrays_pos.xyz, 1.0)).xyz;
 }
 
-inline float3 sampleScene(thread const CameraBuffer& u_camera,
+inline float3 sampleScene(constant CameraBuffer& u_camera,
                           texture2d<float> u_displace_color, sampler samp, float2 px)
 {
     return u_displace_color.sample(samp, px / u_camera.m_screensize).rgb;
@@ -250,7 +250,7 @@ inline float sceneLuma(float3 c)
 
 // View-space position reconstruction from the depth buffer (irrlicht
 // convention: +z forward).
-inline float3 viewPosAt(thread const CameraBuffer& u_camera,
+inline float3 viewPosAt(constant CameraBuffer& u_camera,
                         texture2d<float> u_depth, sampler depth_s, float2 px)
 {
     float2 vp_xy = u_camera.m_viewport.xy;
@@ -263,7 +263,7 @@ inline float3 viewPosAt(thread const CameraBuffer& u_camera,
 }
 
 // ---- Anti-aliasing (FXAA) ----
-inline float3 antialiasScene(thread const CameraBuffer& u_camera,
+inline float3 antialiasScene(constant CameraBuffer& u_camera,
                              texture2d<float> u_displace_color, sampler samp, float2 px)
 {
     float3 rgbM  = sampleScene(u_camera, u_displace_color, samp, px);
@@ -301,7 +301,7 @@ inline float3 antialiasScene(thread const CameraBuffer& u_camera,
 }
 
 // ---- Contrast-adaptive sharpening (AMD CAS style) ----
-inline float3 casSharpen(thread const CameraBuffer& u_camera,
+inline float3 casSharpen(constant CameraBuffer& u_camera,
                          texture2d<float> u_displace_color, sampler samp,
                          float2 px, float3 center)
 {
@@ -329,7 +329,7 @@ inline float3 brightPass(float3 c)
     return c * smoothstep(0.90, 1.0, sceneLuma(c));
 }
 
-inline float3 bloomGather(thread const CameraBuffer& u_camera,
+inline float3 bloomGather(constant CameraBuffer& u_camera,
                           texture2d<float> u_displace_color, sampler samp, float2 px)
 {
     float s = u_camera.m_viewport.w / 540.0;
@@ -348,7 +348,7 @@ inline float3 bloomGather(thread const CameraBuffer& u_camera,
 }
 
 // ---- Depth of field (dof.frag port) ----
-inline float3 applyDOF(thread const CameraBuffer& u_camera,
+inline float3 applyDOF(constant CameraBuffer& u_camera,
                        texture2d<float> u_displace_color, sampler samp,
                        texture2d<float> u_depth, sampler depth_s,
                        float3 col_in, float2 px)
@@ -397,7 +397,7 @@ inline float3 applyDOF(thread const CameraBuffer& u_camera,
 }
 
 // ---- Track god rays / light shafts ----
-inline float3 godRays(thread const CameraBuffer& u_camera,
+inline float3 godRays(constant CameraBuffer& u_camera,
                       texture2d<float> u_depth, sampler depth_s, float2 px)
 {
     float opacity = u_camera.m_godrays_pos.w;
@@ -467,7 +467,7 @@ inline float3 godRays(thread const CameraBuffer& u_camera,
 }
 
 // ---- Sun lens flare ----
-inline float3 lensFlare(thread const CameraBuffer& u_camera,
+inline float3 lensFlare(constant CameraBuffer& u_camera,
                         texture2d<float> u_depth, sampler depth_s, float2 px)
 {
     float opacity = u_camera.m_godrays_pos.w;
@@ -540,7 +540,7 @@ inline float3 lensFlare(thread const CameraBuffer& u_camera,
 }
 
 // ---- Per-object glow outlines ----
-inline float3 glowOutline(thread const CameraBuffer& u_camera,
+inline float3 glowOutline(constant CameraBuffer& u_camera,
                           texture2d<float> u_glow, sampler glow_s,
                           float3 col_in, float2 px)
 {
@@ -570,7 +570,7 @@ inline float3 glowOutline(thread const CameraBuffer& u_camera,
 }
 
 // ---- Volumetric light scattering (pointlightscatter.frag port) ----
-inline float3 lightScatter(thread const CameraBuffer& u_camera,
+inline float3 lightScatter(constant CameraBuffer& u_camera,
                            constant GEGlobalLightBuffer& u_global_light,
                            texture2d<float> u_depth, sampler depth_s, float2 px)
 {
@@ -687,7 +687,7 @@ inline float3 bhBlackbody(float t01)
     return mix(c2, c3, (t01 - 0.75) / 0.25);
 }
 
-inline float3 diskSample(thread const CameraBuffer& u_camera,
+inline float3 diskSample(constant CameraBuffer& u_camera,
                          float a, float b, float doppler, thread float& bright)
 {
     const float DISK_IN = 1.45;   // inner edge (~ISCO) in R_E units
@@ -733,7 +733,7 @@ inline float3 diskSample(thread const CameraBuffer& u_camera,
     return col;
 }
 
-inline float3 bhEmissionAt(thread const CameraBuffer& u_camera,
+inline float3 bhEmissionAt(constant CameraBuffer& u_camera,
                            texture2d<float> u_depth, sampler depth_s, float2 px)
 {
     float3 emission = float3(0.0);
@@ -821,7 +821,7 @@ inline float3 bhEmissionAt(thread const CameraBuffer& u_camera,
     return emission;
 }
 
-inline float2 bhScreenVelocity(thread const CameraBuffer& u_camera, float2 px)
+inline float2 bhScreenVelocity(constant CameraBuffer& u_camera, float2 px)
 {
     float2 vp_xy = u_camera.m_viewport.xy;
     float2 vp_wh = u_camera.m_viewport.zw;
@@ -851,7 +851,7 @@ inline float2 bhScreenVelocity(thread const CameraBuffer& u_camera, float2 px)
     return vel;
 }
 
-inline float3 bhLensFlare(thread const CameraBuffer& u_camera,
+inline float3 bhLensFlare(constant CameraBuffer& u_camera,
                           texture2d<float> u_depth, sampler depth_s, float2 px)
 {
     float knob = u_camera.m_postfx_flags2.z;
@@ -924,7 +924,7 @@ inline float3 bhLensFlare(thread const CameraBuffer& u_camera,
     return flare * knob;
 }
 
-inline float3 kerrAccretion(thread const CameraBuffer& u_camera,
+inline float3 kerrAccretion(constant CameraBuffer& u_camera,
                             texture2d<float> u_depth, sampler depth_s, float2 px)
 {
     float3 em = bhEmissionAt(u_camera, u_depth, depth_s, px);
@@ -1429,7 +1429,7 @@ inline float getMaxTraceDistance(float3 p, float3 v)
 // v          : Screen space reflection direction
 // hitPointSS : Returns screen space hit point
 // Returns    : Whether RT actually hit a surface
-inline bool traceHiZ(thread const CameraBuffer& u_camera,
+inline bool traceHiZ(constant CameraBuffer& u_camera,
                      texture2d<float> u_hiz_depth,
                      float3 p, float3 v, thread float2& hitPointSS)
 {

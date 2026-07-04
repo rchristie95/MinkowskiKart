@@ -6,7 +6,7 @@
 // the GLSL: same branch guards, same epsilons, same operation order. GLSL
 // inversesqrt() is spelled rsqrt() in MSL (identical semantics). The only
 // structural change from GLSL is that the camera UBO is passed explicitly as
-// `thread const CameraBuffer& u_camera` instead of being a global block; the
+// `constant CameraBuffer& u_camera` instead of being a global block; the
 // field aliases in relativity_bridge.h make the bodies read identically.
 //
 // Include order:
@@ -22,27 +22,27 @@ using namespace metal;
 // ---------------------------------------------------------------------------
 // Accessors (mirror the GLSL helpers of the same name)
 // ---------------------------------------------------------------------------
-inline bool relativityVisualsEnabled(thread const CameraBuffer& u_camera)
+inline bool relativityVisualsEnabled(constant CameraBuffer& u_camera)
 {
     return u_relativity_params.x > 0.5;
 }
 
-inline float3 getRelativityBetaVector(thread const CameraBuffer& u_camera)
+inline float3 getRelativityBetaVector(constant CameraBuffer& u_camera)
 {
     return u_relativity_beta.xyz;
 }
 
-inline float getRelativityCLight(thread const CameraBuffer& u_camera)
+inline float getRelativityCLight(constant CameraBuffer& u_camera)
 {
     return max(u_relativity_beta.w, 0.0);
 }
 
-inline float getRelativityGamma(thread const CameraBuffer& u_camera)
+inline float getRelativityGamma(constant CameraBuffer& u_camera)
 {
     return max(u_relativity_params.z, 1.0);
 }
 
-inline float getRelativityInverseGamma(thread const CameraBuffer& u_camera)
+inline float getRelativityInverseGamma(constant CameraBuffer& u_camera)
 {
     float inv_gamma = u_relativity_params.w;
     return inv_gamma > 0.0 ? inv_gamma : 1.0;
@@ -55,7 +55,7 @@ inline float getRelativityInverseGamma(thread const CameraBuffer& u_camera)
 // float alone without ambiguity against the 2-arg form when a default is used,
 // so the disable-flag form is named explicitly. Behaviour is identical.
 // ---------------------------------------------------------------------------
-inline float getRelativisticVisualFade(thread const CameraBuffer& u_camera,
+inline float getRelativisticVisualFade(constant CameraBuffer& u_camera,
                                        float3 world_position,
                                        float3 object_velocity)
 {
@@ -64,7 +64,7 @@ inline float getRelativisticVisualFade(thread const CameraBuffer& u_camera,
     return 1.0;
 }
 
-inline float getRelativisticVisualFade(thread const CameraBuffer& u_camera,
+inline float getRelativisticVisualFade(constant CameraBuffer& u_camera,
                                        float3 world_position,
                                        float3 object_velocity,
                                        float disable_relativity_visual)
@@ -86,7 +86,7 @@ inline float getRelativisticVisualFade(thread const CameraBuffer& u_camera,
 // worldDirectionToObserverDirection: relativistic aberration of a unit ray
 // ---------------------------------------------------------------------------
 inline float3 worldDirectionToObserverDirection(
-    thread const CameraBuffer& u_camera, float3 world_direction)
+    constant CameraBuffer& u_camera, float3 world_direction)
 {
     float3 beta_vector = getRelativityBetaVector(u_camera);
     float beta2 = dot(beta_vector, beta_vector);
@@ -114,7 +114,7 @@ inline float3 worldDirectionToObserverDirection(
 // transformObserverRayToWorldDirection: inverse aberration (observer -> world)
 // ---------------------------------------------------------------------------
 inline float3 transformObserverRayToWorldDirection(
-    thread const CameraBuffer& u_camera, float3 observer_direction)
+    constant CameraBuffer& u_camera, float3 observer_direction)
 {
     float observer_length2 = dot(observer_direction, observer_direction);
     if (observer_length2 < 1e-8)
@@ -151,7 +151,7 @@ inline float3 transformObserverRayToWorldDirection(
 // now-arriving light left it.
 // ---------------------------------------------------------------------------
 inline float3 getRelativisticEmissionRelativePosition(
-    thread const CameraBuffer& u_camera, float3 relative,
+    constant CameraBuffer& u_camera, float3 relative,
     float3 object_velocity)
 {
     float c_light = getRelativityCLight(u_camera);
@@ -184,7 +184,7 @@ inline float3 getRelativisticEmissionRelativePosition(
 // applyRelativisticVisualPosition: full retarded-position + aberration warp
 // ---------------------------------------------------------------------------
 inline float4 applyRelativisticVisualPosition(
-    thread const CameraBuffer& u_camera, float4 world_position,
+    constant CameraBuffer& u_camera, float4 world_position,
     float3 object_velocity, float visual_fade)
 {
     if (!relativityVisualsEnabled(u_camera) || visual_fade <= 1e-4)
@@ -213,7 +213,7 @@ inline float4 applyRelativisticVisualPosition(
 
 // Convenience overload matching the GLSL zero-velocity default.
 inline float4 applyRelativisticVisualPosition(
-    thread const CameraBuffer& u_camera, float4 world_position)
+    constant CameraBuffer& u_camera, float4 world_position)
 {
     return applyRelativisticVisualPosition(u_camera, world_position,
         float3(0.0), 1.0);

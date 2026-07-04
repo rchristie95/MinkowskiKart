@@ -22,7 +22,7 @@
 //
 // The relativity helpers (transformObserverRayToWorldDirection) live in
 // common/relativity_visual.h and take the camera UBO explicitly as
-// `thread const CameraBuffer& u_camera`; relativity_bridge.h defines that
+// `constant CameraBuffer& u_camera`; relativity_bridge.h defines that
 // CameraBuffer struct (field-for-field identical to GECameraBuffer, incl.
 // m_inverse_projection_matrix + m_inverse_view_matrix that this pass reads) and
 // the u_* field aliases. So we bind the same camera UBO and pass it through.

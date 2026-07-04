@@ -8,6 +8,8 @@
 
 #include "ge_metal_features.hpp"
 #include "ge_metal_texture.hpp"
+#include "ge_metal_shader_manager.hpp"
+#include "ge_main.hpp"
 #include "SDL_metal.h"
 #include "../source/Irrlicht/os.h"
 
@@ -426,6 +428,40 @@ void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
     }
 }   // geMetalDumpScreenshot
 
+// ----------------------------------------------------------------------------
+// Compile every ported .metal shader in data/shaders/ge_metal/ at runtime via
+// GEMetalShaderManager (newLibraryWithSource: on-GPU) and log pass/fail. This
+// validates the auto-ported MSL tree without an offline Metal toolchain.
+// Enabled by GE_METAL_TEST_SHADERS.
+static void geMetalTestShaders(GEMetalDriver* drv, void* device)
+{
+    std::string sf = GE::getShaderFolder();   // .../data/shaders/ge_shaders/
+    size_t pos = sf.rfind("ge_shaders");
+    std::string folder = (pos == std::string::npos) ? sf
+        : sf.substr(0, pos) + "ge_metal/";
+    GE::GEMetalShaderManager::init(drv, device, folder);
+
+    NSString* dir = [NSString stringWithUTF8String:folder.c_str()];
+    NSArray* all = [[NSFileManager defaultManager]
+        contentsOfDirectoryAtPath:dir error:nil];
+    NSArray* metals = [[all filteredArrayUsingPredicate:
+        [NSPredicate predicateWithFormat:@"self ENDSWITH '.metal'"]]
+        sortedArrayUsingSelector:@selector(compare:)];
+
+    int ok = 0, fail = 0;
+    for (NSString* f in metals)
+    {
+        std::string name = f.UTF8String;
+        void* lib = GE::GEMetalShaderManager::getLibrary(name);
+        if (lib) { ok++; irr::os::Printer::log("GEMetalShaderTest OK", name.c_str()); }
+        else { fail++; irr::os::Printer::log("GEMetalShaderTest FAIL", name.c_str(), ELL_ERROR); }
+    }
+    char msg[96];
+    snprintf(msg, sizeof(msg), "compiled %d/%lu ported shaders (%d failed)",
+        ok, (unsigned long)metals.count, fail);
+    irr::os::Printer::log("GEMetalShaderTest", msg);
+}   // geMetalTestShaders
+
 // ============================================================================
 GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
                              io::IFileSystem* io, SDL_Window* window,
@@ -447,6 +483,9 @@ GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
 
     geMetalPopulateFeatures((__bridge void*)m_impl->device, &m_impl->features);
     geMetalPrintFeatures(m_impl->features);
+
+    if (getenv("GE_METAL_TEST_SHADERS"))
+        geMetalTestShaders(this, (__bridge void*)m_impl->device);
 
     m_impl->sdl_view = SDL_Metal_CreateView(window);
     if (m_impl->sdl_view == nullptr)

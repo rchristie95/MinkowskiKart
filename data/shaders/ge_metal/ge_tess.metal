@@ -201,7 +201,7 @@ inline float ge_tess_getDistanceToEdge(float3 point, float3 pA, float3 pB)
 
 // Port of getWarpAmplification(pA, pB). Needs beta + observer_pos from the
 // camera UBO, so it takes u_camera explicitly (GLSL read the global block).
-inline float ge_tess_getWarpAmplification(thread const CameraBuffer& u_camera,
+inline float ge_tess_getWarpAmplification(constant CameraBuffer& u_camera,
                                           float3 pA, float3 pB)
 {
     float3 beta = getRelativityBetaVector(u_camera);
@@ -216,7 +216,7 @@ inline float ge_tess_getWarpAmplification(thread const CameraBuffer& u_camera,
 }
 
 // Port of getTessLevel(pA, pB).
-inline float ge_tess_getTessLevel(thread const CameraBuffer& u_camera,
+inline float ge_tess_getTessLevel(constant CameraBuffer& u_camera,
                                  float3 pA, float3 pB)
 {
     float edge_l = length(pB - pA);
@@ -457,7 +457,7 @@ inline FragmentIn ge_tess_eval_vertex(thread const ControlPoint& c0,
                                       thread const ControlPoint& c1,
                                       thread const ControlPoint& c2,
                                       float3 bc,
-                                      thread const CameraBuffer& u_camera)
+                                      constant CameraBuffer& u_camera)
 {
     FragmentIn o;
     float4 world_pos  = bc.x * c0.world_position + bc.y * c1.world_position + bc.z * c2.world_position;

@@ -43,7 +43,7 @@ using namespace metal;
 // rational curve had it); the filmic shoulder rolls highlights off instead
 // of clipping them.
 // ---------------------------------------------------------------------------
-static inline float3 filmicToneMap(thread const CameraBuffer& u_camera, float3 x)
+static inline float3 filmicToneMap(constant CameraBuffer& u_camera, float3 x)
 {
     x *= u_camera.m_beauty_params.x;
     return clamp((x * (2.51 * x + 0.03)) /
@@ -53,7 +53,7 @@ static inline float3 filmicToneMap(thread const CameraBuffer& u_camera, float3 x
 // ---------------------------------------------------------------------------
 // Gentle grade: a touch of S-curve contrast plus the saturation knob.
 // ---------------------------------------------------------------------------
-static inline float3 gradeColor(thread const CameraBuffer& u_camera, float3 c)
+static inline float3 gradeColor(constant CameraBuffer& u_camera, float3 c)
 {
     c = mix(c, c * c * (3.0 - 2.0 * c), 0.15);
     float luma = dot(c, float3(0.2126, 0.7152, 0.0722));
