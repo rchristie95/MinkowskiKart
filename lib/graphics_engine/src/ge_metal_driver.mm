@@ -237,7 +237,8 @@ void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
             [enc setRenderPipelineState:d->pipeline_3d];
             [enc setDepthStencilState:d->depth_test];
             [enc setFragmentSamplerState:d->sampler_2d atIndex:0];
-            [enc setCullMode:MTLCullModeNone];
+            [enc setFrontFacingWinding:MTLWindingClockwise];
+            [enc setCullMode:MTLCullModeBack];
             for (const GEMetal3DCmd& c : d->cmds3d)
             {
                 [enc setVertexBuffer:c.vbuf offset:0 atIndex:0];
@@ -652,7 +653,9 @@ bool GEMetalDriver::endScene()
             [enc setRenderPipelineState:m_impl->pipeline_3d];
             [enc setDepthStencilState:m_impl->depth_test];
             [enc setFragmentSamplerState:m_impl->sampler_2d atIndex:0];
-            [enc setCullMode:MTLCullModeNone];
+            // GE geometry uses clockwise front faces (VK_FRONT_FACE_CLOCKWISE).
+            [enc setFrontFacingWinding:MTLWindingClockwise];
+            [enc setCullMode:MTLCullModeBack];
             for (const GEMetal3DCmd& c : m_impl->cmds3d)
             {
                 [enc setVertexBuffer:c.vbuf offset:0 atIndex:0];
