@@ -4,6 +4,7 @@
 
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
+#import <simd/simd.h>
 
 #include "ge_metal_features.hpp"
 #include "ge_metal_texture.hpp"
@@ -11,11 +12,13 @@
 #include "../source/Irrlicht/os.h"
 
 #include <S3DVertex.h>
+#include <IMeshBuffer.h>
 
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -63,6 +66,65 @@ fragment float4 ge2d_fragment(VOut in [[stage_in]],
 }
 )MSL";
 
+// Inline MSL for the forward 3D pipeline. Renders SPM geometry
+// (S3DVertexSkinnedMesh) with a model-view-projection matrix and albedo
+// texture. The GL-style projection z in [-1,1] is remapped to Metal's [0,1]
+// in the shader (matching the clip matrix the GE camera bakes in).
+static NSString* const g_3d_msl = @R"MSL(
+#include <metal_stdlib>
+using namespace metal;
+
+struct V3In
+{
+    float3 pos   [[attribute(0)]];
+    float4 color [[attribute(1)]];
+    half2  uv    [[attribute(2)]];
+};
+struct V3Out
+{
+    float4 position [[position]];
+    float4 color;
+    float2 uv;
+};
+struct MVP { float4x4 m; };
+
+vertex V3Out ge3d_vertex(V3In in [[stage_in]], constant MVP& u [[buffer(1)]])
+{
+    float4 clip = u.m * float4(in.pos, 1.0);
+    clip.z = (clip.z + clip.w) * 0.5;   // GL [-1,1] -> Metal [0,1]
+    V3Out o;
+    o.position = clip;
+    o.color = in.color.zyxw;
+    o.uv = float2(in.uv);
+    return o;
+}
+
+fragment float4 ge3d_fragment(V3Out in [[stage_in]],
+                             texture2d<float> tex [[texture(0)]],
+                             sampler samp [[sampler(0)]])
+{
+    float4 t = tex.sample(samp, in.uv);
+    return float4(t.rgb, 1.0);
+}
+)MSL";
+
+// A cached GPU copy of a static SPM mesh buffer's geometry.
+struct GEMetalCachedMesh
+{
+    id<MTLBuffer> vbuf = nil;
+    id<MTLBuffer> ibuf = nil;
+    uint32_t index_count = 0;
+};
+
+struct GEMetal3DCmd
+{
+    id<MTLBuffer> vbuf;
+    id<MTLBuffer> ibuf;
+    uint32_t index_count;
+    simd_float4x4 mvp;
+    const video::ITexture* texture;
+};
+
 // Screen-space 2D vertex uploaded to the GPU (20 bytes: pos, packed BGRA, uv).
 struct GEMetal2DVertex
 {
@@ -100,6 +162,17 @@ struct GEMetalDriver::Impl
     std::vector<uint16_t> indices;
     std::vector<GEMetal2DCmd> cmds;
 
+    // 3D forward pipeline + resources.
+    id<MTLRenderPipelineState> pipeline_3d = nil;
+    id<MTLDepthStencilState> depth_test = nil;    // 3D: less, write
+    id<MTLDepthStencilState> depth_none = nil;    // 2D: always, no write
+    id<MTLTexture> depth_tex = nil;
+    std::map<const void*, GEMetalCachedMesh> mesh_cache;
+    std::vector<GEMetal3DCmd> cmds3d;
+    irr::core::matrix4 mat_world;
+    irr::core::matrix4 mat_view;
+    irr::core::matrix4 mat_proj;
+
     // Per-frame transient state.
     id<CAMetalDrawable> drawable = nil;
     id<MTLCommandBuffer> command_buffer = nil;
@@ -125,19 +198,54 @@ void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
         td.storageMode = MTLStorageModeShared;
         id<MTLTexture> off = [d->device newTextureWithDescriptor:td];
 
+        MTLTextureDescriptor* dd = [MTLTextureDescriptor
+            texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
+                                         width:w height:h mipmapped:NO];
+        dd.usage = MTLTextureUsageRenderTarget;
+        dd.storageMode = MTLStorageModePrivate;
+        id<MTLTexture> off_depth = [d->device newTextureWithDescriptor:dd];
+
         MTLRenderPassDescriptor* rp =
             [MTLRenderPassDescriptor renderPassDescriptor];
         rp.colorAttachments[0].texture = off;
         rp.colorAttachments[0].loadAction = MTLLoadActionClear;
         rp.colorAttachments[0].storeAction = MTLStoreActionStore;
         rp.colorAttachments[0].clearColor = d->clear_color;
+        rp.depthAttachment.texture = off_depth;
+        rp.depthAttachment.loadAction = MTLLoadActionClear;
+        rp.depthAttachment.clearDepth = 1.0;
+        rp.depthAttachment.storeAction = MTLStoreActionDontCare;
 
         id<MTLCommandBuffer> cb = [d->queue commandBuffer];
         id<MTLRenderCommandEncoder> enc =
             [cb renderCommandEncoderWithDescriptor:rp];
+        // 3D pass (same as endScene) so the captured frame shows the world.
+        if (!d->cmds3d.empty())
+        {
+            [enc setRenderPipelineState:d->pipeline_3d];
+            [enc setDepthStencilState:d->depth_test];
+            [enc setFragmentSamplerState:d->sampler_2d atIndex:0];
+            [enc setCullMode:MTLCullModeNone];
+            for (const GEMetal3DCmd& c : d->cmds3d)
+            {
+                [enc setVertexBuffer:c.vbuf offset:0 atIndex:0];
+                simd_float4x4 mvp = c.mvp;
+                [enc setVertexBytes:&mvp length:sizeof(mvp) atIndex:1];
+                id<MTLTexture> t = d->white;
+                const GEMetalTexture* gt =
+                    dynamic_cast<const GEMetalTexture*>(c.texture);
+                if (gt && gt->getMetalTexture())
+                    t = (__bridge id<MTLTexture>)gt->getMetalTexture();
+                [enc setFragmentTexture:t atIndex:0];
+                [enc drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                    indexCount:c.index_count indexType:MTLIndexTypeUInt16
+                    indexBuffer:c.ibuf indexBufferOffset:0];
+            }
+        }
         if (!d->cmds.empty())
         {
             [enc setRenderPipelineState:d->pipeline_2d];
+            [enc setDepthStencilState:d->depth_none];
             [enc setVertexBuffer:d->vbuf offset:0 atIndex:0];
             [enc setFragmentSamplerState:d->sampler_2d atIndex:0];
             for (const GEMetal2DCmd& cmd : d->cmds)
@@ -305,6 +413,9 @@ GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
         MTLBlendFactorOneMinusSourceAlpha;
     pd.colorAttachments[0].destinationAlphaBlendFactor =
         MTLBlendFactorOneMinusSourceAlpha;
+    // The frame render pass carries a depth attachment (for 3D), so the 2D
+    // pipeline must declare a matching depth format even though it never writes.
+    pd.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
     m_impl->pipeline_2d =
         [m_impl->device newRenderPipelineStateWithDescriptor:pd error:&err];
     if (m_impl->pipeline_2d == nil)
@@ -314,6 +425,52 @@ GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
         m_impl = NULL;
         throw std::runtime_error("Metal 2D pipeline creation failed: " + msg);
     }
+
+    // ---- 3D forward pipeline (SPM geometry) ---------------------------------
+    id<MTLLibrary> lib3d = [m_impl->device newLibraryWithSource:g_3d_msl
+                                                        options:nil error:&err];
+    if (lib3d == nil)
+    {
+        std::string msg = err ? err.localizedDescription.UTF8String : "unknown";
+        delete m_impl; m_impl = NULL;
+        throw std::runtime_error("Metal 3D shader compile failed: " + msg);
+    }
+    // S3DVertexSkinnedMesh: pos float3 @0, normal u32 @12, color BGRA @16,
+    // uv half2 @20, tangent @28, joints @32, weights @40; stride 48.
+    MTLVertexDescriptor* vd3 = [[MTLVertexDescriptor alloc] init];
+    vd3.attributes[0].format = MTLVertexFormatFloat3;
+    vd3.attributes[0].offset = 0;   vd3.attributes[0].bufferIndex = 0;
+    vd3.attributes[1].format = MTLVertexFormatUChar4Normalized;
+    vd3.attributes[1].offset = 16;  vd3.attributes[1].bufferIndex = 0;
+    vd3.attributes[2].format = MTLVertexFormatHalf2;
+    vd3.attributes[2].offset = 20;  vd3.attributes[2].bufferIndex = 0;
+    vd3.layouts[0].stride = sizeof(irr::video::S3DVertexSkinnedMesh);
+    vd3.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    MTLRenderPipelineDescriptor* pd3 =
+        [[MTLRenderPipelineDescriptor alloc] init];
+    pd3.vertexFunction = [lib3d newFunctionWithName:@"ge3d_vertex"];
+    pd3.fragmentFunction = [lib3d newFunctionWithName:@"ge3d_fragment"];
+    pd3.vertexDescriptor = vd3;
+    pd3.colorAttachments[0].pixelFormat = m_impl->layer.pixelFormat;
+    pd3.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+    m_impl->pipeline_3d =
+        [m_impl->device newRenderPipelineStateWithDescriptor:pd3 error:&err];
+    if (m_impl->pipeline_3d == nil)
+    {
+        std::string msg = err ? err.localizedDescription.UTF8String : "unknown";
+        delete m_impl; m_impl = NULL;
+        throw std::runtime_error("Metal 3D pipeline creation failed: " + msg);
+    }
+
+    MTLDepthStencilDescriptor* ds = [[MTLDepthStencilDescriptor alloc] init];
+    ds.depthCompareFunction = MTLCompareFunctionLess;
+    ds.depthWriteEnabled = YES;
+    m_impl->depth_test = [m_impl->device newDepthStencilStateWithDescriptor:ds];
+    MTLDepthStencilDescriptor* dn = [[MTLDepthStencilDescriptor alloc] init];
+    dn.depthCompareFunction = MTLCompareFunctionAlways;
+    dn.depthWriteEnabled = NO;
+    m_impl->depth_none = [m_impl->device newDepthStencilStateWithDescriptor:dn];
 
     MTLSamplerDescriptor* sd = [[MTLSamplerDescriptor alloc] init];
     sd.minFilter = MTLSamplerMinMagFilterLinear;
@@ -369,9 +526,69 @@ bool GEMetalDriver::beginScene(bool backBuffer, bool zBuffer, SColor color,
     m_impl->verts.clear();
     m_impl->indices.clear();
     m_impl->cmds.clear();
+    m_impl->cmds3d.clear();
     m_clip = getFullscreenClip();
     return true;
 }   // beginScene
+
+// ----------------------------------------------------------------------------
+void GEMetalDriver::setTransform(E_TRANSFORMATION_STATE state,
+                                 const core::matrix4& mat)
+{
+    if (m_impl == NULL)
+        return;
+    switch (state)
+    {
+    case ETS_WORLD:      m_impl->mat_world = mat; break;
+    case ETS_VIEW:       m_impl->mat_view = mat;  break;
+    case ETS_PROJECTION: m_impl->mat_proj = mat;  break;
+    default: break;
+    }
+}   // setTransform
+
+// ----------------------------------------------------------------------------
+void GEMetalDriver::drawMeshBuffer(const scene::IMeshBuffer* mb)
+{
+    if (m_impl == NULL || mb == NULL)
+        return;
+    // Only SPM geometry (the format GE meshes are converted to) is handled.
+    if (mb->getVertexType() != video::EVT_SKINNED_MESH)
+        return;
+    const u32 vcount = mb->getVertexCount();
+    const u32 icount = mb->getIndexCount();
+    if (vcount == 0 || icount == 0)
+        return;
+
+    // Cache the static geometry on the GPU, keyed by the mesh-buffer pointer.
+    GEMetalCachedMesh& cm = m_impl->mesh_cache[mb];
+    if (cm.vbuf == nil)
+    {
+        const size_t vbytes =
+            (size_t)vcount * sizeof(irr::video::S3DVertexSkinnedMesh);
+        const size_t ibytes = (size_t)icount * sizeof(uint16_t);
+        cm.vbuf = [m_impl->device newBufferWithBytes:mb->getVertices()
+            length:vbytes options:MTLResourceStorageModeShared];
+        cm.ibuf = [m_impl->device newBufferWithBytes:mb->getIndices()
+            length:ibytes options:MTLResourceStorageModeShared];
+        cm.index_count = icount;
+    }
+
+    // MVP = proj * view * world (irrlicht convention), passed column-major.
+    irr::core::matrix4 mvp = m_impl->mat_proj * m_impl->mat_view *
+        m_impl->mat_world;
+    simd_float4x4 m;
+    const float* p = mvp.pointer();
+    for (int c = 0; c < 4; c++)
+        m.columns[c] = (simd_float4){ p[c*4+0], p[c*4+1], p[c*4+2], p[c*4+3] };
+
+    GEMetal3DCmd cmd;
+    cmd.vbuf = cm.vbuf;
+    cmd.ibuf = cm.ibuf;
+    cmd.index_count = cm.index_count;
+    cmd.mvp = m;
+    cmd.texture = mb->getMaterial().getTexture(0);
+    m_impl->cmds3d.push_back(cmd);
+}   // drawMeshBuffer
 
 // ----------------------------------------------------------------------------
 bool GEMetalDriver::endScene()
@@ -388,8 +605,52 @@ bool GEMetalDriver::endScene()
         rp.colorAttachments[0].storeAction = MTLStoreActionStore;
         rp.colorAttachments[0].clearColor = m_impl->clear_color;
 
+        // Depth buffer for the 3D pass (recreated on resize).
+        NSUInteger dw = m_impl->drawable.texture.width;
+        NSUInteger dh = m_impl->drawable.texture.height;
+        if (m_impl->depth_tex == nil || m_impl->depth_tex.width != dw ||
+            m_impl->depth_tex.height != dh)
+        {
+            MTLTextureDescriptor* dd = [MTLTextureDescriptor
+                texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
+                                             width:dw height:dh mipmapped:NO];
+            dd.usage = MTLTextureUsageRenderTarget;
+            dd.storageMode = MTLStorageModePrivate;
+            m_impl->depth_tex = [m_impl->device newTextureWithDescriptor:dd];
+        }
+        rp.depthAttachment.texture = m_impl->depth_tex;
+        rp.depthAttachment.loadAction = MTLLoadActionClear;
+        rp.depthAttachment.clearDepth = 1.0;
+        rp.depthAttachment.storeAction = MTLStoreActionDontCare;
+
         id<MTLRenderCommandEncoder> enc =
             [m_impl->command_buffer renderCommandEncoderWithDescriptor:rp];
+
+        // ---- 3D forward pass (opaque, depth-tested) -------------------------
+        if (!m_impl->cmds3d.empty())
+        {
+            [enc setRenderPipelineState:m_impl->pipeline_3d];
+            [enc setDepthStencilState:m_impl->depth_test];
+            [enc setFragmentSamplerState:m_impl->sampler_2d atIndex:0];
+            [enc setCullMode:MTLCullModeNone];
+            for (const GEMetal3DCmd& c : m_impl->cmds3d)
+            {
+                [enc setVertexBuffer:c.vbuf offset:0 atIndex:0];
+                simd_float4x4 mvp = c.mvp;
+                [enc setVertexBytes:&mvp length:sizeof(mvp) atIndex:1];
+                id<MTLTexture> t = m_impl->white;
+                const GEMetalTexture* gt =
+                    dynamic_cast<const GEMetalTexture*>(c.texture);
+                if (gt && gt->getMetalTexture())
+                    t = (__bridge id<MTLTexture>)gt->getMetalTexture();
+                [enc setFragmentTexture:t atIndex:0];
+                [enc drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                indexCount:c.index_count
+                                 indexType:MTLIndexTypeUInt16
+                               indexBuffer:c.ibuf
+                         indexBufferOffset:0];
+            }
+        }
 
         if (!m_impl->cmds.empty())
         {
@@ -412,6 +673,7 @@ bool GEMetalDriver::endScene()
             std::memcpy(m_impl->ibuf.contents, m_impl->indices.data(), ibytes);
 
             [enc setRenderPipelineState:m_impl->pipeline_2d];
+            [enc setDepthStencilState:m_impl->depth_none];
             [enc setVertexBuffer:m_impl->vbuf offset:0 atIndex:0];
             [enc setFragmentSamplerState:m_impl->sampler_2d atIndex:0];
 
@@ -452,13 +714,22 @@ bool GEMetalDriver::endScene()
     m_impl->drawable = nil;
     m_impl->command_buffer = nil;
 
-    // One-shot offscreen verification dump (GE_METAL_SCREENSHOT=<path>).
+    // Offscreen verification dump (GE_METAL_SCREENSHOT=<path>). Fires once at
+    // frame GE_METAL_SHOT_FRAME (default 1) so a mid-race HUD frame can be
+    // captured rather than the loading screen.
+    static int s_frame = 0;
     static bool s_dumped = false;
+    s_frame++;
     const char* shot = getenv("GE_METAL_SCREENSHOT");
-    if (shot && !s_dumped && !m_impl->cmds.empty())
+    if (shot && !s_dumped)
     {
-        s_dumped = true;
-        dumpScreenshot((int)ScreenSize.Width, (int)ScreenSize.Height, shot);
+        const char* fs = getenv("GE_METAL_SHOT_FRAME");
+        int target = fs ? atoi(fs) : 1;
+        if (s_frame >= target)
+        {
+            s_dumped = true;
+            dumpScreenshot((int)ScreenSize.Width, (int)ScreenSize.Height, shot);
+        }
     }
     return true;
 }   // endScene

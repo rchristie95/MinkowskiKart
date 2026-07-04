@@ -49,6 +49,12 @@ public:
 
     virtual void setMaterial(const SMaterial& material) { Material = material; }
 
+    // ---- 3D rendering (forward, textured, depth-tested) ---------------------
+    virtual void setTransform(E_TRANSFORMATION_STATE state,
+                              const core::matrix4& mat);
+
+    virtual void drawMeshBuffer(const scene::IMeshBuffer* mb);
+
     virtual void OnResize(const core::dimension2d<u32>& size);
 
     virtual u32 getMaximalPrimitiveCount() const { return 0x7fffffff; }
