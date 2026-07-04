@@ -110,11 +110,27 @@ fragment float4 ge3d_fragment(V3Out in [[stage_in]],
 {
     float4 t = tex.sample(samp, in.uv);
     if (t.a < 0.5) discard_fragment();               // alpha-test cutout
+    float3 albedo = t.rgb * in.color.rgb;
+
     float3 N = normalize(in.wnormal);
-    float3 L = normalize(float3(0.35, 0.9, 0.4));     // fixed sun-ish direction
+    float3 L = normalize(float3(0.45, 0.72, 0.30));   // warm sun direction
+
+    // Hemispheric ambient (cool sky from above, warm bounce from below) gives
+    // depth without a full IBL pass; N.y<0 faces read darker (fake grounding).
+    float hemi = 0.5 + 0.5 * N.y;
+    float3 sky = float3(0.42, 0.48, 0.58);
+    float3 gnd = float3(0.26, 0.22, 0.18);
+    float3 ambient = mix(gnd, sky, hemi);
+
     float ndl = max(dot(N, L), 0.0);
-    float light = 0.4 + 0.7 * ndl;                    // ambient + diffuse
-    return float4(t.rgb * in.color.rgb * light, 1.0);
+    float3 sun = float3(1.15, 1.05, 0.9) * ndl;       // warm directional sun
+
+    float3 lit = albedo * (ambient + sun);
+    // Reinhard tonemap keeps highlights from blowing out (the deferred path
+    // tonemaps HDR; this approximates it so the forward pass is not washed out).
+    lit = lit / (1.0 + lit);
+    lit = pow(lit, float3(1.0 / 1.1));                // slight contrast lift
+    return float4(lit, 1.0);
 }
 )MSL";
 

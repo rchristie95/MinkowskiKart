@@ -729,9 +729,13 @@ namespace UserConfigParams
         &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
 #elif defined(__APPLE__)
     // OpenGL 4.1 is deprecated on macOS since 2018; default to Vulkan/MoltenVK.
+    // NOTE: new players MUST default to "vulkan" (MoltenVK) — it is the polished,
+    // full-featured renderer. The native "metal" backend is EXPERIMENTAL and
+    // opt-in only (via --render-driver=metal or a manual config edit); never make
+    // it the default until it reaches visual parity with the MoltenVK path.
     PARAM_PREFIX StringUserConfigParam         m_render_driver
         PARAM_DEFAULT(  StringUserConfigParam("vulkan", "render_driver",
-        &m_video_group, "Render video driver to use, at the moment opengl, vulkan or directx9 is supported.") );
+        &m_video_group, "Render video driver to use: vulkan (default, MoltenVK on macOS), opengl, directx9, or metal (experimental native Metal on macOS).") );
 #else
     // Windows, Linux and the rest default to the Vulkan renderer (OpenGL
     // stays selectable in the graphics settings).
