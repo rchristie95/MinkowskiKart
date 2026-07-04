@@ -144,6 +144,15 @@ void CustomVideoSettingsDialog::beforeAddingWidgets()
 
     rds->m_properties[PROP_WRAP_AROUND] = "true";
     rds->clearLabels();
+#if defined(__APPLE__)
+    // macOS: OpenGL 4.1 is deprecated. Offer MoltenVK (the polished default,
+    // stored as "vulkan") vs the EXPERIMENTAL native Metal backend (stored as
+    // "metal"). The display labels are mapped to those stored driver strings in
+    // processEvent so the many m_render_driver == "vulkan" checks keep working.
+    rds->addLabel("MoltenVK");
+    rds->addLabel("Metal");
+    rds->setValue(std::string(UserConfigParams::m_render_driver) == "metal" ? 1 : 0);
+#else
     rds->addLabel("OpenGL");
     rds->addLabel("Vulkan");
     const int rd_count = 2;
@@ -163,9 +172,25 @@ void CustomVideoSettingsDialog::beforeAddingWidgets()
         rds->addLabel(StringUtils::utf8ToWide(UserConfigParams::m_render_driver));
         rds->setValue(rd_count);
     }
+#endif
     rds->setActive(StateManager::get()->getGameState() != GUIEngine::INGAME_MENU);
 #endif
 } // beforeAddingWidgets
+
+// -----------------------------------------------------------------------------
+
+// On macOS the render-driver spinner shows "MoltenVK"/"Metal"; map those display
+// labels to the stored driver strings ("vulkan"/"metal") so the many
+// m_render_driver == "vulkan" checks across the codebase keep working. On other
+// platforms the (lower-cased) label already is the driver string.
+static std::string mapRenderDriverLabel(const std::string& label_lower)
+{
+#if defined(__APPLE__)
+    if (label_lower == "moltenvk") return "vulkan";
+    if (label_lower == "metal")    return "metal";
+#endif
+    return label_lower;
+}   // mapRenderDriverLabel
 
 // -----------------------------------------------------------------------------
 
@@ -178,9 +203,13 @@ GUIEngine::EventPropagation CustomVideoSettingsDialog::processEvent(const std::s
         // kept when the players chooses to apply the new config
         // However, we immediately update the GUI to show which
         // advanced settings are available or not with the chosen renderer
-        std::string rd = StringUtils::wideToUtf8(
-            getWidget<GUIEngine::SpinnerWidget>("render_driver")->getStringValue().make_lower());
-
+        std::string rd = mapRenderDriverLabel(StringUtils::wideToUtf8(
+            getWidget<GUIEngine::SpinnerWidget>("render_driver")->getStringValue().make_lower()));
+#if defined(__APPLE__)
+        // Both MoltenVK and native Metal are GE backends -> same advanced
+        // options, so show them enabled (Metal ignores the ones it lacks).
+        rd = "vulkan";
+#endif
         updateActivation(rd);
     }
     if (eventSource == "buttons")
@@ -229,9 +258,13 @@ GUIEngine::EventPropagation CustomVideoSettingsDialog::processEvent(const std::s
             // whichever matches the renderer being applied so neither
             // clobbers the other.
             {
+#if defined(__APPLE__)
+                const bool vk_selected = true;   // MoltenVK + Metal are both GE
+#else
                 const bool vk_selected = StringUtils::wideToUtf8(
                     getWidget<GUIEngine::SpinnerWidget>("render_driver")
                     ->getStringValue().make_lower()) == "vulkan";
+#endif
                 const bool ao_on = advanced_pipeline &&
                     getWidget<CheckBoxWidget>("ssao")->getState();
                 if (vk_selected)
@@ -289,8 +322,8 @@ GUIEngine::EventPropagation CustomVideoSettingsDialog::processEvent(const std::s
                 getWidget<SpinnerWidget>("geometry_detail")->getValue();;
             int quality = getWidget<SpinnerWidget>("image_quality")->getValue();
 
-            std::string rd = StringUtils::wideToUtf8(
-                getWidget<GUIEngine::SpinnerWidget>("render_driver")->getStringValue().make_lower());
+            std::string rd = mapRenderDriverLabel(StringUtils::wideToUtf8(
+                getWidget<GUIEngine::SpinnerWidget>("render_driver")->getStringValue().make_lower()));
 
             bool need_restart = false;
             if (std::string(UserConfigParams::m_render_driver) != rd)
@@ -352,7 +385,10 @@ void CustomVideoSettingsDialog::updateActivation(const std::string& renderer)
 #ifndef SERVER_ONLY
     bool light = getWidget<CheckBoxWidget>("dynamiclight")->getState();
     bool real_light = light;
-    bool vk = GE::getDriver()->getDriverType() == video::EDT_VULKAN;
+    // Both the Vulkan (MoltenVK) and native Metal backends are GE drivers and
+    // expose the same advanced-pipeline options.
+    bool vk = GE::getDriver()->getDriverType() == video::EDT_VULKAN ||
+              GE::getDriver()->getDriverType() == video::EDT_METAL;
     bool modern_gl = CVS->isGLSL();
 
     // If showing enabled options for a specific renderer has
