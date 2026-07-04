@@ -76,24 +76,27 @@ using namespace metal;
 
 struct V3In
 {
-    float3 pos   [[attribute(0)]];
-    float4 color [[attribute(1)]];
-    half2  uv    [[attribute(2)]];
+    float3 pos    [[attribute(0)]];
+    float4 normal [[attribute(1)]];   // Int1010102Normalized -> xyz object normal
+    float4 color  [[attribute(2)]];
+    half2  uv     [[attribute(3)]];
 };
 struct V3Out
 {
     float4 position [[position]];
+    float3 wnormal;
     float4 color;
     float2 uv;
 };
-struct MVP { float4x4 m; };
+struct U3D { float4x4 mvp; float4x4 model; };
 
-vertex V3Out ge3d_vertex(V3In in [[stage_in]], constant MVP& u [[buffer(1)]])
+vertex V3Out ge3d_vertex(V3In in [[stage_in]], constant U3D& u [[buffer(1)]])
 {
-    float4 clip = u.m * float4(in.pos, 1.0);
+    float4 clip = u.mvp * float4(in.pos, 1.0);
     clip.z = (clip.z + clip.w) * 0.5;   // GL [-1,1] -> Metal [0,1]
     V3Out o;
     o.position = clip;
+    o.wnormal = (u.model * float4(in.normal.xyz, 0.0)).xyz;
     o.color = in.color.zyxw;
     o.uv = float2(in.uv);
     return o;
@@ -104,7 +107,12 @@ fragment float4 ge3d_fragment(V3Out in [[stage_in]],
                              sampler samp [[sampler(0)]])
 {
     float4 t = tex.sample(samp, in.uv);
-    return float4(t.rgb, 1.0);
+    if (t.a < 0.5) discard_fragment();               // alpha-test cutout
+    float3 N = normalize(in.wnormal);
+    float3 L = normalize(float3(0.35, 0.9, 0.4));     // fixed sun-ish direction
+    float ndl = max(dot(N, L), 0.0);
+    float light = 0.4 + 0.7 * ndl;                    // ambient + diffuse
+    return float4(t.rgb * in.color.rgb * light, 1.0);
 }
 )MSL";
 
@@ -122,8 +130,12 @@ struct GEMetal3DCmd
     id<MTLBuffer> ibuf;
     uint32_t index_count;
     simd_float4x4 mvp;
+    simd_float4x4 model;
     const video::ITexture* texture;
 };
+
+// Matches the MSL U3D constant buffer (mvp, model).
+struct GEMetal3DUniforms { simd_float4x4 mvp; simd_float4x4 model; };
 
 // Screen-space 2D vertex uploaded to the GPU (20 bytes: pos, packed BGRA, uv).
 struct GEMetal2DVertex
@@ -229,8 +241,8 @@ void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
             for (const GEMetal3DCmd& c : d->cmds3d)
             {
                 [enc setVertexBuffer:c.vbuf offset:0 atIndex:0];
-                simd_float4x4 mvp = c.mvp;
-                [enc setVertexBytes:&mvp length:sizeof(mvp) atIndex:1];
+                GEMetal3DUniforms u3 = { c.mvp, c.model };
+                [enc setVertexBytes:&u3 length:sizeof(u3) atIndex:1];
                 id<MTLTexture> t = d->white;
                 const GEMetalTexture* gt =
                     dynamic_cast<const GEMetalTexture*>(c.texture);
@@ -438,12 +450,14 @@ GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
     // S3DVertexSkinnedMesh: pos float3 @0, normal u32 @12, color BGRA @16,
     // uv half2 @20, tangent @28, joints @32, weights @40; stride 48.
     MTLVertexDescriptor* vd3 = [[MTLVertexDescriptor alloc] init];
-    vd3.attributes[0].format = MTLVertexFormatFloat3;
+    vd3.attributes[0].format = MTLVertexFormatFloat3;             // position @0
     vd3.attributes[0].offset = 0;   vd3.attributes[0].bufferIndex = 0;
-    vd3.attributes[1].format = MTLVertexFormatUChar4Normalized;
-    vd3.attributes[1].offset = 16;  vd3.attributes[1].bufferIndex = 0;
-    vd3.attributes[2].format = MTLVertexFormatHalf2;
-    vd3.attributes[2].offset = 20;  vd3.attributes[2].bufferIndex = 0;
+    vd3.attributes[1].format = MTLVertexFormatInt1010102Normalized; // normal @12
+    vd3.attributes[1].offset = 12;  vd3.attributes[1].bufferIndex = 0;
+    vd3.attributes[2].format = MTLVertexFormatUChar4Normalized;   // color BGRA @16
+    vd3.attributes[2].offset = 16;  vd3.attributes[2].bufferIndex = 0;
+    vd3.attributes[3].format = MTLVertexFormatHalf2;              // uv @20
+    vd3.attributes[3].offset = 20;  vd3.attributes[3].bufferIndex = 0;
     vd3.layouts[0].stride = sizeof(irr::video::S3DVertexSkinnedMesh);
     vd3.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
 
@@ -576,16 +590,22 @@ void GEMetalDriver::drawMeshBuffer(const scene::IMeshBuffer* mb)
     // MVP = proj * view * world (irrlicht convention), passed column-major.
     irr::core::matrix4 mvp = m_impl->mat_proj * m_impl->mat_view *
         m_impl->mat_world;
-    simd_float4x4 m;
-    const float* p = mvp.pointer();
-    for (int c = 0; c < 4; c++)
-        m.columns[c] = (simd_float4){ p[c*4+0], p[c*4+1], p[c*4+2], p[c*4+3] };
+    auto toSimd = [](const irr::core::matrix4& im) -> simd_float4x4
+    {
+        simd_float4x4 o;
+        const float* p = im.pointer();
+        for (int c = 0; c < 4; c++)
+            o.columns[c] = simd_make_float4(p[c*4+0], p[c*4+1], p[c*4+2],
+                p[c*4+3]);
+        return o;
+    };
 
     GEMetal3DCmd cmd;
     cmd.vbuf = cm.vbuf;
     cmd.ibuf = cm.ibuf;
     cmd.index_count = cm.index_count;
-    cmd.mvp = m;
+    cmd.mvp = toSimd(mvp);
+    cmd.model = toSimd(m_impl->mat_world);
     cmd.texture = mb->getMaterial().getTexture(0);
     m_impl->cmds3d.push_back(cmd);
 }   // drawMeshBuffer
@@ -636,8 +656,8 @@ bool GEMetalDriver::endScene()
             for (const GEMetal3DCmd& c : m_impl->cmds3d)
             {
                 [enc setVertexBuffer:c.vbuf offset:0 atIndex:0];
-                simd_float4x4 mvp = c.mvp;
-                [enc setVertexBytes:&mvp length:sizeof(mvp) atIndex:1];
+                GEMetal3DUniforms u3 = { c.mvp, c.model };
+                [enc setVertexBytes:&u3 length:sizeof(u3) atIndex:1];
                 id<MTLTexture> t = m_impl->white;
                 const GEMetalTexture* gt =
                     dynamic_cast<const GEMetalTexture*>(c.texture);
