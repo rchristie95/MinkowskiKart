@@ -258,7 +258,8 @@ struct GEMetalDriver::Impl
 // texture, log pixel stats + a coarse luminance grid, and write raw {w,h,BGRA}
 // to 'path'. Enabled via GE_METAL_SCREENSHOT so the UI can be verified without
 // Screen Recording permission. Runs once.
-void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
+void GEMetalDriver::dumpScreenshot(int w, int h, const char* path,
+                                  std::vector<uint8_t>* out_pixels)
 {
     Impl* d = m_impl;
     if (d == nullptr || w <= 0 || h <= 0)
@@ -387,6 +388,11 @@ void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
         [off getBytes:pixels.data() bytesPerRow:w * 4
            fromRegion:MTLRegionMake2D(0, 0, w, h) mipmapLevel:0];
 
+        if (out_pixels)
+            *out_pixels = pixels;
+        if (path == nullptr || path[0] == 0)
+            return;   // readback-only (createScreenShot): skip stats + file
+
         // Stats: fraction of pixels differing from the clear colour.
         uint8_t cr = (uint8_t)(d->clear_color.red * 255.0);
         uint8_t cg = (uint8_t)(d->clear_color.green * 255.0);
@@ -443,6 +449,35 @@ void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
         }
     }
 }   // geMetalDumpScreenshot
+
+// ----------------------------------------------------------------------------
+IImage* GEMetalDriver::createScreenShot(video::ECOLOR_FORMAT format,
+                                        video::E_RENDER_TARGET target)
+{
+    if (m_impl == nullptr)
+        return NULL;
+    const int w = (int)ScreenSize.Width;
+    const int h = (int)ScreenSize.Height;
+    if (w <= 0 || h <= 0)
+        return NULL;
+
+    std::vector<uint8_t> pixels;
+    dumpScreenshot(w, h, nullptr, &pixels);   // offscreen readback (BGRA)
+    if ((int)pixels.size() < w * h * 4)
+        return NULL;
+
+    IImage* image = createImage(video::ECF_A8R8G8B8,
+        core::dimension2du((u32)w, (u32)h));
+    if (!image)
+        return NULL;
+    uint8_t* dst = (uint8_t*)image->lock();
+    // Metal BGRA8Unorm == irrlicht ECF_A8R8G8B8 in memory; force opaque alpha.
+    memcpy(dst, pixels.data(), (size_t)w * h * 4);
+    for (size_t i = 3; i < (size_t)w * h * 4; i += 4)
+        dst[i] = 255;
+    image->unlock();
+    return image;
+}   // createScreenShot
 
 // ----------------------------------------------------------------------------
 // Compile every ported .metal shader in data/shaders/ge_metal/ at runtime via

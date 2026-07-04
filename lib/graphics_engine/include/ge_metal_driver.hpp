@@ -12,6 +12,9 @@
 #include "SColor.h"
 #include "SDL_video.h"
 
+#include <cstdint>
+#include <vector>
+
 using namespace irr;
 using namespace video;
 
@@ -62,6 +65,12 @@ public:
     virtual void OnResize(const core::dimension2d<u32>& size);
 
     virtual u32 getMaximalPrimitiveCount() const { return 0x7fffffff; }
+
+    // Read back the current frame as an irrlicht image (used by STK's
+    // screenshot feature / MK_AUTO_SHOT so Metal captures like the Vulkan path).
+    virtual IImage* createScreenShot(
+        video::ECOLOR_FORMAT format = video::ECF_UNKNOWN,
+        video::E_RENDER_TARGET target = video::ERT_FRAME_BUFFER);
 
     // ---- 2D rendering (UI / text / HUD) --------------------------------------
     virtual void draw2DVertexPrimitiveList(const void* vertices, u32 vertexCount,
@@ -138,9 +147,11 @@ private:
         unsigned vertices_count, const uint16_t* indices,
         unsigned indices_count, const video::ITexture* texture);
 
-    // Debug: re-render this frame's 2D batches to an offscreen readable texture,
-    // log stats + a luminance grid, and write raw {w,h,BGRA} to path.
-    void dumpScreenshot(int w, int h, const char* path);
+    // Re-render this frame's batches into an offscreen readable texture. If
+    // 'path' is set, also log stats + a luminance grid and write raw {w,h,BGRA}
+    // to it. If 'out_pixels' is set, the BGRA readback is copied there.
+    void dumpScreenshot(int w, int h, const char* path,
+                        std::vector<uint8_t>* out_pixels = nullptr);
 };   // GEMetalDriver
 
 }   // namespace GE
