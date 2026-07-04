@@ -116,6 +116,42 @@ fragment float4 ge3d_fragment(V3Out in [[stage_in]],
 }
 )MSL";
 
+// Inline MSL for standard-vertex 3D geometry (S3DVertex) such as the skybox.
+// Unlit (albedo * vertex colour) since the skybox is emissive.
+static NSString* const g_3ds_msl = @R"MSL(
+#include <metal_stdlib>
+using namespace metal;
+struct S3In
+{
+    float3 pos   [[attribute(0)]];
+    float4 color [[attribute(1)]];
+    float2 uv    [[attribute(2)]];
+};
+struct S3Out { float4 position [[position]]; float4 color; float2 uv; };
+struct MVPs { float4x4 mvp; };
+vertex S3Out ge3ds_vertex(S3In in [[stage_in]], constant MVPs& u [[buffer(1)]])
+{
+    float4 clip = u.mvp * float4(in.pos, 1.0);
+    clip.z = (clip.z + clip.w) * 0.5;
+    S3Out o; o.position = clip; o.color = in.color.zyxw; o.uv = in.uv;
+    return o;
+}
+fragment float4 ge3ds_fragment(S3Out in [[stage_in]],
+                              texture2d<float> tex [[texture(0)]],
+                              sampler samp [[sampler(0)]])
+{
+    return float4(tex.sample(samp, in.uv).rgb * in.color.rgb, 1.0);
+}
+)MSL";
+
+struct GEMetal3DStdCmd
+{
+    uint32_t index_start;
+    uint32_t index_count;
+    simd_float4x4 mvp;
+    const video::ITexture* texture;
+};
+
 // A cached GPU copy of a static SPM mesh buffer's geometry.
 struct GEMetalCachedMesh
 {
@@ -185,6 +221,14 @@ struct GEMetalDriver::Impl
     irr::core::matrix4 mat_view;
     irr::core::matrix4 mat_proj;
 
+    // Standard-vertex 3D (skybox etc.): dynamic per-frame geometry.
+    id<MTLRenderPipelineState> pipeline_3d_std = nil;
+    id<MTLBuffer> vbuf3d = nil;
+    id<MTLBuffer> ibuf3d = nil;
+    std::vector<uint8_t> verts3d;     // raw S3DVertex bytes
+    std::vector<uint16_t> indices3d;
+    std::vector<GEMetal3DStdCmd> cmds3d_std;
+
     // Per-frame transient state.
     id<CAMetalDrawable> drawable = nil;
     id<MTLCommandBuffer> command_buffer = nil;
@@ -231,6 +275,40 @@ void GEMetalDriver::dumpScreenshot(int w, int h, const char* path)
         id<MTLCommandBuffer> cb = [d->queue commandBuffer];
         id<MTLRenderCommandEncoder> enc =
             [cb renderCommandEncoderWithDescriptor:rp];
+        // Match endScene order: skybox (no depth) first, then opaque 3D.
+        if (!d->cmds3d_std.empty())
+        {
+            const size_t vb = d->verts3d.size();
+            const size_t ib = d->indices3d.size() * sizeof(uint16_t);
+            if (d->vbuf3d == nil || d->vbuf3d.length < vb)
+                d->vbuf3d = [d->device newBufferWithLength:(vb*2+4096)
+                    options:MTLResourceStorageModeShared];
+            if (d->ibuf3d == nil || d->ibuf3d.length < ib)
+                d->ibuf3d = [d->device newBufferWithLength:(ib*2+4096)
+                    options:MTLResourceStorageModeShared];
+            std::memcpy(d->vbuf3d.contents, d->verts3d.data(), vb);
+            std::memcpy(d->ibuf3d.contents, d->indices3d.data(), ib);
+            [enc setRenderPipelineState:d->pipeline_3d_std];
+            [enc setDepthStencilState:d->depth_none];
+            [enc setFragmentSamplerState:d->sampler_2d atIndex:0];
+            [enc setCullMode:MTLCullModeNone];
+            [enc setVertexBuffer:d->vbuf3d offset:0 atIndex:0];
+            for (const GEMetal3DStdCmd& c : d->cmds3d_std)
+            {
+                simd_float4x4 mvp = c.mvp;
+                [enc setVertexBytes:&mvp length:sizeof(mvp) atIndex:1];
+                id<MTLTexture> t = d->white;
+                const GEMetalTexture* gt =
+                    dynamic_cast<const GEMetalTexture*>(c.texture);
+                if (gt && gt->getMetalTexture())
+                    t = (__bridge id<MTLTexture>)gt->getMetalTexture();
+                [enc setFragmentTexture:t atIndex:0];
+                [enc drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                    indexCount:c.index_count indexType:MTLIndexTypeUInt16
+                    indexBuffer:d->ibuf3d
+                    indexBufferOffset:c.index_start * sizeof(uint16_t)];
+            }
+        }
         // 3D pass (same as endScene) so the captured frame shows the world.
         if (!d->cmds3d.empty())
         {
@@ -478,6 +556,40 @@ GEMetalDriver::GEMetalDriver(const SIrrlichtCreationParameters& params,
         throw std::runtime_error("Metal 3D pipeline creation failed: " + msg);
     }
 
+    // Standard-vertex 3D pipeline (S3DVertex: pos @0, normal @12, color @24,
+    // uv @28; stride 36). Used for the skybox and other non-SPM 3D geometry.
+    id<MTLLibrary> lib3ds = [m_impl->device newLibraryWithSource:g_3ds_msl
+                                                         options:nil error:&err];
+    if (lib3ds == nil)
+    {
+        std::string msg = err ? err.localizedDescription.UTF8String : "unknown";
+        delete m_impl; m_impl = NULL;
+        throw std::runtime_error("Metal std-3D shader compile failed: " + msg);
+    }
+    MTLVertexDescriptor* vds = [[MTLVertexDescriptor alloc] init];
+    vds.attributes[0].format = MTLVertexFormatFloat3;
+    vds.attributes[0].offset = 0;   vds.attributes[0].bufferIndex = 0;
+    vds.attributes[1].format = MTLVertexFormatUChar4Normalized;
+    vds.attributes[1].offset = 24;  vds.attributes[1].bufferIndex = 0;
+    vds.attributes[2].format = MTLVertexFormatFloat2;
+    vds.attributes[2].offset = 28;  vds.attributes[2].bufferIndex = 0;
+    vds.layouts[0].stride = 36;
+    vds.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+    MTLRenderPipelineDescriptor* pds = [[MTLRenderPipelineDescriptor alloc] init];
+    pds.vertexFunction = [lib3ds newFunctionWithName:@"ge3ds_vertex"];
+    pds.fragmentFunction = [lib3ds newFunctionWithName:@"ge3ds_fragment"];
+    pds.vertexDescriptor = vds;
+    pds.colorAttachments[0].pixelFormat = m_impl->layer.pixelFormat;
+    pds.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+    m_impl->pipeline_3d_std =
+        [m_impl->device newRenderPipelineStateWithDescriptor:pds error:&err];
+    if (m_impl->pipeline_3d_std == nil)
+    {
+        std::string msg = err ? err.localizedDescription.UTF8String : "unknown";
+        delete m_impl; m_impl = NULL;
+        throw std::runtime_error("Metal std-3D pipeline creation failed: " + msg);
+    }
+
     MTLDepthStencilDescriptor* ds = [[MTLDepthStencilDescriptor alloc] init];
     ds.depthCompareFunction = MTLCompareFunctionLess;
     ds.depthWriteEnabled = YES;
@@ -542,9 +654,62 @@ bool GEMetalDriver::beginScene(bool backBuffer, bool zBuffer, SColor color,
     m_impl->indices.clear();
     m_impl->cmds.clear();
     m_impl->cmds3d.clear();
+    m_impl->verts3d.clear();
+    m_impl->indices3d.clear();
+    m_impl->cmds3d_std.clear();
     m_clip = getFullscreenClip();
     return true;
 }   // beginScene
+
+// ----------------------------------------------------------------------------
+void GEMetalDriver::drawVertexPrimitiveList(const void* vertices,
+    u32 vertexCount, const void* indexList, u32 primitiveCount,
+    E_VERTEX_TYPE vType, scene::E_PRIMITIVE_TYPE pType, E_INDEX_TYPE iType)
+{
+    if (m_impl == NULL || vertexCount == 0 || primitiveCount == 0)
+        return;
+    if (vType != EVT_STANDARD || iType != EIT_16BIT)
+        return;   // only standard 16-bit geometry (skybox etc.)
+
+    const size_t stride = 36;   // sizeof(S3DVertex)
+    const uint32_t base = (uint32_t)(m_impl->verts3d.size() / stride);
+    if (base + vertexCount > 65535)
+        return;
+    const uint8_t* vsrc = (const uint8_t*)vertices;
+    m_impl->verts3d.insert(m_impl->verts3d.end(), vsrc,
+        vsrc + (size_t)vertexCount * stride);
+
+    const uint32_t index_start = (uint32_t)m_impl->indices3d.size();
+    const uint16_t* idx = (const uint16_t*)indexList;
+    if (pType == scene::EPT_TRIANGLE_FAN)
+    {
+        for (u32 i = 0; i < primitiveCount; i++)
+        {
+            m_impl->indices3d.push_back(base + idx[0]);
+            m_impl->indices3d.push_back(base + idx[i + 1]);
+            m_impl->indices3d.push_back(base + idx[i + 2]);
+        }
+    }
+    else   // EPT_TRIANGLES
+    {
+        for (u32 i = 0; i < primitiveCount * 3; i++)
+            m_impl->indices3d.push_back(base + idx[i]);
+    }
+
+    irr::core::matrix4 mvp = m_impl->mat_proj * m_impl->mat_view *
+        m_impl->mat_world;
+    simd_float4x4 m;
+    const float* p = mvp.pointer();
+    for (int c = 0; c < 4; c++)
+        m.columns[c] = simd_make_float4(p[c*4+0], p[c*4+1], p[c*4+2], p[c*4+3]);
+
+    GEMetal3DStdCmd cmd;
+    cmd.index_start = index_start;
+    cmd.index_count = (uint32_t)m_impl->indices3d.size() - index_start;
+    cmd.mvp = m;
+    cmd.texture = Material.getTexture(0);
+    m_impl->cmds3d_std.push_back(cmd);
+}   // drawVertexPrimitiveList
 
 // ----------------------------------------------------------------------------
 void GEMetalDriver::setTransform(E_TRANSFORMATION_STATE state,
@@ -646,6 +811,43 @@ bool GEMetalDriver::endScene()
 
         id<MTLRenderCommandEncoder> enc =
             [m_impl->command_buffer renderCommandEncoderWithDescriptor:rp];
+
+        // ---- Skybox / standard-vertex 3D (unlit, background: no depth) ------
+        // Rendered first with no depth write so opaque geometry draws over it.
+        if (!m_impl->cmds3d_std.empty())
+        {
+            const size_t vb = m_impl->verts3d.size();
+            const size_t ib = m_impl->indices3d.size() * sizeof(uint16_t);
+            if (m_impl->vbuf3d == nil || m_impl->vbuf3d.length < vb)
+                m_impl->vbuf3d = [m_impl->device newBufferWithLength:(vb*2+4096)
+                    options:MTLResourceStorageModeShared];
+            if (m_impl->ibuf3d == nil || m_impl->ibuf3d.length < ib)
+                m_impl->ibuf3d = [m_impl->device newBufferWithLength:(ib*2+4096)
+                    options:MTLResourceStorageModeShared];
+            std::memcpy(m_impl->vbuf3d.contents, m_impl->verts3d.data(), vb);
+            std::memcpy(m_impl->ibuf3d.contents, m_impl->indices3d.data(), ib);
+
+            [enc setRenderPipelineState:m_impl->pipeline_3d_std];
+            [enc setDepthStencilState:m_impl->depth_none];
+            [enc setFragmentSamplerState:m_impl->sampler_2d atIndex:0];
+            [enc setCullMode:MTLCullModeNone];
+            [enc setVertexBuffer:m_impl->vbuf3d offset:0 atIndex:0];
+            for (const GEMetal3DStdCmd& c : m_impl->cmds3d_std)
+            {
+                simd_float4x4 mvp = c.mvp;
+                [enc setVertexBytes:&mvp length:sizeof(mvp) atIndex:1];
+                id<MTLTexture> t = m_impl->white;
+                const GEMetalTexture* gt =
+                    dynamic_cast<const GEMetalTexture*>(c.texture);
+                if (gt && gt->getMetalTexture())
+                    t = (__bridge id<MTLTexture>)gt->getMetalTexture();
+                [enc setFragmentTexture:t atIndex:0];
+                [enc drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                    indexCount:c.index_count indexType:MTLIndexTypeUInt16
+                    indexBuffer:m_impl->ibuf3d
+                    indexBufferOffset:c.index_start * sizeof(uint16_t)];
+            }
+        }
 
         // ---- 3D forward pass (opaque, depth-tested) -------------------------
         if (!m_impl->cmds3d.empty())

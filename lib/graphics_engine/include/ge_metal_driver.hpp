@@ -55,6 +55,10 @@ public:
 
     virtual void drawMeshBuffer(const scene::IMeshBuffer* mb);
 
+    virtual void drawVertexPrimitiveList(const void* vertices, u32 vertexCount,
+        const void* indexList, u32 primitiveCount, E_VERTEX_TYPE vType,
+        scene::E_PRIMITIVE_TYPE pType, E_INDEX_TYPE iType);
+
     virtual void OnResize(const core::dimension2d<u32>& size);
 
     virtual u32 getMaximalPrimitiveCount() const { return 0x7fffffff; }
