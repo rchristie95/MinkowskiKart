@@ -226,8 +226,8 @@ void GEVulkanGTAOPass::init()
         pipeline_info.stage.pName = "main";
         pipeline_info.layout = m_pipeline_layout;
         VkPipeline pipeline = VK_NULL_HANDLE;
-        if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1,
-            &pipeline_info, NULL, &pipeline) != VK_SUCCESS)
+        if (m_vk->createComputePipelines(1, &pipeline_info, &pipeline) !=
+            VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create " + shader_name);
         }
@@ -549,17 +549,9 @@ void GEVulkanGTAOPass::generate(VkCommandBuffer cmd)
         VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-    VkMemoryBarrier scene_barrier = {};
-    scene_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    scene_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    scene_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    vkCmdPipelineBarrier(cmd,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &scene_barrier, 0, NULL,
-        0, NULL);
-
+    // The G-buffer render pass already publishes its color/depth writes to
+    // compute shader reads through its subpass-to-external dependency. A
+    // second global memory barrier here only serializes unrelated work.
     const uint32_t half_w = m_linear_depth->getSize().Width;
     const uint32_t half_h = m_linear_depth->getSize().Height;
     const uint32_t full_w = m_ao_result->getSize().Width;

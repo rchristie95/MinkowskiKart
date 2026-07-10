@@ -1,6 +1,8 @@
 #include "ge_vulkan_driver.hpp"
 
 #include <cstdio>
+#include <cstring>
+#include <fstream>
 
 #include "ge_compressor_astc_4x4.hpp"
 #include "ge_compressor_bptc_bc7.hpp"
@@ -36,6 +38,7 @@
 
 #ifdef _IRR_COMPILE_WITH_VULKAN_
 #include "SDL_vulkan.h"
+#include "SDL_filesystem.h"
 #include <algorithm>
 #include <atomic>
 #include <limits>
@@ -600,6 +603,8 @@ GEVulkanDriver::GEVulkanDriver(const SIrrlichtCreationParameters& params,
     }
 #endif
 
+    createPipelineCache();
+
     VmaAllocatorCreateInfo allocator_create_info = {};
     allocator_create_info.physicalDevice = m_physical_device;
     allocator_create_info.device = m_vk->device;
@@ -667,6 +672,12 @@ GEVulkanDriver::~GEVulkanDriver()
 // ----------------------------------------------------------------------------
 void GEVulkanDriver::destroyVulkan()
 {
+    // Drain once before destroying scene-owned descriptor pools, pipelines and
+    // render passes. Individual destructors can then skip their legacy waits,
+    // while buffers/images still use the deferred queue during normal play.
+    m_disable_wait_idle = false;
+    waitIdle(true/*flush_command_loader*/);
+    setDisableWaitIdle(true);
     GECompressorASTC4x4::destroy();
     if (m_depth_texture)
     {
@@ -714,8 +725,10 @@ void GEVulkanDriver::destroyVulkan()
     // Free any dynamic-buffer allocations still pending deferred deletion
     // while the device (and VMA allocator) are still alive. The scene manager
     // clear above destroyed all draw calls, so the GPU no longer references
-    // them; the GEVulkanDynamicBuffer destructors already wait idle.
+    // them; normal runtime destruction queues their allocations here.
     handleDeferredBufferDeletions(true/*force*/);
+
+    savePipelineCache();
 
     for (std::mutex* m : m_graphics_queue_mutexes)
         delete m;
@@ -1120,6 +1133,132 @@ void GEVulkanDriver::createDevice()
 }   // createDevice
 
 // ----------------------------------------------------------------------------
+void GEVulkanDriver::createPipelineCache()
+{
+    // SDL creates the directory on every supported platform, including the
+    // app-private Android storage area.
+    char* pref_path = SDL_GetPrefPath("MinkowskiKart", "MinkowskiKart");
+    if (pref_path)
+    {
+        m_pipeline_cache_path = pref_path;
+        SDL_free(pref_path);
+        m_pipeline_cache_path += "vulkan_pipeline_cache.bin";
+    }
+
+    std::vector<char> cache_data;
+    if (!m_pipeline_cache_path.empty())
+    {
+        std::ifstream input(m_pipeline_cache_path.c_str(),
+                            std::ios::binary | std::ios::ate);
+        if (input)
+        {
+            const std::streamoff size = input.tellg();
+            // A cache is normally at most a few MiB. Refuse corrupt files
+            // large enough to cause a pathological startup allocation.
+            if (size >= 32 && size <= 64 * 1024 * 1024)
+            {
+                cache_data.resize((size_t)size);
+                input.seekg(0, std::ios::beg);
+                input.read(cache_data.data(), size);
+            }
+        }
+    }
+
+    // Vulkan's version-one cache header is four uint32 values followed by the
+    // device UUID. Never feed a cache produced by another GPU/driver to the
+    // implementation; discard it and let Vulkan rebuild cleanly instead.
+    bool valid_cache = cache_data.size() >= 32;
+    if (valid_cache)
+    {
+        uint32_t header_length = 0;
+        uint32_t header_version = 0;
+        uint32_t vendor_id = 0;
+        uint32_t device_id = 0;
+        memcpy(&header_length, cache_data.data(), sizeof(uint32_t));
+        memcpy(&header_version, cache_data.data() + 4, sizeof(uint32_t));
+        memcpy(&vendor_id, cache_data.data() + 8, sizeof(uint32_t));
+        memcpy(&device_id, cache_data.data() + 12, sizeof(uint32_t));
+        valid_cache = header_length >= 32 &&
+            header_length <= cache_data.size() &&
+            header_version == VK_PIPELINE_CACHE_HEADER_VERSION_ONE &&
+            vendor_id == m_properties.vendorID &&
+            device_id == m_properties.deviceID &&
+            memcmp(cache_data.data() + 16, m_properties.pipelineCacheUUID,
+                   VK_UUID_SIZE) == 0;
+    }
+
+    VkPipelineCacheCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    if (valid_cache)
+    {
+        create_info.initialDataSize = cache_data.size();
+        create_info.pInitialData = cache_data.data();
+    }
+
+    VkResult result = vkCreatePipelineCache(m_vk->device, &create_info, NULL,
+                                            &m_vk->pipeline_cache);
+    if (result != VK_SUCCESS && valid_cache)
+    {
+        // Driver upgrades can invalidate an otherwise well-formed cache.
+        create_info.initialDataSize = 0;
+        create_info.pInitialData = NULL;
+        result = vkCreatePipelineCache(m_vk->device, &create_info, NULL,
+                                       &m_vk->pipeline_cache);
+    }
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("vkCreatePipelineCache failed");
+}   // createPipelineCache
+
+// ----------------------------------------------------------------------------
+void GEVulkanDriver::savePipelineCache()
+{
+    if (m_vk->device == VK_NULL_HANDLE ||
+        m_vk->pipeline_cache == VK_NULL_HANDLE ||
+        m_pipeline_cache_path.empty())
+    {
+        return;
+    }
+
+    size_t size = 0;
+    if (vkGetPipelineCacheData(m_vk->device, m_vk->pipeline_cache, &size,
+                               NULL) != VK_SUCCESS || size == 0 ||
+        size > 64 * 1024 * 1024)
+    {
+        return;
+    }
+
+    std::vector<char> cache_data(size);
+    if (vkGetPipelineCacheData(m_vk->device, m_vk->pipeline_cache, &size,
+                               cache_data.data()) != VK_SUCCESS)
+    {
+        return;
+    }
+
+    std::ofstream output(m_pipeline_cache_path.c_str(),
+                         std::ios::binary | std::ios::trunc);
+    if (output)
+        output.write(cache_data.data(), size);
+}   // savePipelineCache
+
+// ----------------------------------------------------------------------------
+VkResult GEVulkanDriver::createGraphicsPipelines(uint32_t count,
+    const VkGraphicsPipelineCreateInfo* create_infos, VkPipeline* pipelines)
+{
+    std::lock_guard<std::mutex> lock(m_pipeline_cache_mutex);
+    return vkCreateGraphicsPipelines(m_vk->device, m_vk->pipeline_cache, count,
+        create_infos, NULL, pipelines);
+}   // createGraphicsPipelines
+
+// ----------------------------------------------------------------------------
+VkResult GEVulkanDriver::createComputePipelines(uint32_t count,
+    const VkComputePipelineCreateInfo* create_infos, VkPipeline* pipelines)
+{
+    std::lock_guard<std::mutex> lock(m_pipeline_cache_mutex);
+    return vkCreateComputePipelines(m_vk->device, m_vk->pipeline_cache, count,
+        create_infos, NULL, pipelines);
+}   // createComputePipelines
+
+// ----------------------------------------------------------------------------
 std::unique_lock<std::mutex> GEVulkanDriver::getGraphicsQueue(VkQueue* queue) const
 {
     if (m_graphics_queue_count == 0)
@@ -1404,6 +1543,10 @@ found_mode:
 // ----------------------------------------------------------------------------
 void GEVulkanDriver::createSyncObjects()
 {
+    // A recreated swapchain may expose fewer images than the previous one.
+    // Restart the acquire-semaphore rotation before indexing the new vectors.
+    m_current_semaphore = 0;
+
     VkSemaphoreCreateInfo semaphore_info = {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -1811,7 +1954,12 @@ bool GEVulkanDriver::endScene()
         &m_vk->in_flight_fences[m_current_frame], VK_TRUE, 20000000000ULL) ==
         VK_TIMEOUT)
     {
+#ifdef __ANDROID__
+        __android_log_print(ANDROID_LOG_ERROR, "MinkowskiKart",
+            "GEVulkanDriver: fence wait timed out -> recreating swapchain");
+#else
         printf("GEVulkanDriver: fence wait timed out -> recreating swapchain\n");
+#endif
         // Attempt to restore after out focus in gnome fullscreen
         video::CNullDriver::endScene();
         GEVulkan2dRenderer::clear();
@@ -1830,32 +1978,76 @@ bool GEVulkanDriver::endScene()
         return true;
     }
 
-    VkFence fence = m_vk->in_flight_fences[m_current_frame];
-    vkResetFences(m_vk->device, 1, &fence);
-    vkResetCommandPool(m_vk->device, m_vk->command_pools[m_current_frame], 0);
-
     // The fence above guarantees this frame slot's previous GPU work is done,
     // so it is safe to retire any buffers orphaned long enough ago.
     handleDeferredBufferDeletions(false/*force*/);
 
-    VkSemaphore semaphore = m_vk->image_available_semaphores[m_current_semaphore];
+    // Acquire before resetting the frame fence. VK_ERROR_OUT_OF_DATE_KHR does
+    // not signal the acquire semaphore and no work will be submitted, so the
+    // fence must remain signalled for this frame slot to be reusable.
+    VkSemaphore image_available =
+        m_vk->image_available_semaphores[m_current_semaphore];
     VkResult result = vkAcquireNextImageKHR(m_vk->device, m_vk->swap_chain,
-        std::numeric_limits<uint64_t>::max(), semaphore, VK_NULL_HANDLE,
+        std::numeric_limits<uint64_t>::max(), image_available, VK_NULL_HANDLE,
         &m_image_index);
 
-    if (result != VK_SUCCESS)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         video::CNullDriver::endScene();
         GEVulkan2dRenderer::clear();
         handleDeletedTextures();
-        return false;
+        // Most render callers intentionally ignore endScene()'s return value.
+        // Recreate here instead of repeatedly acquiring the same stale
+        // swapchain forever with no frame/fence advancement.
+        destroySwapChainRelated(false/*handle_surface*/);
+        try
+        {
+            createSwapChainRelated(false/*handle_surface*/);
+        }
+        catch (std::exception&)
+        {
+            // Minimized/zero-sized Windows surfaces can temporarily reject
+            // recreation. Leave the swapchain torn down for the existing
+            // resize/resume path to retry.
+            destroySwapChainRelated(false/*handle_surface*/);
+            return false;
+        }
+        return true;
     }
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+    {
+        std::string err_msg = "vkAcquireNextImageKHR failed with VkResult " +
+            std::to_string((int)result);
+#ifdef __ANDROID__
+        __android_log_print(ANDROID_LOG_ERROR, "MinkowskiKart", "%s",
+            err_msg.c_str());
+#else
+        printf("%s\n", err_msg.c_str());
+#endif
+        throw std::runtime_error(err_msg);
+    }
+    const bool acquired_suboptimal = result == VK_SUBOPTIMAL_KHR;
+
+    result = vkResetCommandPool(m_vk->device,
+        m_vk->command_pools[m_current_frame], 0);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("vkResetCommandPool failed");
 
     buildCommandBuffers();
 
-    VkSemaphore wait_semaphores[] = {m_vk->image_available_semaphores[m_current_semaphore]};
+    VkFence fence = m_vk->in_flight_fences[m_current_frame];
+    result = vkResetFences(m_vk->device, 1, &fence);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("vkResetFences failed");
+
+    VkSemaphore wait_semaphores[] = {image_available};
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signal_semaphores[] = {m_vk->render_finished_semaphores[m_current_semaphore]};
+    // A present-wait semaphore is reused only when its swapchain image is
+    // acquired again. At that point the presentation engine has finished its
+    // previous wait on this semaphore, unlike a semaphore rotated by CPU frame.
+    VkSemaphore render_finished =
+        m_vk->render_finished_semaphores[m_image_index];
+    VkSemaphore signal_semaphores[] = {render_finished};
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1867,21 +2059,34 @@ bool GEVulkanDriver::endScene()
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    VkQueue queue = VK_NULL_HANDLE;
-    std::unique_lock<std::mutex> ul = getGraphicsQueue(&queue);
-    result = vkQueueSubmit(queue, 1, &submit_info,
-        m_vk->in_flight_fences[m_current_frame]);
-    ul.unlock();
+    VkQueue graphics_queue = VK_NULL_HANDLE;
+    // All frames share the deferred color/normal/depth attachments. Keep frame
+    // submissions on queue zero so Vulkan queue order serializes those shared
+    // images; the remaining family queues stay available to upload workers.
+    graphics_queue = m_graphics_queue[0];
+    std::unique_lock<std::mutex> graphics_queue_lock(
+        *m_graphics_queue_mutexes[0]);
+    result = vkQueueSubmit(graphics_queue, 1, &submit_info, fence);
 
     if (result != VK_SUCCESS)
     {
-        printf("vkQueueSubmit failed with VkResult %d\n", (int)result);
-        throw std::runtime_error("vkQueueSubmit failed");
+        std::string err_msg = "vkQueueSubmit failed with VkResult " +
+            std::to_string((int)result);
+#ifdef __ANDROID__
+        // Plain printf never reaches logcat on Android (stdout isn't wired
+        // up), so log directly and also fold the VkResult into the
+        // exception message below, which main.cpp does print via Log::error.
+        __android_log_print(ANDROID_LOG_ERROR, "MinkowskiKart", "%s",
+            err_msg.c_str());
+#else
+        printf("%s\n", err_msg.c_str());
+#endif
+        throw std::runtime_error(err_msg);
     }
 
     VkSemaphore semaphores[] =
     {
-        m_vk->render_finished_semaphores[m_current_semaphore]
+        render_finished
     };
     VkSwapchainKHR swap_chains[] =
     {
@@ -1903,21 +2108,34 @@ bool GEVulkanDriver::endScene()
         m_vk->swap_chain_images.size();
 
     if (m_present_queue)
+    {
+        // The present-only queue has a different family. It is not exposed to
+        // the command loader, so the frame thread is its sole submitter.
+        graphics_queue_lock.unlock();
         result = vkQueuePresentKHR(m_present_queue, &present_info);
+    }
     else
     {
-        VkQueue present_queue = VK_NULL_HANDLE;
-        std::unique_lock<std::mutex> ul = getGraphicsQueue(&present_queue);
-        result = vkQueuePresentKHR(present_queue, &present_info);
-        ul.unlock();
+        // Keep the same graphics queue locked from render submit through
+        // present instead of reacquiring an arbitrary queue from the family.
+        result = vkQueuePresentKHR(graphics_queue, &present_info);
+        graphics_queue_lock.unlock();
     }
     if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR &&
         result != VK_ERROR_OUT_OF_DATE_KHR)
+    {
+#ifdef __ANDROID__
+        __android_log_print(ANDROID_LOG_ERROR, "MinkowskiKart",
+            "vkQueuePresentKHR failed with VkResult %d", (int)result);
+#else
         printf("vkQueuePresentKHR failed with VkResult %d\n", (int)result);
+#endif
+    }
     if (!video::CNullDriver::endScene())
         return false;
 
-    return (result != VK_ERROR_OUT_OF_DATE_KHR && result != VK_SUBOPTIMAL_KHR);
+    return (!acquired_suboptimal && result != VK_ERROR_OUT_OF_DATE_KHR &&
+        result != VK_SUBOPTIMAL_KHR);
 }   // endScene
 
 // ----------------------------------------------------------------------------
@@ -2436,12 +2654,18 @@ void GEVulkanDriver::destroySwapChainRelated(bool handle_surface)
             vkDestroySurfaceKHR(m_vk->instance, m_vk->surface, NULL);
         m_vk->surface = VK_NULL_HANDLE;
     }
+    // The device was idle before the old swapchain/FBO resources were
+    // released, so everything newly queued by their destructors is safe to
+    // reclaim immediately rather than carrying it across recreation.
+    handleDeferredBufferDeletions(true/*force*/);
 }   // destroySwapChainRelated
 
 // ----------------------------------------------------------------------------
 void GEVulkanDriver::createSwapChainRelated(bool handle_surface)
 {
-    waitIdle();
+    // Every recreation path first calls destroySwapChainRelated(), which has
+    // already drained the device before releasing the old resources. A second
+    // vkDeviceWaitIdle here doubled resize/orientation/resume latency.
     if (handle_surface)
     {
         if (SDL_Vulkan_CreateSurface(m_params.m_sdl_window, m_vk->instance, &m_vk->surface) == SDL_FALSE)
@@ -2485,6 +2709,20 @@ void GEVulkanDriver::scheduleBufferDeletion(VkBuffer buffer,
 }   // scheduleBufferDeletion
 
 // ----------------------------------------------------------------------------
+void GEVulkanDriver::scheduleImageDeletion(VkImage image,
+                                           VmaAllocation allocation,
+                                           VkImageView image_view,
+                                           VkImageView srgb_image_view)
+{
+    if (image == VK_NULL_HANDLE && allocation == VK_NULL_HANDLE &&
+        image_view == VK_NULL_HANDLE && srgb_image_view == VK_NULL_HANDLE)
+        return;
+    std::lock_guard<std::mutex> lock(m_deferred_buffer_deletions_mutex);
+    m_deferred_image_deletions.push_back({ image, allocation, image_view,
+        srgb_image_view, (int)getMaxFrameInFlight() + 1 });
+}   // scheduleImageDeletion
+
+// ----------------------------------------------------------------------------
 void GEVulkanDriver::handleDeferredBufferDeletions(bool force)
 {
     std::lock_guard<std::mutex> lock(m_deferred_buffer_deletions_mutex);
@@ -2495,6 +2733,26 @@ void GEVulkanDriver::handleDeferredBufferDeletions(bool force)
         {
             vmaDestroyBuffer(m_vk->allocator, it->m_buffer, it->m_allocation);
             it = m_deferred_buffer_deletions.erase(it);
+        }
+        else
+            ++it;
+    }
+    for (auto it = m_deferred_image_deletions.begin();
+        it != m_deferred_image_deletions.end();)
+    {
+        if (force || --it->m_frames_left <= 0)
+        {
+            if (it->m_image_view != VK_NULL_HANDLE)
+                vkDestroyImageView(m_vk->device, it->m_image_view, NULL);
+            if (it->m_srgb_image_view != VK_NULL_HANDLE)
+                vkDestroyImageView(m_vk->device, it->m_srgb_image_view, NULL);
+            if (it->m_image != VK_NULL_HANDLE ||
+                it->m_allocation != VK_NULL_HANDLE)
+            {
+                vmaDestroyImage(m_vk->allocator, it->m_image,
+                    it->m_allocation);
+            }
+            it = m_deferred_image_deletions.erase(it);
         }
         else
             ++it;

@@ -119,19 +119,19 @@ void GEVulkanDynamicBuffer::initLocalBuffer(unsigned frame)
 void GEVulkanDynamicBuffer::destroy()
 {
     GEVulkanDriver* vk = getVKDriver();
-    vk->waitIdle();
     for (unsigned i = 0; i < m_host_buffer.size(); i++)
     {
-        vmaDestroyBuffer(vk->getVmaAllocator(), m_host_buffer[i],
-            m_host_memory[i]);
+        // The ring slot can still be referenced by an in-flight frame. Retire
+        // it through the driver's frame-delayed queue instead of draining the
+        // entire device for every dynamic-buffer destruction.
+        vk->scheduleBufferDeletion(m_host_buffer[i], m_host_memory[i]);
         m_host_buffer[i] = VK_NULL_HANDLE;
         m_host_memory[i] = VK_NULL_HANDLE;
         m_mapped_addr[i] = NULL;
     }
     for (unsigned i = 0; i < m_local_buffer.size(); i++)
     {
-        vmaDestroyBuffer(vk->getVmaAllocator(), m_local_buffer[i],
-            m_local_memory[i]);
+        vk->scheduleBufferDeletion(m_local_buffer[i], m_local_memory[i]);
         m_local_buffer[i] = VK_NULL_HANDLE;
         m_local_memory[i] = VK_NULL_HANDLE;
     }

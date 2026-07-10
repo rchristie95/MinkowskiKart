@@ -79,7 +79,8 @@ public:
     // seams shared between buffers subdivide to the same depth. Bounded by the
     // 16-bit index limit. No-op for dense or skinned buffers. Must run before
     // the geometry is uploaded to the GPU.
-    void subdivideForRelativity();
+    void subdivideForRelativity(float target_edge = 0.6f,
+                                int max_passes = 8);
     // ------------------------------------------------------------------------
     virtual void setBoundingBox(const irr::core::aabbox3df& box)
                                                       { m_bounding_box = box; }

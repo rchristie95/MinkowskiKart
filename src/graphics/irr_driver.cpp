@@ -598,10 +598,15 @@ begin:
             // Metal backend (EDT_METAL) implements tessellation natively, so
             // it can turn the adaptive relativistic tessellation back on.
             GE::getGEConfig()->m_adaptive_tessellation =
-                (driver_created == video::EDT_METAL) && Relativity::isEnabled();
+                (driver_created == video::EDT_METAL) && Relativity::isEnabled()
+                && !UserConfigParams::m_vk_debug_no_tess;
 #else
+            // Tile-based Vulkan GPUs keep this enabled for large-triangle
+            // correctness. ge_tess.tesc applies a lower, screen-aware factor
+            // cap on TILED_GPU instead of disabling subdivision altogether.
             GE::getGEConfig()->m_adaptive_tessellation =
-                Relativity::isEnabled();
+                Relativity::isEnabled() &&
+                !UserConfigParams::m_vk_debug_no_tess;
 #endif
             // Sun shadow mapping, per-object glow and light scattering
             // (ported from the SP/OpenGL advanced pipeline).
@@ -716,7 +721,7 @@ begin:
                     "falling back to OpenGL.");
 #endif
                 display_msg = L"Vulkan unsupported";
-                UserConfigParams::m_render_driver.revertToDefaults();
+                UserConfigParams::m_render_driver = "opengl";
                 goto begin;
             }
 

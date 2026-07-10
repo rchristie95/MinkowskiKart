@@ -38,6 +38,10 @@ class GEVulkanTextureDescriptor
 
     std::vector<VkDescriptorSet> m_descriptor_sets;
 
+    unsigned m_descriptor_sets_per_frame;
+
+    std::vector<bool> m_dirty_descriptor_frames;
+
     const unsigned m_max_texture_list;
 
     const unsigned m_max_layer;
@@ -50,7 +54,7 @@ class GEVulkanTextureDescriptor
 
     bool m_recreate_next_frame;
 
-    bool m_needs_update_descriptor;
+    void invalidateDescriptorSets();
 public:
     // ------------------------------------------------------------------------
     GEVulkanTextureDescriptor(unsigned max_texture_list, unsigned max_layer,
@@ -58,12 +62,7 @@ public:
     // ------------------------------------------------------------------------
     ~GEVulkanTextureDescriptor();
     // ------------------------------------------------------------------------
-    void clear()
-    {
-        m_texture_list.clear();
-        m_needs_update_descriptor = true;
-        m_recreate_next_frame = false;
-    }
+    void clear();
     // ------------------------------------------------------------------------
     void handleDeletedTextures()
     {
@@ -86,13 +85,7 @@ public:
     int getTextureID(const irr::video::ITexture** list,
                      const std::string& shader = std::string());
     // ------------------------------------------------------------------------
-    void setSamplerUse(GEVulkanSampler sampler)
-    {
-        if (m_sampler_use == sampler)
-            return;
-        m_sampler_use = sampler;
-        m_needs_update_descriptor = true;
-    }
+    void setSamplerUse(GEVulkanSampler sampler);
     // ------------------------------------------------------------------------
     void updateDescriptor();
     // ------------------------------------------------------------------------
@@ -103,8 +96,7 @@ public:
     VkDescriptorSetLayout* getDescriptorSetLayout()
                                            { return &m_descriptor_set_layout; }
     // ------------------------------------------------------------------------
-    VkDescriptorSet* getDescriptorSet()
-                                           { return m_descriptor_sets.data(); }
+    VkDescriptorSet* getDescriptorSet();
     // ------------------------------------------------------------------------
     GEVulkanSampler getSamplerUse() const             { return m_sampler_use; }
 };   // GEVulkanTextureDescriptor

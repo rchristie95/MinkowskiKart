@@ -2,6 +2,7 @@
 #define HEADER_GE_VULKAN_DRAW_CALL_HPP
 
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -186,7 +187,9 @@ private:
 
     size_t m_dynamic_spm_padded_size;
 
-    bool m_update_data_descriptor_sets;
+    uint64_t m_data_descriptor_generation;
+
+    std::vector<uint64_t> m_data_descriptor_set_generations;
 
     VkDescriptorSetLayout m_data_layout;
 
@@ -275,6 +278,8 @@ private:
     size_t getInitialSBOSize() const;
     // ------------------------------------------------------------------------
     void updateDataDescriptorSets(GEVulkanDriver* vk);
+    // ------------------------------------------------------------------------
+    void invalidateDataDescriptorSets();
     // ------------------------------------------------------------------------
     void bindBaseVertex(GEVulkanDriver* vk, VkCommandBuffer cmd);
     // ------------------------------------------------------------------------

@@ -137,11 +137,6 @@ GEVulkanTexture::~GEVulkanTexture()
 {
     m_thread_loading_lock.lock();
     m_thread_loading_lock.unlock();
-
-    if (m_image_view || m_image != VK_NULL_HANDLE ||
-        m_vma_allocation != VK_NULL_HANDLE)
-        m_vk->waitIdle();
-
     clearVulkanData();
 }   // ~GEVulkanTexture
 
@@ -521,26 +516,25 @@ bool GEVulkanTexture::createImageView(VkImageAspectFlags aspect_flags,
 // ----------------------------------------------------------------------------
 void GEVulkanTexture::clearVulkanData()
 {
+    VkImageView image_view = VK_NULL_HANDLE;
+    VkImageView srgb_image_view = VK_NULL_HANDLE;
     if (m_image_view)
     {
-        vkDestroyImageView(m_vulkan_device, m_image_view.get()->load(), NULL);
+        image_view = m_image_view.get()->load();
         m_image_view.get()->store(VK_NULL_HANDLE);
         m_image_view.reset();
         if (m_image_view_srgb)
         {
-            vkDestroyImageView(m_vulkan_device,
-                m_image_view_srgb.get()->load(), NULL);
+            srgb_image_view = m_image_view_srgb.get()->load();
             m_image_view_srgb.get()->store(VK_NULL_HANDLE);
             m_image_view_srgb.reset();
         }
     }
-    if (m_image != VK_NULL_HANDLE)
-    {
-        vmaDestroyImage(m_vk->getVmaAllocator(), m_image, m_vma_allocation);
-        m_image = VK_NULL_HANDLE;
-        m_vma_allocation = VK_NULL_HANDLE;
-        m_vma_info = {};
-    }
+    m_vk->scheduleImageDeletion(m_image, m_vma_allocation, image_view,
+        srgb_image_view);
+    m_image = VK_NULL_HANDLE;
+    m_vma_allocation = VK_NULL_HANDLE;
+    m_vma_info = {};
 }   // clearVulkanData
 
 // ----------------------------------------------------------------------------
@@ -905,10 +899,6 @@ void GEVulkanTexture::reload()
         if (is_currently_loading || m_image == VK_NULL_HANDLE)
             return;
     }
-
-    if (m_image_view || m_image != VK_NULL_HANDLE ||
-        m_vma_allocation != VK_NULL_HANDLE)
-        m_vk->waitIdle();
 
     if (m_ondemand_load)
     {

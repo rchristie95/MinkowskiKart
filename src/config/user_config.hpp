@@ -766,6 +766,14 @@ namespace UserConfigParams
         PARAM_DEFAULT(BoolUserConfigParam(false, "vk_debug_ao",
         &m_video_group, "Experimental Vulkan ambient occlusion (custom video "
         "settings toggle); off by default"));
+    // Relativistic warping is always enabled (Relativity::isEnabled() is
+    // hardcoded true), so the adaptive tessellation pipeline it forces on
+    // has no other CLI/UI toggle. This exists to bisect Vulkan crashes on
+    // GPUs where hardware tessellation is suspect (e.g. mobile TBDR parts).
+    PARAM_PREFIX BoolUserConfigParam        m_vk_debug_no_tess
+        PARAM_DEFAULT(BoolUserConfigParam(false, "vk_debug_no_tess",
+        &m_video_group, "Force-disable the Vulkan adaptive tessellation "
+        "pipeline for crash triage; off by default"));
 
 #if defined(MOBILE_STK)
     PARAM_PREFIX BoolUserConfigParam        m_vulkan_fullscreen_desktop

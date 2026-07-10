@@ -7,8 +7,9 @@ if "%PROJECT_ROOT:~-1%"=="\" set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
 set "NINJA=%PROJECT_ROOT%\.build-tools\ninja\ninja.exe"
 set "CMAKE=%PROJECT_ROOT%\.build-tools\cmake\cmake-4.3.1-windows-x86_64\bin\cmake.exe"
 set "COMPILER_BIN=%PROJECT_ROOT%\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\bin"
+set "PYTHON_BIN=%PROJECT_ROOT%\.build-tools\llvm-mingw\llvm-mingw-20260407-msvcrt-x86_64\python\bin"
 set "DEPENDENCY_BIN=%PROJECT_ROOT%\dependencies-win-x86_64\bin"
-set "PATH=%COMPILER_BIN%;%DEPENDENCY_BIN%;%PATH%"
+set "PATH=%COMPILER_BIN%;%PYTHON_BIN%;%DEPENDENCY_BIN%;%PATH%"
 if not exist "%NINJA%" (
     echo Missing bundled Ninja at "%NINJA%".
     exit /b 1

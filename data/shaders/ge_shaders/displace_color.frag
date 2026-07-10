@@ -153,6 +153,18 @@ vec3 bloomGather(vec2 px)
         vec2(1.0, 0.0), vec2(0.7071, 0.7071), vec2(0.0, 1.0),
         vec2(-0.7071, 0.7071), vec2(-1.0, 0.0), vec2(-0.7071, -0.7071),
         vec2(0.0, -1.0), vec2(0.7071, -0.7071));
+#ifdef TILED_GPU
+    // Mobile TBDRs pay heavily for wide, full-resolution gathers. Four
+    // evenly-spaced directions at two radii retain a soft halo while cutting
+    // this effect from 25 scene reads to 9.
+    for (int i = 0; i < 8; i += 2)
+    {
+        accum += brightPass(sampleScene(px + DIRS[i] * (5.0 * s))) * 0.25;
+        accum += brightPass(sampleScene(px + DIRS[i] * (13.0 * s))) * 0.125;
+    }
+    // Total weight 0.5 + 4*(0.375) = 2.0
+    return accum * (0.25 / 2.0);
+#else
     for (int i = 0; i < 8; i++)
     {
         accum += brightPass(sampleScene(px + DIRS[i] * (4.0 * s))) * 0.25;
@@ -161,6 +173,7 @@ vec3 bloomGather(vec2 px)
     }
     // Total weight 0.5 + 8*(0.4375) = 4.0
     return accum * (0.25 / 4.0);
+#endif
 }
 
 // ---- Depth of field ----
@@ -174,6 +187,13 @@ vec3 applyDOF(vec3 col_in, vec2 px)
 
     float depth = viewPosAt(px).z;
     float blur = clamp(abs(depth - FOCAL_DEPTH) / RANGE, -MAX_BLUR, MAX_BLUR);
+    float focus = clamp(max(1.1666 - (depth / 240.0), depth - 2000.0),
+                        0.0, 1.0);
+
+    // Most road and kart pixels are close enough to the focal region that
+    // the expensive bokeh gather would be blended away. Avoid paying for it.
+    if (focus >= 0.995 || abs(blur) < 0.002)
+        return col_in;
 
     // GL taps at uv + dir * (10 / screen) * blur, i.e. dir * 10 * blur px.
     float o = 10.0 * blur;
@@ -186,6 +206,13 @@ vec3 applyDOF(vec3 col_in, vec2 px)
         vec2(-0.15, 0.37), vec2(-0.29, 0.29), vec2(0.37, 0.15),
         vec2(-0.4, 0.0), vec2(-0.37, -0.15), vec2(-0.29, -0.29),
         vec2(0.15, -0.37));
+#ifdef TILED_GPU
+    // An 8-tap disc is a good compromise at the reduced mobile render scale.
+    // It preserves visible defocus without the desktop path's 40 extra reads.
+    for (int i = 0; i < 16; i += 2)
+        col += sampleScene(px + TAPS[i] * o);
+    col /= 9.0;
+#else
     for (int i = 0; i < 16; i++)
         col += sampleScene(px + TAPS[i] * o);
 
@@ -207,8 +234,7 @@ vec3 applyDOF(vec3 col_in, vec2 px)
     }
 
     col /= 41.0;
-    float focus = clamp(max(1.1666 - (depth / 240.0), depth - 2000.0),
-                        0.0, 1.0);
+#endif
     return col_in * focus + col * (1.0 - focus);
 }
 
@@ -265,13 +291,18 @@ vec3 godRays(vec2 px)
     // around the occluder and bleed through the track.
     float sun_vis = 0.0;
     float r_occ = 0.01 * vp_wh.y;
-    for (int k = 0; k < 8; k++)
+#ifdef TILED_GPU
+    const int OCCLUSION_TAPS = 4;
+#else
+    const int OCCLUSION_TAPS = 8;
+#endif
+    for (int k = 0; k < OCCLUSION_TAPS; k++)
     {
-        float a = float(k) * 0.7853981634;
+        float a = float(k) * (6.283185307 / float(OCCLUSION_TAPS));
         vec2 t = clamp(sun_screen + vec2(cos(a), sin(a)) * r_occ,
                        vp_xy, vp_xy + vp_wh);
         if (viewPosAt(t).z >= sun_vz - sun_margin)
-            sun_vis += 0.125;
+            sun_vis += 1.0 / float(OCCLUSION_TAPS);
     }
     if (sun_vis <= 0.001)
         return vec3(0.0);
@@ -281,8 +312,15 @@ vec3 godRays(vec2 px)
     if (px_dist > R_px * 14.0)
         return vec3(0.0);
 
+#ifdef TILED_GPU
+    const int N = 12;
+    // Preserve the desktop path's attenuation over the same ray distance when
+    // taking half as many, twice-as-long steps: sqrt(0.90) per mobile step.
+    const float DECAY = 0.9486832981;
+#else
     const int N = 24;
     const float DECAY = 0.90;
+#endif
     // Like godray.frag, march most of the way toward the sun.
     vec2 step_px = (sun_screen - px) / (float(N) * 1.12);
     vec2 cur = px;
@@ -411,7 +449,13 @@ vec3 glowOutline(vec3 col_in, vec2 px)
         vec2(0.0, -1.0), vec2(0.7071, -0.7071));
     vec4 blur = center * 0.25;
     float weight = 0.25;
+#ifdef TILED_GPU
+    // Nine reads instead of seventeen; the alternating directions still
+    // cover the full circle and the two radii keep the outline broad.
+    for (int i = 0; i < 8; i += 2)
+#else
     for (int i = 0; i < 8; i++)
+#endif
     {
         blur += texture(u_glow,
             (px + DIRS[i] * (4.0 * s)) / u_camera.m_screensize) * 0.125;
@@ -469,7 +513,11 @@ vec3 lightScatter(vec2 px)
         if (closestpoint.z < 1.0)
             closestpoint = vec3(0.0);
 
+#ifdef TILED_GPU
+        const int STEPS = 4;
+#else
         const int STEPS = 8;
+#endif
         float stepsize = length(farthestpoint - closestpoint) / float(STEPS);
         vec3 light_col =
             u_global_light.m_lights[i].m_color_inverse_square_range.xyz;
@@ -1227,7 +1275,11 @@ void main()
     float boost_amount = u_camera.m_motion_blur.x;
     if (boost_amount > 0.001)
     {
+#ifdef TILED_GPU
+        const int NB_SAMPLES = 4;
+#else
         const int NB_SAMPLES = 8;
+#endif
         vec2 texcoords = (frag_px - vp_xy) / vp_wh;
 
         // Reconstruct the world position of this pixel and reproject it

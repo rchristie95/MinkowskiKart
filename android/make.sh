@@ -90,6 +90,10 @@ elif [ "$COMPILE_ARCH" != "x86" ] && [ "$COMPILE_ARCH" != "x86_64" ] && \
 fi
 
 # Update variables for selected build type
+if [ -z "$STK_VULKAN" ]; then
+    export STK_VULKAN=0
+fi
+
 if [ -z "$BUILD_TYPE" ]; then
     BUILD_TYPE="debug"
 fi
@@ -459,24 +463,20 @@ sed -i "s/^package .*;$/package $PACKAGE_NAME;/" \
 sed -i "s/^import .*\.STKEditText;$/import $PACKAGE_NAME.STKEditText;/" \
        "$DIRNAME/src/main/java/SuperTuxKartActivity.java"
 
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/HIDDevice.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/HIDDeviceBLESteamController.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/HIDDeviceManager.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/HIDDeviceUSB.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/SDLActivity.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/SDLAudioManager.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/SDLControllerManager.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/SDL.java" \
-       "$DIRNAME/src/main/java/"
-cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java" \
-       "$DIRNAME/src/main/java/"
+copy_sdl_file() {
+    if [ -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/$1" ]; then
+        cp -f "$DIRNAME/../lib/sdl2/android-project/app/src/main/java/org/libsdl/app/$1" "$DIRNAME/src/main/java/"
+    fi
+}
+copy_sdl_file HIDDevice.java
+copy_sdl_file HIDDeviceBLESteamController.java
+copy_sdl_file HIDDeviceManager.java
+copy_sdl_file HIDDeviceUSB.java
+copy_sdl_file SDLActivity.java
+copy_sdl_file SDLAudioManager.java
+copy_sdl_file SDLControllerManager.java
+copy_sdl_file SDL.java
+copy_sdl_file SDLSurface.java
 
 cp "banner.png" "$DIRNAME/res/drawable/banner.png"
 cp "$APP_ICON" "$DIRNAME/res/drawable/icon.png"
@@ -508,6 +508,7 @@ export ANDROID_HOME="$SDK_PATH"
           -Pversion_name="$PROJECT_VERSION"              \
           -Pversion_code="$PROJECT_CODE"                 \
           -Papp_dir_name="$APP_DIR_NAME"                 \
+          -Pstk_vulkan="$STK_VULKAN"                     \
           $GRADLE_BUILD_TYPE
 
 check_error
@@ -528,6 +529,7 @@ if [ "$GRADLE_BUILD_TYPE" = "assembleRelease" ]; then
           -Pversion_name="$PROJECT_VERSION"              \
           -Pversion_code="$PROJECT_CODE"                 \
           -Papp_dir_name="$APP_DIR_NAME"                 \
+          -Pstk_vulkan="$STK_VULKAN"                     \
           "bundleRelease"
 fi
 

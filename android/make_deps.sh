@@ -191,7 +191,7 @@ build_deps()
                  -DFREETYPE_INCLUDE_DIRS="$DIRNAME/deps-$ARCH_OPTION/freetype/include/" \
                  -DHB_HAVE_GLIB=OFF -DHB_HAVE_GOBJECT=OFF -DHB_HAVE_ICU=OFF       \
                  -DHB_HAVE_FREETYPE=ON -DHB_BUILD_SUBSET=OFF                      \
-                 -DCMAKE_C_FLAGS="-fpic -O3 -g" -DCMAKE_CXX_FLAGS="-std=gnu++0x -fpic -O3 -g" &&
+                 -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-std=gnu++0x -fpic -O3 -g -w" &&
         make -j $(($(nproc) + 1))
         check_error
         mkdir -p "$DIRNAME/deps-$ARCH_OPTION/harfbuzz/include/harfbuzz"
@@ -232,7 +232,7 @@ build_deps()
                 -DLIBTYPE=STATIC -DOPENSL_LIBRARY="-lOpenSLES"                  \
                 -DOPENSL_INCLUDE_DIR="$NDK_SYSROOT/usr/include/SLES/"           \
                 -DOPENSL_ANDROID_INCLUDE_DIR="$NDK_SYSROOT/usr/include/SLES/"   \
-                -DCMAKE_C_FLAGS="-fpic -O3 -g" -DCMAKE_CXX_FLAGS="-fpic -O3 -g" &&
+                -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w" &&
         make -j $(($(nproc) + 1))
         check_error
         touch "$DIRNAME/deps-$ARCH_OPTION/openal.stamp"
@@ -251,7 +251,7 @@ build_deps()
         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
                 -DHOST=$HOST -DARCH=$ARCH -DBUILD_SHARED_LIBS=OFF             \
                 -DENABLE_TESTING=OFF -DENABLE_PROGRAMS=OFF                    \
-                -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+                -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w" &&
         make -j $(($(nproc) + 1))
         check_error
         touch "$DIRNAME/deps-$ARCH_OPTION/mbedtls.stamp"
@@ -277,7 +277,7 @@ build_deps()
                 -DCURL_USE_LIBSSH=OFF -DCURL_USE_LIBSSH2=OFF                  \
                 -DCURL_USE_GSSAPI=OFF -DUSE_NGHTTP2=OFF -DUSE_QUICHE=OFF      \
                 -DHTTP_ONLY=ON -DCURL_CA_BUNDLE=none -DCURL_CA_PATH=none      \
-                -DENABLE_THREADED_RESOLVER=ON -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+                -DENABLE_THREADED_RESOLVER=ON -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w" &&
         make -j $(($(nproc) + 1))
         check_error
         touch "$DIRNAME/deps-$ARCH_OPTION/curl.stamp"
@@ -291,7 +291,7 @@ build_deps()
 
         cd "$DIRNAME/deps-$ARCH_OPTION/libjpeg"
         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
-                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w" &&
         make -j $(($(nproc) + 1))
         check_error
         touch "$DIRNAME/deps-$ARCH_OPTION/libjpeg.stamp"
@@ -305,7 +305,7 @@ build_deps()
 
         cd "$DIRNAME/deps-$ARCH_OPTION/libogg"
         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
-                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
+                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w" &&
         make -j $(($(nproc) + 1))
         check_error
         touch "$DIRNAME/deps-$ARCH_OPTION/libogg.stamp"
@@ -319,7 +319,7 @@ build_deps()
 
         cd "$DIRNAME/deps-$ARCH_OPTION/libvorbis"
         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
-                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
+                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w"      \
                 -DOGG_LIBRARY="$DIRNAME/deps-$ARCH_OPTION/libogg/libogg.a"    \
                 -DOGG_INCLUDE_DIR="$DIRNAME/deps-$ARCH_OPTION/libogg/include" &&
         make -j $(($(nproc) + 1))
@@ -343,13 +343,15 @@ build_deps()
         
         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake  \
                 -DPYTHON_EXECUTABLE="$SYSTEM_PYTHON"                           \
-                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3"          \
-                -DCMAKE_CXX_FLAGS="-fpic -O3" -DSHADERC_SKIP_INSTALL=1         \
+                -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -w"          \
+                -DCMAKE_CXX_FLAGS="-fpic -O3 -w" -DSHADERC_SKIP_INSTALL=1         \
                 -DCMAKE_BUILD_TYPE=Release                                     \
                 -DSHADERC_SKIP_TESTS=1 -DSHADERC_SKIP_EXAMPLES=1               \
                 -DSPIRV_HEADERS_SKIP_INSTALL=1 -DSPIRV_HEADERS_SKIP_EXAMPLES=1 \
                 -DSKIP_SPIRV_TOOLS_INSTALL=1 -DSPIRV_SKIP_TESTS=1              \
                 -DSPIRV_SKIP_EXECUTABLES=1 -DENABLE_GLSLANG_BINARIES=0         \
+                -DGLSLANG_ENABLE_INSTALL=OFF -DENABLE_GLSLANG_INSTALL=OFF      \
+                -DSPIRV_SKIP_INSTALL=ON                                        \
                 -DENABLE_CTEST=0 &&
         make -j $(($(nproc) + 1))
         # Strip debug symbol to make app bundle smaller
@@ -368,12 +370,12 @@ build_deps()
         if [[ "$ARCH_OPTION" = "x86" || "$ARCH_OPTION" = "x86_64" ]]; then
             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
                     -DHOST=$HOST -DARCH=$ARCH                                     \
-                    -DCMAKE_C_FLAGS="-fpic -O3 -g -DSQUISH_USE_SSE=2 -msse2"      \
-                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -DSQUISH_USE_SSE=2 -msse2"
+                    -DCMAKE_C_FLAGS="-fpic -O3 -g -DSQUISH_USE_SSE=2 -msse2 -w"      \
+                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -DSQUISH_USE_SSE=2 -msse2 -w"
         else
             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
-                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g"
+                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g -w"      \
+                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w"
         fi
         make -j $(($(nproc) + 1))
         check_error
@@ -392,25 +394,30 @@ build_deps()
         if [ "$ARCH_OPTION" = "armeabi-v7a" ]; then
             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
                     -DHOST=$HOST -DARCH=$ARCH -DSTK_ARM_NEON=ON                   \
-                    -DCMAKE_C_FLAGS="-fpic -O3 -g -mfpu=neon"                     \
-                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -mfpu=neon"                   \
+                    -DCMAKE_C_FLAGS="-fpic -O3 -g -mfpu=neon -w"                     \
+                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -mfpu=neon -w"                   \
                     -DASTCENC_INVARIANCE=OFF -DASTCENC_CLI=OFF
         elif [ "$ARCH_OPTION" = "arm64-v8a" ]; then
             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
-                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g"                              \
+                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g -w"      \
+                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w"                              \
                     -DASTCENC_ISA_NEON=ON -DASTCENC_INVARIANCE=OFF -DASTCENC_CLI=OFF
         else
             if [ "$ARCH_OPTION" = "x86" ]; then
                 sed -i 's/_mm_popcnt_u64/__builtin_popcountll/g' Source/astcenc_vecmathlib_sse_4.h
             fi
             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
-                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g"                              \
+                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g -w"      \
+                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w"                              \
                     -DASTCENC_ISA_SSE41=ON -DASTCENC_INVARIANCE=OFF -DASTCENC_CLI=OFF
         fi
         make -j $(($(nproc) + 1))
         check_error
+        if [ -f "Source/libastcenc-native-static.a" ]; then
+            cp -f "Source/libastcenc-native-static.a" "Source/libastcenc.a"
+        elif [ -f "Source/libastcenc-static.a" ]; then
+            cp -f "Source/libastcenc-static.a" "Source/libastcenc.a"
+        fi
         touch "$DIRNAME/deps-$ARCH_OPTION/astc-encoder.stamp"
     fi
 
@@ -424,8 +431,8 @@ build_deps()
 
             cd "$DIRNAME/deps-$ARCH_OPTION/libadrenotools"
             cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake \
-                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g"      \
-                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g"                              \
+                    -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -g -w"      \
+                    -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w"                              \
                     -DCMAKE_SHARED_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
             make -j $(($(nproc) + 1))
             check_error
@@ -435,29 +442,30 @@ build_deps()
         fi
 
         if [ ! -f "$DIRNAME/deps-$ARCH_OPTION/mesa.stamp" ]; then
-            echo "Compiling $ARCH_OPTION mesa"
-            mkdir -p "$DIRNAME/deps-$ARCH_OPTION/mesa"
-            cp -a -f "$DIRNAME/../lib/mesa/"* "$DIRNAME/deps-$ARCH_OPTION/mesa"
+            if command -v meson >/dev/null 2>&1; then
+                echo "Compiling $ARCH_OPTION mesa"
+                mkdir -p "$DIRNAME/deps-$ARCH_OPTION/mesa"
+                cp -a -f "$DIRNAME/../lib/mesa/"* "$DIRNAME/deps-$ARCH_OPTION/mesa"
 
-            cd "$DIRNAME/deps-$ARCH_OPTION/mesa"
-            if command -v cygpath >/dev/null 2>&1; then
-                NDK_PATH_MESON=$(cygpath -m "$NDK_PATH")
-                SYSTEM_PYTHON_MESON=$(cygpath -m "$SYSTEM_PYTHON")
-                PKG_CONFIG_DUMMY_MESON=$(cygpath -m "$DIRNAME/deps-$ARCH_OPTION/mesa/pkg-config-dummy.sh")
-            else
-                NDK_PATH_MESON="$NDK_PATH"
-                SYSTEM_PYTHON_MESON="$SYSTEM_PYTHON"
-                PKG_CONFIG_DUMMY_MESON="$DIRNAME/deps-$ARCH_OPTION/mesa/pkg-config-dummy.sh"
-            fi
-            
-            # Create a dummy pkg-config script to make meson happy
-            cat > pkg-config-dummy.sh <<'EOF'
+                cd "$DIRNAME/deps-$ARCH_OPTION/mesa"
+                if command -v cygpath >/dev/null 2>&1; then
+                    NDK_PATH_MESON=$(cygpath -m "$NDK_PATH")
+                    SYSTEM_PYTHON_MESON=$(cygpath -m "$SYSTEM_PYTHON")
+                    PKG_CONFIG_DUMMY_MESON=$(cygpath -m "$DIRNAME/deps-$ARCH_OPTION/mesa/pkg-config-dummy.sh")
+                else
+                    NDK_PATH_MESON="$NDK_PATH"
+                    SYSTEM_PYTHON_MESON="$SYSTEM_PYTHON"
+                    PKG_CONFIG_DUMMY_MESON="$DIRNAME/deps-$ARCH_OPTION/mesa/pkg-config-dummy.sh"
+                fi
+                
+                # Create a dummy pkg-config script to make meson happy
+                cat > pkg-config-dummy.sh <<'EOF'
 #!/bin/sh
 exit 1
 EOF
-            chmod +x pkg-config-dummy.sh
+                chmod +x pkg-config-dummy.sh
 
-            cat > crossfile <<EOF
+                cat > crossfile <<EOF
 [constants]
 ndk_path = '$NDK_PATH_MESON'
 
@@ -486,28 +494,33 @@ cpu_family = 'aarch64'
 cpu = 'armv8'
 endian = 'little'
 EOF
-            sed -i 's/dep_libarchive = dependency(.*/dep_libarchive = null_dep/' src/freedreno/meson.build
-            sed -i 's/dep_libxml2 = dependency(.*/dep_libxml2 = null_dep/' src/freedreno/meson.build
-            sed -i 's/#elif DETECT_OS_ANDROID && !defined(__cplusplus)/#elif 0/' src/util/perf/cpu_trace.h
-            rm -rf build
-            meson setup build --cross-file crossfile \
-                -Dbuildtype=release \
-                -Dplatforms=android \
-                -Dplatform-sdk-version=26 \
-                -Dandroid-stub=true \
-                -Dgallium-drivers= \
-                -Dvulkan-drivers=freedreno \
-                -Dfreedreno-kmds=kgsl \
-                -Db_lto=true \
-                -Db_lto_mode=thin \
-                -Degl=disabled \
-                -Dvalgrind=disabled \
-                -Dzstd=disabled \
-                -Dshader-cache=disabled
-            meson compile -C build
-            check_error
-            cp "$DIRNAME/deps-$ARCH_OPTION/mesa/build/src/freedreno/vulkan/libvulkan_freedreno.so" "$DIRNAME/mesa/arm64-v8a"
-            touch "$DIRNAME/deps-$ARCH_OPTION/mesa.stamp"
+                sed -i 's/dep_libarchive = dependency(.*/dep_libarchive = null_dep/' src/freedreno/meson.build
+                sed -i 's/dep_libxml2 = dependency(.*/dep_libxml2 = null_dep/' src/freedreno/meson.build
+                sed -i 's/#elif DETECT_OS_ANDROID && !defined(__cplusplus)/#elif 0/' src/util/perf/cpu_trace.h
+                rm -rf build
+                meson setup build --cross-file crossfile \
+                    -Dbuildtype=release \
+                    -Dplatforms=android \
+                    -Dplatform-sdk-version=26 \
+                    -Dandroid-stub=true \
+                    -Dgallium-drivers= \
+                    -Dvulkan-drivers=freedreno \
+                    -Dfreedreno-kmds=kgsl \
+                    -Db_lto=true \
+                    -Db_lto_mode=thin \
+                    -Degl=disabled \
+                    -Dvalgrind=disabled \
+                    -Dzstd=disabled \
+                    -Dshader-cache=disabled
+                meson compile -C build
+                check_error
+                cp "$DIRNAME/deps-$ARCH_OPTION/mesa/build/src/freedreno/vulkan/libvulkan_freedreno.so" "$DIRNAME/mesa/arm64-v8a"
+                touch "$DIRNAME/deps-$ARCH_OPTION/mesa.stamp"
+            else
+                echo "Warning: meson not found. Skipping $ARCH_OPTION mesa compilation."
+                mkdir -p "$DIRNAME/mesa/arm64-v8a"
+                touch "$DIRNAME/deps-$ARCH_OPTION/mesa.stamp"
+            fi
         fi
     fi
 }

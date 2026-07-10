@@ -1,0 +1,5 @@
+[mcp_servers.meshy]
+command = 'C:\Users\robso\AppData\Roaming\npm\meshy-mcp-server.cmd'
+
+[mcp_servers.meshy.env]
+MESHY_API_KEY = "msy_GEWhgQqlwbEXuKV3al3PrAQ5zIU9CQ6ZsV1Y"

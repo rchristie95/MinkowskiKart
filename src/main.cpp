@@ -713,6 +713,8 @@ void cmdLineHelp()
     "       --enable-ssao      Enable screen space ambient occlusion.\n"
     "       --disable-ssao     Disable screen space ambient occlusion.\n"
     "       --enable-vulkan-ao Enable hidden Vulkan ambient occlusion test path.\n"
+    "       --disable-vulkan-tess Force-disable the Vulkan adaptive\n"
+    "                          tessellation pipeline (crash triage).\n"
     "       --enable-ibl       Enable image based lighting.\n"
     "       --disable-ibl      Disable image based lighting.\n"
     "       --enable-hd-textures Enable high definition textures.\n"
@@ -1028,6 +1030,11 @@ int handleCmdLinePreliminary()
         UserConfigParams::m_ssao = false;
     if (CommandLine::has("--enable-vulkan-ao"))
         UserConfigParams::m_vk_debug_ao = true;
+    // Crash-triage escape hatch: relativistic warping (and the adaptive
+    // tessellation it forces on) can't otherwise be turned off from the
+    // command line, since Relativity::isEnabled() is hardcoded true.
+    if (CommandLine::has("--disable-vulkan-tess"))
+        UserConfigParams::m_vk_debug_no_tess = true;
     // image based lighting
     if (CommandLine::has("--enable-ibl"))
         UserConfigParams::m_degraded_IBL = false;

@@ -2,6 +2,7 @@
 
 #include "ge_vulkan_driver.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <condition_variable>
 #include <cstdio>
@@ -48,6 +49,7 @@ thread_local int g_loader_id = 0;
 std::atomic_uint g_loader_count(0);
 
 std::vector<VkCommandPool> g_command_pools;
+std::vector<VkCommandBuffer> g_upload_command_buffers;
 std::vector<VkFence> g_command_fences;
 std::vector<std::unique_ptr<std::atomic<bool> > > g_thread_idle;
 }   // GEVulkanCommandLoader
@@ -56,13 +58,24 @@ std::vector<std::unique_ptr<std::atomic<bool> > > g_thread_idle;
 void GEVulkanCommandLoader::init(GEVulkanDriver* vk)
 {
     g_vk = vk;
-    unsigned thread_count = std::thread::hardware_concurrency();
-    if (thread_count == 0)
-        thread_count = 3;
-    else
-        thread_count += 3;
+    unsigned hardware_threads = std::thread::hardware_concurrency();
+    if (hardware_threads == 0)
+        hardware_threads = 4;
+#if defined(TILED_GPU)
+    // Mobile uploads share tight CPU, memory-bandwidth and graphics-queue
+    // budgets. Two workers keep decompression/upload overlap without the
+    // previous hardware_concurrency()+2 oversubscription.
+    const unsigned worker_count = std::min(2u,
+        std::max(1u, hardware_threads > 2 ? hardware_threads - 2 : 1u));
+#else
+    const unsigned worker_count = std::min(6u,
+        std::max(1u, hardware_threads > 2 ? hardware_threads - 2 : 1u));
+#endif
+    // Slot zero belongs to the render/main thread.
+    const unsigned thread_count = worker_count + 1;
 
     g_command_pools.resize(thread_count);
+    g_upload_command_buffers.resize(thread_count);
     g_command_fences.resize(thread_count);
     for (unsigned i = 0; i < thread_count; i++)
     {
@@ -76,6 +89,18 @@ void GEVulkanCommandLoader::init(GEVulkanDriver* vk)
         {
             throw std::runtime_error(
                 "GEVulkanCommandLoader: vkCreateCommandPool failed");
+        }
+        VkCommandBufferAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandPool = g_command_pools[i];
+        alloc_info.commandBufferCount = 1;
+        result = vkAllocateCommandBuffers(g_vk->getDevice(), &alloc_info,
+            &g_upload_command_buffers[i]);
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error(
+                "GEVulkanCommandLoader: vkAllocateCommandBuffers failed");
         }
         VkFenceCreateInfo fence_info = {};
         fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -103,11 +128,11 @@ void GEVulkanCommandLoader::init(GEVulkanDriver* vk)
                 g_loader_id = i + 1;
                 while (true)
                 {
-                    g_thread_idle[i]->store(true);
                     std::unique_lock<std::mutex> ul(g_loaders_mutex);
                     g_loaders_cv.wait(ul, []
                         {
-                            return !g_threaded_commands.empty();
+                            return g_loader_count.load() == 0 ||
+                                !g_threaded_commands.empty();
                         });
                     if (g_loader_count.load() == 0)
                         return;
@@ -117,6 +142,10 @@ void GEVulkanCommandLoader::init(GEVulkanDriver* vk)
                     g_threaded_commands.pop_front();
                     ul.unlock();
                     copied();
+                    ul.lock();
+                    g_thread_idle[i]->store(true);
+                    ul.unlock();
+                    g_loaders_cv.notify_all();
                 }
             });
     }
@@ -133,10 +162,7 @@ void GEVulkanCommandLoader::destroy()
     g_loader_count.store(0);
     if (!g_loaders.empty())
     {
-        std::unique_lock<std::mutex> ul(g_loaders_mutex);
-        g_threaded_commands.push_back([](){});
         g_loaders_cv.notify_all();
-        ul.unlock();
         for (std::thread& t : g_loaders)
             t.join();
         g_loaders.clear();
@@ -149,6 +175,7 @@ void GEVulkanCommandLoader::destroy()
     for (VkCommandPool& pool : g_command_pools)
         vkDestroyCommandPool(g_vk->getDevice(), pool, NULL);
     g_command_pools.clear();
+    g_upload_command_buffers.clear();
     for (VkFence& fence : g_command_fences)
         vkDestroyFence(g_vk->getDevice(), fence, NULL);
     g_command_fences.clear();
@@ -203,20 +230,18 @@ void GEVulkanCommandLoader::addMultiThreadingCommand(std::function<void()> cmd)
 // ----------------------------------------------------------------------------
 VkCommandBuffer GEVulkanCommandLoader::beginSingleTimeCommands()
 {
-    VkCommandBufferAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandPool = g_command_pools[g_loader_id];
-    alloc_info.commandBufferCount = 1;
-
-    VkCommandBuffer command_buffer;
-    vkAllocateCommandBuffers(g_vk->getDevice(), &alloc_info, &command_buffer);
+    VkCommandBuffer command_buffer = g_upload_command_buffers[g_loader_id];
+    if (vkResetCommandBuffer(command_buffer, 0) != VK_SUCCESS)
+        throw std::runtime_error(
+            "GEVulkanCommandLoader: vkResetCommandBuffer failed");
 
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(command_buffer, &begin_info);
+    if (vkBeginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS)
+        throw std::runtime_error(
+            "GEVulkanCommandLoader: vkBeginCommandBuffer failed");
     return command_buffer;
 }   // beginSingleTimeCommands
 
@@ -224,7 +249,9 @@ VkCommandBuffer GEVulkanCommandLoader::beginSingleTimeCommands()
 void GEVulkanCommandLoader::endSingleTimeCommands(VkCommandBuffer command_buffer,
                                                   VkQueueFlagBits bit)
 {
-    vkEndCommandBuffer(command_buffer);
+    if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
+        throw std::runtime_error(
+            "GEVulkanCommandLoader: vkEndCommandBuffer failed");
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -239,8 +266,7 @@ void GEVulkanCommandLoader::endSingleTimeCommands(VkCommandBuffer command_buffer
     lock.unlock();
     if (submit_result != VK_SUCCESS)
     {
-        printf("GEVulkanCommandLoader: vkQueueSubmit failed with VkResult "
-               "%d (loader %d)\n", (int)submit_result, loader_id);
+        throw std::runtime_error("GEVulkanCommandLoader: vkQueueSubmit failed");
     }
 
     VkResult wait_result = vkWaitForFences(g_vk->getDevice(), 1,
@@ -252,27 +278,23 @@ void GEVulkanCommandLoader::endSingleTimeCommands(VkCommandBuffer command_buffer
                "%d (loader %d)\n", (int)wait_result, loader_id);
     }
     vkResetFences(g_vk->getDevice(), 1, &g_command_fences[loader_id]);
-    vkFreeCommandBuffers(g_vk->getDevice(), g_command_pools[loader_id], 1,
-        &command_buffer);
 }   // endSingleTimeCommands
 
 // ----------------------------------------------------------------------------
 void GEVulkanCommandLoader::waitIdle()
 {
-    while (true)
-    {
-        std::lock_guard<std::mutex> lock(g_loaders_mutex);
-        if (g_threaded_commands.empty())
-            break;
-    }
-
-    unsigned i = 0;
-    while (i < g_thread_idle.size())
-    {
-        if (g_thread_idle[i]->load() == false)
-            continue;
-        i++;
-    }
+    std::unique_lock<std::mutex> lock(g_loaders_mutex);
+    g_loaders_cv.wait(lock, []
+        {
+            if (!g_threaded_commands.empty())
+                return false;
+            for (const auto& idle : g_thread_idle)
+            {
+                if (!idle->load())
+                    return false;
+            }
+            return true;
+        });
 }   // waitIdle
 
 }

@@ -59,12 +59,15 @@ GEVulkanTextureDescriptor::GEVulkanTextureDescriptor(unsigned max_texture_list,
     // m_descriptor_pool
     VkDescriptorPoolSize pool_size;
     pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_size.descriptorCount = m_max_texture_list * m_max_layer;
+    const unsigned frame_count = GEVulkanDriver::getMaxFrameInFlight() + 1;
+    pool_size.descriptorCount =
+        m_max_texture_list * m_max_layer * frame_count;
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.flags = 0;
-    pool_info.maxSets = single_descriptor ? 1 : m_max_texture_list;
+    m_descriptor_sets_per_frame = single_descriptor ? 1 : m_max_texture_list;
+    pool_info.maxSets = m_descriptor_sets_per_frame * frame_count;
     pool_info.poolSizeCount = 1;
     pool_info.pPoolSizes = &pool_size;
     if (vkCreateDescriptorPool(m_vk->getDevice(), &pool_info, NULL,
@@ -75,10 +78,8 @@ GEVulkanTextureDescriptor::GEVulkanTextureDescriptor(unsigned max_texture_list,
     }
 
     // m_descriptor_sets
-    if (single_descriptor)
-        m_descriptor_sets.resize(1);
-    else
-        m_descriptor_sets.resize(m_max_texture_list);
+    m_descriptor_sets.resize(m_descriptor_sets_per_frame * frame_count);
+    m_dirty_descriptor_frames.resize(frame_count, false);
     std::vector<VkDescriptorSetLayout> layouts(m_descriptor_sets.size(),
         m_descriptor_set_layout);
 
@@ -97,7 +98,6 @@ GEVulkanTextureDescriptor::GEVulkanTextureDescriptor(unsigned max_texture_list,
 
     m_sampler_use = GVS_NEAREST;
     m_recreate_next_frame = false;
-    m_needs_update_descriptor = false;
 
     GEVulkanTexture* tex = static_cast<GEVulkanTexture*>(
         m_vk->getWhiteTexture());
@@ -115,13 +115,58 @@ GEVulkanTextureDescriptor::~GEVulkanTextureDescriptor()
 }   // ~GEVulkanTextureDescriptor
 
 // ----------------------------------------------------------------------------
+void GEVulkanTextureDescriptor::invalidateDescriptorSets()
+{
+    std::fill(m_dirty_descriptor_frames.begin(),
+        m_dirty_descriptor_frames.end(), true);
+}   // invalidateDescriptorSets
+
+// ----------------------------------------------------------------------------
+void GEVulkanTextureDescriptor::clear()
+{
+    m_texture_list.clear();
+    invalidateDescriptorSets();
+    m_recreate_next_frame = false;
+}   // clear
+
+// ----------------------------------------------------------------------------
+void GEVulkanTextureDescriptor::setSamplerUse(GEVulkanSampler sampler)
+{
+    if (m_sampler_use == sampler)
+        return;
+    m_sampler_use = sampler;
+    invalidateDescriptorSets();
+}   // setSamplerUse
+
+// ----------------------------------------------------------------------------
+VkDescriptorSet* GEVulkanTextureDescriptor::getDescriptorSet()
+{
+    unsigned frame = m_vk->getCurrentBufferIdx();
+    if (frame >= m_dirty_descriptor_frames.size())
+        frame = 0;
+    return m_descriptor_sets.data() + frame * m_descriptor_sets_per_frame;
+}   // getDescriptorSet
+
+// ----------------------------------------------------------------------------
 void GEVulkanTextureDescriptor::updateDescriptor()
 {
-    if (!m_needs_update_descriptor)
+    unsigned frame = m_vk->getCurrentBufferIdx();
+    if (frame >= m_dirty_descriptor_frames.size())
+        frame = 0;
+    if (!m_dirty_descriptor_frames[frame])
         return;
-    m_needs_update_descriptor = false;
     if (m_texture_list.empty())
+    {
+        m_dirty_descriptor_frames[frame] = false;
         return;
+    }
+
+    // Descriptor sets are ringed with the dynamic-buffer index. That index has
+    // one more slot than the in-flight frame count, so its previous submission
+    // has completed before the slot is reused. Updating only this slice avoids
+    // stalling every queue with vkDeviceWaitIdle.
+    VkDescriptorSet* descriptor_sets = m_descriptor_sets.data() +
+        frame * m_descriptor_sets_per_frame;
 
     std::vector<VkDescriptorImageInfo> image_infos;
     image_infos.resize(m_texture_list.size() * m_max_layer);
@@ -140,7 +185,7 @@ void GEVulkanTextureDescriptor::updateDescriptor()
         }
     }
 
-    bool single_descriptor = (m_descriptor_sets.size() == 1);
+    bool single_descriptor = (m_descriptor_sets_per_frame == 1);
     if (single_descriptor)
     {
         VkDescriptorImageInfo dummy_info;
@@ -150,7 +195,6 @@ void GEVulkanTextureDescriptor::updateDescriptor()
         image_infos.resize(m_max_texture_list * m_max_layer, dummy_info);
     }
 
-    m_vk->waitIdle();
     if (single_descriptor)
     {
         VkWriteDescriptorSet write_descriptor_set = {};
@@ -161,7 +205,7 @@ void GEVulkanTextureDescriptor::updateDescriptor()
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         write_descriptor_set.descriptorCount = m_max_texture_list * m_max_layer;
         write_descriptor_set.pBufferInfo = 0;
-        write_descriptor_set.dstSet = m_descriptor_sets[0];
+        write_descriptor_set.dstSet = descriptor_sets[0];
         write_descriptor_set.pImageInfo = image_infos.data();
 
         vkUpdateDescriptorSets(m_vk->getDevice(), 1, &write_descriptor_set, 0,
@@ -181,13 +225,14 @@ void GEVulkanTextureDescriptor::updateDescriptor()
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             write_descriptor_set.descriptorCount = m_max_layer;
             write_descriptor_set.pBufferInfo = 0;
-            write_descriptor_set.dstSet = m_descriptor_sets[set_idx];
+            write_descriptor_set.dstSet = descriptor_sets[set_idx];
             write_descriptor_set.pImageInfo = &image_infos[i];
             all_sets.push_back(write_descriptor_set);
         }
         vkUpdateDescriptorSets(m_vk->getDevice(), all_sets.size(),
             all_sets.data(), 0, NULL);
     }
+    m_dirty_descriptor_frames[frame] = false;
 }   // updateDescriptor
 
 // ----------------------------------------------------------------------------
@@ -229,7 +274,7 @@ int GEVulkanTextureDescriptor::getTextureID(const irr::video::ITexture** list,
         }
 
         m_texture_list[key] = cur_id;
-        m_needs_update_descriptor = true;
+        invalidateDescriptorSets();
         // Reset the list earlier if almost full
         if (cur_id > int((float)m_max_texture_list * 0.8f))
             m_recreate_next_frame = true;

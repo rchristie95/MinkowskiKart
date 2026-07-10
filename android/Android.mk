@@ -386,7 +386,6 @@ LOCAL_CFLAGS       := -I../lib/angelscript/include      \
                       -Ideps-$(TARGET_ARCH_ABI)/libvorbis/include \
                       -Ideps-$(TARGET_ARCH_ABI)/openal/include    \
                       -Ideps-$(TARGET_ARCH_ABI)/mbedtls/include   \
-                      -DUSE_GLES2      \
                       -DMOBILE_STK     \
                       -DENABLE_SOUND   \
                       -DENABLE_IPV6    \
@@ -397,6 +396,9 @@ LOCAL_CFLAGS       := -I../lib/angelscript/include      \
                       -DANDROID_APP_DIR_NAME=\"$(APP_DIR_NAME)\"    \
                       -DSUPERTUXKART_VERSION=\"$(PROJECT_VERSION)\" \
                       -DANDROID_PACKAGE_CLASS_NAME=\"$(PACKAGE_CLASS_NAME)\"
+ifneq ($(STK_VULKAN), 1)
+LOCAL_CFLAGS       += -DUSE_GLES2
+endif
 LOCAL_CPPFLAGS     := -std=gnu++0x
 LOCAL_LDFLAGS      += $(MK_ANDROID_16KB_LDFLAGS)
 

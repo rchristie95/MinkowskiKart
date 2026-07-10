@@ -315,6 +315,10 @@ namespace GE
         //! frames later). Lets callers grow buffers without a full device
         //! stall. Thread-safe.
         void scheduleBufferDeletion(VkBuffer buffer, VmaAllocation allocation);
+        //! Queue an image and its views for destruction after all in-flight
+        //! descriptor sets and command buffers that may reference it retire.
+        void scheduleImageDeletion(VkImage image, VmaAllocation allocation,
+            VkImageView image_view, VkImageView srgb_image_view);
         VkPhysicalDevice getPhysicalDevice() const { return m_physical_device; }
         const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() const
                                                           { return m_features; }
@@ -332,6 +336,15 @@ namespace GE
         std::vector<VkImageView>& getSwapChainImageViews()
                                         { return m_vk->swap_chain_image_views; }
         VkFormat getSwapChainImageFormat() { return m_swap_chain_image_format; }
+        //! Pipeline-cache access is externally synchronized as required by
+        //! Vulkan because environment-map pipelines may compile on a loader
+        //! thread while scene pipelines are created on the render thread.
+        VkResult createGraphicsPipelines(uint32_t count,
+            const VkGraphicsPipelineCreateInfo* create_infos,
+            VkPipeline* pipelines);
+        VkResult createComputePipelines(uint32_t count,
+            const VkComputePipelineCreateInfo* create_infos,
+            VkPipeline* pipelines);
         std::vector<VkFramebuffer>& getSwapChainFramebuffers()
                                        { return m_vk->swap_chain_framebuffers; }
 
@@ -437,6 +450,7 @@ namespace GE
             VkDebugUtilsMessengerEXT debug;
             VkSurfaceKHR surface;
             VkDevice device;
+            VkPipelineCache pipeline_cache;
             VmaAllocator allocator;
             VkSwapchainKHR swap_chain;
             std::vector<VkImage> swap_chain_images;
@@ -455,6 +469,7 @@ namespace GE
                 debug = VK_NULL_HANDLE;
                 surface = VK_NULL_HANDLE;
                 device = VK_NULL_HANDLE;
+                pipeline_cache = VK_NULL_HANDLE;
                 allocator = VK_NULL_HANDLE;
                 swap_chain = VK_NULL_HANDLE;
                 samplers = {{}};
@@ -487,6 +502,8 @@ namespace GE
                     vkDestroyImageView(device, image_view, NULL);
                 if (swap_chain != VK_NULL_HANDLE)
                     vkDestroySwapchainKHR(device, swap_chain, NULL);
+                if (pipeline_cache != VK_NULL_HANDLE)
+                    vkDestroyPipelineCache(device, pipeline_cache, NULL);
                 if (allocator != VK_NULL_HANDLE)
                     vmaDestroyAllocator(allocator);
                 if (device != VK_NULL_HANDLE)
@@ -507,6 +524,8 @@ namespace GE
         VkSurfaceCapabilitiesKHR m_surface_capabilities;
         std::vector<VkSurfaceFormatKHR> m_surface_formats;
         std::vector<VkPresentModeKHR> m_present_modes;
+        std::string m_pipeline_cache_path;
+        std::mutex m_pipeline_cache_mutex;
         std::vector<VkQueue> m_graphics_queue;
         VkQueue m_present_queue;
         mutable std::vector<std::mutex*> m_graphics_queue_mutexes;
@@ -554,7 +573,16 @@ namespace GE
             VmaAllocation m_allocation;
             int m_frames_left;
         };
+        struct DeferredImageDeletion
+        {
+            VkImage m_image;
+            VmaAllocation m_allocation;
+            VkImageView m_image_view;
+            VkImageView m_srgb_image_view;
+            int m_frames_left;
+        };
         std::vector<DeferredBufferDeletion> m_deferred_buffer_deletions;
+        std::vector<DeferredImageDeletion> m_deferred_image_deletions;
         std::mutex m_deferred_buffer_deletions_mutex;
         //! Tick the deferred-deletion queue once per frame; \p force frees
         //! everything immediately (used at shutdown after the device is idle).
@@ -569,6 +597,8 @@ namespace GE
                                       std::vector<VkSurfaceFormatKHR>* surface_formats,
                                       std::vector<VkPresentModeKHR>* present_modes);
         void createDevice();
+        void createPipelineCache();
+        void savePipelineCache();
         void createSwapChain();
         void createSyncObjects();
         void createCommandBuffers();

@@ -36,10 +36,20 @@ layout(location = 10) out float tc_disable_rel[];
 #include "utils/relativity_bridge.glsl"
 #include "../utils/relativity_visual.vert"
 
-// Tessellation quality constants (match sp_tess.tesc)
+// Desktop GPUs retain the original high-quality limits.  Tile-based mobile
+// GPUs need tessellation for correct relativistic warping of large triangles,
+// but factor 64 can amplify one triangle into thousands.  Use a coarser world
+// target and a strict factor cap there; the projected-edge term below still
+// drives large visible or strongly aberrated edges to that cap.
+#ifdef TILED_GPU
+const float TARGET_EDGE_LENGTH_NEAR = 0.35;
+const float TARGET_EDGE_LENGTH_SCREEN = 64.0;
+const float MAX_TESS_LEVEL = 8.0;
+#else
 const float TARGET_EDGE_LENGTH_NEAR = 0.1;
-const float FULL_TESSELLATION_RADIUS = 10.0;
 const float MAX_TESS_LEVEL = 64.0;
+#endif
+const float FULL_TESSELLATION_RADIUS = 10.0;
 
 float getDistanceToEdge(vec3 point, vec3 pA, vec3 pB)
 {
@@ -68,6 +78,24 @@ float getWarpAmplification(vec3 pA, vec3 pB)
     return clamp(1.0 / max(1.0 + dot(beta, dir), 0.125), 1.0, 8.0);
 }
 
+#ifdef TILED_GPU
+// Approximate the unwarped projected edge length in pixels.  This depends only
+// on the shared edge endpoints and camera, so adjacent patches select the same
+// outer level.  Edges crossing the camera plane fall back to the conservative
+// world-space metric instead of dividing by an unstable clip-space w.
+float getProjectedEdgeLength(vec3 pA, vec3 pB)
+{
+    vec4 clip_a = u_camera.m_projection_view_matrix * vec4(pA, 1.0);
+    vec4 clip_b = u_camera.m_projection_view_matrix * vec4(pB, 1.0);
+    if (clip_a.w <= 1e-4 || clip_b.w <= 1e-4)
+        return 0.0;
+
+    vec2 ndc_a = clip_a.xy / clip_a.w;
+    vec2 ndc_b = clip_b.xy / clip_b.w;
+    return length((ndc_b - ndc_a) * 0.5 * u_camera.m_screensize);
+}
+#endif
+
 float getTessLevel(vec3 pA, vec3 pB)
 {
     float edge_l = length(pB - pA);
@@ -78,10 +106,20 @@ float getTessLevel(vec3 pA, vec3 pB)
     // geometry keeps subdividing everywhere, just coarser further away.
     // The level depends only on the edge endpoints and the bubble centre, so
     // patches sharing an edge agree on its level and no cracks appear.
+    float warp_amplification = getWarpAmplification(pA, pB);
     float target_edge = TARGET_EDGE_LENGTH_NEAR *
         max(1.0, dist / FULL_TESSELLATION_RADIUS) /
-        getWarpAmplification(pA, pB);
-    return clamp(edge_l / target_edge, 1.0, MAX_TESS_LEVEL);
+        warp_amplification;
+    float level = edge_l / target_edge;
+#ifdef TILED_GPU
+    // Retain enough subdivisions for long on-screen edges even when they are
+    // far from the bubble.  Aberration raises the requirement in the direction
+    // where the visual transform magnifies nonlinear curvature.
+    float screen_level = getProjectedEdgeLength(pA, pB) *
+        warp_amplification / TARGET_EDGE_LENGTH_SCREEN;
+    level = max(level, screen_level);
+#endif
+    return clamp(level, 1.0, MAX_TESS_LEVEL);
 }
 
 void main()

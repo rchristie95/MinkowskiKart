@@ -26,6 +26,7 @@
 #include "SDL_cpuinfo.h"
 #include "SDL_stdinc.h"
 #include "SDL_system.h"
+#include <cmath>
 #include <jni.h>
 std::string g_android_main_user_agent;
 
@@ -114,6 +115,11 @@ void override_default_params_for_mobile()
     // Enable advanced lighting only for android >= 8
 #ifdef ANDROID
     UserConfigParams::m_dynamic_lights = (SDL_GetAndroidSDKVersion() >= 26);
+    // Advanced lighting on tile-based mobile GPUs is bandwidth-heavy. These
+    // are defaults only: loadConfig() runs afterwards and restores any saved
+    // user choices from config.xml.
+    UserConfigParams::m_shadows_resolution.setDefaultValue(1024);
+    UserConfigParams::m_pcss.setDefaultValue(false);
 #endif
 
     // Disable light scattering for better performance
@@ -143,6 +149,8 @@ void override_default_params_for_mobile()
     const int SCREENLAYOUT_SIZE_XLARGE = 4;
     int32_t screen_size = 0;
     int ddpi = 0;
+    int display_width = 0;
+    int display_height = 0;
     JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
     assert(env);
     jobject activity = (jobject)SDL_AndroidGetActivity();
@@ -168,6 +176,13 @@ void override_default_params_for_mobile()
                 jfieldID ddpi_field = env->GetFieldID(display_dpi_class,
                                                       "densityDpi", "I");
                 ddpi = env->GetIntField(display_dpi_obj, ddpi_field);
+
+                jfieldID width_field = env->GetFieldID(display_dpi_class,
+                                                       "widthPixels", "I");
+                jfieldID height_field = env->GetFieldID(display_dpi_class,
+                                                        "heightPixels", "I");
+                display_width = env->GetIntField(display_dpi_obj, width_field);
+                display_height = env->GetIntField(display_dpi_obj, height_field);
             
                 env->DeleteLocalRef(display_dpi_obj);
                 env->DeleteLocalRef(display_dpi_class);
@@ -201,37 +216,55 @@ void override_default_params_for_mobile()
         break;
     }
     
-    int total_memory = ceilf((float)(SDL_GetSystemRAM()) / 1024);
-    
-    if ((total_memory >= 8) && (SDL_GetAndroidSDKVersion() >= 31))
-    {
-        // Use 100% scale on devices with 8GB RAM and Android >= 12
-        UserConfigParams::m_scale_rtts_factor = 1.0f;
-    }
-    else if (ddpi < 1)
+    const int total_memory = (int)std::ceil(
+        (float)(SDL_GetSystemRAM()) / 1024.0f);
+
+    // Choose the first-run render scale from actual fill-rate demand instead
+    // of treating RAM and Android version as a GPU-performance proxy.  The
+    // advanced deferred path targets about 1.5 MP; the simpler path can afford
+    // more. Low-memory devices use a smaller budget to reduce attachment and
+    // post-processing pressure as a secondary constraint.
+    float target_pixels = UserConfigParams::m_dynamic_lights ?
+        1500000.0f : 2000000.0f;
+    if (total_memory <= 4)
+        target_pixels *= 0.75f;
+
+    float render_scale = 0.85f;
+    if (ddpi < 1)
     {
         Log::warn("MainAndroid", "Failed to get display DPI.");
-        UserConfigParams::m_scale_rtts_factor = 0.7f;
+        render_scale = 0.7f;
     }
-    else
+    else if (ddpi > 500)
+        render_scale = 0.7f;
+    else if (ddpi > 400)
+        render_scale = 0.75f;
+    else if (ddpi > 300)
+        render_scale = 0.8f;
+
+    if (display_width > 0 && display_height > 0)
     {
-        // Update rtts scale based on display DPI
-        if (ddpi > 400)
-            UserConfigParams::m_scale_rtts_factor = 0.6f;
-        else if (ddpi > 300)
-            UserConfigParams::m_scale_rtts_factor = 0.65f;
-        else if (ddpi > 200)
-            UserConfigParams::m_scale_rtts_factor = 0.7f;
-        else if (ddpi > 150)
-            UserConfigParams::m_scale_rtts_factor = 0.75f;
-        else
-            UserConfigParams::m_scale_rtts_factor = 0.8f;
-
-        Log::info("MainAndroid", "Display DPI: %i", ddpi);
+        const float native_pixels =
+            (float)display_width * (float)display_height;
+        const float pixel_limited_scale =
+            std::sqrt(target_pixels / native_pixels);
+        if (pixel_limited_scale < render_scale)
+            render_scale = pixel_limited_scale;
     }
 
-    Log::info("MainAndroid", "Render scale: %f",
-              (float)UserConfigParams::m_scale_rtts_factor);
+    // Keep the value on an existing options-screen preset and within a range
+    // that remains legible while avoiding native-resolution overload.
+    if (render_scale < 0.5f)
+        render_scale = 0.5f;
+    else if (render_scale > 0.85f)
+        render_scale = 0.85f;
+    render_scale = std::floor(render_scale * 20.0f) / 20.0f;
+    UserConfigParams::m_scale_rtts_factor.setDefaultValue(render_scale);
+
+    Log::info("MainAndroid", "Display: %ix%i at %i DPI, RAM: %i GB",
+              display_width, display_height, ddpi, total_memory);
+    Log::info("MainAndroid", "Default render scale: %f (target %.1f MP)",
+              render_scale, target_pixels / 1000000.0f);
 #endif
 
     // Enable screen keyboard

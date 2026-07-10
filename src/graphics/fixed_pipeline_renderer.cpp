@@ -75,20 +75,9 @@ void FixedPipelineRenderer::onLoadWorld()
         // compose pass; force that path so they always work.
         GE::getGEConfig()->m_force_displace_compose =
             Relativity::isEnabled();
-        // Route static geometry through the adaptively tessellated material
-        // variants so large triangles (ocean planes etc.) subdivide and warp
-        // smoothly instead of rigidly. NOT on Apple/MoltenVK: emulated
-        // tessellation there needs a per-draw compute pre-pass that forces a
-        // TBDR tile flush, crawling at ~0.3 fps regardless of subdivision
-        // level. Coarse geometry is instead pre-subdivided on the CPU at load
-        // (GESPMBuffer::subdivideForRelativity), so the per-vertex warp is just
-        // as smooth at full framerate.
-#if defined(__APPLE__)
-        GE::getGEConfig()->m_adaptive_tessellation = false;
-#else
-        GE::getGEConfig()->m_adaptive_tessellation =
-            Relativity::isEnabled();
-#endif
+        // Keep the backend/device policy selected during driver creation.
+        // Reassigning it here used to override --disable-vulkan-tess and would
+        // also discard the bounded TILED_GPU policy.
     }
     m_boost_time.clear();
     m_boost_time.resize(Camera::getNumCameras(), 0.0f);

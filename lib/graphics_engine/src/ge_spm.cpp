@@ -53,6 +53,16 @@ void GESPM::finalize()
         // instead of the emulated per-frame tessellation that crawled at
         // ~0.3 fps. No-op for dense/skinned buffers.
         m_buffer[i]->subdivideForRelativity();
+#elif defined(__arm__) || defined(__aarch64__) || defined(_M_ARM) || \
+      defined(_M_ARM64)
+        // Mobile keeps bounded GPU tessellation for the live relativistic
+        // transform. Only single-buffer coarse meshes are pre-split: uniform
+        // subdivision across separate material buffers can introduce a
+        // T-junction where only one side of a shared edge takes another pass.
+        // Large road/ocean sheets are normally single-buffer meshes, while
+        // multi-material tracks retain the seam-safe shared-edge GPU path.
+        if (m_buffer.size() == 1 && m_buffer[i]->getIndexCount() < 12000)
+            m_buffer[i]->subdivideForRelativity(2.8f, 4);
 #endif
         m_bounding_box.addInternalBox(m_buffer[i]->getBoundingBox());
         m_buffer[i]->createVertexIndexBuffer();

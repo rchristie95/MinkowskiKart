@@ -517,6 +517,7 @@ void GEVulkanDeferredFBO::createRTT()
         dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[1].srcStageMask =
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
             VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         dependencies[1].dstStageMask =
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |

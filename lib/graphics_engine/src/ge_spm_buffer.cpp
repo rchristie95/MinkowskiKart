@@ -94,8 +94,7 @@ void GESPMBuffer::destroyVertexIndexBuffer()
     if (m_buffer == VK_NULL_HANDLE || m_memory == VK_NULL_HANDLE)
         return;
 
-    getVKDriver()->waitIdle();
-    vmaDestroyBuffer(getVKDriver()->getVmaAllocator(), m_buffer, m_memory);
+    getVKDriver()->scheduleBufferDeletion(m_buffer, m_memory);
     m_buffer = VK_NULL_HANDLE;
     m_memory = VK_NULL_HANDLE;
 }   // destroyVertexIndexBuffer
@@ -154,7 +153,7 @@ video::S3DVertexSkinnedMesh midpointVertex(
 }   // namespace
 
 // ----------------------------------------------------------------------------
-void GESPMBuffer::subdivideForRelativity()
+void GESPMBuffer::subdivideForRelativity(float target_edge, int max_passes)
 {
     if (m_has_skinning || m_indices.size() < 3)
         return;
@@ -166,7 +165,7 @@ void GESPMBuffer::subdivideForRelativity()
     // coincide (no seam cracks). It also means a mesh of mixed tiny+huge
     // triangles is still refined (its longest edge drives the loop), unlike an
     // average-edge test that such a mesh would slip past.
-    const float TARGET_EDGE = 0.6f;
+    const float TARGET_EDGE = std::max(target_edge, 0.1f);
 
     // Longest triangle edge over the whole buffer (true max, not sampled, so
     // the stop criterion is exact and seam-consistent).
@@ -196,7 +195,7 @@ void GESPMBuffer::subdivideForRelativity()
     // never truncate.
     const size_t INDEX_LIMIT = 65000;
     // Hard cap on passes as a final backstop against runaway growth.
-    for (int pass = 0; pass < 8; pass++)
+    for (int pass = 0; pass < std::max(max_passes, 0); pass++)
     {
         if (maxEdge() <= TARGET_EDGE)
             break;

@@ -263,7 +263,7 @@ GEVulkanDrawCall::GEVulkanDrawCall()
     m_skinning_data_padded_size = 0;
     m_materials_padded_size = 0;
     m_dynamic_spm_padded_size = 0;
-    m_update_data_descriptor_sets = true;
+    m_data_descriptor_generation = 1;
     m_data_layout = VK_NULL_HANDLE;
     m_descriptor_pool = VK_NULL_HANDLE;
     m_pipeline_layout = VK_NULL_HANDLE;
@@ -291,6 +291,13 @@ GEVulkanDrawCall::GEVulkanDrawCall()
 // ----------------------------------------------------------------------------
 GEVulkanDrawCall::~GEVulkanDrawCall()
 {
+    // Descriptor pools, pipeline layouts and pipelines below are not yet part
+    // of the driver's deferred-retirement queue. Keep their destruction safe;
+    // callers that already drained the device set m_disable_wait_idle to avoid
+    // repeating the wait for every cached draw call.
+    GEVulkanDriver* vk = getVKDriver();
+    if (vk)
+        vk->waitIdle();
     delete m_culling_tool;
     delete m_light_handler;
     delete m_dynamic_data;
@@ -299,7 +306,6 @@ GEVulkanDrawCall::~GEVulkanDrawCall()
        p.second->drop();
     if (m_data_layout != VK_NULL_HANDLE)
     {
-        GEVulkanDriver* vk = getVKDriver();
         vkDestroyDescriptorSetLayout(vk->getDevice(), m_data_layout, NULL);
         vkDestroyDescriptorPool(vk->getDevice(), m_descriptor_pool, NULL);
         m_graphics_pipelines.clear();
@@ -348,7 +354,7 @@ void GEVulkanDrawCall::addNode(irr::scene::ISceneNode* node)
     {
         GESPMBuffer* buffer = static_cast<GESPMBuffer*>(
             mesh->getMeshBuffer(i));
-        if (m_culling_tool->isCulled(buffer, node))
+        if (m_culling_tool->isCulled(buffer, node, i))
             continue;
         const bool dynamic_spm =
             buffer->getHardwareMappingHint_Vertex() == irr::scene::EHM_STREAM ||
@@ -449,8 +455,8 @@ start:
     m_dyspmb_materials.clear();
     m_materials_data.clear();
 
-    m_update_data_descriptor_sets = m_sbo_data->resizeIfNeeded(min_size) ||
-        m_update_data_descriptor_sets;
+    if (m_sbo_data->resizeIfNeeded(min_size))
+        invalidateDataDescriptorSets();
     int current_buffer_idx = vk->getCurrentBufferIdx();
     uint8_t* mapped_addr = (uint8_t*)m_sbo_data->getMappedAddr()
         [current_buffer_idx];
@@ -484,7 +490,7 @@ start:
     size_t sbo_alignment = m_limits.minStorageBufferOffsetAlignment;
     if (skinning_data_padded_size > m_skinning_data_padded_size)
     {
-        m_update_data_descriptor_sets = true;
+        invalidateDataDescriptorSets();
         size_t skinning_padding = getPadding(skinning_data_padded_size,
             sbo_alignment);
         if (skinning_padding > 0)
@@ -777,7 +783,7 @@ start:
     size_t object_data_padded_size = written_size - skinning_data_padded_size;
     if (object_data_padded_size > m_object_data_padded_size)
     {
-        m_update_data_descriptor_sets = true;
+        invalidateDataDescriptorSets();
         size_t object_padding = getPadding(written_size, sbo_alignment);
         if (object_padding > 0)
         {
@@ -870,7 +876,7 @@ start:
         materials_padded_size += material_size;
         if (materials_padded_size > m_materials_padded_size)
         {
-            m_update_data_descriptor_sets = true;
+            invalidateDataDescriptorSets();
             m_materials_padded_size = materials_padded_size;
         }
 
@@ -965,8 +971,8 @@ void GEVulkanDrawCall::prepare(GEVulkanCameraSceneNode* cam)
         m_hiz_depth->prepare(cam);
     if (m_gtao_pass)
     {
-        m_update_data_descriptor_sets =
-            m_gtao_pass->prepare(cam) || m_update_data_descriptor_sets;
+        if (m_gtao_pass->prepare(cam))
+            invalidateDataDescriptorSets();
     }
 }   // prepare
 
@@ -1411,8 +1417,8 @@ void GEVulkanDrawCall::createShadowPipelines(GEVulkanDriver* vk)
                 VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
 
             VkPipeline pipeline = VK_NULL_HANDLE;
-            if (vkCreateGraphicsPipelines(vk->getDevice(), VK_NULL_HANDLE, 1,
-                &pipeline_info, NULL, &pipeline) != VK_SUCCESS)
+            if (vk->createGraphicsPipelines(1, &pipeline_info, &pipeline) !=
+                VK_SUCCESS)
             {
                 throw std::runtime_error(
                     "vkCreateGraphicsPipelines failed for shadow " + p.first);
@@ -1567,16 +1573,16 @@ void GEVulkanDrawCall::createGlowPipelines(GEVulkanDriver* vk)
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 
     VkPipeline pipeline = VK_NULL_HANDLE;
-    if (vkCreateGraphicsPipelines(vk->getDevice(), VK_NULL_HANDLE, 1,
-        &pipeline_info, NULL, &pipeline) != VK_SUCCESS)
+    if (vk->createGraphicsPipelines(1, &pipeline_info, &pipeline) !=
+        VK_SUCCESS)
         throw std::runtime_error("vkCreateGraphicsPipelines failed for glow");
     auto glow = std::shared_ptr<VkPipeline>(new VkPipeline(pipeline),
         destroyPipeline);
 
     stages[0].module = GEVulkanShaderManager::getShader(
         "ge_glow_skinning.vert");
-    if (vkCreateGraphicsPipelines(vk->getDevice(), VK_NULL_HANDLE, 1,
-        &pipeline_info, NULL, &pipeline) != VK_SUCCESS)
+    if (vk->createGraphicsPipelines(1, &pipeline_info, &pipeline) !=
+        VK_SUCCESS)
     {
         throw std::runtime_error(
             "vkCreateGraphicsPipelines failed for glow skinning");
@@ -2217,8 +2223,8 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
 
     if (!insert_from_cache(settings, false))
     {
-        VkResult result = vkCreateGraphicsPipelines(vk->getDevice(),
-            VK_NULL_HANDLE, 1, &pipeline_info, NULL, &graphics_pipeline);
+        VkResult result = vk->createGraphicsPipelines(1, &pipeline_info,
+            &graphics_pipeline);
         if (result != VK_SUCCESS)
         {
             throw std::runtime_error("vkCreateGraphicsPipelines failed for " +
@@ -2233,8 +2239,8 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
         shader_stages[0].module = GEVulkanShaderManager::getShader(
             settings.m_material->m_skinning_vertex_shader);
         set_tess_enabled(false);
-        VkResult result = vkCreateGraphicsPipelines(vk->getDevice(),
-            VK_NULL_HANDLE, 1, &pipeline_info, NULL, &graphics_pipeline);
+        VkResult result = vk->createGraphicsPipelines(1, &pipeline_info,
+            &graphics_pipeline);
         set_tess_enabled(has_tessellation);
         if (result != VK_SUCCESS)
         {
@@ -2256,8 +2262,8 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
     shader_stages[1].module = GEVulkanShaderManager::getShader(
         settings.m_material->m_fragment_shader);
 
-    VkResult result = vkCreateGraphicsPipelines(vk->getDevice(),
-        VK_NULL_HANDLE, 1, &pipeline_info, NULL, &graphics_pipeline);
+    VkResult result = vk->createGraphicsPipelines(1, &pipeline_info,
+        &graphics_pipeline);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("vkCreateGraphicsPipelines failed for " +
@@ -2271,8 +2277,8 @@ void GEVulkanDrawCall::createPipeline(GEVulkanDriver* vk,
     shader_stages[0].module = GEVulkanShaderManager::getShader(
         settings.m_material->m_skinning_vertex_shader);
     set_tess_enabled(false);
-    result = vkCreateGraphicsPipelines(vk->getDevice(),
-        VK_NULL_HANDLE, 1, &pipeline_info, NULL, &graphics_pipeline);
+    result = vk->createGraphicsPipelines(1, &pipeline_info,
+        &graphics_pipeline);
     set_tess_enabled(has_tessellation);
     if (result != VK_SUCCESS)
     {
@@ -2416,6 +2422,7 @@ void GEVulkanDrawCall::createVulkanData()
     // m_data_descriptor_sets
     unsigned set_size = vk->getMaxFrameInFlight() + 1;
     m_data_descriptor_sets.resize(set_size);
+    m_data_descriptor_set_generations.resize(set_size, 0);
     std::vector<VkDescriptorSetLayout> data_layouts(
         m_data_descriptor_sets.size(), m_data_layout);
 
@@ -2591,9 +2598,11 @@ void GEVulkanDrawCall::uploadDynamicData(GEVulkanDriver* vk,
         dst_stage |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
     }
     int current_buffer_idx = vk->getCurrentBufferIdx();
-    m_update_data_descriptor_sets =
-        m_dynamic_data->setCurrentData(data_uploading, cmd,
-        current_buffer_idx) || m_update_data_descriptor_sets;
+    if (m_dynamic_data->setCurrentData(data_uploading, cmd,
+        current_buffer_idx))
+    {
+        invalidateDataDescriptorSets();
+    }
 
     const size_t whole_size = m_skinning_data_padded_size +
         m_object_data_padded_size + m_materials_padded_size;
@@ -2708,7 +2717,7 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
 
     VkPipeline prev_pipeline = VK_NULL_HANDLE;
     std::string cur_pipeline;
-    auto dynamic_spm_buffers = m_dynamic_spm_buffers;
+    std::unordered_set<std::string> processed_dynamic_spm;
     bool bound = false;
 
     int cur_mid = -1;
@@ -2777,9 +2786,11 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
             if (pipeline_change || is_last_cmd)
             {
                 bound = bindPipeline(cmd, cur_pipeline, &prev_pipeline, pt);
-                auto it = dynamic_spm_buffers.find(
+                auto it = m_dynamic_spm_buffers.find(
                     getDynamicBufferKey(cur_pipeline));
-                if (it != dynamic_spm_buffers.end())
+                if (it != m_dynamic_spm_buffers.end() &&
+                    processed_dynamic_spm.find(it->first) ==
+                        processed_dynamic_spm.end())
                 {
                     for (auto& buf : it->second)
                     {
@@ -2794,7 +2805,7 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
                                 current_buffer_idx);
                         }
                     }
-                    dynamic_spm_buffers.erase(it);
+                    processed_dynamic_spm.insert(it->first);
                 }
                 if (rebind_base_vertex)
                 {
@@ -2855,9 +2866,11 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
             {
                 cur_pipeline = m_cmds[i].m_shader;
                 bound = bindPipeline(cmd, cur_pipeline, &prev_pipeline, pt);
-                auto it = dynamic_spm_buffers.find(
+                auto it = m_dynamic_spm_buffers.find(
                     getDynamicBufferKey(cur_pipeline));
-                if (it != dynamic_spm_buffers.end())
+                if (it != m_dynamic_spm_buffers.end() &&
+                    processed_dynamic_spm.find(it->first) ==
+                        processed_dynamic_spm.end())
                 {
                     for (auto& buf : it->second)
                     {
@@ -2878,7 +2891,7 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
                                 current_buffer_idx);
                         }
                     }
-                    dynamic_spm_buffers.erase(it);
+                    processed_dynamic_spm.insert(it->first);
                 }
             }
             int mid = m_cmds[i].m_material_id;
@@ -2912,8 +2925,11 @@ void GEVulkanDrawCall::renderPipeline(GEVulkanDriver* vk, VkCommandBuffer cmd,
             }
         }
     }
-    for (auto& p : dynamic_spm_buffers)
+    for (auto& p : m_dynamic_spm_buffers)
     {
+        if (processed_dynamic_spm.find(p.first) !=
+            processed_dynamic_spm.end())
+            continue;
         std::string dy_pipeline = getShaderFromKey(p.first);
         bound = bindPipeline(cmd, dy_pipeline, &prev_pipeline, pt);
         for (auto& buf : p.second)
@@ -2982,21 +2998,37 @@ size_t GEVulkanDrawCall::getInitialSBOSize() const
 }   // getInitialSBOSize
 
 // ----------------------------------------------------------------------------
+void GEVulkanDrawCall::invalidateDataDescriptorSets()
+{
+    m_data_descriptor_generation++;
+    if (m_data_descriptor_generation == 0)
+    {
+        m_data_descriptor_generation = 1;
+        std::fill(m_data_descriptor_set_generations.begin(),
+            m_data_descriptor_set_generations.end(), 0);
+    }
+}   // invalidateDataDescriptorSets
+
+// ----------------------------------------------------------------------------
 void GEVulkanDrawCall::updateDataDescriptorSets(GEVulkanDriver* vk)
 {
-    if (!m_update_data_descriptor_sets || m_skinning_data_padded_size == 0 ||
-        m_object_data_padded_size == 0)
+    if (m_skinning_data_padded_size == 0 ||
+        m_object_data_padded_size == 0 || m_data_descriptor_sets.empty())
         return;
 
-    m_update_data_descriptor_sets = false;
-    vk->waitIdle();
+    // Data descriptor sets follow the same maxFramesInFlight + 1 ring as the
+    // buffers they describe. The previous use of this slot has retired before
+    // it comes around again, so only this set can be updated without idling the
+    // whole device. Other slices stay dirty until their own safe turn.
+    unsigned i = vk->getCurrentBufferIdx();
+    if (i >= m_data_descriptor_sets.size())
+        i = 0;
+    if (m_data_descriptor_set_generations[i] ==
+        m_data_descriptor_generation)
+        return;
 
-    const bool use_base_vertex =
-        GEVulkanFeatures::supportsBaseVertexRendering();
     const bool bind_mesh_textures =
         GEVulkanFeatures::supportsBindMeshTexturesAtOnce();
-    for (unsigned i = 0; i < m_data_descriptor_sets.size(); i++)
-    {
         VkDescriptorBufferInfo ubo_info;
         ubo_info.buffer = GEVulkanDynamicBuffer::supportsHostTransfer() ?
             m_dynamic_data->getHostBuffer()[i] :
@@ -3128,7 +3160,7 @@ void GEVulkanDrawCall::updateDataDescriptorSets(GEVulkanDriver* vk)
 
         vkUpdateDescriptorSets(vk->getDevice(), data_set.size(),
             data_set.data(), 0, NULL);
-    }
+    m_data_descriptor_set_generations[i] = m_data_descriptor_generation;
 }   // updateDataDescriptor
 
 // ----------------------------------------------------------------------------

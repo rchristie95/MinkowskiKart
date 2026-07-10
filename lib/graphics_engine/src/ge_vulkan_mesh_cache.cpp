@@ -160,8 +160,6 @@ void GEVulkanMeshCache::updateCache()
 // ----------------------------------------------------------------------------
 void GEVulkanMeshCache::destroy()
 {
-    m_vk->waitIdle();
-    m_vk->setDisableWaitIdle(true);
     if (!GEVulkanFeatures::supportsBaseVertexRendering())
     {
         for (unsigned i = 0; i < Meshes.size(); i++)
@@ -179,11 +177,10 @@ void GEVulkanMeshCache::destroy()
     }
     else
     {
-        vmaDestroyBuffer(m_vk->getVmaAllocator(), m_buffer, m_memory);
+        m_vk->scheduleBufferDeletion(m_buffer, m_memory);
         m_buffer = VK_NULL_HANDLE;
         m_memory = VK_NULL_HANDLE;
     }
-    m_vk->setDisableWaitIdle(false);
 
     m_ibo_offset = m_skinning_vbo_offset = 0;
 }   // destroy

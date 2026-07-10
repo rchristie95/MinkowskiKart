@@ -13,7 +13,14 @@
 #include "../source/Irrlicht/os.h"
 #include <SDL_cpuinfo.h>
 
+#if defined(__ANDROID__) && defined(__aarch64__)
+extern "C" const char* Android_Custom_Vulkan_Driver_In_Use()
+{
+    return nullptr;
+}
+#else
 extern "C" const char* Android_Custom_Vulkan_Driver_In_Use();
+#endif
 
 namespace GE
 {

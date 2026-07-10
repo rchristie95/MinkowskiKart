@@ -64,7 +64,8 @@ android
                 def pkgClass = pkgName.replace('.', '/')
                 def appDirName = project.findProperty('app_dir_name') ?: (pkgName.endsWith('.stk_dbg') ? 'supertuxkart-dbg' : (pkgName.endsWith('.stk_beta') ? 'supertuxkart-beta' : 'supertuxkart'))
                 def projVersion = project.getProperty('version_name')
-                arguments app_platform, 'APP_STL=c++_static', cpu_core, "PACKAGE_NAME=${pkgName}", "PACKAGE_CLASS_NAME=${pkgClass}", "APP_DIR_NAME=${appDirName}", "PROJECT_VERSION=${projVersion}"
+                def stkVulkan = project.findProperty('stk_vulkan') ?: '0'
+                arguments app_platform, 'APP_STL=c++_static', cpu_core, "PACKAGE_NAME=${pkgName}", "PACKAGE_CLASS_NAME=${pkgClass}", "APP_DIR_NAME=${appDirName}", "PROJECT_VERSION=${projVersion}", "STK_VULKAN=${stkVulkan}"
                 if (project.getProperty('compile_arch') == 'all')
                 {
                     abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
@@ -168,7 +169,7 @@ android
             manifest.srcFile 'AndroidManifest.xml'
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
-            def includeMesaJni = (project.findProperty('include_mesa_jni') ?: 'false').toString().toBoolean()
+            def includeMesaJni = (project.findProperty('include_mesa_jni') ?: (project.findProperty('stk_vulkan') == '1' ? 'true' : 'false')).toString().toBoolean()
             if (includeMesaJni &&
                 (project.getProperty('compile_arch') == 'all' ||
                  project.getProperty('compile_arch') == 'arm64-v8a'))

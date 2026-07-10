@@ -192,6 +192,11 @@ VkShaderModule GEVulkanShaderManager::loadShader(shaderc_shader_kind kind,
 
     shaderc_compiler_t compiler = shaderc_compiler_initialize();
     shaderc_compile_options_t options = shaderc_compile_options_initialize();
+    // These modules are used to build the release Vulkan pipelines directly;
+    // shaderc otherwise defaults to no optimisation, leaving especially the
+    // large post-processing shaders with avoidable instruction/register cost.
+    shaderc_compile_options_set_optimization_level(options,
+        shaderc_optimization_level_performance);
 
     struct FileIncluder
     {
