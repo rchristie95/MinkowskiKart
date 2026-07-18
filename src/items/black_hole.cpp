@@ -32,6 +32,9 @@
 #include "karts/abstract_kart.hpp"
 #include "modes/linear_world.hpp"
 #include "modes/world.hpp"
+#include "physics/triangle_mesh.hpp"
+#include "tracks/track.hpp"
+#include "tracks/track_object_manager.hpp"
 
 #include <ISceneManager.h>
 #include <ISceneNode.h>
@@ -51,6 +54,77 @@ static const float BH_VISUAL_SCALE = 1.2f;
 // collision sphere, so the black hole's gameplay hitbox matches the radius the
 // player sees on screen (the lensed event-horizon disk).
 static const float BH_LENS_VISUAL_SCALE = 1.35f;
+
+// Remove escaped projectiles once their centre is this far beneath the local
+// driveable surface.  This is measured along the current gravity direction so
+// it also behaves correctly on tracks with non-standard gravity.
+static const float BH_MAX_BELOW_ROAD_DISTANCE = 5.0f;
+
+namespace
+{
+bool findClosestDriveableSurface(const Track* track, const btVector3& from,
+                                 const btVector3& direction,
+                                 btScalar* closest_distance)
+{
+    const btVector3 to = from + direction * 10000.0f;
+    btScalar distance = BT_LARGE_FLOAT;
+    bool found_surface = false;
+
+    Vec3 mesh_hit;
+    Vec3 mesh_normal;
+    const Material* mesh_material = NULL;
+    if (track->getTriangleMesh().castRay(from, to, &mesh_hit,
+                                         &mesh_material, &mesh_normal,
+                                         /*interpolate_normal*/false))
+    {
+        distance = (btVector3(mesh_hit) - from).dot(direction);
+        found_surface = true;
+    }
+
+    TrackObjectManager* object_manager = track->getTrackObjectManager();
+    if (object_manager)
+    {
+        Vec3 object_hit;
+        Vec3 object_normal;
+        const Material* object_material = NULL;
+        if (object_manager->castRay(from, to, &object_hit, &object_material,
+                                    &object_normal,
+                                    /*interpolate_normal*/false))
+        {
+            const btScalar object_distance =
+                (btVector3(object_hit) - from).dot(direction);
+            distance = btMin(distance, object_distance);
+            found_surface = true;
+        }
+    }
+
+    if (found_surface && closest_distance)
+        *closest_distance = distance;
+    return found_surface;
+}
+
+bool isBelowDriveableSurface(const Vec3& position, const btVector3& gravity,
+                             float minimum_distance)
+{
+    const Track* track = Track::getCurrentTrack();
+    if (!track)
+        return false;
+
+    btVector3 up(0.0f, 1.0f, 0.0f);
+    if (gravity.length2() > 0.0001f)
+        up = -gravity.normalized();
+
+    const btVector3 from(position);
+    // A valid surface along gravity means this projectile belongs to a lower
+    // road level, even if another road crosses overhead.
+    if (findClosestDriveableSurface(track, from, -up, NULL))
+        return false;
+
+    btScalar surface_distance = BT_LARGE_FLOAT;
+    return findClosestDriveableSurface(track, from, up, &surface_distance) &&
+           surface_distance > minimum_distance;
+}
+}
 
 // -----------------------------------------------------------------------------
 BlackHole::BlackHole(AbstractKart *kart)
@@ -109,6 +183,22 @@ bool BlackHole::updateAndDelete(int ticks)
 {
     bool can_be_deleted = Flyable::updateAndDelete(ticks);
     if (can_be_deleted)
+    {
+#ifndef SERVER_ONLY
+        SP::removeBlackHoleLens(this);
+#endif
+        removeRollSfx();
+        return true;
+    }
+
+    // Flyable's normal terrain query looks along gravity.  If that found no
+    // road below us, look in the opposite direction: a road more than five
+    // metres overhead means this projectile escaped through its underside.
+    // Requiring the downward query to miss prevents an upper level of a
+    // multi-storey track from deleting a projectile on a valid lower road.
+    if (!getMaterial() &&
+        isBelowDriveableSurface(getXYZ(), m_body->getGravity(),
+                                BH_MAX_BELOW_ROAD_DISTANCE))
     {
 #ifndef SERVER_ONLY
         SP::removeBlackHoleLens(this);
