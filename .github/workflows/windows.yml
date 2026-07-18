@@ -315,6 +315,34 @@ jobs:
           # libwinpthread-1.dll is useless because we statically link
           rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/armv7/libwinpthread-1.dll
           rm -f MinkowskiKart-${{ env.release_tag }}-win/bin/aarch64/libwinpthread-1.dll
+      - name: Add LLVM runtimes required by bundled dependencies
+        if: ${{ env.release_tag != '' }}
+        shell: pwsh
+        run: |
+          $version = "20260616"
+          $archiveName = "llvm-mingw-$version-msvcrt-x86_64.zip"
+          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/$version/$archiveName"
+          curl.exe -L --fail --retry 3 -o $archiveName $url
+          if ($LASTEXITCODE -ne 0) { throw "Failed to download $archiveName" }
+
+          $expectedSha256 = "744809646fdefe24a357399788d68fb07ecc65fa0be71baa2406793ce25c9813"
+          $actualSha256 = (Get-FileHash -Algorithm SHA256 $archiveName).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+            throw "Unexpected SHA-256 for ${archiveName}: $actualSha256"
+          }
+
+          $runtimeRoot = "llvm-mingw-$version-msvcrt-x86_64"
+          $architectures = @("i686", "x86_64", "armv7", "aarch64")
+          foreach ($architecture in $architectures) {
+            $libcxx = "$runtimeRoot/$architecture-w64-mingw32/bin/libc++.dll"
+            $libunwind = "$runtimeRoot/$architecture-w64-mingw32/bin/libunwind.dll"
+            tar.exe -xf $archiveName $libcxx $libunwind
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to extract LLVM runtimes for $architecture"
+            }
+            $destination = "MinkowskiKart-${{ env.release_tag }}-win/bin/$architecture"
+            Copy-Item -LiteralPath $libcxx, $libunwind -Destination $destination
+          }
       - name: Verify packaged user relativity defaults
         if: ${{ env.release_tag != '' }}
         shell: pwsh
