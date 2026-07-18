@@ -232,7 +232,7 @@ build_deps()
                 -DLIBTYPE=STATIC -DOPENSL_LIBRARY="-lOpenSLES"                  \
                 -DOPENSL_INCLUDE_DIR="$NDK_SYSROOT/usr/include/SLES/"           \
                 -DOPENSL_ANDROID_INCLUDE_DIR="$NDK_SYSROOT/usr/include/SLES/"   \
-                -DCMAKE_CXX_SCAN_FOR_MODULES=OFF                                \
+                -DALSOFT_ENABLE_MODULES=OFF                                    \
                 -DCMAKE_C_FLAGS="-fpic -O3 -g -w" -DCMAKE_CXX_FLAGS="-fpic -O3 -g -w" &&
         make -j $(($(nproc) + 1))
         check_error
