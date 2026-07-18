@@ -296,7 +296,7 @@ void GEVulkanDeferredFBO::initConvertColorDescriptor(GEVulkanDriver* vk)
 void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
 {
     // m_descriptor_layout[GVDFP_DISPLACE_COLOR]
-    std::array<VkDescriptorSetLayoutBinding, 5> texture_layout_binding = {};
+    std::array<VkDescriptorSetLayoutBinding, 6> texture_layout_binding = {};
     texture_layout_binding[0].binding = 0;
     texture_layout_binding[0].descriptorCount = 1;
     texture_layout_binding[0].descriptorType =
@@ -314,6 +314,10 @@ void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
     // Per-object glow silhouettes (composited by displace_color.frag).
     texture_layout_binding[4] = texture_layout_binding[0];
     texture_layout_binding[4].binding = 4;
+    // Stored world-space G-buffer normal used to distinguish upward-facing
+    // track surfaces from foreground object occluders in black-hole lensing.
+    texture_layout_binding[5] = texture_layout_binding[0];
+    texture_layout_binding[5].binding = 5;
 
     VkDescriptorSetLayoutCreateInfo setinfo = {};
     setinfo.flags = 0;
@@ -391,6 +395,10 @@ void GEVulkanDeferredFBO::initDisplaceDescriptor(GEVulkanDriver* vk)
     image_infos[4].imageView =
         (VkImageView)m_attachments[GVDFT_GLOW]->getTextureHandler();
     image_infos[4].sampler = m_vk->getSampler(GVS_NEAREST);
+    image_infos[5].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_infos[5].imageView =
+        (VkImageView)m_attachments[GVDFT_NORMAL]->getTextureHandler();
+    image_infos[5].sampler = m_vk->getSampler(GVS_NEAREST);
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

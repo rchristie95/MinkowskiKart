@@ -2,6 +2,7 @@ layout(binding = 0) uniform sampler2D u_displace_mask;
 layout(binding = 2) uniform sampler2D u_displace_color;
 layout(binding = 3) uniform sampler2D u_depth;
 layout(binding = 4) uniform sampler2D u_glow;
+layout(binding = 5) uniform sampler2D u_gbuffer_normal;
 
 layout(location = 0) in vec2 f_uv;
 
@@ -17,6 +18,7 @@ layout(push_constant) uniform Constants
 #include "utils/relativity_bridge.glsl"
 #include "../utils/relativity_visual.vert"
 #include "../utils/displace_utils.frag"
+#include "../utils/decodeNormal.frag"
 
 // The skybox is aberrated by the observer's relativistic motion
 // (skybox.frag bends each view ray with transformObserverRayToWorldDirection),
@@ -718,6 +720,7 @@ struct BlackHoleProjection
 // flare and trail paths.  Besides guaranteeing identical coordinates, this
 // avoids repeating the observer transform for every one of the trail taps.
 BlackHoleProjection g_black_hole_projection[4];
+float g_black_hole_visibility[4];
 
 bool bhFinite(vec2 v)
 {
@@ -845,6 +848,31 @@ BlackHoleProjection projectBlackHole(int index)
     return bh;
 }
 
+// Keep the stable shared black-hole projection, but let genuinely nearer
+// geometry cover the post effect.  The G-buffer normal is the rasterized
+// surface normal, so this classification does not amplify depth discontinuity
+// noise like reconstructing a normal from neighbouring depth texels did.
+// Upward-facing track/terrain remains part of the background being lensed;
+// upright foreground geometry (karts, walls and props) occludes it.
+float blackHoleSurfaceVisibility(vec2 px, BlackHoleProjection bh,
+                                 float world_radius)
+{
+    vec2 sample_px = clamp(px, u_camera.m_viewport.xy,
+        u_camera.m_viewport.xy + u_camera.m_viewport.zw - vec2(1.0));
+    vec2 uv = sample_px / u_camera.m_screensize;
+    float depth = texture(u_depth, uv).x;
+    if (depth >= 1.0)
+        return 1.0;
+
+    vec3 surface_pos = viewPosAt(sample_px);
+    if (surface_pos.z >= bh.view_z - world_radius * 10.0)
+        return 1.0;
+
+    vec3 world_normal = DecodeNormal(texture(u_gbuffer_normal, uv).xy);
+    float upward = max(world_normal.y, 0.0);
+    return smoothstep(0.25, 0.55, upward);
+}
+
 // bhEmissionAt(): raw additive emission (disk + lensed arcs + photon ring)
 // of every active black hole, evaluated at an arbitrary screen pixel. Kept
 // separate from the compression/flare so the motion-trail can resample it
@@ -857,6 +885,9 @@ vec3 bhEmissionAt(vec2 px)
     {
         BlackHoleProjection bh = g_black_hole_projection[i];
         if (!bh.valid)
+            continue;
+        float foreground_visibility = g_black_hole_visibility[i];
+        if (foreground_visibility <= 0.001)
             continue;
         vec2 bh_screen = bh.screen;
         float R_E = bh.radius_px;
@@ -921,7 +952,7 @@ vec3 bhEmissionAt(vec2 px)
         vec3 ring_col = mix(vec3(1.1, 0.8, 0.5), vec3(1.45, 1.35, 1.15), dwarm);
         bh_em += ring_col * ring * mod_az * mix(0.8, 2.1, dwarm);
 
-        emission += bh_em * close_fade;
+        emission += bh_em * close_fade * foreground_visibility;
     }
     return emission;
 }
@@ -941,6 +972,8 @@ vec2 bhScreenVelocity(vec2 px, out float trail_radius)
     {
         BlackHoleProjection bh = g_black_hole_projection[i];
         if (!bh.valid)
+            continue;
+        if (g_black_hole_visibility[i] <= 0.001)
             continue;
         vec2 cur = bh.screen;
         vec4 prev_clip = u_camera.m_previous_pv_matrix *
@@ -982,6 +1015,9 @@ vec3 bhLensFlare(vec2 px)
         BlackHoleProjection bh = g_black_hole_projection[i];
         if (!bh.valid)
             continue;
+        float foreground_visibility = g_black_hole_visibility[i];
+        if (foreground_visibility <= 0.001)
+            continue;
         vec2 bh_ndc = bh.ndc;
         if (abs(bh_ndc.x) > 1.2 || abs(bh_ndc.y) > 1.2)
             continue;
@@ -993,7 +1029,7 @@ vec3 bhLensFlare(vec2 px)
         float close_fade = 1.0 - smoothstep(0.30, 0.5, R_E / vp_wh.y);
         float edge = (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.x))) *
             (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.y)));
-        float vis = close_fade * edge;
+        float vis = close_fade * edge * foreground_visibility;
         if (vis <= 0.0)
             continue;
 
@@ -1066,7 +1102,14 @@ void main()
     vec2 frag_px = gl_FragCoord.xy;
 
     for (int bh_i = 0; bh_i < 4; bh_i++)
+    {
         g_black_hole_projection[bh_i] = projectBlackHole(bh_i);
+        g_black_hole_visibility[bh_i] =
+            g_black_hole_projection[bh_i].valid ?
+            blackHoleSurfaceVisibility(frag_px,
+                g_black_hole_projection[bh_i],
+                u_camera.m_black_holes[bh_i].w) : 0.0;
+    }
 
     // Source pixel in the scene colour texture for this output pixel.
     vec2 src_px = frag_px;
@@ -1086,7 +1129,8 @@ void main()
         if (in_event_horizon)
             continue;
         BlackHoleProjection bh = g_black_hole_projection[bh_i];
-        if (bh.valid)
+        float foreground_visibility = g_black_hole_visibility[bh_i];
+        if (bh.valid && foreground_visibility > 0.001)
         {
             vec2 bh_screen = bh.screen;
             float R_E = bh.radius_px;
@@ -1107,9 +1151,9 @@ void main()
             // isn't clipped; the deflection eases off gradually toward it.
             if (visible_r > 0.5 && visible_r < R_L * 6.0)
             {
-                // Keep the lens entirely in screen space.  Depth-based
-                // foreground rejection produces a hard road seam and noisy
-                // classification around geometry edges.
+                // The silhouette remains in output space.  A stable G-buffer
+                // surface mask keeps nearer objects in front without letting
+                // the road cut a horizontal seam through the lens.
                 // Frame dragging (Kerr): the deflection direction is
                 // swirled around the spin axis, strongest near the horizon.
                 float drag = min(0.9 * (R_L * R_L) /
@@ -1118,7 +1162,7 @@ void main()
                 vec2 visible_dragged = vec2(
                     cd * visible_delta.x - sd * visible_delta.y,
                     sd * visible_delta.x + cd * visible_delta.y);
-                if (visible_r < R_E)
+                if (visible_r < R_E && foreground_visibility > 0.5)
                 {
                     // True shadow (ball-sized) stays pure black.
                     in_event_horizon = true;
@@ -1140,6 +1184,7 @@ void main()
                         (source_dragged / source_r) * r_src;
                     float fade = 1.0 - smoothstep(R_L * 2.5,
                         R_L * 6.0, visible_r);
+                    fade *= foreground_visibility;
                     src_px = mix(src_px, deflected, fade);
                     distortion_strength = max(distortion_strength,
                         clamp(1.0 - (r_src / (R_L * 2.0)), 0.0, 1.0) *
