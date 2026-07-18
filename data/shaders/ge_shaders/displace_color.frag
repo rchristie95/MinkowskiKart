@@ -700,6 +700,151 @@ vec3 diskSample(float a, float b, float doppler, out float bright)
     return col;
 }
 
+struct BlackHoleProjection
+{
+    bool valid;
+    vec3 apparent_pos;
+    vec2 screen;
+    vec2 ndc;
+    float radius_px;
+    float view_z;
+    vec2 minor_axis;
+    vec2 major_axis;
+    vec2 bright_dir;
+    float inclination;
+};
+
+// Built once per output fragment in main and reused by the lens, emission,
+// flare and trail paths.  Besides guaranteeing identical coordinates, this
+// avoids repeating the observer transform for every one of the trail taps.
+BlackHoleProjection g_black_hole_projection[4];
+
+bool bhFinite(vec2 v)
+{
+    return !any(isnan(v)) && !any(isinf(v));
+}
+
+bool projectBlackHolePoint(vec3 world_pos, out vec3 apparent_pos,
+                           out vec4 clip, out vec2 screen)
+{
+    // Black-hole post effects use a stable observer-frame anchor.  Deliberately
+    // omit projectile-velocity retardation: fired black holes can transiently
+    // exceed the configurable c_light, whereas observer aberration is smooth
+    // over the complete options-menu beta range.
+    apparent_pos = applyRelativisticVisualPosition(
+        vec4(world_pos, 1.0), vec3(0.0), 1.0).xyz;
+    clip = u_camera.m_projection_view_matrix * vec4(apparent_pos, 1.0);
+    if (clip.w <= 0.001 || clip.z <= 0.0 || any(isnan(clip)) || any(isinf(clip)))
+        return false;
+
+    vec2 ndc = clip.xy / clip.w;
+    screen = u_camera.m_viewport.xy +
+        (ndc * 0.5 + 0.5) * u_camera.m_viewport.zw;
+    return bhFinite(screen);
+}
+
+BlackHoleProjection projectBlackHole(int index)
+{
+    BlackHoleProjection bh;
+    bh.valid = false;
+    bh.apparent_pos = vec3(0.0);
+    bh.screen = vec2(0.0);
+    bh.ndc = vec2(0.0);
+    bh.radius_px = 2.0;
+    bh.view_z = 0.0;
+    bh.minor_axis = vec2(0.0, 1.0);
+    bh.major_axis = vec2(-1.0, 0.0);
+    bh.bright_dir = vec2(1.0, 0.0);
+    bh.inclination = 0.42;
+
+    float radius = u_camera.m_black_holes[index].w;
+    if (radius <= 0.001)
+        return bh;
+
+    vec3 raw_pos = u_camera.m_black_holes[index].xyz;
+    vec4 center_clip;
+    if (!projectBlackHolePoint(raw_pos, bh.apparent_pos, center_clip, bh.screen))
+        return bh;
+
+    bh.ndc = center_clip.xy / center_clip.w;
+    vec4 center_view = u_camera.m_view_matrix * vec4(bh.apparent_pos, 1.0);
+    bh.view_z = center_view.z;
+
+    vec3 cam_right = vec3(u_camera.m_view_matrix[0][0],
+                          u_camera.m_view_matrix[1][0],
+                          u_camera.m_view_matrix[2][0]);
+    vec3 rim_pos;
+    vec4 rim_clip;
+    vec2 rim_screen;
+    bool rim_valid = projectBlackHolePoint(raw_pos + cam_right * radius,
+        rim_pos, rim_clip, rim_screen);
+    float projected_radius = 0.0;
+    if (rim_valid)
+        projected_radius = length(rim_screen - bh.screen);
+
+    // Near the camera plane the transformed rim can cross behind the camera
+    // even though the centre is visible.  A camera-space offset gives a finite
+    // perspective fallback and keeps the effect alive rather than producing a
+    // NaN, a one-frame flash, or a disappearing ring.
+    if (!rim_valid || isnan(projected_radius) || isinf(projected_radius) ||
+        projected_radius < 0.001)
+    {
+        vec4 fallback_clip = u_camera.m_projection_matrix *
+            (center_view + vec4(radius, 0.0, 0.0, 0.0));
+        if (fallback_clip.w > 0.001 && !any(isnan(fallback_clip)) &&
+            !any(isinf(fallback_clip)))
+        {
+            vec2 fallback_screen = u_camera.m_viewport.xy +
+                (fallback_clip.xy / fallback_clip.w * 0.5 + 0.5) *
+                u_camera.m_viewport.zw;
+            projected_radius = length(fallback_screen - bh.screen);
+        }
+    }
+    float radius_limit = 2.0 * max(u_camera.m_viewport.z,
+                                   u_camera.m_viewport.w);
+    bh.radius_px = clamp(projected_radius, 2.0, radius_limit);
+
+    vec3 up_pos;
+    vec4 up_clip;
+    vec2 up_screen;
+    if (projectBlackHolePoint(raw_pos + vec3(0.0, radius, 0.0),
+        up_pos, up_clip, up_screen))
+    {
+        vec2 minor = up_screen - bh.screen;
+        if (dot(minor, minor) > 1e-8)
+            bh.minor_axis = normalize(minor);
+    }
+    bh.major_axis = vec2(-bh.minor_axis.y, bh.minor_axis.x);
+
+    vec3 cam_pos = u_camera.m_inverse_view_matrix[3].xyz;
+    vec3 to_bh = bh.apparent_pos - cam_pos;
+    float to_bh_len2 = dot(to_bh, to_bh);
+    if (to_bh_len2 > 1e-8)
+        to_bh *= inversesqrt(to_bh_len2);
+    else
+        to_bh = vec3(0.0, 0.0, 1.0);
+    bh.inclination = clamp(abs(to_bh.y), 0.42, 0.85);
+
+    vec3 bright_world = cross(vec3(0.0, 1.0, 0.0), to_bh);
+    if (dot(bright_world, bright_world) > 1e-8)
+    {
+        bright_world = normalize(bright_world);
+        vec3 bright_pos;
+        vec4 bright_clip;
+        vec2 bright_screen;
+        if (projectBlackHolePoint(raw_pos + bright_world * radius,
+            bright_pos, bright_clip, bright_screen))
+        {
+            vec2 bright_delta = bright_screen - bh.screen;
+            if (dot(bright_delta, bright_delta) > 1e-8)
+                bh.bright_dir = normalize(bright_delta);
+        }
+    }
+
+    bh.valid = true;
+    return bh;
+}
+
 // bhEmissionAt(): raw additive emission (disk + lensed arcs + photon ring)
 // of every active black hole, evaluated at an arbitrary screen pixel. Kept
 // separate from the compression/flare so the motion-trail can resample it
@@ -709,29 +854,14 @@ vec3 bhEmissionAt(vec2 px)
     vec3 emission = vec3(0.0);
     vec2 vp_xy = u_camera.m_viewport.xy;
     vec2 vp_wh = u_camera.m_viewport.zw;
-    vec3 cam_pos = u_camera.m_inverse_view_matrix[3].xyz;
-
     for (int i = 0; i < 4; i++)
     {
         float bh_r = u_camera.m_black_holes[i].w;
-        if (bh_r <= 0.001)
+        BlackHoleProjection bh = g_black_hole_projection[i];
+        if (!bh.valid)
             continue;
-        vec3 bh_pos = u_camera.m_black_holes[i].xyz;
-
-        vec4 bh_clip = u_camera.m_projection_view_matrix * vec4(bh_pos, 1.0);
-        if (bh_clip.w <= 0.001 || bh_clip.z <= 0.0)
-            continue;
-        vec2 bh_screen = vp_xy + (bh_clip.xy / bh_clip.w * 0.5 + 0.5) * vp_wh;
-
-        // Shadow radius in pixels (R_E), from the world sphere radius.
-        vec3 cam_right = vec3(u_camera.m_view_matrix[0][0],
-                              u_camera.m_view_matrix[1][0],
-                              u_camera.m_view_matrix[2][0]);
-        vec4 rim_clip = u_camera.m_projection_view_matrix *
-            vec4(bh_pos + cam_right * bh_r, 1.0);
-        vec2 rim_screen = vp_xy +
-            (rim_clip.xy / max(rim_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
-        float R_E = max(length(rim_screen - bh_screen), 2.0);
+        vec2 bh_screen = bh.screen;
+        float R_E = bh.radius_px;
 
         vec2 d = px - bh_screen;
         float rr = length(d) / R_E;
@@ -751,24 +881,18 @@ vec3 bhEmissionAt(vec2 px)
         // disk spans ~3.6 radii and floats above the ball) lets the disk draw
         // over the surrounding dunes instead of being clipped - matching the
         // lenient hovering wormhole.
-        float bh_vz = (u_camera.m_view_matrix * vec4(bh_pos, 1.0)).z;
         bool is_sky = texture(u_depth, px / u_camera.m_screensize).x >= 1.0;
-        if (!is_sky && viewPosAt(px).z < bh_vz - bh_r * 10.0)
+        if (!is_sky && viewPosAt(px).z < bh.view_z - bh_r * 10.0)
             continue;
 
         // Disk orientation on screen: project the disk's world normal
         // (equatorial plane -> world up) to get the minor (across) axis.
-        vec4 up_clip = u_camera.m_projection_view_matrix *
-            vec4(bh_pos + vec3(0.0, bh_r, 0.0), 1.0);
-        vec2 up_screen = vp_xy +
-            (up_clip.xy / max(up_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
-        vec2 minor = normalize(up_screen - bh_screen + vec2(0.0, 1e-4));
-        vec2 major = vec2(-minor.y, minor.x);
+        vec2 minor = bh.minor_axis;
+        vec2 major = bh.major_axis;
 
         // Inclination: 0 edge-on, 1 face-on. Clamped so the disk always
         // reads as a clear ellipse (never a degenerate edge-on line).
-        vec3 to_bh = normalize(bh_pos - cam_pos);
-        float incl = clamp(abs(to_bh.y), 0.42, 0.85);
+        float incl = bh.inclination;
 
         // Local disk coordinates (un-squash the across axis by inclination).
         float a = dot(d, major) / R_E;
@@ -777,13 +901,7 @@ vec3 bhEmissionAt(vec2 px)
         // so the approaching (Doppler-boosted) side is a stable world
         // direction projected to screen - it tracks smoothly as the camera
         // moves instead of flipping.
-        vec3 bw = cross(vec3(0.0, 1.0, 0.0), to_bh);
-        vec4 bw_clip = u_camera.m_projection_view_matrix *
-            vec4(bh_pos + bw * bh_r, 1.0);
-        vec2 bw_screen = vp_xy +
-            (bw_clip.xy / max(bw_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
-        vec2 bright_dir = normalize(bw_screen - bh_screen + vec2(1e-4, 0.0));
-        float doppler = dot(d / max(length(d), 1e-3), bright_dir);
+        float doppler = dot(d / max(length(d), 1e-3), bh.bright_dir);
         float dwarm = clamp(doppler * 0.5 + 0.5, 0.0, 1.0);
 
         vec3 bh_em = vec3(0.0);
@@ -823,31 +941,34 @@ vec3 bhEmissionAt(vec2 px)
 // reprojection (previous projection*view). Drives the disk's ghost trail:
 // as the kart sweeps the hole across the screen the luminous disk smears
 // behind its motion.
-vec2 bhScreenVelocity(vec2 px)
+vec2 bhScreenVelocity(vec2 px, out float trail_radius)
 {
     vec2 vp_xy = u_camera.m_viewport.xy;
     vec2 vp_wh = u_camera.m_viewport.zw;
     float best = 1e9;
     vec2 vel = vec2(0.0);
+    trail_radius = 0.0;
     for (int i = 0; i < 4; i++)
     {
-        if (u_camera.m_black_holes[i].w <= 0.001)
+        BlackHoleProjection bh = g_black_hole_projection[i];
+        if (!bh.valid)
             continue;
-        vec3 p = u_camera.m_black_holes[i].xyz;
-        vec4 cur_clip = u_camera.m_projection_view_matrix * vec4(p, 1.0);
-        if (cur_clip.w <= 0.001 || cur_clip.z <= 0.0)
-            continue;
-        vec2 cur = vp_xy + (cur_clip.xy / cur_clip.w * 0.5 + 0.5) * vp_wh;
-        vec4 prev_clip = u_camera.m_previous_pv_matrix * vec4(p, 1.0);
-        if (prev_clip.w <= 0.001)
+        vec2 cur = bh.screen;
+        vec4 prev_clip = u_camera.m_previous_pv_matrix *
+            vec4(bh.apparent_pos, 1.0);
+        if (prev_clip.w <= 0.001 || prev_clip.z <= 0.0 ||
+            any(isnan(prev_clip)) || any(isinf(prev_clip)))
             continue;
         vec2 prev = vp_xy +
             (prev_clip.xy / prev_clip.w * 0.5 + 0.5) * vp_wh;
-        float dsc = length(px - cur);
+        if (!bhFinite(prev))
+            continue;
+        float dsc = length(px - cur) / bh.radius_px;
         if (dsc < best)
         {
             best = dsc;
             vel = cur - prev;
+            trail_radius = bh.radius_px;
         }
     }
     return vel;
@@ -870,32 +991,23 @@ vec3 bhLensFlare(vec2 px)
     for (int i = 0; i < 4; i++)
     {
         float bh_r = u_camera.m_black_holes[i].w;
-        if (bh_r <= 0.001)
+        BlackHoleProjection bh = g_black_hole_projection[i];
+        if (!bh.valid)
             continue;
-        vec3 bh_pos = u_camera.m_black_holes[i].xyz;
-        vec4 bh_clip = u_camera.m_projection_view_matrix * vec4(bh_pos, 1.0);
-        if (bh_clip.w <= 0.001 || bh_clip.z <= 0.0)
-            continue;
-        vec2 bh_ndc = bh_clip.xy / bh_clip.w;
+        vec2 bh_ndc = bh.ndc;
         if (abs(bh_ndc.x) > 1.2 || abs(bh_ndc.y) > 1.2)
             continue;
-        vec2 bh_screen = vp_xy + (bh_ndc * 0.5 + 0.5) * vp_wh;
+        vec2 bh_screen = bh.screen;
 
         // Depth occlusion: no flare when scene geometry hides the hole.
-        float bh_vz = (u_camera.m_view_matrix * vec4(bh_pos, 1.0)).z;
         bool is_sky = texture(u_depth,
             bh_screen / u_camera.m_screensize).x >= 1.0;
-        if (!is_sky && viewPosAt(bh_screen).z < bh_vz - bh_r * 10.0)
+        if (!is_sky && viewPosAt(bh_screen).z < bh.view_z - bh_r * 10.0)
             continue;
 
         // Fade the flare out as the hole fills the screen (the disk fades
         // too at point-blank range) and as it nears the screen edge.
-        vec4 rim_clip = u_camera.m_projection_view_matrix * vec4(bh_pos +
-            vec3(u_camera.m_view_matrix[0][0], u_camera.m_view_matrix[1][0],
-            u_camera.m_view_matrix[2][0]) * bh_r, 1.0);
-        vec2 rim_screen = vp_xy +
-            (rim_clip.xy / max(rim_clip.w, 0.001) * 0.5 + 0.5) * vp_wh;
-        float R_E = max(length(rim_screen - bh_screen), 2.0);
+        float R_E = bh.radius_px;
         float close_fade = 1.0 - smoothstep(0.30, 0.5, R_E / vp_wh.y);
         float edge = (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.x))) *
             (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.y)));
@@ -940,11 +1052,15 @@ vec3 kerrAccretion(vec2 px)
     // (a crisp head plus a decaying after-image), so a moving hole drags a
     // luminous tail instead of looking stapled in place.
     vec3 em = bhEmissionAt(px);
-    vec2 vel = bhScreenVelocity(px);
+    float trail_radius;
+    vec2 vel = bhScreenVelocity(px, trail_radius);
     if (dot(vel, vel) > 0.25)
     {
         const int N = 5;
         const float TRAIL = 4.0;   // frames of smear
+        float trail_length = length(vel) * TRAIL;
+        if (trail_length > trail_radius && trail_length > 1e-4)
+            vel *= trail_radius / trail_length;
         for (int k = 1; k <= N; k++)
         {
             float t = float(k) / float(N);
@@ -967,6 +1083,9 @@ void main()
     vec2 vp_wh = u_camera.m_viewport.zw;
     vec2 frag_px = gl_FragCoord.xy;
 
+    for (int bh_i = 0; bh_i < 4; bh_i++)
+        g_black_hole_projection[bh_i] = projectBlackHole(bh_i);
+
     // Source pixel in the scene colour texture for this output pixel.
     vec2 src_px = frag_px;
     bool in_event_horizon = false;
@@ -982,25 +1101,13 @@ void main()
     // already-warped source position so the lenses compose.
     for (int bh_i = 0; bh_i < 4; bh_i++)
     {
-        if (in_event_horizon || u_camera.m_black_holes[bh_i].w <= 0.001)
+        if (in_event_horizon)
             continue;
-        vec4 bh_clip = u_camera.m_projection_view_matrix *
-            vec4(u_camera.m_black_holes[bh_i].xyz, 1.0);
-        if (bh_clip.w > 0.001 && bh_clip.z > 0.0)
+        BlackHoleProjection bh = g_black_hole_projection[bh_i];
+        if (bh.valid)
         {
-            vec2 bh_ndc = bh_clip.xy / bh_clip.w;
-            vec2 bh_screen = vp_xy + (bh_ndc * 0.5 + 0.5) * vp_wh;
-
-            // Project the world-space sphere radius to pixels for R_E.
-            vec3 cam_right = vec3(u_camera.m_view_matrix[0][0],
-                                  u_camera.m_view_matrix[1][0],
-                                  u_camera.m_view_matrix[2][0]);
-            vec4 rim_clip = u_camera.m_projection_view_matrix *
-                vec4(u_camera.m_black_holes[bh_i].xyz +
-                cam_right * u_camera.m_black_holes[bh_i].w, 1.0);
-            vec2 rim_ndc = rim_clip.xy / max(rim_clip.w, 0.001);
-            vec2 rim_screen = vp_xy + (rim_ndc * 0.5 + 0.5) * vp_wh;
-            float R_E = max(length(rim_screen - bh_screen), 2.0);
+            vec2 bh_screen = bh.screen;
+            float R_E = bh.radius_px;
             // Effective lensing reach, pushed well past the shadow so the
             // deflection is as dramatic as the wormhole's. The black shadow
             // itself stays at R_E (the ball); only the warp strengthens.
@@ -1008,29 +1115,32 @@ void main()
             const float BH_LENS_STRENGTH = 1.55;
             float R_L = R_E * BH_LENS_STRENGTH;
 
-            vec2 delta = src_px - bh_screen;
-            float r = length(delta);
+            // The visible silhouette belongs to output space and must never
+            // inherit a warp accumulated by an earlier lens.  Source space is
+            // used only to compose the background lookup below.
+            vec2 visible_delta = frag_px - bh_screen;
+            float visible_r = length(visible_delta);
 
             // Outer bound scales with the boosted reach so the wider warp
             // isn't clipped; the deflection eases off gradually toward it.
-            if (r > 0.5 && r < R_L * 6.0)
+            if (visible_r > 0.5 && visible_r < R_L * 6.0)
             {
                 // Skip lensing where scene is in front of the black hole
                 // (view-space compare: raw depth01 epsilons let distant
                 // walls pass).
-                float bh_vz = (u_camera.m_view_matrix *
-                    vec4(u_camera.m_black_holes[bh_i].xyz, 1.0)).z;
                 if (viewPosAt(frag_px).z >=
-                    bh_vz - u_camera.m_black_holes[bh_i].w * 10.0)
+                    bh.view_z - u_camera.m_black_holes[bh_i].w * 10.0)
                 {
                     // Frame dragging (Kerr): the deflection direction is
                     // swirled around the spin axis, strongest near the
                     // horizon.
-                    float drag = min(0.9 * (R_L * R_L) / (r * r), 0.9);
+                    float drag = min(0.9 * (R_L * R_L) /
+                        (visible_r * visible_r), 0.9);
                     float cd = cos(drag), sd = sin(drag);
-                    vec2 dragged = vec2(cd * delta.x - sd * delta.y,
-                                        sd * delta.x + cd * delta.y);
-                    if (r < R_E)
+                    vec2 visible_dragged = vec2(
+                        cd * visible_delta.x - sd * visible_delta.y,
+                        sd * visible_delta.x + cd * visible_delta.y);
+                    if (visible_r < R_E)
                     {
                         // True shadow (ball-sized) stays pure black.
                         in_event_horizon = true;
@@ -1041,21 +1151,30 @@ void main()
                         // around the shadow rim (clamped positive like the
                         // wormhole) so a pronounced ring of lensed scenery
                         // smears around the hole.
-                        float r_src = max(r - (R_L * R_L) / r, R_E * 0.05);
-                        vec2 deflected = bh_screen + (dragged / r) * r_src;
-                        float fade = 1.0 - smoothstep(R_L * 2.5, R_L * 6.0, r);
+                        vec2 source_delta = src_px - bh_screen;
+                        float source_r = max(length(source_delta), 0.5);
+                        vec2 source_dragged = vec2(
+                            cd * source_delta.x - sd * source_delta.y,
+                            sd * source_delta.x + cd * source_delta.y);
+                        float r_src = max(source_r - (R_L * R_L) / source_r,
+                            R_E * 0.05);
+                        vec2 deflected = bh_screen +
+                            (source_dragged / source_r) * r_src;
+                        float fade = 1.0 - smoothstep(R_L * 2.5,
+                            R_L * 6.0, visible_r);
                         src_px = mix(src_px, deflected, fade);
                         distortion_strength = max(distortion_strength,
                             clamp(1.0 - (r_src / (R_L * 2.0)), 0.0, 1.0) *
                             fade);
                         // Chromatic fringe near the rim, at wormhole strength.
-                        float ring_dist = abs(r - R_E) / R_E;
+                        float ring_dist = abs(visible_r - R_E) / R_E;
                         float ca = min(2.0 / max(ring_dist + 0.15, 0.15),
                             12.0) * fade;
+                        ca = min(ca, max(1.0, R_E * 0.25));
                         if (ca > bh_chroma_amt)
                         {
                             bh_chroma_amt = ca;
-                            bh_chroma_dir = dragged / r;
+                            bh_chroma_dir = visible_dragged / visible_r;
                         }
                     }
                     src_px = clamp(src_px, vp_xy, vp_xy + vp_wh);
