@@ -24,6 +24,26 @@ extern bool g_supports_astc_4x4;
 }
 
 std::vector<astcenc_context*> g_astc_contexts;
+
+// astcenc's development API added an optional parent context argument while
+// older packaged releases still expose the original three-argument function.
+// Select the available signature at compile time so platform dependency
+// bundles can be updated independently without breaking the game build.
+template<typename AllocFn>
+auto allocASTCContext(AllocFn alloc_fn, const astcenc_config* config,
+                      unsigned thread_count, astcenc_context** context, int)
+    -> decltype(alloc_fn(config, thread_count, context, NULL))
+{
+    return alloc_fn(config, thread_count, context, NULL);
+}
+
+template<typename AllocFn>
+auto allocASTCContext(AllocFn alloc_fn, const astcenc_config* config,
+                      unsigned thread_count, astcenc_context** context, long)
+    -> decltype(alloc_fn(config, thread_count, context))
+{
+    return alloc_fn(config, thread_count, context);
+}
 #endif
 // ============================================================================
 void GECompressorASTC4x4::init()
@@ -50,7 +70,8 @@ void GECompressorASTC4x4::init()
     for (unsigned i = 0; i < GEVulkanCommandLoader::getLoaderCount(); i++)
     {
         astcenc_context* context = NULL;
-        if (astcenc_context_alloc(&cfg, 1, &context) != ASTCENC_SUCCESS)
+        if (allocASTCContext(&astcenc_context_alloc, &cfg, 1, &context, 0) !=
+            ASTCENC_SUCCESS)
         {
             destroy();
             return;

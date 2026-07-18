@@ -47,9 +47,9 @@ jobs:
           sudo apt-get install -y make ninja-build glslang-tools python3-mako imagemagick pngquant vorbis-tools
           pip install "meson==1.4.0" --break-system-packages
 
-      - name: Install Android NDK 23.1.7779620
+      - name: Install Android NDK 28.1.13356709
         run: |
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "ndk;23.1.7779620"
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "ndk;28.1.13356709"
 
       - name: Cache Android Dependencies Source and Prebuilts
         id: cache-deps
@@ -111,7 +111,7 @@ jobs:
           export NDK_PATH="$ANDROID_SDK_ROOT/ndk"
           export STK_MIN_ANDROID_SDK=21
           export STK_TARGET_ANDROID_SDK=35
-          export STK_NDK_VERSION="23.1.7779620"
+          export STK_NDK_VERSION="28.1.13356709"
           export COMPILE_ARCH="aarch64"
           if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" || "${{ github.event.inputs.build_release_artifact }}" == "true" ]]; then
             export BUILD_TYPE="release"
@@ -240,7 +240,7 @@ jobs:
           fi
 
           ZIPALIGN=$(find "$ANDROID_SDK_ROOT/build-tools" -name zipalign -type f | sort -V | tail -1)
-          READELF="$ANDROID_SDK_ROOT/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          READELF="$ANDROID_SDK_ROOT/ndk/28.1.13356709/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
 
           "$ZIPALIGN" -c -p -v 4 "$APK"
 

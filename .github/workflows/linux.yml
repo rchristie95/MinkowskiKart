@@ -60,8 +60,7 @@ jobs:
           echo "release_name=`basename $GITHUB_REF`" >> $GITHUB_ENV
       - name: Configure packaging name for non-releasing branch
         if: ${{ matrix.build_type != 'Release' || matrix.server_only != 'OFF' ||
-            !(github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) ||
-            github.repository_owner != 'supertuxkart' }}
+            !(github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
         run: |
           echo "release_tag=" >> $GITHUB_ENV
           echo "release_name=" >> $GITHUB_ENV
@@ -157,6 +156,32 @@ jobs:
         run: |
           make -j3 VERBOSE=1
           make install DESTDIR="/tmp/stk" VERBOSE=1
+      - name: Package Linux release
+        if: ${{ env.release_tag != '' && matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc' && matrix.build_type == 'Release' && matrix.server_only == 'OFF' }}
+        run: |
+          set -euo pipefail
+          package="MinkowskiKart-${{ env.release_tag }}-linux-x86_64"
+          mkdir "$package"
+          cp -a /tmp/stk/usr/local/. "$package/"
+          tar -czf "$package.tar.gz" "$package"
+      - name: Upload Linux release artifact
+        if: ${{ env.release_tag != '' && matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc' && matrix.build_type == 'Release' && matrix.server_only == 'OFF' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: MinkowskiKart-${{ env.release_tag }}-linux-x86_64
+          path: MinkowskiKart-${{ env.release_tag }}-linux-x86_64.tar.gz
+      - name: Add Linux package to release
+        if: ${{ env.release_tag != '' && matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc' && matrix.build_type == 'Release' && matrix.server_only == 'OFF' }}
+        uses: ncipollo/release-action@v1.8.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "MinkowskiKart-${{ env.release_tag }}-linux-x86_64.tar.gz"
+          tag: ${{ env.release_name }}
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          allowUpdates: true
+          replacesArtifacts: true
+          prerelease: ${{ env.release_pre }}
       - name: Packaging (macos)
         if: ${{ env.release_tag != '' && matrix.os == 'macos-latest' && matrix.build_type == 'Release' && matrix.server_only == 'OFF' }}
         working-directory: build
