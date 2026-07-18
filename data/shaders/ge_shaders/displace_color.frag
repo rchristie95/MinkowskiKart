@@ -1112,7 +1112,7 @@ void main()
             // deflection is as dramatic as the wormhole's. The black shadow
             // itself stays at R_E (the ball); only the warp strengthens.
             // Tunable: raise for stronger bending (recompiles on launch).
-            const float BH_LENS_STRENGTH = 1.55;
+            const float BH_LENS_STRENGTH = 2.10;
             float R_L = R_E * BH_LENS_STRENGTH;
 
             // The visible silhouette belongs to output space and must never
