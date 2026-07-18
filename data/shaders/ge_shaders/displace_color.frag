@@ -1027,6 +1027,9 @@ vec3 bhLensFlare(vec2 px)
         BlackHoleProjection bh = g_black_hole_projection[i];
         if (!bh.valid)
             continue;
+        float foreground_visibility = g_black_hole_visibility[i];
+        if (foreground_visibility <= 0.001)
+            continue;
         vec2 bh_ndc = bh.ndc;
         if (abs(bh_ndc.x) > 1.2 || abs(bh_ndc.y) > 1.2)
             continue;
