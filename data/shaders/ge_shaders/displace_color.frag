@@ -765,6 +765,18 @@ BlackHoleProjection projectBlackHole(int index)
         return bh;
 
     vec3 raw_pos = u_camera.m_black_holes[index].xyz;
+
+    // The black-hole post effect follows the active camera hemisphere.  A
+    // physically rearward hole must not be aberrated into the forward view by
+    // this screen-space approximation; when rear view is selected the camera
+    // turns around, this depth becomes positive, and the same hole is visible
+    // normally.  Keep the centre a small fraction of its radius ahead of the
+    // camera plane so a crossing sphere cannot generate an enormous fallback
+    // projection for one frame.
+    float raw_view_z = (u_camera.m_view_matrix * vec4(raw_pos, 1.0)).z;
+    if (raw_view_z <= max(0.05, radius * 0.25))
+        return bh;
+
     vec4 center_clip;
     if (!projectBlackHolePoint(raw_pos, bh.apparent_pos, center_clip, bh.screen))
         return bh;
