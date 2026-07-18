@@ -718,6 +718,7 @@ struct BlackHoleProjection
 // flare and trail paths.  Besides guaranteeing identical coordinates, this
 // avoids repeating the observer transform for every one of the trail taps.
 BlackHoleProjection g_black_hole_projection[4];
+float g_black_hole_visibility[4];
 
 bool bhFinite(vec2 v)
 {
@@ -845,6 +846,44 @@ BlackHoleProjection projectBlackHole(int index)
     return bh;
 }
 
+float blackHoleSurfaceVisibility(vec2 px, BlackHoleProjection bh,
+                                 float world_radius)
+{
+    vec2 sample_px = clamp(px, u_camera.m_viewport.xy + vec2(1.0),
+        u_camera.m_viewport.xy + u_camera.m_viewport.zw - vec2(2.0));
+    float depth = texture(u_depth, sample_px / u_camera.m_screensize).x;
+    if (depth >= 1.0)
+        return 1.0;
+
+    vec3 surface_pos = viewPosAt(sample_px);
+    if (surface_pos.z >= bh.view_z - world_radius * 10.0)
+        return 1.0;
+
+    // A nearer vertical object should hide the post effect, but the track
+    // surface beneath a hovering black hole must remain part of the lensed
+    // scene.  Reconstruct a coarse world normal from neighbouring depth
+    // samples so upward-facing road/terrain bypasses the foreground reject.
+    vec2 px_right = sample_px + vec2(1.0, 0.0);
+    vec2 px_up = sample_px + vec2(0.0, 1.0);
+    float depth_right = texture(u_depth,
+        px_right / u_camera.m_screensize).x;
+    float depth_up = texture(u_depth, px_up / u_camera.m_screensize).x;
+    if (depth_right >= 1.0 || depth_up >= 1.0)
+        return 0.0;
+
+    vec3 tangent_x = viewPosAt(px_right) - surface_pos;
+    vec3 tangent_y = viewPosAt(px_up) - surface_pos;
+    vec3 view_normal = cross(tangent_x, tangent_y);
+    float normal_len2 = dot(view_normal, view_normal);
+    if (normal_len2 <= 1e-10)
+        return 0.0;
+
+    vec3 world_normal = normalize(
+        mat3(u_camera.m_inverse_view_matrix) * view_normal);
+    float upward = abs(world_normal.y);
+    return smoothstep(0.35, 0.65, upward);
+}
+
 // bhEmissionAt(): raw additive emission (disk + lensed arcs + photon ring)
 // of every active black hole, evaluated at an arbitrary screen pixel. Kept
 // separate from the compression/flare so the motion-trail can resample it
@@ -852,13 +891,14 @@ BlackHoleProjection projectBlackHole(int index)
 vec3 bhEmissionAt(vec2 px)
 {
     vec3 emission = vec3(0.0);
-    vec2 vp_xy = u_camera.m_viewport.xy;
     vec2 vp_wh = u_camera.m_viewport.zw;
     for (int i = 0; i < 4; i++)
     {
-        float bh_r = u_camera.m_black_holes[i].w;
         BlackHoleProjection bh = g_black_hole_projection[i];
         if (!bh.valid)
+            continue;
+        float foreground_visibility = g_black_hole_visibility[i];
+        if (foreground_visibility <= 0.001)
             continue;
         vec2 bh_screen = bh.screen;
         float R_E = bh.radius_px;
@@ -874,15 +914,6 @@ vec3 bhEmissionAt(vec2 px)
         // over (otherwise the disk math degenerates into a bright ring).
         float close_fade = 1.0 - smoothstep(0.32, 0.5, R_E / vp_wh.y);
         if (close_fade <= 0.0)
-            continue;
-
-        // Occlusion: hide the disk only where scene geometry is clearly in
-        // front of the whole hole (walls, karts). The generous margin (the
-        // disk spans ~3.6 radii and floats above the ball) lets the disk draw
-        // over the surrounding dunes instead of being clipped - matching the
-        // lenient hovering wormhole.
-        bool is_sky = texture(u_depth, px / u_camera.m_screensize).x >= 1.0;
-        if (!is_sky && viewPosAt(px).z < bh.view_z - bh_r * 10.0)
             continue;
 
         // Disk orientation on screen: project the disk's world normal
@@ -932,7 +963,7 @@ vec3 bhEmissionAt(vec2 px)
         vec3 ring_col = mix(vec3(1.1, 0.8, 0.5), vec3(1.45, 1.35, 1.15), dwarm);
         bh_em += ring_col * ring * mod_az * mix(0.8, 2.1, dwarm);
 
-        emission += bh_em * close_fade;
+        emission += bh_em * close_fade * foreground_visibility;
     }
     return emission;
 }
@@ -952,6 +983,9 @@ vec2 bhScreenVelocity(vec2 px, out float trail_radius)
     {
         BlackHoleProjection bh = g_black_hole_projection[i];
         if (!bh.valid)
+            continue;
+        float foreground_visibility = g_black_hole_visibility[i];
+        if (foreground_visibility <= 0.001)
             continue;
         vec2 cur = bh.screen;
         vec4 prev_clip = u_camera.m_previous_pv_matrix *
@@ -990,7 +1024,6 @@ vec3 bhLensFlare(vec2 px)
 
     for (int i = 0; i < 4; i++)
     {
-        float bh_r = u_camera.m_black_holes[i].w;
         BlackHoleProjection bh = g_black_hole_projection[i];
         if (!bh.valid)
             continue;
@@ -999,19 +1032,13 @@ vec3 bhLensFlare(vec2 px)
             continue;
         vec2 bh_screen = bh.screen;
 
-        // Depth occlusion: no flare when scene geometry hides the hole.
-        bool is_sky = texture(u_depth,
-            bh_screen / u_camera.m_screensize).x >= 1.0;
-        if (!is_sky && viewPosAt(bh_screen).z < bh.view_z - bh_r * 10.0)
-            continue;
-
         // Fade the flare out as the hole fills the screen (the disk fades
         // too at point-blank range) and as it nears the screen edge.
         float R_E = bh.radius_px;
         float close_fade = 1.0 - smoothstep(0.30, 0.5, R_E / vp_wh.y);
         float edge = (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.x))) *
             (1.0 - smoothstep(0.9, 1.2, abs(bh_ndc.y)));
-        float vis = close_fade * edge;
+        float vis = close_fade * edge * foreground_visibility;
         if (vis <= 0.0)
             continue;
 
@@ -1084,7 +1111,14 @@ void main()
     vec2 frag_px = gl_FragCoord.xy;
 
     for (int bh_i = 0; bh_i < 4; bh_i++)
+    {
         g_black_hole_projection[bh_i] = projectBlackHole(bh_i);
+        g_black_hole_visibility[bh_i] =
+            g_black_hole_projection[bh_i].valid ?
+            blackHoleSurfaceVisibility(frag_px,
+                g_black_hole_projection[bh_i],
+                u_camera.m_black_holes[bh_i].w) : 0.0;
+    }
 
     // Source pixel in the scene colour texture for this output pixel.
     vec2 src_px = frag_px;
@@ -1104,7 +1138,8 @@ void main()
         if (in_event_horizon)
             continue;
         BlackHoleProjection bh = g_black_hole_projection[bh_i];
-        if (bh.valid)
+        float foreground_visibility = g_black_hole_visibility[bh_i];
+        if (bh.valid && foreground_visibility > 0.001)
         {
             vec2 bh_screen = bh.screen;
             float R_E = bh.radius_px;
@@ -1125,60 +1160,56 @@ void main()
             // isn't clipped; the deflection eases off gradually toward it.
             if (visible_r > 0.5 && visible_r < R_L * 6.0)
             {
-                // Skip lensing where scene is in front of the black hole
-                // (view-space compare: raw depth01 epsilons let distant
-                // walls pass).
-                if (viewPosAt(frag_px).z >=
-                    bh.view_z - u_camera.m_black_holes[bh_i].w * 10.0)
+                // Road and terrain remain in the lensed scene; nearer upright
+                // geometry still occludes the effect through the shared
+                // surface-aware visibility mask.
+                // Frame dragging (Kerr): the deflection direction is
+                // swirled around the spin axis, strongest near the horizon.
+                float drag = min(0.9 * (R_L * R_L) /
+                    (visible_r * visible_r), 0.9);
+                float cd = cos(drag), sd = sin(drag);
+                vec2 visible_dragged = vec2(
+                    cd * visible_delta.x - sd * visible_delta.y,
+                    sd * visible_delta.x + cd * visible_delta.y);
+                if (visible_r < R_E && foreground_visibility > 0.5)
                 {
-                    // Frame dragging (Kerr): the deflection direction is
-                    // swirled around the spin axis, strongest near the
-                    // horizon.
-                    float drag = min(0.9 * (R_L * R_L) /
-                        (visible_r * visible_r), 0.9);
-                    float cd = cos(drag), sd = sin(drag);
-                    vec2 visible_dragged = vec2(
-                        cd * visible_delta.x - sd * visible_delta.y,
-                        sd * visible_delta.x + cd * visible_delta.y);
-                    if (visible_r < R_E)
-                    {
-                        // True shadow (ball-sized) stays pure black.
-                        in_event_horizon = true;
-                    }
-                    else
-                    {
-                        // Strong Schwarzschild deflection: scene wraps tightly
-                        // around the shadow rim (clamped positive like the
-                        // wormhole) so a pronounced ring of lensed scenery
-                        // smears around the hole.
-                        vec2 source_delta = src_px - bh_screen;
-                        float source_r = max(length(source_delta), 0.5);
-                        vec2 source_dragged = vec2(
-                            cd * source_delta.x - sd * source_delta.y,
-                            sd * source_delta.x + cd * source_delta.y);
-                        float r_src = max(source_r - (R_L * R_L) / source_r,
-                            R_E * 0.05);
-                        vec2 deflected = bh_screen +
-                            (source_dragged / source_r) * r_src;
-                        float fade = 1.0 - smoothstep(R_L * 2.5,
-                            R_L * 6.0, visible_r);
-                        src_px = mix(src_px, deflected, fade);
-                        distortion_strength = max(distortion_strength,
-                            clamp(1.0 - (r_src / (R_L * 2.0)), 0.0, 1.0) *
-                            fade);
-                        // Chromatic fringe near the rim, at wormhole strength.
-                        float ring_dist = abs(visible_r - R_E) / R_E;
-                        float ca = min(2.0 / max(ring_dist + 0.15, 0.15),
-                            12.0) * fade;
-                        ca = min(ca, max(1.0, R_E * 0.25));
-                        if (ca > bh_chroma_amt)
-                        {
-                            bh_chroma_amt = ca;
-                            bh_chroma_dir = visible_dragged / visible_r;
-                        }
-                    }
-                    src_px = clamp(src_px, vp_xy, vp_xy + vp_wh);
+                    // True shadow (ball-sized) stays pure black.
+                    in_event_horizon = true;
                 }
+                else
+                {
+                    // Strong Schwarzschild deflection: scene wraps tightly
+                    // around the shadow rim (clamped positive like the
+                    // wormhole) so a pronounced ring of lensed scenery
+                    // smears around the hole.
+                    vec2 source_delta = src_px - bh_screen;
+                    float source_r = max(length(source_delta), 0.5);
+                    vec2 source_dragged = vec2(
+                        cd * source_delta.x - sd * source_delta.y,
+                        sd * source_delta.x + cd * source_delta.y);
+                    float r_src = max(source_r - (R_L * R_L) / source_r,
+                        R_E * 0.05);
+                    vec2 deflected = bh_screen +
+                        (source_dragged / source_r) * r_src;
+                    float fade = 1.0 - smoothstep(R_L * 2.5,
+                        R_L * 6.0, visible_r);
+                    fade *= foreground_visibility;
+                    src_px = mix(src_px, deflected, fade);
+                    distortion_strength = max(distortion_strength,
+                        clamp(1.0 - (r_src / (R_L * 2.0)), 0.0, 1.0) *
+                        fade);
+                    // Chromatic fringe near the rim, at wormhole strength.
+                    float ring_dist = abs(visible_r - R_E) / R_E;
+                    float ca = min(2.0 / max(ring_dist + 0.15, 0.15),
+                        12.0) * fade;
+                    ca = min(ca, max(1.0, R_E * 0.25));
+                    if (ca > bh_chroma_amt)
+                    {
+                        bh_chroma_amt = ca;
+                        bh_chroma_dir = visible_dragged / visible_r;
+                    }
+                }
+                src_px = clamp(src_px, vp_xy, vp_xy + vp_wh);
             }
         }
     }
