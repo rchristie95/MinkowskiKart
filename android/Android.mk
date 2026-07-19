@@ -220,7 +220,7 @@ LOCAL_CFLAGS       := -DENABLE_LIBASTCENC                 \
                       -I../lib/irrlicht/include/          \
                       -I../lib/shaderc/libshaderc/include \
                       -I../lib/libsquish                  \
-                      -Ideps-$(TARGET_ARCH_ABI)/astc-encoder/Source
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/astc-encoder/Source)
 #ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
 #LOCAL_ARM_NEON     := false
 #endif
@@ -280,9 +280,9 @@ LOCAL_SRC_FILES    := $(wildcard ../lib/irrlicht/source/Irrlicht/*.cpp)
 LOCAL_CFLAGS       := -I../lib/irrlicht/source/Irrlicht/ \
                       -I../lib/irrlicht/include/         \
                       -I../src                           \
-                      -Ideps-$(TARGET_ARCH_ABI)/libjpeg/ \
-                      -Ideps-$(TARGET_ARCH_ABI)/libpng/  \
-                      -Ideps-$(TARGET_ARCH_ABI)/zlib/    \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libjpeg/) \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libpng/)  \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/zlib/)    \
                       -I../lib/sdl2/include/             \
                       -I../lib/graphics_engine/include   \
                       -DMOBILE_STK                       \
@@ -379,13 +379,13 @@ LOCAL_CFLAGS       := -I../lib/angelscript/include      \
                       -I../lib/tinygettext/include      \
                       -I../lib/libsquish                \
                       -I../src                          \
-                      -Ideps-$(TARGET_ARCH_ABI)/curl/include      \
-                      -Ideps-$(TARGET_ARCH_ABI)/freetype/include  \
-                      -Ideps-$(TARGET_ARCH_ABI)/harfbuzz/include  \
-                      -Ideps-$(TARGET_ARCH_ABI)/libogg/include    \
-                      -Ideps-$(TARGET_ARCH_ABI)/libvorbis/include \
-                      -Ideps-$(TARGET_ARCH_ABI)/openal/include    \
-                      -Ideps-$(TARGET_ARCH_ABI)/mbedtls/include   \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/curl/include)      \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/freetype/include)  \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/harfbuzz/include)  \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libogg/include)    \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libvorbis/include) \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/openal/include)    \
+                      -I$(abspath deps-$(TARGET_ARCH_ABI)/mbedtls/include)   \
                       -DMOBILE_STK     \
                       -DENABLE_SOUND   \
                       -DENABLE_IPV6    \
