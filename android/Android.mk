@@ -1,4 +1,8 @@
 LOCAL_PATH := $(call my-dir)
+# Keep an immutable absolute path to this makefile. Several modules below set
+# LOCAL_PATH to ".", and dependency include paths must not depend on Gradle's
+# current working directory.
+MK_ANDROID_ROOT := $(LOCAL_PATH)
 MK_ANDROID_16KB_LDFLAGS := -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384
 include $(CLEAR_VARS)
 
@@ -62,6 +66,7 @@ include $(CLEAR_VARS)
 # JPEG
 LOCAL_MODULE := libjpeg
 LOCAL_SRC_FILES := deps-$(TARGET_ARCH_ABI)/libjpeg/libjpeg.a
+LOCAL_EXPORT_C_INCLUDES := $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/libjpeg
 include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
@@ -69,6 +74,7 @@ include $(CLEAR_VARS)
 # zlib
 LOCAL_MODULE := zlib
 LOCAL_SRC_FILES := deps-$(TARGET_ARCH_ABI)/zlib/libz.a
+LOCAL_EXPORT_C_INCLUDES := $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/zlib
 include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
@@ -76,6 +82,7 @@ include $(CLEAR_VARS)
 # PNG
 LOCAL_MODULE := png
 LOCAL_SRC_FILES := deps-$(TARGET_ARCH_ABI)/libpng/libpng.a
+LOCAL_EXPORT_C_INCLUDES := $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/libpng
 include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
@@ -212,6 +219,7 @@ LOCAL_PATH         := .
 LOCAL_CPP_FEATURES += rtti exceptions
 LOCAL_SRC_FILES    := $(wildcard ../lib/graphics_engine/src/*.c) \
                       $(wildcard ../lib/graphics_engine/src/*.cpp)
+LOCAL_C_INCLUDES   := $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/astc-encoder/Source
 LOCAL_CFLAGS       := -DENABLE_LIBASTCENC                 \
                       -I../lib/graphics_engine/include    \
                       -I../lib/graphics_utils             \
@@ -219,8 +227,7 @@ LOCAL_CFLAGS       := -DENABLE_LIBASTCENC                 \
                       -I../lib/bullet/src/                \
                       -I../lib/irrlicht/include/          \
                       -I../lib/shaderc/libshaderc/include \
-                      -I../lib/libsquish                  \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/astc-encoder/Source)
+                      -I../lib/libsquish
 #ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
 #LOCAL_ARM_NEON     := false
 #endif
@@ -277,15 +284,15 @@ LOCAL_SHORT_COMMANDS := true
 LOCAL_PATH         := .
 LOCAL_CPP_FEATURES += rtti exceptions
 LOCAL_SRC_FILES    := $(wildcard ../lib/irrlicht/source/Irrlicht/*.cpp)
-LOCAL_CFLAGS       := -I../lib/irrlicht/source/Irrlicht/ \
-                      -I../lib/irrlicht/include/         \
-                      -I../src                           \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libjpeg/) \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libpng/)  \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/zlib/)    \
-                      -I../lib/sdl2/include/             \
-                      -I../lib/graphics_engine/include   \
-                      -DMOBILE_STK                       \
+LOCAL_C_INCLUDES   := $(MK_ANDROID_ROOT)/../lib/irrlicht/source/Irrlicht \
+                      $(MK_ANDROID_ROOT)/../lib/irrlicht/include         \
+                      $(MK_ANDROID_ROOT)/../src                          \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/libjpeg \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/libpng  \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/zlib    \
+                      $(MK_ANDROID_ROOT)/../lib/sdl2/include             \
+                      $(MK_ANDROID_ROOT)/../lib/graphics_engine/include
+LOCAL_CFLAGS       := -DMOBILE_STK                       \
                       -DANDROID_PACKAGE_CALLBACK_NAME=$(PACKAGE_CALLBACK_NAME)
 LOCAL_CPPFLAGS     := -std=gnu++0x
 LOCAL_STATIC_LIBRARIES := libjpeg png zlib
@@ -365,6 +372,13 @@ LOCAL_SRC_FILES    := $(wildcard ../src/*.cpp)     \
                       $(wildcard ../src/*/*.cpp)   \
                       $(wildcard ../src/*/*/*.cpp)
 LOCAL_LDLIBS       := -llog -lm -lOpenSLES
+LOCAL_C_INCLUDES   := $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/curl/include      \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/freetype/include  \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/harfbuzz/include  \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/libogg/include    \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/libvorbis/include \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/openal/include    \
+                      $(MK_ANDROID_ROOT)/deps-$(TARGET_ARCH_ABI)/mbedtls/include
 LOCAL_CFLAGS       := -I../lib/angelscript/include      \
                       -I../lib/bullet/src               \
                       -I../lib/sheenbidi/Headers        \
@@ -379,13 +393,6 @@ LOCAL_CFLAGS       := -I../lib/angelscript/include      \
                       -I../lib/tinygettext/include      \
                       -I../lib/libsquish                \
                       -I../src                          \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/curl/include)      \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/freetype/include)  \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/harfbuzz/include)  \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libogg/include)    \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/libvorbis/include) \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/openal/include)    \
-                      -I$(abspath deps-$(TARGET_ARCH_ABI)/mbedtls/include)   \
                       -DMOBILE_STK     \
                       -DENABLE_SOUND   \
                       -DENABLE_IPV6    \
