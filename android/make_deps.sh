@@ -301,6 +301,21 @@ build_deps()
         touch "$DIRNAME/deps-$ARCH_OPTION/libjpeg.stamp"
     fi
 
+    # Irrlicht's Android build uses bundled JPEG headers. Keep them beside the
+    # engine source so ndk-build does not depend on Gradle's treatment of
+    # generated include roots. This also runs when dependencies came from the
+    # Actions cache and the compilation stamp already exists.
+    IRR_JPEG_HEADERS="$DIRNAME/../lib/irrlicht/source/Irrlicht/jpeglib"
+    mkdir -p "$IRR_JPEG_HEADERS"
+    for JPEG_HEADER in jconfig.h jerror.h jmorecfg.h jpeglib.h; do
+        if [ ! -f "$DIRNAME/deps-$ARCH_OPTION/libjpeg/$JPEG_HEADER" ]; then
+            echo "Error: Missing Android libjpeg header $JPEG_HEADER"
+            exit 1
+        fi
+        cp -f "$DIRNAME/deps-$ARCH_OPTION/libjpeg/$JPEG_HEADER" \
+              "$IRR_JPEG_HEADERS/$JPEG_HEADER"
+    done
+
     # Libogg
     if [ ! -f "$DIRNAME/deps-$ARCH_OPTION/libogg.stamp" ]; then
         echo "Compiling $ARCH_OPTION libogg"
@@ -444,7 +459,9 @@ build_deps()
             touch "$DIRNAME/deps-$ARCH_OPTION/libadrenotools.stamp"
         fi
 
-        if [ ! -f "$DIRNAME/deps-$ARCH_OPTION/mesa.stamp" ]; then
+        if [ "${SKIP_MESA:-0}" = "1" ]; then
+            echo "Skipping optional $ARCH_OPTION mesa driver"
+        elif [ ! -f "$DIRNAME/deps-$ARCH_OPTION/mesa.stamp" ]; then
             if command -v meson >/dev/null 2>&1; then
                 echo "Compiling $ARCH_OPTION mesa"
                 mkdir -p "$DIRNAME/deps-$ARCH_OPTION/mesa"

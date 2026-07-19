@@ -26,6 +26,7 @@ dl_apk/
 /lib/sdl2/
 /lib/shaderc/
 /lib/zlib/
+/lib/irrlicht/source/Irrlicht/jpeglib/
 
 # Dev tools and pre-compiled dependencies
 .build-tools/

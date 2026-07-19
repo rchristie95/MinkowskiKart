@@ -113,6 +113,10 @@ jobs:
           export STK_TARGET_ANDROID_SDK=35
           export STK_NDK_VERSION="28.1.13356709"
           export COMPILE_ARCH="aarch64"
+          # The shipping package uses the system Vulkan driver (STK_VULKAN=0),
+          # and validation rejects optional Mesa hook libraries. Do not spend
+          # release time compiling a driver that cannot be packaged.
+          export SKIP_MESA=1
           if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" || "${{ github.event.inputs.build_release_artifact }}" == "true" ]]; then
             export BUILD_TYPE="release"
             if [[ "$GITHUB_REF" == refs/tags/* ]]; then
