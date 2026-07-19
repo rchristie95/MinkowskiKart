@@ -13,9 +13,13 @@
 
 #include <stdio.h> // required for jpeglib.h
 #ifdef _IRR_COMPILE_WITH_LIBJPEG_
-extern "C" {
+	extern "C" {
 	#ifndef _IRR_USE_NON_SYSTEM_JPEG_LIB_
+	#if defined(__ANDROID__)
+	#include "../../../libjpeg/jpeglib.h"
+	#else
 	#include <jpeglib.h> // use system lib
+	#endif
 	#else
 	#include "jpeglib/jpeglib.h" // use irrlicht jpeglib
 	#endif

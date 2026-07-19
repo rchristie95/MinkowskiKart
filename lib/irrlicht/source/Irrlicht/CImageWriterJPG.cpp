@@ -16,8 +16,13 @@
 extern "C"
 {
 #ifndef _IRR_USE_NON_SYSTEM_JPEG_LIB_
+	#if defined(__ANDROID__)
+	#include "../../../libjpeg/jpeglib.h"
+	#include "../../../libjpeg/jerror.h"
+	#else
 	#include <jpeglib.h>
 	#include <jerror.h>
+	#endif
 #else
 	#include "jpeglib/jpeglib.h"
 	#include "jpeglib/jerror.h"
