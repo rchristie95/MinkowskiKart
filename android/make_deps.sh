@@ -348,14 +348,13 @@ build_deps()
         cmake . -DCMAKE_TOOLCHAIN_FILE=../../../cmake/Toolchain-android.cmake  \
                 -DPYTHON_EXECUTABLE="$SYSTEM_PYTHON"                           \
                 -DHOST=$HOST -DARCH=$ARCH -DCMAKE_C_FLAGS="-fpic -O3 -w"          \
-                -DCMAKE_CXX_FLAGS="-fpic -O3 -w" -DSHADERC_SKIP_INSTALL=1         \
+                -DCMAKE_CXX_FLAGS="-fpic -O3 -w" -DSHADERC_SKIP_INSTALL=OFF       \
                 -DCMAKE_BUILD_TYPE=Release                                     \
                 -DSHADERC_SKIP_TESTS=1 -DSHADERC_SKIP_EXAMPLES=1               \
-                -DSPIRV_HEADERS_SKIP_INSTALL=1 -DSPIRV_HEADERS_SKIP_EXAMPLES=1 \
-                -DSKIP_SPIRV_TOOLS_INSTALL=1 -DSPIRV_SKIP_TESTS=1              \
+                -DSPIRV_HEADERS_SKIP_INSTALL=OFF -DSPIRV_HEADERS_SKIP_EXAMPLES=1 \
+                -DSKIP_SPIRV_TOOLS_INSTALL=OFF -DSPIRV_SKIP_TESTS=1            \
                 -DSPIRV_SKIP_EXECUTABLES=1 -DENABLE_GLSLANG_BINARIES=0         \
-                -DGLSLANG_ENABLE_INSTALL=OFF -DENABLE_GLSLANG_INSTALL=OFF      \
-                -DSPIRV_SKIP_INSTALL=ON                                        \
+                -DGLSLANG_ENABLE_INSTALL=ON -DSPIRV_SKIP_INSTALL=OFF           \
                 -DENABLE_CTEST=0 &&
         make -j $(($(nproc) + 1))
         # Strip debug symbol to make app bundle smaller
