@@ -308,12 +308,15 @@ build_deps()
     IRR_JPEG_HEADERS="$DIRNAME/../lib/irrlicht/source/Irrlicht/jpeglib"
     mkdir -p "$IRR_JPEG_HEADERS"
     for JPEG_HEADER in jconfig.h jerror.h jmorecfg.h jpeglib.h; do
-        if [ ! -f "$DIRNAME/deps-$ARCH_OPTION/libjpeg/$JPEG_HEADER" ]; then
+        JPEG_HEADER_SOURCE="$DIRNAME/deps-$ARCH_OPTION/libjpeg/$JPEG_HEADER"
+        if [ ! -f "$JPEG_HEADER_SOURCE" ]; then
+            JPEG_HEADER_SOURCE="$DIRNAME/deps-$ARCH_OPTION/libjpeg/src/$JPEG_HEADER"
+        fi
+        if [ ! -f "$JPEG_HEADER_SOURCE" ]; then
             echo "Error: Missing Android libjpeg header $JPEG_HEADER"
             exit 1
         fi
-        cp -f "$DIRNAME/deps-$ARCH_OPTION/libjpeg/$JPEG_HEADER" \
-              "$IRR_JPEG_HEADERS/$JPEG_HEADER"
+        cp -f "$JPEG_HEADER_SOURCE" "$IRR_JPEG_HEADERS/$JPEG_HEADER"
     done
 
     # Libogg
