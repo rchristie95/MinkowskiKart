@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Robson Christie - theoretical and computational physicist working on open quantum systems, quantum simulation, cosmology, and scientific software.">
+  <meta name="description" content="Robson Christie - theoretical and computational physicist working on open quantum systems, cosmology, scientific software, and the open-source relativistic racing game Minkowski Kart.">
   <title>Robson Christie // Open Quantum Systems</title>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
   <style>
@@ -154,6 +154,10 @@
     main {
       position: relative;
       z-index: 2;
+    }
+
+    section[id] {
+      scroll-margin-top: 88px;
     }
 
     .hero {
@@ -462,28 +466,108 @@
       font-weight: 700;
     }
 
-    .project {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 22px;
-      align-items: center;
-      padding: 28px;
-      background:
-        linear-gradient(90deg, rgba(57, 255, 136, 0.08), transparent 55%),
-        var(--panel-strong);
+    .game-feature {
+      padding-top: 18px;
     }
 
-    .big-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 50px;
-      padding: 0 18px;
+    .game-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(330px, 0.96fr);
+      overflow: hidden;
       border: 1px solid var(--line-strong);
-      background: var(--green);
-      color: #001405;
-      font-weight: 800;
-      white-space: nowrap;
+      background:
+        radial-gradient(circle at 90% 10%, rgba(213, 255, 106, 0.12), transparent 24rem),
+        linear-gradient(135deg, rgba(57, 255, 136, 0.09), transparent 56%),
+        var(--panel-strong);
+      box-shadow: var(--shadow), inset 0 0 42px rgba(57, 255, 136, 0.05);
+    }
+
+    .game-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(28px, 5vw, 58px);
+    }
+
+    .game-copy h2 {
+      margin: 8px 0 16px;
+      color: var(--warning);
+      font-size: clamp(2.25rem, 5vw, 4.8rem);
+      line-height: 0.92;
+      letter-spacing: -0.055em;
+      text-transform: uppercase;
+      text-shadow: 0 0 22px rgba(213, 255, 106, 0.2);
+    }
+
+    .game-lede {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(1.02rem, 1.5vw, 1.18rem);
+    }
+
+    .game-detail {
+      margin: 14px 0 0;
+      color: var(--muted);
+    }
+
+    .platform-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 22px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .platform-list li {
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.54);
+      color: var(--warning);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .game-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 26px 0 0;
+    }
+
+    .game-media {
+      position: relative;
+      min-height: 410px;
+      margin: 0;
+      border-left: 1px solid var(--line);
+      background: #000;
+    }
+
+    .game-media::after {
+      position: absolute;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(0, 17, 5, 0.32), transparent 25%),
+        linear-gradient(0deg, rgba(0, 0, 0, 0.78), transparent 38%);
+    }
+
+    .game-media img {
+      width: 100%;
+      height: 100%;
+      min-height: 410px;
+      object-fit: cover;
+    }
+
+    .game-media figcaption {
+      position: absolute;
+      right: 18px;
+      bottom: 14px;
+      z-index: 1;
+      color: var(--text);
+      font-size: 0.78rem;
+      text-shadow: 0 1px 8px #000;
     }
 
     .footer {
@@ -517,7 +601,7 @@
       .hero,
       .section-head,
       .grid.three,
-      .project {
+      .game-panel {
         grid-template-columns: 1fr;
       }
 
@@ -527,6 +611,16 @@
 
       .terminal-window {
         max-width: 440px;
+      }
+
+      .game-media {
+        min-height: 340px;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+
+      .game-media img {
+        min-height: 340px;
       }
 
       .role {
@@ -552,6 +646,10 @@
       section {
         padding: 42px 0;
       }
+
+      section[id] {
+        scroll-margin-top: 150px;
+      }
     }
   </style>
 </head>
@@ -565,6 +663,7 @@
         <span>robson_christie</span>
       </a>
       <div class="links">
+        <a href="#minkowski-kart">minkowski_kart</a>
         <a href="#research">research</a>
         <a href="#publications">papers</a>
         <a href="#cv">cv</a>
@@ -607,6 +706,32 @@
           </p>
         </div>
       </aside>
+    </section>
+
+    <section id="minkowski-kart" class="shell game-feature" aria-labelledby="minkowski-kart-title">
+      <article class="game-panel">
+        <div class="game-copy">
+          <span class="tagline">featured_release // version_1.9</span>
+          <h2 id="minkowski-kart-title">Minkowski Kart</h2>
+          <p class="game-lede">A free, open-source 3D kart racer that makes special relativity part of the race.</p>
+          <p class="game-detail">Race through time dilation, Doppler colour shifts, aberration, black-hole lensing, cosmic strings and linked wormholes, with local split-screen and LAN play.</p>
+          <ul class="platform-list" aria-label="Supported platforms">
+            <li>Windows</li>
+            <li>macOS</li>
+            <li>Linux</li>
+            <li>Android</li>
+          </ul>
+          <div class="game-actions">
+            <a class="button primary" href="https://rchristie95.github.io/MinkowskiKart/download.html">play / download</a>
+            <a class="button" href="https://rchristie95.github.io/MinkowskiKart/physics.html">explore_the_physics</a>
+            <a class="button" href="https://github.com/rchristie95/MinkowskiKart">source_code</a>
+          </div>
+        </div>
+        <figure class="game-media">
+          <img src="assets/minkowski-kart-relativistic-racing-game.webp" width="1920" height="1080" alt="Minkowski Kart race on the Mobius Trip track with the relativistic HUD visible">
+          <figcaption>Mobius Trip // genuine gameplay</figcaption>
+        </figure>
+      </article>
     </section>
 
     <section id="research" class="shell">
@@ -784,16 +909,6 @@
       </div>
     </section>
 
-    <section class="shell">
-      <article class="card project">
-        <div>
-          <span class="tagline">side_project</span>
-          <h2>minkowski_kart</h2>
-          <p class="muted">A SuperTuxKart fork for relativistic racing mechanics: black holes, time dilation, cosmic strings, Lorentz-grid frame shifts, and other spacetime-inspired systems.</p>
-        </div>
-        <a class="big-link" href="https://github.com/rchristie95/MinkowskiKart">github_repo</a>
-      </article>
-    </section>
   </main>
 
   <footer class="footer">

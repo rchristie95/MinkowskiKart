@@ -30,7 +30,7 @@ Minkowski Kart turns selected ideas from special relativity into readable racing
 - **Black-hole lensing and linked wormholes** as arcade power-ups, alongside photons, warp bubbles, and other physics-themed items.
 - **Solo racing, local split-screen, and LAN play**, with keyboard and configurable gamepad or joystick controls.
 
-This is a physics-inspired arcade game, not a scientifically exact simulation. Its motion uses Bullet-based kart dynamics with a relativistic speed cap; the black-hole, wormhole, and gravitational-wave effects are gameplay and screen-space approximations rather than solutions of Einstein's field equations. See [Physics and approximations](#physics-and-approximations).
+Minkowski Kart is a physics-inspired arcade game built for fast, playful racing. Bullet-based kart dynamics meet a relativistic speed cap, while black holes, wormholes, and gravitational waves become power-ups and screen-space effects. See [Physics and approximations](#physics-and-approximations).
 
 ## Download and play
 
@@ -51,7 +51,7 @@ No minimum CPU, GPU, memory, or Windows version has yet been established. Enhanc
 | macOS | Working universal package; headless initialization and unit tests also run in CI. |
 | Android | Working ARM64 APK for Android 5.0+; package structure and alignment are also checked in CI. |
 | Linux | Working x86-64 package. CI builds the client and server across GCC/Clang and Debug/Release configurations; redistributors should confirm `stk-assets` while the published archive's asset-completeness audit is finished. |
-| iOS | Ad-hoc IPA exists for development testing; it is not a general App Store installation package. |
+| iOS | Ad-hoc IPA for development testing. Player releases focus on Windows, macOS, Linux, and Android. |
 
 All release files are listed on the [version_1.9 release page](https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9).
 
@@ -92,9 +92,9 @@ Linux, Apple, Android, and Switch build recipes remain in their existing workflo
 
 The game computes beta and the Lorentz factor from each kart's speed and the configured in-game speed of light. It accumulates per-kart proper time, derives a relativistic aberration transform, estimates retarded emission positions, and applies a directional Doppler/searchlight colour transform in the renderer.
 
-The visual pipeline deliberately does **not** apply a second blanket Lorentz contraction to scene positions, normals, or tangents. Doppler colour shifting is conditional rather than a continuous high-speed filter. The arcade dynamics retain Bullet physics and enforce a relativistic velocity limit instead of implementing a complete relativistic rigid-body solver.
+The visual pipeline applies aberration and apparent-position transforms while keeping scene positions, normals, and tangents stable for responsive racing. Selected items and status effects activate the directional Doppler colour shift. Bullet physics and a relativistic velocity limit shape the arcade handling.
 
-Black holes use a homing projectile plus analytic screen-space lensing. Wormholes are linked, bidirectional teleporters with lensing effects; they do not render a physically correct see-through portal. These are curved-spacetime-inspired mechanics, not general-relativity simulations.
+Black holes combine a homing projectile with analytic screen-space lensing. Wormholes are linked, bidirectional teleporters whose lensing effects announce a shortcut through the track. Together they turn curved-spacetime inspiration into immediate arcade mechanics.
 
 For implementation detail and equations, see:
 

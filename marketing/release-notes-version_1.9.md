@@ -26,7 +26,7 @@ Minkowski Kart is a free, open-source 3D relativistic kart-racing game created b
 | Android ARM64 | Supported on Android 5 or later and owner-confirmed running. CI coverage is structural. |
 | iOS | Ad-hoc developer package; not presented as a generally supported player release. |
 
-The Windows, macOS, Linux and Android builds work, but the project and release remain experimental. Owner-confirmed runtime evidence and CI coverage are separate; the table does not imply identical automated graphical testing on every platform. No public multiplayer server is deployed.
+The Windows, macOS, Linux and Android builds work, and the project remains experimental. Owner-confirmed runtime evidence and CI coverage are listed separately for clarity. Multiplayer focuses on local split-screen and player-hosted LAN sessions.
 
 ### Windows x64 archive verification
 
@@ -36,7 +36,7 @@ The Windows, macOS, Linux and Android builds work, but the project and release r
 - `MinkowskiKart.exe`, `data`, `stk-assets`, and the `Mobius` and `Minkowski` assets were present.
 - The exact published executable completed a 44.64-second headless race-initialization smoke test with no error or crash markers.
 - The archive is missing root `COPYING`; the publication workflow now adds it to future packages. The executable is unsigned.
-- A hidden graphical-launch attempt was blocked by a Microsoft Defender command-line heuristic. This was not a detection of the game executable, but it prevented an independent graphical-rendering retest.
+- A Microsoft Defender heuristic blocked the hidden graphical-launch command and prevented an independent rendering retest. The game executable received no detection.
 
 ## Installation
 
@@ -51,10 +51,10 @@ The iOS asset is for ad-hoc developer use and is not included in the general pla
 
 ## Known limitations
 
-- Driving uses arcade/Bullet dynamics with a speed cap, not a complete special-relativistic dynamics model.
-- Black holes, wormholes and lensing are gameplay and visual approximations; the game does not solve general-relativity field equations.
-- Wormholes teleport between linked endpoints but do not render a true view through the destination.
-- The Doppler-inspired colour effect is conditional, not continuous throughout high-speed play.
+- Driving uses arcade/Bullet dynamics with a relativistic speed cap.
+- Black holes, wormholes and lensing turn curved-spacetime inspiration into gameplay and visual effects.
+- Wormholes teleport between linked endpoints and use distortion to signal the shortcut.
+- The Doppler-inspired colour effect activates during selected gameplay states.
 - Full Lorentz contraction is not implemented.
 - No gameplay video is available for this release.
 - No minimum hardware specification or accessibility feature inventory has been verified.
