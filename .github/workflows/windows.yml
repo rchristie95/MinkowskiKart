@@ -404,14 +404,36 @@ jobs:
           $consoleErr = Join-Path $verifyRoot "console-err.txt"
           $gameLog = Join-Path $verifyRoot "archive-smoke.log"
           $proc = $null
+          $aliveAtStop = $false
+          $exitCode = $null
+          $raceReady = $false
           try {
             $proc = Start-Process -FilePath "$pkg\bin\x86_64\MinkowskiKart.exe" `
               -ArgumentList @("--no-graphics", "--no-sound", "--race-now", "--track=mobius_track", "--kart=minkowski", "--laps=1", "--numkarts=2", "--stdout=archive-smoke.log", "--stdout-dir=$verifyRoot") `
               -RedirectStandardOutput $consoleOut `
               -RedirectStandardError $consoleErr `
               -PassThru -WorkingDirectory "$pkg\bin\x86_64"
-            Start-Sleep -Seconds 20
-            $alive = !$proc.HasExited
+            $deadline = (Get-Date).AddSeconds(60)
+            do {
+              if ($proc.HasExited) {
+                $proc.WaitForExit()
+                $exitCode = $proc.ExitCode
+                break
+              }
+              if (Test-Path -LiteralPath $gameLog -PathType Leaf) {
+                $liveOutput = Get-Content -LiteralPath $gameLog -Raw
+                if ($liveOutput -match "RaceManager created" -and $liveOutput -match "Setting track in RaceManager") {
+                  $raceReady = $true
+                  break
+                }
+              }
+              Start-Sleep -Seconds 2
+            } while ((Get-Date) -lt $deadline)
+            $aliveAtStop = !$proc.HasExited
+            if (!$aliveAtStop -and $null -eq $exitCode) {
+              $proc.WaitForExit()
+              $exitCode = $proc.ExitCode
+            }
           }
           finally {
             if ($null -ne $proc -and !$proc.HasExited) {
@@ -420,17 +442,27 @@ jobs:
             }
           }
 
-          if (!(Test-Path -LiteralPath $gameLog -PathType Leaf)) {
-            throw "FAILED: exact archive did not create its runtime log"
-          }
-          $output = Get-Content -LiteralPath $gameLog -Raw
-          foreach ($consolePath in @($consoleOut, $consoleErr)) {
-            if (Test-Path -LiteralPath $consolePath -PathType Leaf) {
-              $output += "`n" + (Get-Content -LiteralPath $consolePath -Raw)
+          $outputParts = @()
+          foreach ($diagnosticPath in @($gameLog, $consoleOut, $consoleErr)) {
+            if (Test-Path -LiteralPath $diagnosticPath -PathType Leaf) {
+              $outputParts += "===== $([IO.Path]::GetFileName($diagnosticPath)) ====="
+              $outputParts += Get-Content -LiteralPath $diagnosticPath -Raw
             }
           }
-          Write-Host $output
-          if (!$alive) { throw "FAILED: exact archive exited during headless race initialisation" }
+          $output = $outputParts -join "`n"
+          if ($output) {
+            Write-Host $output
+          }
+          if (!(Test-Path -LiteralPath $gameLog -PathType Leaf)) {
+            $state = if ($null -ne $exitCode) { "exit code $exitCode" } else { "still starting after 60 seconds" }
+            throw "FAILED: exact archive did not create its runtime log ($state)"
+          }
+          if (!$aliveAtStop) {
+            throw "FAILED: exact archive exited during headless race initialisation (exit code $exitCode)"
+          }
+          if (!$raceReady) {
+            throw "FAILED: exact archive did not reach race-manager initialisation within 60 seconds"
+          }
           if (!$output.Contains("MinkowskiKart, $env:release_tag.")) {
             throw "FAILED: archive executable version does not match $env:release_tag"
           }

@@ -5,8 +5,8 @@
   "start_url": "/MinkowskiKart/",
   "scope": "/MinkowskiKart/",
   "display": "standalone",
-  "background_color": "#050912",
-  "theme_color": "#07101d",
+  "background_color": "#000600",
+  "theme_color": "#000600",
   "icons": [
     {
       "src": "assets/icon-192.png",
