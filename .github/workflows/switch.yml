@@ -117,7 +117,7 @@ jobs:
           done
       - name: Handle build cache
         if: ${{ env.SWITCH_SUPPORTED == 'true' }}
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           # This is unnecessarily verbose and might break, but again ! seems broken
           # See: https://github.com/Mstrodl/stk-code/runs/2333673736?check_suite_focus=true#step:16:34

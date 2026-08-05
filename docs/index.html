@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minkowski Kart — Relativistic Kart-Racing Game</title>
+  <meta name="description" content="Minkowski Kart is a free open-source 3D relativistic kart-racing game with time dilation, Doppler colour effects, aberration, and physics-inspired power-ups.">
+  <link rel="canonical" href="https://rchristie95.github.io/MinkowskiKart/">
+  <meta name="theme-color" content="#07101d">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Minkowski Kart">
+  <meta property="og:title" content="Minkowski Kart — Relativistic Kart-Racing Game">
+  <meta property="og:description" content="Race through special-relativistic optics, time effects, and curved-spacetime-inspired arcade power-ups.">
+  <meta property="og:url" content="https://rchristie95.github.io/MinkowskiKart/">
+  <meta property="og:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:image:alt" content="Minkowski Kart racing on a curved Möbius track with the words Relativistic Kart Racing">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Minkowski Kart — Relativistic Kart-Racing Game">
+  <meta name="twitter:description" content="A free open-source 3D racing game with special-relativistic optics and physics-inspired power-ups.">
+  <meta name="twitter:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
+  <meta name="twitter:image:alt" content="Minkowski Kart racing on a curved Möbius track with the words Relativistic Kart Racing">
+  <link rel="icon" href="assets/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Minkowski Kart",
+    "alternateName": "MinkowskiKart",
+    "description": "A free open-source 3D relativistic kart-racing game with time-dilation gameplay, relativistic aberration, Doppler colour effects, and curved-spacetime-inspired power-ups.",
+    "url": "https://rchristie95.github.io/MinkowskiKart/",
+    "downloadUrl": "https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9",
+    "applicationCategory": "GameApplication",
+    "gamePlatform": ["Windows", "macOS", "Linux", "Android"],
+    "operatingSystem": "Windows; macOS; Linux; Android 5.0+",
+    "softwareVersion": "version_1.9",
+    "author": {"@type": "Person", "name": "Robson Christie", "url": "https://robsonchristie.com/"},
+    "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "image": "https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png",
+    "screenshot": [
+      "https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-relativistic-racing-game.webp",
+      "https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-black-hole-lensing.webp"
+    ],
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock"},
+    "codeRepository": "https://github.com/rchristie95/MinkowskiKart",
+    "isBasedOn": "https://github.com/supertuxkart/stk-code"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <nav class="nav-shell" aria-label="Primary navigation">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">MK/</span> Minkowski Kart</a>
+      <ul class="nav-links">
+        <li><a href="index.html" aria-current="page">Home</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="physics.html">Physics</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="https://github.com/rchristie95/MinkowskiKart">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Free · open source · experimental</p>
+        <h1>Minkowski Kart</h1>
+        <p class="subtitle">Relativistic kart racing</p>
+        <p class="lede">A 3D arcade racer where adjustable light speed, proper-time telemetry, aberration, Doppler colour effects, and spacetime-inspired power-ups reshape the track.</p>
+        <div class="actions">
+          <a class="button primary" href="download.html">Download version_1.9</a>
+          <a class="button" href="https://github.com/rchristie95/MinkowskiKart">View source on GitHub</a>
+        </div>
+        <ul class="proof-list" aria-label="Project facts">
+          <li>GPLv3+</li>
+          <li>Windows · macOS · Linux · Android</li>
+          <li>Keyboard + gamepad</li>
+          <li>Split-screen + LAN</li>
+        </ul>
+      </div>
+      <figure class="hero-figure">
+        <img src="assets/minkowski-kart-relativistic-racing-game.webp" width="1920" height="870" alt="Two karts racing on the Möbius Trip track while the HUD shows velocity, beta, proper time, and the configured speed of light">
+        <figcaption>Genuine in-game capture on Möbius Trip. The right-hand telemetry shows velocity, β, proper time τ, and the configured in-game speed of light c.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section" aria-labelledby="what-heading">
+      <p class="eyebrow">The game</p>
+      <h2 id="what-heading">Physics you can race through</h2>
+      <p class="section-intro">Minkowski Kart is an open-source relativistic kart-racing game created by Robson Christie. It extends SuperTuxKart with special-relativistic visual transforms, time-related mechanics, live physics telemetry, and a new family of arcade power-ups.</p>
+      <div class="grid">
+        <article class="card">
+          <p class="kicker">Optics</p>
+          <h3>Aberration and apparent position</h3>
+          <p>The renderer derives a Lorentz-based aberration transform and estimates retarded emission positions for moving geometry.</p>
+        </article>
+        <article class="card">
+          <p class="kicker">Time</p>
+          <h3>Proper-time telemetry</h3>
+          <p>Each kart tracks proper time from its Lorentz factor, while a radius-limited Time Dilation item changes nearby opponents' effective light speed.</p>
+        </article>
+        <article class="card">
+          <p class="kicker">Colour</p>
+          <h3>Conditional Doppler effects</h3>
+          <p>A directional spectral approximation shifts colours during selected item and status effects. It is not a permanent high-speed filter.</p>
+        </article>
+        <article class="card">
+          <p class="kicker">Power-ups</p>
+          <h3>Black holes and wormholes</h3>
+          <p>Homing black-hole projectiles create screen-space lensing; paired wormholes teleport karts between linked endpoints.</p>
+        </article>
+        <article class="card">
+          <p class="kicker">Play</p>
+          <h3>Solo, split-screen, and LAN</h3>
+          <p>Race AI opponents, configure multiple local input devices, or play over a local network. Public online infrastructure is not currently turnkey.</p>
+        </article>
+        <article class="card">
+          <p class="kicker">Controls</p>
+          <h3>Keyboard and gamepad</h3>
+          <p>Keyboard and configurable gamepad or joystick input are implemented. Bind controls from the in-game Options menu.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section split" aria-labelledby="honest-heading">
+      <div>
+        <p class="eyebrow">What it simulates</p>
+        <h2 id="honest-heading">Arcade racing, explicit approximations</h2>
+        <p>Minkowski Kart uses real special-relativistic equations for beta, gamma, proper-time bookkeeping, aberration, retarded apparent position, and a Doppler/searchlight colour model. The driving model remains a game: Bullet-based kart physics with a relativistic velocity cap.</p>
+        <p>The black holes, wormholes, and gravitational visual effects are inspired by curved spacetime. They do not solve general-relativity field equations, trace full light geodesics, or provide physically exact portal views.</p>
+        <div class="actions">
+          <a class="button" href="physics.html">Read the physics guide</a>
+          <a class="button" href="https://github.com/rchristie95/MinkowskiKart/tree/main/paper/ajp-minkowski-kart">Read the technical manuscript</a>
+        </div>
+      </div>
+      <figure class="feature-image">
+        <img src="assets/minkowski-kart-black-hole-lensing.webp" width="1920" height="870" loading="lazy" alt="Kart approaching a black-hole power-up while the track and background are distorted by the game's lensing effect">
+        <figcaption>In-game black-hole lensing is an analytic screen-space effect rather than a geodesic ray trace.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section" aria-labelledby="platform-heading">
+      <p class="eyebrow">Version_1.9</p>
+      <h2 id="platform-heading">Download with the evidence attached</h2>
+      <p class="section-intro">Working public builds are available for Windows, macOS, Linux, and Android. The exact Windows archive has also passed integrity, extraction, asset, and headless race-initialisation checks; every platform's evidence is stated separately.</p>
+      <div class="grid">
+        <article class="card success">
+          <p class="kicker">Best verified</p>
+          <h3>Windows x64</h3>
+          <p>The exact 1.09 GB release archive passes SHA-256, ZIP integrity, extraction, required-asset, and 44-second headless race-initialisation checks.</p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-win.zip">Download the Windows archive</a></p>
+        </article>
+        <article class="card success">
+          <p class="kicker">Working platforms</p>
+          <h3>macOS and Android</h3>
+          <p>Both packages run. macOS also passes headless CI tests; the Android 5.0+ ARM64 package also passes structural and alignment checks.</p>
+          <p><a href="download.html#other-platforms">Download and review CI evidence</a></p>
+        </article>
+        <article class="card success">
+          <p class="kicker">Working platform</p>
+          <h3>Linux</h3>
+          <p>The x86-64 package runs. CI also compiles client and server configurations with GCC and Clang; redistributors should confirm <code>stk-assets</code> while archive completeness is audited. The iOS IPA remains a separate ad-hoc developer package.</p>
+          <p><a href="download.html#other-platforms">Download Linux or review iOS</a></p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-shell">
+      <p>Minkowski Kart · Free software under GPLv3+ · Based on SuperTuxKart</p>
+      <div class="footer-links">
+        <a href="https://github.com/rchristie95/MinkowskiKart/issues">Report a bug</a>
+        <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/ATTRIBUTION.md">Credits and licences</a>
+        <a href="sitemap.xml">Sitemap</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

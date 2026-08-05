@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rchristie95.github.io/MinkowskiKart/sitemap.xml

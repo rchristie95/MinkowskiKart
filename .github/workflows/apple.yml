@@ -68,7 +68,7 @@ jobs:
             echo "cache_$number=apple-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.platform }}-$id" >> $GITHUB_ENV
           done
       - name: Handle build cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             apple-build

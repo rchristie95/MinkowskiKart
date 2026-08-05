@@ -1,134 +1,117 @@
-# Minkowski Kart: Relativistic Racing
+# Minkowski Kart
 
-Minkowski Kart is a 3D arcade kart-racing game built around the principles of special and general relativity. Originally forked from [SuperTuxKart](https://github.com/supertuxkart/stk-code), it transforms the racing experience by integrating relativistic effects into every aspect of gameplay, from the item system to the visual rendering.
+Minkowski Kart is a free, open-source 3D **relativistic kart-racing game** with time-dilation gameplay, relativistic aberration, Doppler colour effects, and curved-spacetime-inspired power-ups.
 
-```mermaid
-graph TD
-    subgraph Core_Engine [Core Engine]
-        Engine[MinkowskiKart Engine]
-        Physics[Bullet Physics]
-        Input[SDL2 Input]
-    end
+![Minkowski Kart racers on the Möbius Trip track with velocity, beta, proper-time, and speed-of-light telemetry](docs/assets/minkowski-kart-relativistic-racing-game.webp)
 
-    subgraph Relativistic_Systems [Relativistic Systems]
-        Renderer[SP Renderer]
-        Doppler[Doppler Shift VFX]
-        SpaceCollapse[Spacetime Collapse]
-        Tess[GPU Tessellation]
-    end
+<p align="center">
+  <a href="https://rchristie95.github.io/MinkowskiKart/download.html"><strong>Download Minkowski Kart</strong></a>
+  · <a href="https://rchristie95.github.io/MinkowskiKart/">Website</a>
+  · <a href="https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9">Latest release</a>
+  · <a href="https://github.com/rchristie95/MinkowskiKart">Source code</a>
+  · <a href="marketing/video/capture-checklist.md">Gameplay capture plan</a>
+</p>
 
-    subgraph Spacetime_Items [Spacetime Items]
-        Items[Item System]
-        Warp[Warp Bubble]
-        BH[Black Hole]
-        Portal[Wormhole]
-        Dilation[Time Dilation]
-    end
+<p align="center">
+  <img alt="Current release: version 1.9" src="https://img.shields.io/badge/release-version__1.9-61d8e6">
+  <img alt="Project status: experimental" src="https://img.shields.io/badge/status-experimental-f0b35a">
+  <img alt="Licence: GNU GPL version 3 or later" src="https://img.shields.io/badge/licence-GPLv3%2B-8bd450">
+  <a href="https://github.com/rchristie95/MinkowskiKart/actions/workflows/windows.yml"><img alt="Windows build workflow status" src="https://github.com/rchristie95/MinkowskiKart/actions/workflows/windows.yml/badge.svg"></a>
+</p>
 
-    subgraph Networking [Networking]
-        Online[Online Manager]
-        RelSync[Relativistic State Sync]
-    end
+## Race through relativity
 
-    Engine --> Physics
-    Engine --> Renderer
-    Engine --> Items
-    Engine --> Online
-    
-    Renderer --> Doppler
-    Renderer --> SpaceCollapse
-    Renderer --> Tess
-    
-    Items --> Warp
-    Items --> BH
-    Items --> Portal
-    Items --> Dilation
-    
-    Online --> RelSync
-```
+Minkowski Kart turns selected ideas from special relativity into readable racing mechanics and visual effects:
 
-Owned online multiplayer deployment and invitation setup are documented in
-[doc/ONLINE_INFRASTRUCTURE.md](doc/ONLINE_INFRASTRUCTURE.md).
+- **Adjustable speed of light** with live velocity, beta, Lorentz factor, and proper-time telemetry.
+- **Relativistic aberration and retarded apparent positions** applied to moving scene geometry.
+- **Directional Doppler colour shifting** during selected item and status effects.
+- **Time Dilation** waves that temporarily reduce the effective speed of light for nearby opponents.
+- **Black-hole lensing and linked wormholes** as arcade power-ups, alongside photons, warp bubbles, and other physics-themed items.
+- **Solo racing, local split-screen, and LAN play**, with keyboard and configurable gamepad or joystick controls.
 
-## Relativistic Item System
+This is a physics-inspired arcade game, not a scientifically exact simulation. Its motion uses Bullet-based kart dynamics with a relativistic speed cap; the black-hole, wormhole, and gravitational-wave effects are gameplay and screen-space approximations rather than solutions of Einstein's field equations. See [Physics and approximations](#physics-and-approximations).
 
-The core of Minkowski Kart is its spacetime-themed powerup system. Each item is designed to reflect relativistic concepts:
+## Download and play
 
-| Powerup | Effect |
+The current public release is **version_1.9**, with working builds for **Windows, macOS, Linux, and Android**. The exact published Windows archive passes SHA-256, full ZIP integrity, extraction, required gameplay-data and asset checks, and a 44-second headless race-initialisation smoke test. That archive predates the publication-workflow fix and omits a root copy of `COPYING`; the source licence remains available in this repository, and future Windows packages include it. The [download page](https://rchristie95.github.io/MinkowskiKart/download.html) separates confirmed platform support from the exact checks run for each package.
+
+### Windows x64
+
+1. Download [`MinkowskiKart-version_1.9-win.zip`](https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-win.zip).
+2. Extract the complete archive to a writable folder.
+3. Open the extracted folder and run `run_game.bat`.
+4. If Windows displays a security warning, verify the file came from the release link above before choosing whether to continue.
+
+No minimum CPU, GPU, memory, or Windows version has yet been established. Enhanced track tessellation requires desktop GLSL 4.00 or newer; the standard rendering mode has lower shader requirements that are not yet formally documented.
+
+| Package | Current evidence |
 |---|---|
-| **Warp Bubble** | A defensive shield that provides a short max-speed boost when fired forward. |
-| **Asteroid** | A heavy, rocky projectile that flies in a ballistic arc. |
-| **Black Hole** | A heavy homing projectile that orbits and pulls in targets. |
-| **Zipper** | A standard high-energy speed boost. |
-| **Photon** | Launches a high-speed tether on impact or triggers a Doppler-style blast. |
-| **Super Position** | A global spacetime collapse that rotates track pickups and pulses the world. |
-| **Anti-Karticle** | A mirrored clone that annihilates on contact with a pair-production flash. |
-| **Wormhole** | Spawns a linked pair of traversable spacetime portals. |
-| **Time Dilation** | A field-effect that slows down all other active karts. |
-| **Maxwell-Boltzmann** | Targets the leader with deterministic Gaussian velocity kicks. |
+| Windows | Working x64 build; the exact release archive passes integrity, extraction, gameplay-asset, and headless race-initialisation checks. Its missing root `COPYING` file is fixed for future packages. |
+| macOS | Working universal package; headless initialization and unit tests also run in CI. |
+| Android | Working ARM64 APK for Android 5.0+; package structure and alignment are also checked in CI. |
+| Linux | Working x86-64 package. CI builds the client and server across GCC/Clang and Debug/Release configurations; redistributors should confirm `stk-assets` while the published archive's asset-completeness audit is finished. |
+| iOS | Ad-hoc IPA exists for development testing; it is not a general App Store installation package. |
 
-The gameplay logic lives in `src/items/` and item weights are configured in [data/powerup.xml](data/powerup.xml).
+All release files are listed on the [version_1.9 release page](https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9).
 
-## Visual Effects and Rendering
+## Controls
 
-Minkowski Kart features specialized visual effects to represent relativistic phenomena:
+Controls are configurable in **Options → Controls**. Keyboard and gamepad/joystick input are supported. For local multiplayer, configure a separate input device or distinct keys for each player, choose **Splitscreen Multiplayer**, and press each device's fire control to join.
 
-- **Doppler Shifting:** Fullscreen flashes and color shifts during high-speed impacts.
-- **Spacetime Collapses:** Visual pulses and world-distortion during Super Position events.
-- **Gravitational Visuals:** Specialized rendering for Black Hole and Wormhole entities.
-- **Relativistic Apparent Position:** Calculations for world-space velocity effects.
+## Build from source
 
-### Track Clipping Mitigation
+Minkowski Kart uses CMake. The automated workflows in [`.github/workflows`](.github/workflows) are the clearest record of the currently exercised toolchains. A fresh Windows checkout needs a compiler/toolchain plus the matching SuperTuxKart dependency bundle; these large build dependencies are not stored in this repository.
 
-The Relativity options menu provides two local rendering modes for reducing kart/track clipping:
+### Windows with llvm-mingw and Ninja
 
-- **Cheap (lite subdivision + height correction):** Uses GPU subdivision and adjusts visual height against the physical track surface.
-- **Enhanced (strong subdivision):** Uses advanced tessellation shaders for solid and normal-mapped meshes with a stronger near-kart cutoff. Edge subdivision is dynamically scaled based on distance.
+Install CMake and Ninja, then place an llvm-mingw toolchain under `.build-tools/llvm-mingw/` and the matching dependency bundle at the repository root. The helper scripts `setup_cmake.ps1` and `setup_dependencies.ps1` can prepare parts of this environment, but downloaded dependencies are not yet content-hash pinned.
 
-Enhanced mode requires desktop GLSL 4.00+ or GLSL ES 3.20+.
+```powershell
+cmake -S . -B build -G Ninja `
+  -DCMAKE_MAKE_PROGRAM="$PWD/.build-tools/ninja/ninja.exe" `
+  -DLLVM_ARCH=x86_64 `
+  -DLLVM_PREFIX="$PWD/.build-tools/llvm-mingw/<toolchain-directory>" `
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/Toolchain-llvm-mingw.cmake" `
+  -DCHECK_ASSETS=OFF `
+  -DUSE_WIIUSE=OFF `
+  -DSTK_RELEASE_VERSION=version_1.9
 
-## Building The Project (Windows)
-
-This project uses CMake and Ninja with the llvm-mingw toolchain.
-
-### 1. Prerequisites
-
-- **CMake:** `winget install --id Kitware.CMake -e`
-- **llvm-mingw:** Download from [llvm-mingw releases](https://github.com/mstorsjo/llvm-mingw/releases) and extract to `.build-tools\llvm-mingw\`.
-- **Ninja:** Download from [Ninja releases](https://github.com/ninja-build/ninja/releases) and extract to `.build-tools\ninja\`.
-- **Dependencies:** Download Windows dependencies from the project repository and extract to the root directory.
-
-### 2. Configure and Build
-
-```bash
-# Configure
-cmake -S . -B build -G Ninja \
-  -DCMAKE_MAKE_PROGRAM=".build-tools/ninja/ninja.exe" \
-  -DLLVM_ARCH=x86_64 \
-  -DLLVM_PREFIX=".build-tools/llvm-mingw/llvm-mingw-..." \
-  -DCMAKE_TOOLCHAIN_FILE="cmake/Toolchain-llvm-mingw.cmake" \
-  -DCHECK_ASSETS=OFF \
-  -DUSE_WIIUSE=OFF
-
-# Build
-.build-tools/ninja/ninja.exe -C build -j4
+cmake --build build --parallel
 ```
 
-The executable is output to `build\bin\MinkowskiKart.exe`.
+The executable is written to `build/bin/MinkowskiKart.exe`. Run it with the repository data root:
 
-### 3. Run
-
-```bat
-run.bat
+```powershell
+./build/bin/MinkowskiKart.exe --root-data="$PWD/data"
 ```
 
-## Credits and Attribution
+Linux, Apple, Android, and Switch build recipes remain in their existing workflow and platform directories. See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.
 
-### Project Foundation
-This project was forked from SuperTuxKart (GPLv3). We are grateful to the SuperTuxKart team for their robust racing engine.
+## Physics and approximations
 
-### Relativity Concepts
-Relativistic rendering and math ideas are adapted from **OpenRelativity** by the MIT Game Lab (MIT License).
+The game computes beta and the Lorentz factor from each kart's speed and the configured in-game speed of light. It accumulates per-kart proper time, derives a relativistic aberration transform, estimates retarded emission positions, and applies a directional Doppler/searchlight colour transform in the renderer.
 
----
-Developed as an experimental exploration of relativistic physics in arcade gaming.
+The visual pipeline deliberately does **not** apply a second blanket Lorentz contraction to scene positions, normals, or tangents. Doppler colour shifting is conditional rather than a continuous high-speed filter. The arcade dynamics retain Bullet physics and enforce a relativistic velocity limit instead of implementing a complete relativistic rigid-body solver.
+
+Black holes use a homing projectile plus analytic screen-space lensing. Wormholes are linked, bidirectional teleporters with lensing effects; they do not render a physically correct see-through portal. These are curved-spacetime-inspired mechanics, not general-relativity simulations.
+
+For implementation detail and equations, see:
+
+- [`src/relativity/relativity_math.cpp`](src/relativity/relativity_math.cpp)
+- [`data/shaders/utils/relativity_visual.vert`](data/shaders/utils/relativity_visual.vert)
+- [`data/shaders/utils/relativity_color.frag`](data/shaders/utils/relativity_color.frag)
+- [`paper/ajp-minkowski-kart/`](paper/ajp-minkowski-kart)
+- [Website physics guide](https://rchristie95.github.io/MinkowskiKart/physics.html)
+
+## Multiplayer status
+
+Local split-screen and LAN play are implemented. The source also contains online services and server-authoritative relativity settings, but the public account, API, and relay infrastructure is not deployed as a turnkey service. See [`doc/ONLINE_INFRASTRUCTURE.md`](doc/ONLINE_INFRASTRUCTURE.md) for the operator setup and current limitations.
+
+## Credits, licence, and acknowledgements
+
+Minkowski Kart was created by **Robson Christie** and is based on [SuperTuxKart](https://github.com/supertuxkart/stk-code). It incorporates and adapts ideas and colour-shift code from the MIT Game Lab's [OpenRelativity](https://github.com/MITGameLab/OpenRelativity), under the MIT License.
+
+The program is distributed under the **GNU General Public License version 3 or later**; see [COPYING](COPYING). Bundled artwork, audio, tracks, and other assets retain their own attribution and licence records throughout `data/` and `stk-assets/`. See [ATTRIBUTION.md](ATTRIBUTION.md) for the project-level overview.
+
+Bug reports and build problems belong in [GitHub Issues](https://github.com/rchristie95/MinkowskiKart/issues). Please do not report security vulnerabilities publicly; use the process in [SECURITY.md](SECURITY.md).
