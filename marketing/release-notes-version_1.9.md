@@ -63,7 +63,9 @@ The iOS asset is for ad-hoc developer use and is not included in the general pla
 
 ## Integrity and feedback
 
-The exact Windows x64 archive's SHA-256 matched the expected value. After the workflow produces a corrected archive containing root `COPYING`, generate and publish that new archive's numeric digest in a user-facing sidecar checksum file. This audit did not verify checksums for the other platform archives.
+The exact Windows x64 archive's SHA-256 matched the expected value. When the workflow produces a corrected archive containing root `COPYING`, it also generates and publishes the replacement digest. This audit did not independently recalculate checksums for the other platform archives.
+
+The current Windows digest is also available as [`MinkowskiKart-version_1.9-win.zip.sha256`](https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-win.zip.sha256). The updated workflow replaces that sidecar whenever it replaces the Windows archive.
 
 Report bugs and package results in the [issue tracker](https://github.com/rchristie95/MinkowskiKart/issues). Include the release asset name, operating system, graphics hardware, input device, reproduction steps and logs.
 
