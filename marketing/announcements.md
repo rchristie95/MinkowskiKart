@@ -17,7 +17,7 @@ Minkowski Kart is an experimental, open-source 3D relativistic kart-racing game.
 
 You can adjust the game’s effective speed of light and follow beta, gamma, and proper-time telemetry while racing. The renderer includes retarded-position and aberration effects, with a conditional Doppler colour effect. The item set turns related ideas into arcade mechanics: a radius-limited time-dilation field affects nearby opponents, black holes home and distort the image, and linked wormholes teleport karts between two endpoints.
 
-This is a game experiment, not a complete or scientifically exact simulation. Kart dynamics remain arcade-style and speed-capped, the project does not solve general-relativity equations, and its black-hole and wormhole effects are gameplay representations. Split-screen and LAN play are included; there is not currently a project-operated public game server.
+This is a physics-inspired game experiment with speed-capped arcade handling, relativity telemetry, and playful black-hole and wormhole effects. Split-screen and player-hosted LAN play are included.
 
 Working `version_1.9` builds are supported for Windows, macOS, Linux and Android; the project owner confirms that all four run. Windows CI enters a race, and the exact published Windows ZIP's SHA-256 separately matched the expected value; CRC, extraction, content and a 44.64-second headless race-initialization smoke also passed. Its root `COPYING` is missing, the executable is unsigned and graphical rendering was not independently retested. macOS has owner-confirmed gameplay plus headless CI; Linux has owner-confirmed runtime evidence; and Android has owner-confirmed runtime evidence plus structural CI. A Linux `stk-assets` packaging concern remains under audit.
 
@@ -36,7 +36,7 @@ Hello! I’m sharing Minkowski Kart, an experimental GPLv3-or-later project buil
 
 The fork keeps arcade kart racing at its centre while adding a relativity-focused layer: an adjustable effective speed of light; beta, gamma, and proper-time telemetry; retarded-position and aberration rendering; a conditional Doppler colour effect; and spacetime-themed items. The time-dilation item acts within a limited radius, black holes combine a homing projectile with lensing, and paired wormholes teleport karts and add a lensing effect. Split-screen and LAN racing are present, alongside keyboard and gamepad controls.
 
-I want to be precise about scope: this is experimental game design, not full special-relativistic vehicle dynamics or a general-relativity solver. The karts still use speed-capped arcade physics, and the portal and gravitational visuals are approximations made for play.
+The project explores relativity through experimental game design. Speed-capped arcade physics keeps the karts responsive, while portal and gravitational visuals are tuned for play.
 
 Working builds are supported for Windows, macOS, Linux and Android, and the owner confirms that all four run. Windows has CI race-entry coverage; the exact published Windows ZIP also passed integrity, extraction, content and a 44.64-second headless race-initialization smoke, although it is unsigned, lacks root `COPYING` and was not graphically retested. macOS has owner-confirmed gameplay plus headless CI; Android has owner-confirmed runtime evidence plus structural CI; and Linux has owner-confirmed runtime evidence with an asset-packaging concern to check.
 
@@ -58,7 +58,7 @@ Feedback from people familiar with SuperTuxKart would be especially useful: do t
 
 Minkowski Kart is an open-source 3D kart racer that brings relativity-inspired rules and visuals into arcade racing. Players can change the effective speed of light, see beta/gamma and proper-time telemetry, and encounter time-dilation fields, homing black holes, and paired wormholes during a race. Retarded-position, aberration, lensing, and conditional Doppler colour effects alter how the action looks.
 
-It is deliberately an experimental game rather than a claim of scientific exactness. The driving model is still speed-capped arcade physics, and there is no project-operated public server; local split-screen and LAN play are available. The owner confirms that supported Windows, macOS, Linux and Android builds all run. The exact Windows release passed integrity, content and a 44.64-second headless race-init smoke; it remains unsigned, lacks root `COPYING` and was not graphically retested. CI coverage differs elsewhere, and the Linux archive still has a possible missing-`stk-assets` concern.
+It is deliberately an experimental game with speed-capped arcade physics, local split-screen, and player-hosted LAN play. The owner confirms that supported Windows, macOS, Linux and Android builds all run. The exact Windows release passed integrity, content and a 44.64-second headless race-init smoke; it remains unsigned, lacks root `COPYING` and was not graphically retested. CI coverage differs elsewhere, and the Linux archive still has a possible missing-`stk-assets` concern.
 
 If the premise sounds interesting, the project overview and download notes are here: <https://rchristie95.github.io/MinkowskiKart/>
 
@@ -78,7 +78,7 @@ Minkowski Kart is an experimental, open-source relativistic kart-racing game bui
 
 The player can adjust the effective speed of light and inspect beta, gamma, and proper-time telemetry. Rendering code applies retarded-position and aberration effects and can apply a Doppler colour effect under supported conditions. Relativity also becomes game logic: a time-dilation item affects other karts inside a limited radius, black holes act as homing projectiles with lensing, and linked wormholes teleport karts with a lensing effect.
 
-The boundaries matter. Vehicle motion remains Bullet-based, speed-capped arcade dynamics rather than full special-relativistic dynamics. Minkowski Kart does not solve general-relativity equations, render a true view through a portal, apply full Lorentz contraction, or show continuous high-speed Doppler shifting in every rendering path. The black holes and wormholes are game mechanics and visual approximations.
+Vehicle motion uses Bullet-based, speed-capped arcade dynamics. Selected equations drive the telemetry and renderer, while black holes, wormholes, and Doppler colour become readable game mechanics and visual effects.
 
 Working experimental builds are supported for Windows, macOS, Linux and Android, and the owner confirms that all four run. Windows has race-entry CI plus exact-archive integrity, content and 44.64-second headless race-init evidence; graphical rendering was not independently retested. macOS has owner-confirmed gameplay plus headless CI; Android has owner-confirmed runtime evidence plus structural CI; and Linux has owner-confirmed runtime evidence with a packaging concern around `stk-assets`.
 
@@ -104,7 +104,7 @@ Release: https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9
 
 ## Bluesky
 
-Experimental open-source relativistic kart-racing game for Windows, macOS, Linux & Android. Adjust c, watch beta/gamma and proper time, and race with time-dilation fields, black holes & wormholes. Arcade game, not full SR/GR.
+Experimental open-source relativistic kart racing for Windows, macOS, Linux & Android. Adjust c, watch beta/gamma and proper time, and race with time-dilation fields, black holes & wormholes.
 
 https://rchristie95.github.io/MinkowskiKart/
 
@@ -128,7 +128,7 @@ I’m Robson Christie, the creator of Minkowski Kart. I’ve been working on an 
 
 The game lets you adjust the effective speed of light and displays beta, gamma, and proper-time telemetry. It uses retarded positions, aberration, a conditional Doppler colour effect, and lensing effects. There are also arcade interpretations of the theme: a local time-dilation field, homing black holes, and linked wormholes that teleport karts. You can play with keyboard or gamepad, in split-screen or over LAN.
 
-I don’t want to oversell the science. The vehicle model remains speed-capped arcade physics, not full relativistic dynamics, and there is no general-relativity solver or true portal view. Working experimental builds are supported for Windows, macOS, Linux and Android, and I have confirmed all four run. The exact Windows archive passed integrity/content checks and a 44.64-second headless race-init smoke, but is unsigned, lacks root `COPYING` and was not graphically retested. macOS has headless CI, Android structural CI, and Linux a possible `stk-assets` packaging concern. There is no project-run public server.
+The vehicle model uses speed-capped arcade physics, with selected relativity calculations powering the telemetry, renderer, and item effects. Working experimental builds are supported for Windows, macOS, Linux and Android, and I have confirmed all four run. The exact Windows archive passed integrity/content checks and a 44.64-second headless race-init smoke; it is unsigned, lacks root `COPYING` and was not graphically retested. macOS has headless CI, Android structural CI, and Linux a possible `stk-assets` packaging concern. Multiplayer focuses on local split-screen and player-hosted LAN sessions.
 
 Project overview: <https://rchristie95.github.io/MinkowskiKart/>
 
@@ -154,7 +154,7 @@ The game has an adjustable effective speed of light, beta/gamma and proper-time 
 
 Working experimental builds are supported for Windows, macOS, Linux and Android. I have run all four. Windows CI covers race entry, and the exact release ZIP passed integrity/content plus a 44.64-second headless race-init smoke; it is unsigned, lacks root `COPYING` and was not graphically retested. macOS CI is headless, Android CI is structural, Linux has an archive asset concern, and iOS remains developer/ad-hoc.
 
-The engineering boundary is intentional: motion still uses speed-capped arcade physics, not full special-relativistic dynamics. It does not solve GR equations, implement full Lorentz contraction, or render a true view through each wormhole. OpenRelativity’s MIT-licensed colour-shift and mathematics work is credited as an inspiration.
+The engineering is tuned for play: motion uses speed-capped arcade physics, selected rendering transforms create the high-beta visuals, and linked teleporters power the wormholes. OpenRelativity’s MIT-licensed colour-shift and mathematics work is credited as an inspiration.
 
 Project and download notes: <https://rchristie95.github.io/MinkowskiKart/>
 

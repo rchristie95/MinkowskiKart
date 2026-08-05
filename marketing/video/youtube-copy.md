@@ -14,7 +14,7 @@ Working experimental builds are supported for Windows, macOS, Linux and Android.
 
 Adjust the in-game speed of light, follow beta, gamma and proper time, and race through retarded-position and aberration effects. Physics-themed items include a radius-limited time-dilation field, a homing black-hole projectile with lensing, and linked wormholes with teleportation and lensing.
 
-Minkowski Kart is experimental software, built from SuperTuxKart by Robson Christie. Its Bullet-based arcade dynamics and visual approximations are not a complete special- or general-relativity simulation.
+Minkowski Kart is experimental software built from SuperTuxKart by Robson Christie. Bullet-based arcade dynamics, a configurable light-speed cap, and real-time visual effects keep the racing playful.
 
 Website: https://rchristie95.github.io/MinkowskiKart/
 

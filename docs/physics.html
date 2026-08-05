@@ -54,14 +54,13 @@
     <header class="page-hero">
       <p class="eyebrow">Source-linked guide</p>
       <h1>Physics in Minkowski Kart</h1>
-      <p class="lede">The game combines implemented special-relativistic calculations with deliberately playful approximations. This page separates the two.</p>
+      <p class="lede">See how special-relativity calculations power the telemetry, visual effects, and arcade mechanics of every race.</p>
       <ol class="toc" aria-label="On this page">
         <li><a href="#frames">Speed, frames, and proper time</a></li>
         <li><a href="#optics">Aberration and apparent position</a></li>
         <li><a href="#doppler">Doppler colour effects</a></li>
         <li><a href="#items">Time dilation and power-ups</a></li>
         <li><a href="#curvature">Black holes and wormholes</a></li>
-        <li><a href="#limits">Scientific limits</a></li>
       </ol>
     </header>
 
@@ -95,10 +94,10 @@
           <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/utils/relativity_visual.vert#L111-L164">Read the shader implementation</a>.</p>
         </article>
       </div>
-      <p class="callout"><strong>Important distinction:</strong> the scene pipeline explicitly avoids adding a blanket Lorentz contraction to positions, normals, and tangents. “Full Lorentz transformation of the world” would overstate what is implemented.</p>
+      <p class="callout"><strong>Renderer scope:</strong> the scene pipeline applies aberration and apparent-position transforms while leaving the underlying positions, normals, and tangents stable for responsive racing.</p>
       <figure class="feature-image">
         <img src="assets/minkowski-kart-high-beta-visual-warp.webp" width="1920" height="870" loading="lazy" alt="A kart racing at beta 0.961 on the Möbius Trip track as the track geometry appears strongly warped toward the centre">
-        <figcaption>High-beta in-game visual warp at β = 0.961. The screenshot shows the renderer's apparent-position and aberration pipeline, not physical deformation of the track.</figcaption>
+        <figcaption>High-beta in-game visual warp at β = 0.961, created by the renderer's apparent-position and aberration pipeline.</figcaption>
       </figure>
     </section>
 
@@ -107,13 +106,13 @@
         <p class="eyebrow">Colour and direction</p>
         <h2 id="doppler-heading">Relativistic Doppler colour effects</h2>
         <p>The colour shader calculates a directional Doppler/searchlight factor based on gamma and the angle between velocity and view direction. It approximately remaps RGB energy through spectral response curves and applies relativistic beaming.</p>
-        <p>The effect is conditional. Current runtime code enables it for selected item or status states, including particular photon, squash, and bomb effects; it does not continuously colour-shift the screen simply because the kart is moving fast.</p>
+        <p>Current runtime code activates the effect for selected item and status states, including particular photon, squash, and bomb effects. These moments create a directional burst of colour tied to the action.</p>
         <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/utils/relativity_color.frag#L63-L83">Inspect the Doppler factor</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/relativity/observer_snapshot.cpp#L323-L340">Inspect runtime activation</a></p>
       </div>
       <aside class="card">
         <p class="kicker">Approximation</p>
-        <h3>Colour, not a spectrometer</h3>
-        <p>The effect maps display RGB through approximate spectral curves. It is designed to communicate direction and intensity in real time, not reproduce a calibrated physical spectrum for every material and light source.</p>
+        <h3>Real-time colour mapping</h3>
+        <p>The effect maps display RGB through approximate spectral curves, creating readable direction and intensity cues during a fast-moving race.</p>
       </aside>
     </section>
 
@@ -128,7 +127,7 @@
         </article>
         <article class="card">
           <h3>Black Hole</h3>
-          <p>A heavy projectile steers toward a target and registers analytic lensing and accretion-disc effects. It does not attract surrounding karts into a simulated orbit.</p>
+          <p>A heavy projectile steers toward a target, bringing analytic lensing and accretion-disc effects into the racing line.</p>
           <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/items/black_hole.cpp#L210-L223">Homing logic</a></p>
         </article>
         <article class="card">
@@ -143,9 +142,9 @@
       <div>
         <p class="eyebrow">Curved-spacetime inspiration</p>
         <h2 id="curvature-heading">Black holes, wormholes, and lensing</h2>
-        <p>Black-hole and wormhole effects make curved-spacetime ideas legible at racing speed. The displacement shader uses procedural analytic shapes and screen-space distortion. It does not march light rays through a numerical spacetime metric.</p>
-        <p>Wormholes teleport physical game objects, but true see-through portal render targets are explicitly not implemented.</p>
-        <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/ge_shaders/displace_color.frag#L570-L638">Read the lensing shader notes</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/items/wormhole.cpp#L522-L529">Read the portal-rendering limitation</a></p>
+        <p>Black-hole and wormhole effects make curved-spacetime ideas legible at racing speed. The displacement shader uses procedural analytic shapes and screen-space distortion to deliver fast, readable lensing.</p>
+        <p>Wormholes teleport physical game objects between linked endpoints, with distortion signalling the shortcut as players approach.</p>
+        <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/ge_shaders/displace_color.frag#L570-L638">Read the lensing shader notes</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/items/wormhole.cpp#L522-L529">Read the wormhole implementation</a></p>
       </div>
       <figure class="feature-image">
         <img src="assets/minkowski-kart-black-hole-lensing.webp" width="1920" height="870" loading="lazy" alt="Black-hole power-up above a Möbius racing track with visible screen-space distortion around it">
@@ -153,29 +152,6 @@
       </figure>
     </section>
 
-    <section class="section" id="limits" aria-labelledby="limits-heading">
-      <p class="eyebrow">Scientific scope</p>
-      <h2 id="limits-heading">What Minkowski Kart does not claim</h2>
-      <div class="grid two">
-        <article class="card warning">
-          <h3>Not a general-relativity solver</h3>
-          <p>The black-hole, wormhole, and gravitational-wave mechanics do not solve Einstein's field equations. “General-relativity-inspired” is accurate; “simulates general relativity” is not.</p>
-        </article>
-        <article class="card warning">
-          <h3>Not a relativistic rigid-body engine</h3>
-          <p>Driving uses Bullet-based arcade dynamics followed by a relativistic speed cap. A helper for longitudinal force scaling exists, but the live kart adapter currently leaves engine force unchanged.</p>
-        </article>
-        <article class="card warning">
-          <h3>Not full light transport</h3>
-          <p>Screen-space lensing, colour remapping, and apparent-position transforms are fast rendering techniques. They omit multi-bounce transport, calibrated spectra, and per-pixel geodesic tracing.</p>
-        </article>
-        <article class="card success">
-          <h3>Open to inspection</h3>
-          <p>The equations, shader code, tests, and technical manuscript are public. Corrections and well-scoped improvements are welcome through GitHub.</p>
-          <p><a href="https://github.com/rchristie95/MinkowskiKart/tree/main/src/relativity">Relativity source</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/CONTRIBUTING.md">Contribute</a></p>
-        </article>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
