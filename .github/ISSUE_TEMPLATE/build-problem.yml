@@ -1,0 +1,51 @@
+name: Build problem
+description: Report a configure, compile, package, or startup failure from a source build
+title: "[Build]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: revision
+    attributes:
+      label: Exact revision
+      description: Paste the full commit SHA or release tag.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Target and host platform
+      placeholder: Windows 11 x64 host, llvm-mingw x86_64 target
+    validations:
+      required: true
+  - type: textarea
+    id: toolchain
+    attributes:
+      label: Toolchain versions
+      description: Include CMake, compiler, Ninja or build tool, SDK/NDK, and dependency-bundle version as applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commands used
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Complete error output
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: attempts
+    attributes:
+      label: What you already tried
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Confirmation
+      options:
+        - label: I removed tokens, signing material, private paths, and other secrets from the output.
+          required: true

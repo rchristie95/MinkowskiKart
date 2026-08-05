@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Physics in Minkowski Kart — Effects and Approximations</title>
+  <meta name="description" content="Learn how Minkowski Kart implements beta, Lorentz factors, proper time, aberration, retarded apparent positions, Doppler colour effects, black holes, and wormholes.">
+  <link rel="canonical" href="https://rchristie95.github.io/MinkowskiKart/physics.html">
+  <meta name="theme-color" content="#07101d">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Minkowski Kart">
+  <meta property="og:title" content="Physics in Minkowski Kart">
+  <meta property="og:description" content="What the relativistic racing game calculates, what it approximates, and where to read the source.">
+  <meta property="og:url" content="https://rchristie95.github.io/MinkowskiKart/physics.html">
+  <meta property="og:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
+  <meta property="og:image:alt" content="Minkowski Kart racing on a curved Möbius track with the words Relativistic Kart Racing">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Physics in Minkowski Kart">
+  <meta name="twitter:description" content="A source-linked guide to the game's relativistic effects and deliberate approximations.">
+  <meta name="twitter:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
+  <link rel="icon" href="assets/icon-192.png" sizes="192x192">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Physics in Minkowski Kart: Effects and Approximations",
+    "description": "A source-linked explanation of the special-relativistic optics, time bookkeeping, and curved-spacetime-inspired gameplay in Minkowski Kart.",
+    "url": "https://rchristie95.github.io/MinkowskiKart/physics.html",
+    "author": {"@type": "Person", "name": "Robson Christie"},
+    "about": {"@type": "VideoGame", "name": "Minkowski Kart"},
+    "image": "https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <nav class="nav-shell" aria-label="Primary navigation">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">MK/</span> Minkowski Kart</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="physics.html" aria-current="page">Physics</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="https://github.com/rchristie95/MinkowskiKart">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <header class="page-hero">
+      <p class="eyebrow">Source-linked guide</p>
+      <h1>Physics in Minkowski Kart</h1>
+      <p class="lede">The game combines implemented special-relativistic calculations with deliberately playful approximations. This page separates the two.</p>
+      <ol class="toc" aria-label="On this page">
+        <li><a href="#frames">Speed, frames, and proper time</a></li>
+        <li><a href="#optics">Aberration and apparent position</a></li>
+        <li><a href="#doppler">Doppler colour effects</a></li>
+        <li><a href="#items">Time dilation and power-ups</a></li>
+        <li><a href="#curvature">Black holes and wormholes</a></li>
+        <li><a href="#limits">Scientific limits</a></li>
+      </ol>
+    </header>
+
+    <section class="section split" id="frames" aria-labelledby="frames-heading">
+      <div>
+        <p class="eyebrow">Special relativity</p>
+        <h2 id="frames-heading">Speed, Lorentz factor, and proper time</h2>
+        <p>The in-game speed of light <em>c</em> is adjustable from 15 to 1000 game units per second. For a kart moving at speed <em>v</em>, the relativity module calculates beta and the Lorentz factor:</p>
+        <p class="equation"><span aria-hidden="true">β = |v| / c &nbsp;&nbsp; γ = 1 / √(1 − β²)</span><span class="sr-only">Beta equals speed divided by the speed of light; gamma equals one divided by the square root of one minus beta squared.</span></p>
+        <p>Per-kart proper time accumulates at <span class="equation-inline">Δτ = Δt / γ</span>. The race HUD can display velocity, beta, proper time, and the configured <em>c</em>. Ordinary race timing remains coordinate time; proper time is additional telemetry.</p>
+        <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/relativity/relativity_math.cpp#L647-L697">Read the beta, gamma, and proper-time implementation</a>.</p>
+      </div>
+      <figure class="feature-image">
+        <img src="assets/minkowski-kart-relativistic-racing-game.webp" width="1920" height="870" alt="Two karts racing while the HUD reports velocity 20, beta 0.572, proper time 1 minute 1 second, and speed of light 35">
+        <figcaption>Telemetry in a genuine game capture: v, β, τ, and c are visible at the right.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section" id="optics" aria-labelledby="optics-heading">
+      <p class="eyebrow">How objects look</p>
+      <h2 id="optics-heading">Aberration and retarded apparent positions</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>Relativistic aberration</h3>
+          <p>The CPU and GPU implementations transform viewing directions using a Lorentz-derived aberration mapping. At high beta, forward and peripheral directions appear redistributed.</p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/relativity/relativity_math.cpp#L108-L185">CPU transform</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/utils/relativity_visual.vert#L46-L74">GPU transform</a></p>
+        </article>
+        <article class="card">
+          <h3>Retarded emission time</h3>
+          <p>The renderer estimates where light would have left a moving object before reaching the observer, then combines that apparent position with the aberration mapping.</p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/utils/relativity_visual.vert#L111-L164">Read the shader implementation</a>.</p>
+        </article>
+      </div>
+      <p class="callout"><strong>Important distinction:</strong> the scene pipeline explicitly avoids adding a blanket Lorentz contraction to positions, normals, and tangents. “Full Lorentz transformation of the world” would overstate what is implemented.</p>
+      <figure class="feature-image">
+        <img src="assets/minkowski-kart-high-beta-visual-warp.webp" width="1920" height="870" loading="lazy" alt="A kart racing at beta 0.961 on the Möbius Trip track as the track geometry appears strongly warped toward the centre">
+        <figcaption>High-beta in-game visual warp at β = 0.961. The screenshot shows the renderer's apparent-position and aberration pipeline, not physical deformation of the track.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section split" id="doppler" aria-labelledby="doppler-heading">
+      <div>
+        <p class="eyebrow">Colour and direction</p>
+        <h2 id="doppler-heading">Relativistic Doppler colour effects</h2>
+        <p>The colour shader calculates a directional Doppler/searchlight factor based on gamma and the angle between velocity and view direction. It approximately remaps RGB energy through spectral response curves and applies relativistic beaming.</p>
+        <p>The effect is conditional. Current runtime code enables it for selected item or status states, including particular photon, squash, and bomb effects; it does not continuously colour-shift the screen simply because the kart is moving fast.</p>
+        <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/utils/relativity_color.frag#L63-L83">Inspect the Doppler factor</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/relativity/observer_snapshot.cpp#L323-L340">Inspect runtime activation</a></p>
+      </div>
+      <aside class="card">
+        <p class="kicker">Approximation</p>
+        <h3>Colour, not a spectrometer</h3>
+        <p>The effect maps display RGB through approximate spectral curves. It is designed to communicate direction and intensity in real time, not reproduce a calibrated physical spectrum for every material and light source.</p>
+      </aside>
+    </section>
+
+    <section class="section" id="items" aria-labelledby="items-heading">
+      <p class="eyebrow">Mechanics</p>
+      <h2 id="items-heading">Time dilation and physics-themed power-ups</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Time Dilation</h3>
+          <p>A wave expands to a 75-unit radius over three seconds. Eligible opponents inside it receive a delayed, distance-scaled reduction in effective <em>c</em>; shields can absorb the effect.</p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/items/powerup.cpp#L447-L523">Source</a></p>
+        </article>
+        <article class="card">
+          <h3>Black Hole</h3>
+          <p>A heavy projectile steers toward a target and registers analytic lensing and accretion-disc effects. It does not attract surrounding karts into a simulated orbit.</p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/items/black_hole.cpp#L210-L223">Homing logic</a></p>
+        </article>
+        <article class="card">
+          <h3>Wormhole</h3>
+          <p>Two linked endpoints form a bidirectional shortcut. Entering one moves the kart to the other while transforming orientation and velocity.</p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/items/wormhole.cpp#L331-L410">Teleport logic</a></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section split" id="curvature" aria-labelledby="curvature-heading">
+      <div>
+        <p class="eyebrow">Curved-spacetime inspiration</p>
+        <h2 id="curvature-heading">Black holes, wormholes, and lensing</h2>
+        <p>Black-hole and wormhole effects make curved-spacetime ideas legible at racing speed. The displacement shader uses procedural analytic shapes and screen-space distortion. It does not march light rays through a numerical spacetime metric.</p>
+        <p>Wormholes teleport physical game objects, but true see-through portal render targets are explicitly not implemented.</p>
+        <p><a href="https://github.com/rchristie95/MinkowskiKart/blob/main/data/shaders/ge_shaders/displace_color.frag#L570-L638">Read the lensing shader notes</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/src/items/wormhole.cpp#L522-L529">Read the portal-rendering limitation</a></p>
+      </div>
+      <figure class="feature-image">
+        <img src="assets/minkowski-kart-black-hole-lensing.webp" width="1920" height="870" loading="lazy" alt="Black-hole power-up above a Möbius racing track with visible screen-space distortion around it">
+        <figcaption>A genuine in-game capture of the black-hole lensing effect.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section" id="limits" aria-labelledby="limits-heading">
+      <p class="eyebrow">Scientific scope</p>
+      <h2 id="limits-heading">What Minkowski Kart does not claim</h2>
+      <div class="grid two">
+        <article class="card warning">
+          <h3>Not a general-relativity solver</h3>
+          <p>The black-hole, wormhole, and gravitational-wave mechanics do not solve Einstein's field equations. “General-relativity-inspired” is accurate; “simulates general relativity” is not.</p>
+        </article>
+        <article class="card warning">
+          <h3>Not a relativistic rigid-body engine</h3>
+          <p>Driving uses Bullet-based arcade dynamics followed by a relativistic speed cap. A helper for longitudinal force scaling exists, but the live kart adapter currently leaves engine force unchanged.</p>
+        </article>
+        <article class="card warning">
+          <h3>Not full light transport</h3>
+          <p>Screen-space lensing, colour remapping, and apparent-position transforms are fast rendering techniques. They omit multi-bounce transport, calibrated spectra, and per-pixel geodesic tracing.</p>
+        </article>
+        <article class="card success">
+          <h3>Open to inspection</h3>
+          <p>The equations, shader code, tests, and technical manuscript are public. Corrections and well-scoped improvements are welcome through GitHub.</p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/tree/main/src/relativity">Relativity source</a> · <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/CONTRIBUTING.md">Contribute</a></p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-shell">
+      <p>Physics guide · Claims linked to the public source</p>
+      <div class="footer-links">
+        <a href="download.html">Download</a>
+        <a href="faq.html">FAQ</a>
+        <a href="https://github.com/rchristie95/MinkowskiKart/tree/main/paper/ajp-minkowski-kart">Technical manuscript</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minkowski Kart FAQ — Downloads, Platforms, and Physics</title>
+  <meta name="description" content="Answers about playing, downloading, supported platforms, open-source licensing, special relativity, general-relativity-inspired effects, and SuperTuxKart.">
+  <link rel="canonical" href="https://rchristie95.github.io/MinkowskiKart/faq.html">
+  <meta name="theme-color" content="#07101d">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Minkowski Kart">
+  <meta property="og:title" content="Minkowski Kart FAQ">
+  <meta property="og:description" content="Clear answers about downloads, platforms, physics, scientific scope, licensing, and the SuperTuxKart relationship.">
+  <meta property="og:url" content="https://rchristie95.github.io/MinkowskiKart/faq.html">
+  <meta property="og:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
+  <meta property="og:image:alt" content="Minkowski Kart racing on a curved Möbius track with the words Relativistic Kart Racing">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Minkowski Kart FAQ">
+  <meta name="twitter:description" content="Is it playable? Which platforms run it? What relativity does the game implement?">
+  <meta name="twitter:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
+  <link rel="icon" href="assets/icon-192.png" sizes="192x192">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"What is Minkowski Kart?","acceptedAnswer":{"@type":"Answer","text":"Minkowski Kart is a free open-source 3D relativistic kart-racing game created by Robson Christie."}},
+      {"@type":"Question","name":"Is Minkowski Kart playable?","acceptedAnswer":{"@type":"Answer","text":"Yes. Release version_1.9 has working packages for Windows, macOS, Linux, and Android."}},
+      {"@type":"Question","name":"Is Minkowski Kart free and open source?","acceptedAnswer":{"@type":"Answer","text":"Yes. Downloads cost zero and the program is distributed under GNU GPL version 3 or later."}},
+      {"@type":"Question","name":"Does Minkowski Kart simulate special relativity?","acceptedAnswer":{"@type":"Answer","text":"It implements beta and Lorentz-factor calculations, proper-time bookkeeping, relativistic aberration, retarded apparent positions, a directional Doppler colour model, and a relativistic speed cap inside an arcade racing game."}},
+      {"@type":"Question","name":"Does Minkowski Kart simulate general relativity?","acceptedAnswer":{"@type":"Answer","text":"No. Its black holes, wormholes, and lensing are curved-spacetime-inspired gameplay and screen-space approximations; the game does not solve Einstein's field equations."}}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <nav class="nav-shell" aria-label="Primary navigation">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">MK/</span> Minkowski Kart</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="physics.html">Physics</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="faq.html" aria-current="page">FAQ</a></li>
+        <li><a href="https://github.com/rchristie95/MinkowskiKart">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <header class="page-hero">
+      <p class="eyebrow">Straight answers</p>
+      <h1>Frequently asked questions</h1>
+      <p class="lede">Downloads, scientific scope, supported platforms, licensing, and how Minkowski Kart relates to the projects that came before it.</p>
+    </header>
+
+    <section class="section" aria-labelledby="faq-heading">
+      <h2 id="faq-heading">About the game</h2>
+      <div class="faq-list">
+        <details open>
+          <summary>What is Minkowski Kart?</summary>
+          <p>Minkowski Kart is a free, open-source 3D relativistic kart-racing game created by Robson Christie. It combines arcade kart racing with special-relativistic visual transforms, proper-time telemetry, time-related mechanics, and curved-spacetime-inspired power-ups.</p>
+        </details>
+        <details>
+          <summary>Is Minkowski Kart playable?</summary>
+          <p>Yes. The current public release is <a href="https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9">version_1.9</a>, with working packages for Windows, macOS, Linux, and Android. Windows CI enters a race, and the exact published Windows archive separately passed integrity, extraction, gameplay-asset, and 44-second headless race-initialisation checks.</p>
+        </details>
+        <details>
+          <summary>Is Minkowski Kart free?</summary>
+          <p>Yes. The release downloads cost zero, and the repository contains no requirement to purchase the game.</p>
+        </details>
+        <details>
+          <summary>Is Minkowski Kart open source?</summary>
+          <p>Yes. The program is distributed under the GNU General Public License version 3 or later. Individual assets retain the licences recorded beside them in the repository.</p>
+        </details>
+        <details>
+          <summary>Where can I download Minkowski Kart?</summary>
+          <p>Use the <a href="download.html">official download page</a> or the <a href="https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9">GitHub release page</a>. The Windows release currently has the broadest automated test coverage.</p>
+        </details>
+        <details>
+          <summary>Which operating systems are supported?</summary>
+          <p>Windows, macOS, Linux, and Android have working packages. The Android build is ARM64 and targets Android 5.0 or later. An ad-hoc iOS developer package also exists but is not a general App Store installation.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="science-heading">
+      <h2 id="science-heading">Relativity and scientific scope</h2>
+      <div class="faq-list">
+        <details open>
+          <summary>Does Minkowski Kart simulate special relativity?</summary>
+          <p>It implements several special-relativistic calculations inside an arcade game: beta and Lorentz factors, proper-time bookkeeping, a Lorentz-derived aberration transform, retarded apparent positions, directional Doppler colour effects, and a relativistic speed cap. Read the <a href="physics.html">physics guide</a> for source links and limitations.</p>
+        </details>
+        <details>
+          <summary>Does it include general relativity?</summary>
+          <p>It includes black-hole, wormhole, gravitational-wave, and lensing ideas as gameplay and visual effects. It does not solve Einstein's field equations or implement a general-relativity simulation.</p>
+        </details>
+        <details>
+          <summary>Is it intended as a scientifically exact simulation?</summary>
+          <p>No. Minkowski Kart is a physics-inspired racing game. Its optical equations and telemetry are inspectable, but its kart dynamics, power-ups, colour mapping, black-hole lensing, and wormholes make deliberate real-time and gameplay approximations.</p>
+        </details>
+        <details>
+          <summary>Does Doppler shifting happen whenever I drive fast?</summary>
+          <p>No. The current Doppler colour effect is activated for selected item and status conditions. The game does not apply a permanent full-screen shift solely because of speed.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="project-heading">
+      <h2 id="project-heading">Project and participation</h2>
+      <div class="faq-list">
+        <details open>
+          <summary>How is Minkowski Kart related to SuperTuxKart?</summary>
+          <p>It is developed from the SuperTuxKart codebase and retains its racing engine, many systems, and extensive upstream contributions. Minkowski Kart adds project-specific relativity, rendering, gameplay, track, packaging, and documentation work. Upstream notices and asset credits remain part of the project.</p>
+        </details>
+        <details>
+          <summary>How is it related to OpenRelativity?</summary>
+          <p>The project adapts relativistic visual-model ideas and colour-shift code from the MIT Game Lab's OpenRelativity project under the MIT License. The implementation is credited in the repository and technical manuscript.</p>
+        </details>
+        <details>
+          <summary>Does online multiplayer work?</summary>
+          <p>Local split-screen and LAN play are implemented. Online networking code also exists, including server-authoritative relativity settings, but a turnkey public account/API/relay service is not currently deployed.</p>
+        </details>
+        <details>
+          <summary>How can I report a bug or build problem?</summary>
+          <p>Use the project-specific forms on <a href="https://github.com/rchristie95/MinkowskiKart/issues/new/choose">GitHub Issues</a>. Include the exact version, platform, reproduction steps, and logs. Report sensitive security problems privately through the repository's <a href="https://github.com/rchristie95/MinkowskiKart/security/advisories/new">security advisory form</a>.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-shell">
+      <p>Minkowski Kart · Questions answered from public source and project evidence</p>
+      <div class="footer-links">
+        <a href="download.html">Download</a>
+        <a href="physics.html">Physics</a>
+        <a href="about.html">About</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

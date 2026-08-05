@@ -38,6 +38,10 @@ jobs:
         run: |
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "project_version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "project_version=${{ github.event.inputs.target_release }}" >> "$GITHUB_ENV"
+          elif [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/master" ]]; then
+            echo "project_version=preview" >> "$GITHUB_ENV"
           else
             echo "project_version=git" >> "$GITHUB_ENV"
           fi
@@ -76,7 +80,7 @@ jobs:
             echo "cache_$number=windows-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.os }}-$id" >> $GITHUB_ENV
           done
       - name: Handle build cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             build
@@ -239,16 +243,13 @@ jobs:
         run: |
           echo "release_tag=" >> $GITHUB_ENV
           echo "release_name=" >> $GITHUB_ENV
-      - name: Check for prerelease
+      - name: Configure prerelease status from release name
         shell : bash
-        if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || contains(github.ref, 'rc') || contains(github.ref, 'beta') }}
         run: |
-          echo "release_pre=true" >> $GITHUB_ENV
-      - name: Check for non-prerelease
-        shell : bash
-        if: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' && !contains(github.ref, 'rc') && !contains(github.ref, 'beta') }}
-        run: |
-          echo "release_pre=false" >> $GITHUB_ENV
+          case "$release_tag" in
+            preview|*rc*|*beta*) echo "release_pre=true" >> "$GITHUB_ENV" ;;
+            *) echo "release_pre=false" >> "$GITHUB_ENV" ;;
+          esac
       - name: Show packaging name
         shell : bash
         run : |
@@ -296,6 +297,7 @@ jobs:
           cp -r stk-assets MinkowskiKart-${{ env.release_tag }}-win/stk-assets
           cp -r stk-assets-custom/. MinkowskiKart-${{ env.release_tag }}-win/stk-assets/
           cp -r data MinkowskiKart-${{ env.release_tag }}-win/data
+          cp COPYING ATTRIBUTION.md README.md MinkowskiKart-${{ env.release_tag }}-win/
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             cp "MinkowskiKart-${{ env.release_tag }}-win/data/supertuxkart.git" \
               "MinkowskiKart-${{ env.release_tag }}-win/data/supertuxkart.${{ env.release_tag }}"
@@ -369,6 +371,79 @@ jobs:
         if: ${{ env.release_tag != '' }}
         run: |
           Compress-Archive -LiteralPath MinkowskiKart-${{ env.release_tag }}-win -DestinationPath MinkowskiKart-${{ env.release_tag }}-win.zip
+      - name: Verify exact archive and generate SHA-256 checksum
+        if: ${{ env.release_tag != '' }}
+        shell: pwsh
+        run: |
+          $archive = "MinkowskiKart-${{ env.release_tag }}-win.zip"
+          $verifyRoot = Join-Path $env:RUNNER_TEMP "minkowski-archive-verify"
+          Expand-Archive -LiteralPath $archive -DestinationPath $verifyRoot -Force
+          $pkg = Join-Path $verifyRoot "MinkowskiKart-${{ env.release_tag }}-win"
+
+          $required = @(
+            "run_game.bat",
+            "COPYING",
+            "ATTRIBUTION.md",
+            "README.md",
+            "bin\x86_64\MinkowskiKart.exe",
+            "data\stk_config.xml",
+            "stk-assets\tracks\mobius_track\track.xml",
+            "stk-assets\karts\minkowski\kart.xml"
+          )
+          foreach ($relativePath in $required) {
+            $path = Join-Path $pkg $relativePath
+            if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "FAILED: archive is missing $relativePath"
+            }
+          }
+
+          $env:SUPERTUXKART_DATADIR = (Resolve-Path $pkg).Path + "\"
+          $env:SUPERTUXKART_SAVEDIR = Join-Path $verifyRoot "smoke-profile"
+          New-Item -ItemType Directory -Force -Path $env:SUPERTUXKART_SAVEDIR | Out-Null
+          $consoleOut = Join-Path $verifyRoot "console-out.txt"
+          $consoleErr = Join-Path $verifyRoot "console-err.txt"
+          $gameLog = Join-Path $verifyRoot "archive-smoke.log"
+          $proc = $null
+          try {
+            $proc = Start-Process -FilePath "$pkg\bin\x86_64\MinkowskiKart.exe" `
+              -ArgumentList @("--no-graphics", "--no-sound", "--race-now", "--track=mobius_track", "--kart=minkowski", "--laps=1", "--numkarts=2", "--stdout=archive-smoke.log", "--stdout-dir=$verifyRoot") `
+              -RedirectStandardOutput $consoleOut `
+              -RedirectStandardError $consoleErr `
+              -PassThru -WorkingDirectory "$pkg\bin\x86_64"
+            Start-Sleep -Seconds 20
+            $alive = !$proc.HasExited
+          }
+          finally {
+            if ($null -ne $proc -and !$proc.HasExited) {
+              $proc.Kill()
+              $proc.WaitForExit()
+            }
+          }
+
+          if (!(Test-Path -LiteralPath $gameLog -PathType Leaf)) {
+            throw "FAILED: exact archive did not create its runtime log"
+          }
+          $output = Get-Content -LiteralPath $gameLog -Raw
+          foreach ($consolePath in @($consoleOut, $consoleErr)) {
+            if (Test-Path -LiteralPath $consolePath -PathType Leaf) {
+              $output += "`n" + (Get-Content -LiteralPath $consolePath -Raw)
+            }
+          }
+          Write-Host $output
+          if (!$alive) { throw "FAILED: exact archive exited during headless race initialisation" }
+          if (!$output.Contains("MinkowskiKart, $env:release_tag.")) {
+            throw "FAILED: archive executable version does not match $env:release_tag"
+          }
+          if ($output -notmatch "RaceManager created" -or $output -notmatch "Setting track in RaceManager") {
+            throw "FAILED: exact archive did not reach race-manager initialisation"
+          }
+          if ($output -match "Not all assets found|Invalid parameter|\[(?:fatal|error)\s*\]") {
+            throw "FAILED: exact archive reported an asset, argument, or runtime error"
+          }
+
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
+          "$hash  $archive" | Set-Content -LiteralPath "$archive.sha256" -Encoding ascii
+          Write-Host "Exact archive smoke test passed; SHA-256: $hash"
       - name: Install Mesa3D for headless OpenGL
         if: ${{ env.release_tag != '' }}
         shell: pwsh
@@ -385,7 +460,7 @@ jobs:
           if (Test-Path mesa\x64\libglapi.dll) {
             Copy-Item mesa\x64\libglapi.dll "$pkg\bin\x86_64\"
           }
-      - name: Smoke test packaged executable
+      - name: Smoke test staged package with CI-only Mesa
         if: ${{ env.release_tag != '' }}
         shell: pwsh
         run: |
@@ -433,13 +508,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MinkowskiKart-${{ env.release_tag }}-win
-          path: MinkowskiKart-${{ env.release_tag }}-win.zip
+          path: |
+            MinkowskiKart-${{ env.release_tag }}-win.zip
+            MinkowskiKart-${{ env.release_tag }}-win.zip.sha256
       - name: Create release
         if: ${{ env.release_tag != '' }}
         uses: ncipollo/release-action@v1.8.8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "MinkowskiKart-${{ env.release_tag }}-win.zip"
+          artifacts: "MinkowskiKart-${{ env.release_tag }}-win.zip,MinkowskiKart-${{ env.release_tag }}-win.zip.sha256"
           tag: ${{ env.release_name }}
           omitBodyDuringUpdate: true
           omitNameDuringUpdate: true

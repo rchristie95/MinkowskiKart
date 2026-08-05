@@ -1,0 +1,70 @@
+name: Bug report
+description: Report a Minkowski Kart crash, gameplay problem, or unintended behaviour
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Minkowski Kart. Do not use this form for security vulnerabilities; follow SECURITY.md instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: For example, version_1.9 or a full commit SHA.
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: Installation source
+      options:
+        - Windows release archive
+        - Linux release archive
+        - macOS release archive
+        - Android APK
+        - iOS development IPA
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating-system version, CPU, GPU/driver, and keyboard/gamepad details when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start Minkowski Kart
+        2. Choose …
+        3. Observe …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and captures
+      description: Attach stdout.log and a genuine screenshot or short capture when useful. Remove private information first.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmation
+      options:
+        - label: I searched for an existing report and removed credentials or private data from attachments.
+          required: true

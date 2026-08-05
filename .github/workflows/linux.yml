@@ -34,12 +34,6 @@ jobs:
         compiler: [gcc, clang]
         build_type: [Debug, Release]
         server_only: [ON, OFF]
-        exclude:
-          - os: macos-latest
-            compiler: gcc
-          - os: macos-latest
-            build_type: Debug
-
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

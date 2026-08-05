@@ -1,0 +1,22 @@
+{
+  "name": "Minkowski Kart",
+  "short_name": "Minkowski Kart",
+  "description": "Official website for the open-source relativistic kart-racing game.",
+  "start_url": "/MinkowskiKart/",
+  "scope": "/MinkowskiKart/",
+  "display": "standalone",
+  "background_color": "#050912",
+  "theme_color": "#07101d",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
