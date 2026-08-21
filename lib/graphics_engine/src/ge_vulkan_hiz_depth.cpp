@@ -217,7 +217,7 @@ void GEVulkanHiZDepth::init()
 // ----------------------------------------------------------------------------
 void GEVulkanHiZDepth::loadRenderingDescriptor()
 {
-    const size_t displace_binding_count = 5;
+    const size_t displace_binding_count = 6;
     VkDescriptorPoolSize pool_size;
     pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_size.descriptorCount = displace_binding_count;
@@ -277,6 +277,10 @@ void GEVulkanHiZDepth::loadRenderingDescriptor()
     image_infos[4].imageView =
         (VkImageView)m_vk->getTransparentTexture()->getTextureHandler();
     image_infos[4].sampler = m_vk->getSampler(GVS_NEAREST);
+    image_infos[5].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_infos[5].imageView =
+        (VkImageView)dfbo->getAttachment<GVDFT_NORMAL>()->getTextureHandler();
+    image_infos[5].sampler = m_vk->getSampler(GVS_NEAREST);
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
