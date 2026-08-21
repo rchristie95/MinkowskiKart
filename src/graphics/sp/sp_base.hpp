@@ -189,9 +189,11 @@ void drawBoundingBoxes();
 void loadShaders();
 // ----------------------------------------------------------------------------
 // Register a scene node belonging to an animated track object so that
-// estimateNodeVelocity always returns zero for it (animated track objects
-// such as balloons have large per-frame Bezier deltas that are not real
-// translational velocities, causing stutter in the relativistic shader).
+// estimateNodeVelocity always returns zero for it and all its descendants
+// (animated track objects such as balloons have large per-frame Bezier
+// deltas that are not real translational velocities, causing stutter in the
+// relativistic shader; animated library/LOD objects register their root
+// node while the rendered mesh nodes are children of it).
 void registerAnimatedTrackNode(const irr::scene::ISceneNode* node);
 // ----------------------------------------------------------------------------
 void unregisterAnimatedTrackNode(const irr::scene::ISceneNode* node);

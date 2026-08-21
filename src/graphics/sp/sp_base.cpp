@@ -171,15 +171,17 @@ core::vector3df estimateNodeVelocity(const scene::ISceneNode* node,
 
     // Animated track objects (balloons, etc.) are stationary in the world
     // frame; their Bezier-driven position deltas are visual-only and must not
-    // be fed into the relativistic shader as real velocities.
-    if (g_animated_track_nodes.count(node))
-        return core::vector3df(0.0f, 0.0f, 0.0f);
-
+    // be fed into the relativistic shader as real velocities. Walk the
+    // ancestors too: an animated library or LOD object registers its root
+    // node, but the mesh nodes actually rendered are its children, and they
+    // inherit the same non-physical motion (visible as warp popping on
+    // slow-moving environmental props).
     // Presentation objects (start referee etc.) are repositioned per camera
-    // per frame; their motion is not a physical velocity.
+    // per frame; their motion is not a physical velocity either.
     for (const scene::ISceneNode* cur = node; cur; cur = cur->getParent())
     {
-        if (g_presentation_nodes.count(cur))
+        if (g_animated_track_nodes.count(cur) ||
+            g_presentation_nodes.count(cur))
             return core::vector3df(0.0f, 0.0f, 0.0f);
     }
 
@@ -1255,7 +1257,11 @@ void addObject(SPMeshNode* node)
     const core::vector3df node_position(model_matrix[12], model_matrix[13],
                                         model_matrix[14]);
     core::vector3df node_velocity;
-    if (!findKartVelocityForNode(node, node_velocity))
+    // Same lookup order as fillNodeRelativityVelocity (GE/Vulkan): true
+    // physical velocities (kart, then flyable/prop override) before falling
+    // back to the graphics-delta estimator.
+    if (!findKartVelocityForNode(node, node_velocity) &&
+        !findNodeOverrideVelocity(node, node_velocity))
     {
         node_velocity = estimateNodeVelocity(node, node_position);
     }
