@@ -1918,15 +1918,19 @@ int handleCmdLine(bool has_server_config, bool has_parent_process)
  */
 void initUserConfig()
 {
-    file_manager = new FileManager();
-
+    // The FileManager constructor redirects stdout/stderr into the log file,
+    // so the log name and directory overrides must be applied before it runs
+    // or --stdout/--stdout-dir have no effect on the main log.
     std::string s;
-    if(CommandLine::has("--root", &s))
-        FileManager::addRootDirs(s);
     if (CommandLine::has("--stdout", &s))
         FileManager::setStdoutName(s);
     if (CommandLine::has("--stdout-dir", &s))
         FileManager::setStdoutDir(s);
+
+    file_manager = new FileManager();
+
+    if(CommandLine::has("--root", &s))
+        FileManager::addRootDirs(s);
 
     user_config  = new UserConfig();     // needs file_manager
     user_config->loadConfig();
@@ -2340,6 +2344,11 @@ int main(int argc, char *argv[])
         // handle all command line options that do not need (or must
         // not have) other managers initialised:
         initUserConfig();
+
+        // Stamp the (now redirected) log with the build version so every
+        // stdout.log identifies the release it came from; the packaging
+        // smoke test also asserts this line.
+        Log::info("main", "MinkowskiKart, %s.", STK_VERSION);
 
         CommandLine::addArgsFromUserConfig();
 
