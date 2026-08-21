@@ -1,4 +1,5 @@
 # Build artifacts
+cmake_build/
 build/
 build-dev/
 dl_apk/

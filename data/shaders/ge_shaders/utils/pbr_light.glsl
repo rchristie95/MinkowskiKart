@@ -1,3 +1,18 @@
+#include "relativity_bridge.glsl"
+#include "../../utils/relativity_visual.vert"
+
+// Point lights are stored at their true world positions, but geometry is
+// shaded at its relativistically warped (retarded + aberrated) position.
+// Warp the light center the same way (static scene lights: zero velocity)
+// so lights stay attached to the warped geometry around them instead of
+// illuminating the wrong pixels at high beta. Spot axes are left in the
+// world frame; their aberration is second order at track scales.
+vec3 getRelativisticLightWorldPosition(int i)
+{
+    return applyRelativisticVisualPosition(
+        vec4(u_global_light.m_lights[i].m_position_radius.xyz, 1.0)).xyz;
+}
+
 vec3 PBRLight(
     vec3 normal,
     vec3 eyedir,
@@ -114,8 +129,7 @@ vec3 accumulateLights(int light_count, vec3 diffuse_color, vec3 normal,
     for (int i = 0; i < light_count; i++)
     {
         vec3 light_to_frag = (u_camera.m_view_matrix *
-            vec4(u_global_light.m_lights[i].m_position_radius.xyz,
-            1.0)).xyz - xpos;
+            vec4(getRelativisticLightWorldPosition(i), 1.0)).xyz - xpos;
         float invrange = u_global_light.m_lights[i].m_color_inverse_square_range.w;
         float distance_sq = dot(light_to_frag, light_to_frag);
         if (distance_sq * invrange > 1.)
@@ -159,8 +173,7 @@ vec3 calculateLight(int i, vec3 diffuse_color, vec3 normal, vec3 xpos,
                     vec3 eyedir, float perceptual_roughness, float metallic)
 {
     vec3 light_to_frag = (u_camera.m_view_matrix *
-        vec4(u_global_light.m_lights[i].m_position_radius.xyz,
-        1.0)).xyz - xpos;
+        vec4(getRelativisticLightWorldPosition(i), 1.0)).xyz - xpos;
     float invrange = u_global_light.m_lights[i].m_color_inverse_square_range.w;
     float distance_sq = dot(light_to_frag, light_to_frag);
     if (distance_sq * invrange > 1.)

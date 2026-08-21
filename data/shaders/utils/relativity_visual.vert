@@ -130,10 +130,19 @@ vec3 getRelativisticEmissionRelativePosition(vec3 relative,
     if (discriminant < 0.0)
         return relative;
 
-    float emission_dt = (-b + sqrt(discriminant)) / a;
-    if (emission_dt > 0.0 || emission_dt < -1000.0)
+    // The equation a*t^2 + 2*b*t + c = 0 has two roots; one retarded (past
+    // emission) and one advanced (future). The physical retarded time is the
+    // largest negative root — the most recent past emission event. Consider
+    // both roots, matching the CPU implementation in relativity_math.cpp.
+    float sqrt_disc = sqrt(discriminant);
+    float root0 = (-b + sqrt_disc) / a;
+    float root1 = (-b - sqrt_disc) / a;
+    bool valid0 = root0 <= 0.0 && root0 >= -1000.0;
+    bool valid1 = root1 <= 0.0 && root1 >= -1000.0;
+    if (!valid0 && !valid1)
         return relative;
-
+    float emission_dt = valid0 && valid1 ?
+        max(root0, root1) : (valid0 ? root0 : root1);
     return relative + object_velocity * emission_dt;
 }
 

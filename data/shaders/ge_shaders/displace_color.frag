@@ -496,8 +496,12 @@ vec3 lightScatter(vec2 px)
     vec3 fog = vec3(0.0);
     for (int i = 0; i < u_global_light.m_light_count; i++)
     {
+        // Match pbr_light.glsl: scatter around the warped (retarded +
+        // aberrated) lamp image, not its unwarped world position.
         vec3 light_pos = (u_camera.m_view_matrix *
-            vec4(u_global_light.m_lights[i].m_position_radius.xyz, 1.0)).xyz;
+            vec4(applyRelativisticVisualPosition(vec4(
+            u_global_light.m_lights[i].m_position_radius.xyz, 1.0)).xyz,
+            1.0)).xyz;
         // The GL chain blurs its half-res scatter buffer (~20 full-res px),
         // spreading small bright lamp cores into soft orbs. Equivalent here:
         // widen the scattering radius and conserve the in-scattered energy.
