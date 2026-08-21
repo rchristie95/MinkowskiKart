@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Download Minkowski Kart version_1.9</title>
-  <meta name="description" content="Download working Minkowski Kart version_1.9 builds for Windows, macOS, Linux, and Android, verify SHA-256 digests, or build the game from source.">
+  <title>Download Minkowski Kart version_1.91</title>
+  <meta name="description" content="Download working Minkowski Kart version_1.91 builds for Windows, macOS, Linux, and Android, verify SHA-256 digests, or build the game from source.">
   <link rel="canonical" href="https://rchristie95.github.io/MinkowskiKart/download.html">
   <meta name="theme-color" content="#000600">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Minkowski Kart">
-  <meta property="og:title" content="Download Minkowski Kart version_1.9">
+  <meta property="og:title" content="Download Minkowski Kart version_1.91">
   <meta property="og:description" content="Get working Windows, macOS, Linux, and Android builds with exact CI and checksum information.">
   <meta property="og:url" content="https://rchristie95.github.io/MinkowskiKart/download.html">
   <meta property="og:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
   <meta property="og:image:alt" content="Minkowski Kart racing on a curved Möbius track with the words Relativistic Kart Racing">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Download Minkowski Kart version_1.9">
+  <meta name="twitter:title" content="Download Minkowski Kart version_1.91">
   <meta name="twitter:description" content="Download the open-source relativistic kart-racing game and review platform verification notes.">
   <meta name="twitter:image" content="https://rchristie95.github.io/MinkowskiKart/assets/minkowski-kart-social-preview.png">
   <link rel="icon" href="assets/icon-192.png" sizes="192x192">
@@ -25,11 +25,11 @@
   {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "Download Minkowski Kart version_1.9",
+    "name": "Download Minkowski Kart version_1.91",
     "url": "https://rchristie95.github.io/MinkowskiKart/download.html",
-    "description": "Official download and verification information for Minkowski Kart version_1.9.",
+    "description": "Official download and verification information for Minkowski Kart version_1.91.",
     "isPartOf": {"@type": "WebSite", "name": "Minkowski Kart", "url": "https://rchristie95.github.io/MinkowskiKart/"},
-    "about": {"@type": "VideoGame", "name": "Minkowski Kart", "softwareVersion": "version_1.9"}
+    "about": {"@type": "VideoGame", "name": "Minkowski Kart", "softwareVersion": "version_1.91"}
   }
   </script>
 </head>
@@ -52,11 +52,11 @@
   <main id="main">
     <header class="page-hero">
       <p class="eyebrow">Current release · 18 July 2026</p>
-      <h1>Download version_1.9</h1>
+      <h1>Download version_1.91</h1>
       <p class="lede">Working builds are available for Windows, macOS, Linux, and Android. The exact Windows x64 release archive passes integrity, extraction, required gameplay-data and asset checks, and a 44-second headless race-initialisation smoke test.</p>
       <div class="actions">
-        <a class="button primary" href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-win.zip">Download for Windows</a>
-        <a class="button" href="https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9">Release page</a>
+        <a class="button primary" href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.91/MinkowskiKart-version_1.91-win.zip">Download for Windows</a>
+        <a class="button" href="https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.91">Release page</a>
       </div>
     </header>
 
@@ -72,7 +72,7 @@
           <li>Configure keyboard or gamepad input under <strong>Options → Controls</strong>.</li>
         </ol>
         <div class="actions">
-          <a class="button primary" href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-win.zip">MinkowskiKart-version_1.9-win.zip</a>
+          <a class="button primary" href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.91/MinkowskiKart-version_1.91-win.zip">MinkowskiKart-version_1.91-win.zip</a>
         </div>
       </div>
       <aside class="card success" aria-labelledby="windows-verification-heading">
@@ -93,25 +93,27 @@
           <p class="kicker">Working · macOS</p>
           <h3>Universal macOS zip</h3>
           <p>The universal arm64/x86-64 package runs. CI also ad-hoc signs it and performs headless initialization and unit tests.</p>
-          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-mac.zip">Download macOS package (856 MB)</a></p>
+          <p>The app is not signed with a paid Apple Developer ID, so macOS quarantines it after download and it will not open at first. Remove the quarantine attribute from Terminal, adjusting the path to wherever you placed the app:</p>
+          <pre><code>xattr -rd com.apple.quarantine ~/Downloads/MinkowskiKart.app</code></pre>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.91/MinkowskiKart-version_1.91-mac.zip">Download macOS package (856 MB)</a></p>
         </article>
         <article class="card success">
           <p class="kicker">Working · Android</p>
           <h3>Android 5.0+ ARM64 APK</h3>
           <p>The ARM64 APK runs. CI targets Android SDK 21 or later and also checks package contents, native-library alignment, and required assets.</p>
-          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-android.apk">Download Android APK (194 MB)</a></p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.91/MinkowskiKart-version_1.91-android.apk">Download Android APK (194 MB)</a></p>
         </article>
         <article class="card success">
           <p class="kicker">Working · Linux</p>
           <h3>Linux x86-64 archive</h3>
           <p>The x86-64 package runs. CI additionally builds Linux client and server configurations with GCC and Clang in Debug and Release modes. Redistributors should confirm <code>stk-assets</code> while the published archive's asset-completeness audit is finished.</p>
-          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-linux-x86_64.tar.gz">Download Linux package (71 MB)</a></p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.91/MinkowskiKart-version_1.91-linux-x86_64.tar.gz">Download Linux package (71 MB)</a></p>
         </article>
         <article class="card warning">
           <p class="kicker">Developer package · iOS</p>
           <h3>Ad-hoc iOS IPA</h3>
           <p>The ad-hoc signed IPA is provided for developer testing through the CI workflow; the public player releases are Windows, macOS, Linux, and Android.</p>
-          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-ios.ipa">Download for development testing (836 MB)</a></p>
+          <p><a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.91/MinkowskiKart-version_1.91-ios.ipa">Download for development testing (836 MB)</a></p>
         </article>
       </div>
     </section>
@@ -124,17 +126,17 @@
         <table class="status-table">
           <thead><tr><th>Asset</th><th>SHA-256</th></tr></thead>
           <tbody>
-            <tr><td>Windows zip</td><td><code>60197bc29f5cdb8420c3dbdec08c9d25d6ba29af5b3505acde77dc09345d971a</code></td></tr>
-            <tr><td>macOS zip</td><td><code>7e9dca85723c3a9aaba9d71ae5ddd33b157fc5e42d812693331c31f01338519a</code></td></tr>
-            <tr><td>Linux x86-64 tar.gz</td><td><code>70a3720d8e82033569561a5d5ba8844dc28b908647687c55b4086bc05cd78fb1</code></td></tr>
-            <tr><td>Android APK</td><td><code>473ec56716db51e239b77b58af7f1c6364157341e3fbc7811541284d3e5d2afd</code></td></tr>
-            <tr><td>Android AAB</td><td><code>fe16071240b53787299a50c330861ab0c08122502c950132be2ee7cd542ae39b</code></td></tr>
-            <tr><td>iOS IPA</td><td><code>0cfcb839b93d8dd785c927778b98315ddb5c44ec7f56042ccc12588077b7ac5c</code></td></tr>
+            <tr><td>Windows zip</td><td><code>c9b28330e8e1fc63446791b9cb6c9134785a454598f5085002db9c04118bef90</code></td></tr>
+            <tr><td>macOS zip</td><td><code>91ed82f428e9b8505b01ba9970cdc249e9ec515d7915302e3730a498e0bf1fde</code></td></tr>
+            <tr><td>Linux x86-64 tar.gz</td><td><code>59fa4d6b976a5afd95d327aa1d11260babafa06778ba8c2137a44e32d76151e2</code></td></tr>
+            <tr><td>Android APK</td><td><code>e70251ad9f254b295ea5a135a078d09a5d7c6407959986b0ca6faf1eae6d2602</code></td></tr>
+            <tr><td>Android AAB</td><td><code>fc377834191b7b18edab950d146cfa9291c8cdc011e2c78e94e1e177aa2e6fc8</code></td></tr>
+            <tr><td>iOS IPA</td><td><code>76615d20c47ccac3a25ae77954d982a39df127f51e30358fcf8cbe662f64592f</code></td></tr>
           </tbody>
         </table>
       </div>
       <p>On Windows PowerShell, run:</p>
-      <pre><code>Get-FileHash -Algorithm SHA256 .\MinkowskiKart-version_1.9-win.zip</code></pre>
+      <pre><code>Get-FileHash -Algorithm SHA256 .\MinkowskiKart-version_1.91-win.zip</code></pre>
     </section>
 
     <section class="section split" aria-labelledby="requirements-heading">
@@ -148,7 +150,7 @@
       <aside class="card" aria-labelledby="source-build-heading">
         <p class="kicker">Source build</p>
         <h3 id="source-build-heading">Build the exact revision</h3>
-        <p>Clone the repository, check out <code>version_1.9</code>, install the platform toolchain and dependencies, and pass <code>-DSTK_RELEASE_VERSION=version_1.9</code> to CMake.</p>
+        <p>Clone the repository, check out <code>version_1.91</code>, install the platform toolchain and dependencies, and pass <code>-DSTK_RELEASE_VERSION=version_1.91</code> to CMake.</p>
         <p><a href="https://github.com/rchristie95/MinkowskiKart#build-from-source">Read the source-build guide</a></p>
         <p><a href="https://github.com/rchristie95/MinkowskiKart/actions">Inspect build logs</a></p>
       </aside>
@@ -157,7 +159,7 @@
 
   <footer class="site-footer">
     <div class="footer-shell">
-      <p>Minkowski Kart · Release information for version_1.9</p>
+      <p>Minkowski Kart · Release information for version_1.91</p>
       <div class="footer-links">
         <a href="https://github.com/rchristie95/MinkowskiKart/issues">Report a problem</a>
         <a href="https://github.com/rchristie95/MinkowskiKart/blob/main/COPYING">GPLv3+</a>
