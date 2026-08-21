@@ -50,7 +50,7 @@ No minimum CPU, GPU, memory, or Windows version has yet been established. Enhanc
 | Windows | Working x64 build; the exact release archive passes integrity, extraction, gameplay-asset, and headless race-initialisation checks. Its missing root `COPYING` file is fixed for future packages. |
 | macOS | Working universal package; headless initialization and unit tests also run in CI. |
 | Android | Working ARM64 APK for Android 5.0+; package structure and alignment are also checked in CI. |
-| Linux | Working x86-64 package. CI builds the client and server across GCC/Clang and Debug/Release configurations; redistributors should confirm `stk-assets` while the published archive's asset-completeness audit is finished. |
+| Linux | Working x86-64 package that bundles the complete `stk-assets` pack; packaging asserts the required tracks and karts are present before the archive is compressed. CI builds the client and server across GCC/Clang and Debug/Release configurations. |
 | iOS | Ad-hoc IPA for development testing. Player releases focus on Windows, macOS, Linux, and Android. |
 
 All release files are listed on the [version_1.9 release page](https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9).
