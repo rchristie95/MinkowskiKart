@@ -157,6 +157,18 @@ jobs:
           package="MinkowskiKart-${{ env.release_tag }}-linux-x86_64"
           mkdir "$package"
           cp -a /tmp/stk/usr/local/. "$package/"
+          # Bundle the full asset pack as a sibling of data/ (the file manager
+          # probes root_dir + "../stk-assets"), then overlay the repository's
+          # custom assets, mirroring the Windows packaging job.
+          wget -q https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip
+          unzip -q stk-assets-full.zip -d "$package/share/supertuxkart/stk-assets"
+          rm stk-assets-full.zip
+          cp -a stk-assets/. "$package/share/supertuxkart/stk-assets/"
+          # The package must be playable as shipped: require the custom track
+          # and kart plus a stock track from the full asset pack.
+          test -f "$package/share/supertuxkart/stk-assets/tracks/mobius_track/track.xml"
+          test -f "$package/share/supertuxkart/stk-assets/karts/minkowski/kart.xml"
+          test -f "$package/share/supertuxkart/stk-assets/tracks/lighthouse/track.xml"
           tar -czf "$package.tar.gz" "$package"
       - name: Upload Linux release artifact
         if: ${{ env.release_tag != '' && matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc' && matrix.build_type == 'Release' && matrix.server_only == 'OFF' }}
