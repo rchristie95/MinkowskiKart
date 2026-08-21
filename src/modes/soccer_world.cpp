@@ -24,6 +24,9 @@
 #include "io/file_manager.hpp"
 #include "graphics/irr_driver.hpp"
 #include "graphics/camera/camera_normal.hpp"
+#ifndef SERVER_ONLY
+#include "graphics/sp/sp_base.hpp"
+#endif
 #include "karts/abstract_kart_animation.hpp"
 #include "karts/kart_model.hpp"
 #include "karts/kart_properties.hpp"
@@ -233,6 +236,32 @@ public:
     }
 };   // BallGoalData
 
+#ifndef SERVER_ONLY
+namespace
+{
+// The football is a gameplay-critical collision object: at low c_light the
+// relativistic position warp displaces its rendered position away from the
+// hitbox karts actually collide with. Treat it like the arena hazard props
+// (see ThreeStrikesBattle): drop any velocity override and register the node
+// for the zero-velocity exemption so the visual stays locked to the physics
+// ball. PhysicalObject::updateGraphics skips exempted nodes, so the per-frame
+// physics velocity feed does not re-add the override.
+void setTrackObjectRelativityExempt(TrackObject* object, bool exempt)
+{
+    TrackObjectPresentationSceneNode* presentation = object ?
+        object->getPresentation<TrackObjectPresentationSceneNode>() : NULL;
+    if (!presentation || !presentation->getNode())
+        return;
+    SP::clearNodeRelativityVelocity(presentation->getNode());
+    if (exempt)
+        SP::registerAnimatedTrackNode(presentation->getNode());
+    else
+        SP::unregisterAnimatedTrackNode(presentation->getNode());
+}   // setTrackObjectRelativityExempt
+
+}   // namespace
+#endif
+
 //-----------------------------------------------------------------------------
 /** Constructor. Sets up the clock mode etc.
  */
@@ -253,6 +282,8 @@ SoccerWorld::SoccerWorld() : WorldWithRank()
     m_red_ai = 0;
     m_blue_ai = 0;
     m_ball_track_sector = NULL;
+    m_ball = NULL;
+    m_ball_body = NULL;
     m_bgd.reset(new BallGoalData());
 }   // SoccerWorld
 
@@ -261,6 +292,9 @@ SoccerWorld::SoccerWorld() : WorldWithRank()
  */
 SoccerWorld::~SoccerWorld()
 {
+#ifndef SERVER_ONLY
+    setTrackObjectRelativityExempt(m_ball, false);
+#endif
     m_goal_sound->deleteSFX();
 
     delete m_ball_track_sector;
@@ -308,6 +342,10 @@ void SoccerWorld::init()
     }
     if (!m_ball)
         Log::fatal("SoccerWorld","Ball is missing in soccer field, abort.");
+
+#ifndef SERVER_ONLY
+    setTrackObjectRelativityExempt(m_ball, true);
+#endif
 
     float radius = m_ball->getPhysicalObject()->getRadius();
     if (radius <= 0.0f)

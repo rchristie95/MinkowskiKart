@@ -1976,6 +1976,19 @@ void unregisterAnimatedTrackNode(const scene::ISceneNode* node)
 }   // unregisterAnimatedTrackNode
 
 // ----------------------------------------------------------------------------
+bool isAnimatedTrackNode(const scene::ISceneNode* node)
+{
+    if (g_animated_track_nodes.empty())
+        return false;
+    for (const scene::ISceneNode* cur = node; cur; cur = cur->getParent())
+    {
+        if (g_animated_track_nodes.count(cur))
+            return true;
+    }
+    return false;
+}   // isAnimatedTrackNode
+
+// ----------------------------------------------------------------------------
 void resetRelativityNodeCaches()
 {
     g_no_warp_texture_cache.clear();

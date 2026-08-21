@@ -198,6 +198,12 @@ void registerAnimatedTrackNode(const irr::scene::ISceneNode* node);
 // ----------------------------------------------------------------------------
 void unregisterAnimatedTrackNode(const irr::scene::ISceneNode* node);
 // ----------------------------------------------------------------------------
+// True if the node or an ancestor is registered as an animated track node,
+// i.e. it carries the zero-velocity relativity exemption. Lets per-frame
+// physics velocity feeds (PhysicalObject::updateGraphics) skip exempted
+// objects instead of re-adding them to the override map each frame.
+bool isAnimatedTrackNode(const irr::scene::ISceneNode* node);
+// ----------------------------------------------------------------------------
 // Register a camera-anchored presentation node (e.g. the start referee) so
 // that estimateNodeVelocity returns zero for it and all its descendants:
 // its per-frame repositioning is presentation-only, not physical motion.

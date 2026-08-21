@@ -664,9 +664,11 @@ void PhysicalObject::updateGraphics(float dt)
     // Feed the relativistic renderer this object's true physics velocity so
     // dynamic physical objects warp smoothly (like karts/flyables) instead of
     // using the noisy graphics-delta estimator. Cleared in the destructor.
+    // Objects with the zero-velocity relativity exemption (e.g. the soccer
+    // ball, whose visual must stay locked to its hitbox) are skipped.
     TrackObjectPresentationSceneNode* sn = m_object ?
         m_object->getPresentation<TrackObjectPresentationSceneNode>() : NULL;
-    if (sn && sn->getNode())
+    if (sn && sn->getNode() && !SP::isAnimatedTrackNode(sn->getNode()))
         SP::setNodeRelativityVelocity(sn->getNode(),
             Vec3(m_body->getLinearVelocity()).toIrrVector());
 #endif
