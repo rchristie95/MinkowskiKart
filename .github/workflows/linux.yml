@@ -87,7 +87,8 @@ jobs:
           sudo apt-get update 
           sudo apt install -y build-essential cmake libbluetooth-dev libcurl4-gnutls-dev \
           libfreetype6-dev libharfbuzz-dev libjpeg-dev libogg-dev libopenal-dev \
-          libpng-dev libsdl2-dev libvorbis-dev pkg-config zlib1g-dev clang
+          libpng-dev libsdl2-dev libvorbis-dev pkg-config zlib1g-dev clang \
+          libshaderc-dev glslang-dev spirv-tools
       - name: Install dylibbundler for packaging osx binary
         if: ${{ env.release_tag != '' && matrix.os == 'macos-latest' && matrix.build_type == 'Release' && matrix.server_only == 'OFF' }}
         run: |
@@ -133,7 +134,14 @@ jobs:
           $CXX --version
           mkdir "build"
           cd "build"
-          cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DSERVER_ONLY=$SERVER_ONLY -DCHECK_ASSETS=off -DBUILD_RECORDER=off -DNO_SHADERC=on;
+          # Vulkan needs shaderc to compile the GE shaders at runtime; -DNO_SHADERC=on
+          # defines DISABLE_SHADERC, which makes GEVulkanShaderManager compile nothing and
+          # abort with "No vulkan shaders compiled", so the game silently falls back to
+          # OpenGL even though render_driver already defaults to vulkan on Linux.
+          # Link shaderc statically so the release tarball stays self-contained: Debian's
+          # libshaderc_combined.a still needs glslang and SPIRV-Tools resolved explicitly.
+          SHADERC_LIBS="/usr/lib/x86_64-linux-gnu/libshaderc_combined.a;SPIRV-Tools-opt;SPIRV-Tools;glslang;SPIRV"
+          cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DSERVER_ONLY=$SERVER_ONLY -DCHECK_ASSETS=off -DBUILD_RECORDER=off -DSHADERC_LIBRARY="$SHADERC_LIBS";
       - name: Configure bulid (macos)
         if: ${{ matrix.os == 'macos-latest' }}
         env:
@@ -150,6 +158,21 @@ jobs:
         run: |
           make -j3 VERBOSE=1
           make install DESTDIR="/tmp/stk" VERBOSE=1
+      - name: Verify Vulkan shader support is compiled in
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.server_only == 'OFF' }}
+        run: |
+          set -euo pipefail
+          bin="/tmp/stk/usr/local/bin/MinkowskiKart"
+          test -x "$bin"
+          # A build with -DNO_SHADERC=on still exports the shaderc_* C entry points but
+          # links no compiler backend, so it aborts at runtime with "No vulkan shaders
+          # compiled" and falls back to OpenGL. glslang/SPIRV-Tools symbols are only
+          # present when shaderc is genuinely linked in.
+          if [ "$(nm -C "$bin" | grep -ciE 'glslang|spvtools')" -eq 0 ]; then
+            echo "Vulkan shader compilation is missing: shaderc was not linked into $bin."
+            echo "Do not build the Linux package with -DNO_SHADERC=on."
+            exit 1
+          fi
       - name: Package Linux release
         if: ${{ env.release_tag != '' && matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc' && matrix.build_type == 'Release' && matrix.server_only == 'OFF' }}
         run: |
