@@ -25,6 +25,7 @@
   */
 
 #include "utils/time.hpp"
+#include "addons/addon_id_safety.hpp"
 
 #include <assert.h>
 #include <string>
@@ -66,6 +67,9 @@ public:
     {
         return "addon_"+id;
     }   // createAddonId
+    // ------------------------------------------------------------------------
+    /** True when an external add-on id is a safe single directory component. */
+    static bool isValidAddonId(const std::string &id);
     // ------------------------------------------------------------------------
 
 private:

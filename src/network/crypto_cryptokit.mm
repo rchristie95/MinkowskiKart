@@ -168,6 +168,10 @@ ENetPacket* Crypto::encryptSend(BareNetworkString& ns, bool reliable)
 // ----------------------------------------------------------------------------
 NetworkString* Crypto::decryptRecieve(ENetPacket* p)
 {
+    // Encrypted packets contain a 4-byte counter and 16-byte GCM tag.
+    // Reject truncated datagrams before reading the counter or subtracting.
+    if (!p || p->dataLength <= 4 + 16)
+        throw std::runtime_error("Encrypted packet is too short.");
 
     std::array<uint8_t, 12> iv = {};
     if (NetworkConfig::get()->isClient())

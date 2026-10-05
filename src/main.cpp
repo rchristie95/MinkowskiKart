@@ -245,8 +245,10 @@ extern "C" {
 #include "modes/cutscene_world.hpp"
 #include "modes/demo_world.hpp"
 #include "network/protocols/connect_to_server.hpp"
+#include "network/crypto.hpp"
 #include "network/protocols/client_lobby.hpp"
 #include "network/protocols/server_lobby.hpp"
+#include "network/protocols/game_events_protocol.hpp"
 #include "network/network.hpp"
 #include "network/network_config.hpp"
 #include "network/network_string.hpp"
@@ -2944,6 +2946,14 @@ void runUnitTests()
     GraphicsRestrictions::unitTesting();
     Log::info("UnitTest", "NetworkString");
     NetworkString::unitTesting();
+    Log::info("UnitTest", "ConnectToServer discovery");
+    ConnectToServer::unitTesting();
+    Log::info("UnitTest", "Crypto short packets");
+    cryptoShortPacketUnitTesting();
+    Log::info("UnitTest", "Game event directions");
+    GameEventsProtocol::unitTesting();
+    Log::info("UnitTest", "Handshake packet length");
+    ServerLobby::unitTesting();
     Log::info("UnitTest", "RelativityMath");
     Relativity::unitTesting();
     Log::info("UnitTest", "RelativityObserverSnapshot");

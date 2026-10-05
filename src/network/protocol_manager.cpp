@@ -394,7 +394,8 @@ void ProtocolManager::update(int ticks)
             const std::string& name = (*i)->getPeer()->getAddress().toString();
             Log::error("ProtocolManager",
                 "Synchronous event error from %s: %s", name.c_str(), e.what());
-            Log::error("ProtocolManager", (*i)->data().getLogMessage().c_str());
+            const std::string message = (*i)->data().getLogMessage();
+            Log::error("ProtocolManager", "%s", message.c_str());
         }
         m_sync_events_to_process.lock();
         if (can_be_deleted)
@@ -453,8 +454,8 @@ void ProtocolManager::asynchronousUpdate()
             const std::string& name = (*i)->getPeer()->getAddress().toString();
             Log::error("ProtocolManager", "Asynchronous event "
                 "error from %s: %s", name.c_str(), e.what());
-            Log::error("ProtocolManager",
-                (*i)->data().getLogMessage().c_str());
+            const std::string message = (*i)->data().getLogMessage();
+            Log::error("ProtocolManager", "%s", message.c_str());
         }
 
         m_async_events_to_process.lock();

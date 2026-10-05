@@ -1292,6 +1292,8 @@ void STKHost::handleDirectSocketRequest(Network* direct_socket,
     {
         BareNetworkString s;
         s.addUInt16(getPrivatePort());
+        if (message.size() == 2 * sizeof(uint64_t))
+            s.addUInt64(message.getUInt64()).addUInt64(message.getUInt64());
         direct_socket->sendRawPacket(s, sender);
     }
     else

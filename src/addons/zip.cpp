@@ -18,7 +18,9 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <stdint.h>
 
+#include "addons/zip.hpp"
 #include "graphics/irr_driver.hpp"
 #include "io/file_manager.hpp"
 #include "utils/log.hpp"
@@ -30,27 +32,27 @@
 #include <IWriteFile.h>
 using namespace irr;
 using namespace io;
-s32 IFileSystem_copyFileToFile(IWriteFile* dst, IReadFile* src)
-{
-  char buf[1024];
-  const s32 sz = sizeof(buf) / sizeof(*buf);
 
-  s32 rx = src->getSize();
-  for (s32 r = 0; r < rx; /**/)
+bool copyFileBounded(IWriteFile* dst, IReadFile* src, uint64_t expected_size)
+{
+  char buf[8192];
+  uint64_t remaining = expected_size;
+  while (remaining > 0)
   {
-    s32 wx = src->read(buf, sz);
-    for (s32 w = 0; w < wx; /**/)
+    const u32 requested = (u32)(remaining < sizeof(buf) ? remaining : sizeof(buf));
+    const s32 read = src->read(buf, requested);
+    if (read <= 0 || (u32)read > requested) return false;
+    s32 written = 0;
+    while (written < read)
     {
-      s32 n = dst->write(buf + w, wx - w);
-      if (n < 0)
-        return -1;
-      else
-        w += n;
+      const s32 n = dst->write(buf + written, read - written);
+      if (n <= 0) return false;
+      written += n;
     }
-    r += wx;
+    remaining -= (u32)read;
   }
-  return rx;
-}   // IFileSystem_copyFileToFile
+  return src->getPos() == src->getSize();
+}
 
 // ----------------------------------------------------------------------------
 /** Extracts all files from the zip archive 'from' to the directory 'to'.
@@ -58,13 +60,14 @@ s32 IFileSystem_copyFileToFile(IWriteFile* dst, IReadFile* src)
  *  \param to The destination directory.
  *  \return True if successful.
  */
-bool extract_zip(const std::string &from, const std::string &to, bool recursive)
+bool extract_zip(const std::string &from, const std::string &to, bool recursive,
+                 const ZipSafety::Limits& limits)
 {
     //Add the zip to the file system
     IFileSystem *file_system = irr_driver->getDevice()->getFileSystem();
     if(!file_system->addFileArchive(from.c_str(),
                                     /*ignoreCase*/false,
-                                   /*ignorePath*/!recursive, io::EFAT_ZIP))
+                                   /*ignorePath*/false, io::EFAT_ZIP))
     {
         return false;
     }
@@ -74,32 +77,81 @@ bool extract_zip(const std::string &from, const std::string &to, bool recursive)
     io::IFileArchive *zip_archive =
         file_system->getFileArchive(file_system->getFileArchiveCount()-1);
     const io::IFileList *zip_file_list = zip_archive->getFileList();
+    if (!zip_file_list ||
+        !ZipSafety::withinBudget(zip_file_list->getFileCount(), 0, limits))
+    {
+        file_system->removeFileArchive(file_system->getAbsolutePath(from.c_str()));
+        return false;
+    }
+    uint64_t expanded_bytes = 0;
+    for (u32 i = 0; i < zip_file_list->getFileCount(); ++i)
+    {
+        if (zip_file_list->isDirectory(i)) continue;
+        const uint64_t size = zip_file_list->getFileSize(i);
+        const std::string archive_name = zip_file_list->getFullFileName(i).c_str();
+        std::string output_name = archive_name;
+        if (!recursive)
+            output_name = StringUtils::getBasename(output_name);
+        if (!ZipSafety::isSafeName(archive_name) ||
+            !ZipSafety::isSafeName(output_name) ||
+            !ZipSafety::canAddFile(expanded_bytes, size, limits))
+        {
+            file_system->removeFileArchive(file_system->getAbsolutePath(from.c_str()));
+            return false;
+        }
+        expanded_bytes += size;
+    }
     // Copy all files from the zip archive to the destination
     bool error = false;
     for(unsigned int i=0; i<zip_file_list->getFileCount(); i++)
     {
         if(zip_file_list->isDirectory(i)) continue;
         if(zip_file_list->getFileName(i)[0]=='.') continue;
-        std::string base = zip_file_list->getFullFileName(i).c_str();
+        std::string archive_name = zip_file_list->getFullFileName(i).c_str();
+        std::string base = archive_name;
         if (!recursive)
             base = StringUtils::getBasename(base);
+
+        // All paths and sizes were validated before extraction starts.
 
         Log::debug("addons", "Unzipping file '%s'.", base.c_str());
 
         IReadFile* src_file =
-            zip_archive->createAndOpenFile(base.c_str());
+            zip_archive->createAndOpenFile(archive_name.c_str());
         if(!src_file)
         {
             Log::warn("addons", "Can't read file '%s'. This is ignored, but the addon might not work", base.c_str());
             error = true;
             continue;
         }
+        if (src_file->getSize() < 0 ||
+            (uint64_t)src_file->getSize() != zip_file_list->getFileSize(i))
+        {
+            Log::warn("addons", "Archive size mismatch for '%s'.", base.c_str());
+            src_file->drop();
+            error = true;
+            continue;
+        }
 
         std::string file_location = to + "/" + base;
+        if (!ZipSafety::isConfinedPath(to, base))
+        {
+            Log::warn("addons", "Refusing to write through a link in '%s'.", file_location.c_str());
+            src_file->drop();
+            error = true;
+            continue;
+        }
         if (recursive)
         {
             const std::string& dir = StringUtils::getPath(file_location);
             file_manager->checkAndCreateDirectoryP(dir);
+        }
+        if (!ZipSafety::isConfinedPath(to, base))
+        {
+            Log::warn("addons", "Refusing to write through a link in '%s'.", file_location.c_str());
+            src_file->drop();
+            error = true;
+            continue;
         }
         IWriteFile* dst_file =
             file_system->createAndWriteFile(file_location.c_str());
@@ -110,7 +162,7 @@ bool extract_zip(const std::string &from, const std::string &to, bool recursive)
             continue;
         }
 
-        if (IFileSystem_copyFileToFile(dst_file, src_file) < 0)
+        if (!copyFileBounded(dst_file, src_file, zip_file_list->getFileSize(i)))
         {
             Log::warn("addons", "Could not copy '%s' from archive '%s'. This is ignored, but the addon might not work.",
                       base.c_str(), from.c_str());

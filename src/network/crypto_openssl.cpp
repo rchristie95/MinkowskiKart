@@ -210,6 +210,8 @@ ENetPacket* Crypto::encryptSend(BareNetworkString& ns, bool reliable)
 // ----------------------------------------------------------------------------
 NetworkString* Crypto::decryptRecieve(ENetPacket* p)
 {
+    if (!p || p->dataLength <= 4 + m_tag_size)
+        throw std::runtime_error("Encrypted packet is too short.");
     int clen = (int)(p->dataLength - 4 - m_tag_size);
     auto ns = std::unique_ptr<NetworkString>(new NetworkString(p->data, clen));
 

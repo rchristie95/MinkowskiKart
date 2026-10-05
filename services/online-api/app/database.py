@@ -44,3 +44,10 @@ def _ensure_user_columns(engine) -> None:
             conn.execute(text(
                 "ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL "
                 "DEFAULT FALSE"))
+        if "user_sessions" in inspector.get_table_names():
+            session_columns = {col["name"] for col in
+                               inspect(engine).get_columns("user_sessions")}
+            if "session_type" not in session_columns:
+                conn.execute(text(
+                    "ALTER TABLE user_sessions ADD COLUMN session_type "
+                    "VARCHAR(16) NOT NULL DEFAULT 'game'"))

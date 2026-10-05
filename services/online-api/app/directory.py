@@ -9,9 +9,13 @@ from redis import Redis
 
 
 class MemoryDirectory:
-    def __init__(self, listing_ttl: int, join_ttl: int):
+    def __init__(self, listing_ttl: int, join_ttl: int,
+                 join_max_entries: int = 64,
+                 join_max_payload_bytes: int = 4096):
         self.listing_ttl = listing_ttl
         self.join_ttl = join_ttl
+        self.join_max_entries = join_max_entries
+        self.join_max_payload_bytes = join_max_payload_bytes
         self._next_id = 1
         self._servers: dict[int, dict[str, Any]] = {}
         self._owner_server: dict[int, int] = {}
@@ -85,13 +89,18 @@ class MemoryDirectory:
             self._cleanup()
             if server_id not in self._servers:
                 return False
+            record = dict(values, id=str(user_id))
+            if len(json.dumps(record).encode("utf-8")) > self.join_max_payload_bytes:
+                return False
             expiry = time.time() + self.join_ttl
             pending = self._joins.setdefault(server_id, [])
             pending[:] = [
                 request for request in pending
                 if int(request["id"]) != user_id and request["_expires_at"] > time.time()
             ]
-            pending.append(dict(values, id=str(user_id), _expires_at=expiry))
+            if len(pending) >= self.join_max_entries:
+                return False
+            pending.append(dict(record, _expires_at=expiry))
             return True
 
     def poll_joins(self, owner_id: int,
@@ -122,10 +131,55 @@ class MemoryDirectory:
 
 
 class RedisDirectory:
-    def __init__(self, redis_url: str, listing_ttl: int, join_ttl: int):
+    def __init__(self, redis_url: str, listing_ttl: int, join_ttl: int,
+                 join_max_entries: int = 64,
+                 join_max_payload_bytes: int = 4096):
         self.redis = Redis.from_url(redis_url, decode_responses=True)
         self.listing_ttl = listing_ttl
         self.join_ttl = join_ttl
+        self.join_max_entries = join_max_entries
+        self.join_max_payload_bytes = join_max_payload_bytes
+
+    _ADD_JOIN = """
+    local key = KEYS[1]
+    local user_id = ARGV[1]
+    local entries = redis.call('LRANGE', key, 0, -1)
+    for _, item in ipairs(entries) do
+      local ok, decoded = pcall(cjson.decode, item)
+      if not ok or type(decoded) ~= 'table' or type(decoded.id) ~= 'string' then
+        redis.call('LREM', key, 0, item)
+      elseif tostring(decoded.id) == user_id then
+        redis.call('LREM', key, 0, item)
+      end
+    end
+    if redis.call('LLEN', key) >= tonumber(ARGV[3]) then return 0 end
+    redis.call('RPUSH', key, ARGV[2])
+    redis.call('EXPIRE', key, tonumber(ARGV[4]))
+    return 1
+    """
+
+    _CLEAR_USER_JOINS = """
+    local key = KEYS[1]
+    local user_id = ARGV[1]
+    local ttl = redis.call('PTTL', key)
+    local entries = redis.call('LRANGE', key, 0, -1)
+    local remaining = {}
+    for _, item in ipairs(entries) do
+      local ok, decoded = pcall(cjson.decode, item)
+      if (ok and type(decoded) == 'table' and type(decoded.id) == 'string'
+          and tostring(decoded.id) ~= user_id) then
+        table.insert(remaining, item)
+      end
+    end
+    redis.call('DEL', key)
+    if #remaining > 0 then
+      for _, item in ipairs(remaining) do
+        redis.call('RPUSH', key, item)
+      end
+      if ttl > 0 then redis.call('PEXPIRE', key, ttl) end
+    end
+    return #remaining
+    """
 
     @staticmethod
     def _server_key(server_id: int) -> str:
@@ -196,12 +250,13 @@ class RedisDirectory:
         if not self.server(server_id):
             return False
         record = dict(values, id=str(user_id))
+        encoded = json.dumps(record)
+        if len(encoded.encode("utf-8")) > self.join_max_payload_bytes:
+            return False
         key = self._join_key(server_id)
-        with self.redis.pipeline() as pipe:
-            pipe.rpush(key, json.dumps(record))
-            pipe.expire(key, self.join_ttl)
-            pipe.execute()
-        return True
+        return bool(self.redis.eval(self._ADD_JOIN, 1, key, str(user_id),
+                                    encoded, self.join_max_entries,
+                                    self.join_ttl))
 
     def poll_joins(self, owner_id: int,
                    heartbeat: dict[str, str]) -> list[dict[str, Any]] | None:
@@ -217,14 +272,4 @@ class RedisDirectory:
 
     def clear_user_joins(self, user_id: int) -> None:
         for key in self.redis.scan_iter("mk:join:*"):
-            raw = self.redis.lrange(key, 0, -1)
-            remaining = [
-                value for value in raw
-                if int(json.loads(value)["id"]) != user_id
-            ]
-            with self.redis.pipeline() as pipe:
-                pipe.delete(key)
-                if remaining:
-                    pipe.rpush(key, *remaining)
-                    pipe.expire(key, self.join_ttl)
-                pipe.execute()
+            self.redis.eval(self._CLEAR_USER_JOINS, 1, key, str(user_id))

@@ -19,7 +19,10 @@
 # Cloudflare. (play.robsonchristie.com stays DNS-only — UDP can't be proxied.)
 {$MK_ONLINE_DOMAIN} {
     encode zstd gzip
-    reverse_proxy api:8000
+    reverse_proxy api:8000 {
+        # Replace any client-supplied value; the API trusts this only from Caddy.
+        header_up X-Forwarded-For {remote_host}
+    }
 }
 
 # Personal homepage — proxied by Cloudflare. Serve the Cloudflare Origin

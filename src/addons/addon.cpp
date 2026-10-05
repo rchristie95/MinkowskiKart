@@ -30,6 +30,11 @@
 
 Addon::SortOrder Addon::m_sort_order=Addon::SO_DEFAULT;
 
+bool Addon::isValidAddonId(const std::string& id)
+{
+    return AddonIdSafety::isValid(id);
+}
+
 Addon::Addon(const XMLNode &xml)
 {
     m_name               = "";
@@ -69,7 +74,15 @@ Addon::Addon(const XMLNode &xml)
     m_name     = StringUtils::xmlDecode(name);
     m_dir_name = StringUtils::toLowerCase(name);
     xml.get("id",                 &m_dir_name          );
-    m_id = createAddonId(m_dir_name);
+    if (!isValidAddonId(m_dir_name))
+    {
+        // Keep malformed server entries visible only as inert metadata. An
+        // empty id cannot resolve to a directory for install or removal.
+        m_dir_name.clear();
+        m_id.clear();
+    }
+    else
+        m_id = createAddonId(m_dir_name);
     xml.get("designer",           &designer            );
     xml.get("status",             &m_status            );
 
@@ -242,5 +255,7 @@ bool Addon::isAddon(const std::string &directory)
 /** Returns the directory in which this addon is installed. */
 std::string Addon::getDataDir() const
 {
+    if (!isValidAddonId(m_dir_name))
+        return "";
     return file_manager->getAddonsFile(getTypeDirectory()+m_dir_name);
 }   // getDataDir

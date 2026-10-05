@@ -70,6 +70,14 @@
 
 using namespace ProtocolUtils;
 
+namespace
+{
+bool encryptedPayloadFits(uint32_t declared_size, unsigned int remaining)
+{
+    return declared_size <= remaining;
+}
+}
+
 int ServerLobby::m_fixed_laps = -1;
 // ========================================================================
 class SubmitRankingRequest : public Online::XMLRequest
@@ -2264,7 +2272,8 @@ void ServerLobby::checkIncomingConnectionRequests()
                     {
                         continue;
                     }
-                    auto ctp = std::make_shared<ConnectToPeer>(peer_addr);
+                    auto ctp = std::make_shared<ConnectToPeer>(peer_addr,
+                        keys[id].m_aes_key, keys[id].m_aes_iv);
                     if (auto pm = m_protocol_manager.lock())
                         pm->requestStart(ctp);
                     sl->addPeerConnection(peer_addr_str);
@@ -2702,6 +2711,15 @@ void ServerLobby::connectionRequested(Event* event)
     online_id = data.getUInt32();
     encrypted_size = data.getUInt32();
 
+    // The advertised size is attacker controlled. Validate it against the
+    // unread packet before copying the encrypted request into a new buffer.
+    if (!encryptedPayloadFits(encrypted_size, data.size()))
+    {
+        Log::warn("ServerLobby", "Rejecting truncated encrypted connection request.");
+        peer->reset();
+        return;
+    }
+
     // Will be disconnected if banned by IP
     testBannedForIP(peer.get());
     if (peer->isDisconnected())
@@ -2790,6 +2808,14 @@ void ServerLobby::connectionRequested(Event* event)
             false/*is_pending_connection*/);
     }
 }   // connectionRequested
+
+// ----------------------------------------------------------------------------
+void ServerLobby::unitTesting()
+{
+    if (!encryptedPayloadFits(0, 0) || !encryptedPayloadFits(7, 7) ||
+        encryptedPayloadFits(8, 7) || encryptedPayloadFits(0xffffffffu, 7))
+        throw std::runtime_error("Encrypted handshake length check failed.");
+}   // unitTesting
 
 //-----------------------------------------------------------------------------
 void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,

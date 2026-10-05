@@ -1,0 +1,82 @@
+{
+  "dependencies-android-src.tar.xz": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-android-src.tar.xz",
+    "sha256": "f87a54743eebd1d776a490a5b9b978706e48820fa28bb501f29a2b2788a9c279",
+    "size": 121738700
+  },
+  "ispc-cross-1.26.0.tar.xz": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/ispc-cross-1.26.0.tar.xz",
+    "sha256": "d5d0df91c734c9b87370455b97f6a5d06bbe7c55d45b149837e93758b5292fd6",
+    "size": 8244048
+  },
+  "mxe_static_mingw.zip": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/mxe_static_mingw.zip",
+    "sha256": "861fd67ca56de10e9a3f19411e0255f53704cfc93b2640a2bc1edf8acb7995ad",
+    "size": 167602940
+  },
+  "dependencies-iphoneos.tar.xz": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-iphoneos.tar.xz",
+    "sha256": "a91c8ffcfaa25b4070bcc8bc1b1cea0628a51b5fba7d9d4f77e2a72fd42ac9eb",
+    "size": 9129560
+  },
+  "dependencies-macosx.tar.xz": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-macosx.tar.xz",
+    "sha256": "4d1ee5e9f84d864d5ffee1ca6f6a4fff1025a5d833bd07a2295c429f1ff15248",
+    "size": 13401728
+  },
+  "dependencies-win-i686.zip": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-win-i686.zip",
+    "sha256": "7b4242c1b607cc95ad5c3db8a7fcdec23238bfe9f271f1ed56d0c3cfce1bc2ba",
+    "size": 41793658
+  },
+  "dependencies-win-x86_64.zip": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-win-x86_64.zip",
+    "sha256": "f7edd77761130019d113c829492af23a63140d71f9944a7758f8515a4ca05b2b",
+    "size": 40783501
+  },
+  "dependencies-win-armv7.zip": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-win-armv7.zip",
+    "sha256": "84daec3fe43f86145d786642d7d58a5e9e9a22530ad48a5eef35fc043208a7b8",
+    "size": 40477381
+  },
+  "dependencies-win-aarch64.zip": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-win-aarch64.zip",
+    "sha256": "5a9c10479ea422a61b77bd701005a8c7e787e694c51f479cd5e5c7b20609d8f8",
+    "size": 73281438
+  },
+  "cctools-14.1.tar.xz": {
+    "url": "https://github.com/supertuxkart/dependencies/releases/download/cctools/cctools-14.1.tar.xz",
+    "sha256": "5f7c25c83a1c5b25af4f6ee9748f5e37c1e7fd29338f5820141f3caccdcc5356",
+    "size": 671307188
+  },
+  "stk-assets-full.zip": {
+    "url": "https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip",
+    "sha256": "1799c72e40e777a4090b5392ad76678cf9bf1fb2666a752a55e8c312e434ab2b",
+    "size": 687665848
+  },
+  "llvm-mingw-20210423-msvcrt-ubuntu-18.04-x86_64.tar.xz": {
+    "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20210423/llvm-mingw-20210423-msvcrt-ubuntu-18.04-x86_64.tar.xz",
+    "sha256": "c2e5a3ebe2e333939ea83b385efa85ecdc3301d1e5de8ca2fc69c69ed9e58127",
+    "size": 117874500
+  },
+  "cv2pdb-0.50.zip": {
+    "url": "https://github.com/rainers/cv2pdb/releases/download/v0.50/cv2pdb-0.50.zip",
+    "sha256": "a3258fba7de2fb91ed012d88d682a9dfc013ec1bf16d7ed1d24f730ad1e3c806",
+    "size": 253191
+  },
+  "mesa3d-26.2.4-release-mingw.7z": {
+    "url": "https://github.com/pal1000/mesa-dist-win/releases/download/26.2.4/mesa3d-26.2.4-release-mingw.7z",
+    "sha256": "36a30a04d8cab6e2bea2d3c747c326d15024d9711dd80f45ef97ac6f2c3c5086",
+    "size": 57022686
+  },
+  "git-tools.zip": {
+    "url": "https://codeload.github.com/MestreLion/git-tools/zip/b5822d297b3ca4a3b6574e78327a464790b14937",
+    "sha256": "863d9e6805b922f9b64bd9d264ef8db1ceb06faba8a6cf4bd200ae58bfacd5eb",
+    "revision": "b5822d297b3ca4a3b6574e78327a464790b14937"
+  },
+  "linkernsbypass.tar.gz": {
+    "url": "https://codeload.github.com/bylaws/liblinkernsbypass/tar.gz/aa3975893d83ef1bc84c321ec60c65fbf1287887",
+    "sha256": "da1128c8aa771c4d24766b53a47822d0717baa5c536ca8491220402942b80638",
+    "revision": "aa3975893d83ef1bc84c321ec60c65fbf1287887"
+  }
+}

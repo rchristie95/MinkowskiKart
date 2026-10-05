@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+from html import escape
+from ipaddress import ip_address
 from typing import Any
 import xml.etree.ElementTree as ET
 
@@ -35,16 +37,74 @@ def xml_response(success: bool = True, info: str = "",
                     media_type="application/xml")
 
 
+class JoinBodyLimitMiddleware:
+    """Read rendezvous form bodies into a small bounded buffer before parsing."""
+
+    def __init__(self, app, max_bytes: int):
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope, receive, send):
+        if (scope["type"] != "http" or scope.get("method") != "POST" or
+                scope.get("path") != "/api/v2/server/join-server-key/"):
+            await self.app(scope, receive, send)
+            return
+
+        headers = {key.lower(): value for key, value in scope.get("headers", [])}
+        content_length = headers.get(b"content-length")
+        if content_length:
+            try:
+                if int(content_length) > self.max_bytes:
+                    await self._reject(send)
+                    return
+            except ValueError:
+                pass
+
+        messages = []
+        total = 0
+        chunks = 0
+        while True:
+            message = await receive()
+            messages.append(message)
+            if message["type"] == "http.disconnect":
+                break
+            if message["type"] == "http.request":
+                total += len(message.get("body", b""))
+                chunks += 1
+                if total > self.max_bytes or chunks > 128:
+                    await self._reject(send)
+                    return
+                if not message.get("more_body", False):
+                    break
+
+        index = 0
+
+        async def replay_receive():
+            nonlocal index
+            if index < len(messages):
+                message = messages[index]
+                index += 1
+                return message
+            return await receive()
+
+        await self.app(scope, replay_receive, send)
+
+    @staticmethod
+    async def _reject(send):
+        body = b'<response success="no" info="Rendezvous request is too large" />'
+        await send({"type": "http.response.start", "status": 413,
+                    "headers": [(b"content-type", b"application/xml"),
+                                (b"content-length", str(len(body)).encode())]})
+        await send({"type": "http.response.body", "body": body})
+
+
 async def get_form(request: Request) -> dict[str, str]:
     form = await request.form()
     return {str(key): str(value) for key, value in form.items()}
 
 
 def client_ip(request: Request) -> str:
-    """Best-effort client IP, honouring the proxy header set by Caddy."""
-    forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Use the source address after Uvicorn's configured proxy validation."""
     return request.client.host if request.client else "unknown"
 
 
@@ -79,9 +139,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     rate_limiter = create_rate_limiter(settings.redis_url)
     directory = (
         RedisDirectory(settings.redis_url, settings.listing_ttl_seconds,
-                       settings.join_ttl_seconds)
+                       settings.join_ttl_seconds, settings.join_max_entries,
+                       settings.join_max_payload_bytes)
         if settings.redis_url else
-        MemoryDirectory(settings.listing_ttl_seconds, settings.join_ttl_seconds)
+        MemoryDirectory(settings.listing_ttl_seconds, settings.join_ttl_seconds,
+                        settings.join_max_entries,
+                        settings.join_max_payload_bytes)
     )
 
     @asynccontextmanager
@@ -91,6 +154,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="MinkowskiKart Online API", version="0.1.0",
                   lifespan=lifespan)
+    app.add_middleware(JoinBodyLimitMiddleware,
+                       max_bytes=settings.join_max_request_bytes)
     app.state.engine = engine
     app.state.session_factory = session_factory
     app.state.directory = directory
@@ -106,6 +171,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         session = db.get(UserSession, token_hash(token))
         user = db.get(User, user_id)
         if (not session or session.user_id != user_id or
+                session.session_type != "game" or
                 session.expires_at <= utc_now() or
                 not user or not user.active):
             return None
@@ -138,7 +204,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return f"""
         <html><body style='font-family:sans-serif;max-width:400px;margin:100px auto;background:#090b15;color:#f4f7ff'>
             <h1 style='text-align:center'>Admin Login</h1>
-            {f'<p style="color:#ff6b6b;text-align:center">{error}</p>' if error else ''}
+            {f'<p style="color:#ff6b6b;text-align:center">{escape(error)}</p>' if error else ''}
             <form action="/admin/login" method="post" style='display:grid;gap:10px;background:#1a1d2e;padding:20px;border-radius:8px'>
                 <label>Username (Email)</label>
                 <input type="text" name="username" style='padding:8px;border-radius:4px;border:1px solid #333;background:#090b15;color:white'>
@@ -164,19 +230,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             
             token = new_session_token()
             db.add(UserSession(token_hash=token_hash(token), user_id=user.id,
+                               session_type="admin",
                                expires_at=session_expiry(1))) # 1 day admin session
             db.commit()
             
             response = RedirectResponse(url="/admin/dashboard", status_code=303)
-            response.set_cookie(key="admin_token", value=token, httponly=True, samesite="lax")
+            response.set_cookie(key="admin_token", value=token, httponly=True,
+                                secure=True, samesite="lax")
             return response
 
     def get_admin(admin_token: str | None, db) -> User | None:
         if not admin_token: return None
         session = db.get(UserSession, token_hash(admin_token))
-        if not session or session.expires_at <= utc_now(): return None
+        if (not session or session.session_type != "admin" or
+                session.expires_at <= utc_now()): return None
         user = db.get(User, session.user_id)
-        return user if user and user.is_admin else None
+        return user if user and user.active and user.is_admin else None
 
     @app.get("/admin/dashboard", response_class=HTMLResponse)
     async def admin_dashboard(admin_token: str | None = Cookie(None)):
@@ -190,11 +259,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 user_rows += f"""
                 <tr style='border-bottom:1px solid #333'>
                     <td style='padding:10px'>{u.id}</td>
-                    <td style='padding:10px'>{u.username}</td>
-                    <td style='padding:10px'>{u.email}</td>
+                    <td style='padding:10px'>{escape(u.username)}</td>
+                    <td style='padding:10px'>{escape(u.email)}</td>
                     <td style='padding:10px'>{'✅' if u.is_admin else '❌'}</td>
                     <td style='padding:10px'>
-                        <form action="/admin/delete-user" method="post" style='margin:0' onsubmit="return confirm('Delete {u.username}?')">
+                        <form action="/admin/delete-user" method="post" style='margin:0' onsubmit="return confirm('Delete this user?')">
                             <input type="hidden" name="user_id" value="{u.id}">
                             <button type="submit" style='color:#ff6b6b;background:none;border:none;cursor:pointer;text-decoration:underline'>Delete</button>
                         </form>
@@ -207,7 +276,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'>
                     <h1>MinkowskiKart Admin</h1>
                     <div>
-                        <span>Logged in as <b>{admin.username}</b></span> | 
+                        <span>Logged in as <b>{escape(admin.username)}</b></span> |
                         <a href="/admin/logout" style='color:#4a90e2'>Logout</a>
                     </div>
                 </div>
@@ -247,7 +316,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if admin_token:
             with session_factory() as db:
                 session = db.get(UserSession, token_hash(admin_token))
-                if session:
+                if session and session.session_type == "admin":
                     db.delete(session)
                     db.commit()
         response = RedirectResponse(url="/admin/login")
@@ -270,6 +339,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 return xml_response(False, "Username or password is invalid")
             token = new_session_token()
             db.add(UserSession(token_hash=token_hash(token), user_id=user.id,
+                               session_type="game",
                                expires_at=session_expiry(settings.session_days)))
             db.commit()
             return xml_response(attrs={
@@ -335,6 +405,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 return xml_response(False,
                     "The password must be between 8 and 60 characters long")
             user.password_hash = hash_password(new_password)
+            # Password changes revoke every token, including this one.
+            db.execute(sa.delete(UserSession).where(UserSession.user_id == user.id))
             db.commit()
             return xml_response()
 
@@ -362,7 +434,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/api/v2/user/register/")
     async def register(request: Request) -> Response:
         import re
-        from sqlalchemy.exc import IntegrityError
 
         if not rate_limiter.hit("register", client_ip(request),
                                 limit=5, window=3600):
@@ -385,28 +456,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return xml_response(False, "Username must be between 3 and 30 characters.")
         if not re.match(r"^[a-z][a-z0-9._-]*$", username):
             return xml_response(False, "Username is invalid.")
-        if email and ("@" not in email or "." not in email):
+        if email and not re.fullmatch(
+                r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+",
+                email):
             return xml_response(False, "Email address is invalid.")
-        # The in-game client does not collect an email. The column is unique, so
-        # emailless accounts get a per-user placeholder rather than a single
-        # shared address (which would let only one account ever register).
-        if not email:
-            email = f"{username}@minkowskikart.internal"
-
-        with session_factory() as db:
-            try:
-                user = User(
-                    username=username,
-                    email=email,
-                    password_hash=hash_password(password),
-                    active=True
-                )
-                db.add(user)
-                db.commit()
-            except IntegrityError:
-                return xml_response(False, "Username is already taken.")
-            
-            return xml_response(True, "Account created! You can now sign in with your username and password.")
+        return xml_response(False,
+            "Registration is invite-only. Please contact the server administrator.")
 
     @app.post("/api/v2/user/recover/")
     async def recover(request: Request) -> Response:
@@ -498,17 +553,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 server_id = int(values.get("server-id", "0"))
             except ValueError:
                 return xml_response(False, "Invalid server id")
+            try:
+                target_port = int(values.get("port", "0"))
+                caller_address = ip_address(client_ip(request))
+            except ValueError:
+                return xml_response(False, "Invalid rendezvous endpoint")
+            if not 1 <= target_port <= 65535:
+                return xml_response(False, "Invalid rendezvous endpoint")
             accepted = directory.add_join(server_id, user.id, {
-                "ip": values.get("address", "0"),
-                "ipv6": values.get("address-ipv6", ""),
-                "port": values.get("port", "0"),
+                # The game protocol parses IPv4 into uint32_t in host-order
+                # decimal form (SocketAddress::getIP), while IPv6 stays text.
+                "ip": str(int(caller_address)) if caller_address.version == 4 else "0",
+                "ipv6": str(caller_address) if caller_address.version == 6 else "",
+                "port": str(target_port),
                 "aes-key": values.get("aes-key", ""),
                 "aes-iv": values.get("aes-iv", ""),
                 "username": user.username,
                 "country-code": "",
             })
             return (xml_response() if accepted else
-                    xml_response(False, "Server is no longer online"))
+                    xml_response(False,
+                        "Server is no longer online or the join request was rejected"))
 
     @app.post("/api/v2/server/poll-connection-requests/")
     async def poll_server(request: Request) -> Response:

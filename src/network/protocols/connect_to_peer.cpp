@@ -19,18 +19,25 @@
 #include "network/protocols/connect_to_peer.hpp"
 #include "network/network.hpp"
 #include "network/network_string.hpp"
+#include "network/crypto.hpp"
 #include "network/stk_host.hpp"
 #include "utils/time.hpp"
 #include "utils/log.hpp"
+
+#include <random>
 
 // ----------------------------------------------------------------------------
 /** Constructor for peer address.
  *  \param address The address to connect to.
  */
-ConnectToPeer::ConnectToPeer(const SocketAddress &address)
+ConnectToPeer::ConnectToPeer(const SocketAddress &address,
+                             const std::string& aes_key,
+                             const std::string& aes_iv)
              : Protocol(PROTOCOL_CONNECTION)
 {
     m_peer_address = address;
+    m_aes_key = aes_key;
+    m_aes_iv = aes_iv;
     m_state = WAIT_FOR_CONNECTION;
 }   // ConnectToPeer
 
@@ -70,7 +77,43 @@ void ConnectToPeer::asynchronousUpdate()
                 // and this aloha
                 aloha.getBuffer().insert(aloha.getBuffer().begin(), 2, 0xFF);
 
+                bool authenticated = false;
+                if (!m_aes_key.empty() && !m_aes_iv.empty())
+                {
+                    std::vector<uint8_t> client_key, client_iv;
+                    if (decodeAlohaCredentials(m_aes_key, m_aes_iv,
+                                               client_key, client_iv))
+                    {
+                        std::random_device rd;
+                        std::vector<uint8_t> auth_iv(12);
+                        for (uint8_t& b : auth_iv)
+                            b = static_cast<uint8_t>(rd());
+                        Crypto auth_crypto(getAlohaAuthKey(client_key),
+                            auth_iv, 16);
+                        BareNetworkString token(
+                            reinterpret_cast<const char*>(client_iv.data()),
+                            static_cast<int>(client_iv.size()));
+                        if (auth_crypto.encryptConnectionRequest(token))
+                        {
+                            aloha.getBuffer().insert(aloha.getBuffer().end(),
+                                auth_iv.begin(), auth_iv.end());
+                            aloha.getBuffer().insert(aloha.getBuffer().end(),
+                                token.getBuffer().begin(),
+                                token.getBuffer().end());
+                            authenticated = true;
+                        }
+                    }
+                }
                 STKHost::get()->sendRawPacket(aloha, m_peer_address);
+                // Retain a legacy notification for older clients. Updated
+                // clients accept only the authenticated packet above.
+                if (authenticated)
+                {
+                    BareNetworkString legacy("aloha-stk");
+                    legacy.getBuffer().insert(legacy.getBuffer().begin(), 2,
+                        0xFF);
+                    STKHost::get()->sendRawPacket(legacy, m_peer_address);
+                }
                 Log::debug("ConnectToPeer", "Broadcast aloha sent.");
                 // 20 seconds timeout
                 if (m_tried_connection++ > 10)

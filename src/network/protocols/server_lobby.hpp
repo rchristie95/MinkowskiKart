@@ -290,6 +290,7 @@ private:
     bool supportsAI();
     void updateAddons();
 public:
+    static void unitTesting();
     // Having those variable private would just require a bunch of boilerplate
     // code to access them... What's the point?
 

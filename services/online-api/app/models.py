@@ -30,6 +30,7 @@ class UserSession(Base):
 
     token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    session_type: Mapped[str] = mapped_column(String(16), default="game", nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)

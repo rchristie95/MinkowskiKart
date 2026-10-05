@@ -19,6 +19,7 @@ typedef double progress_t;
 #endif
 
 #include "online/http_request.hpp"
+#include "online/http_response_buffer.hpp"
 #include "io/file_manager.hpp"
 #include "config/user_config.hpp"
 #include "online/request_manager.hpp"
@@ -129,8 +130,8 @@ int curlDebugCallback(CURL *handle, curl_infotype type,
 size_t curlWriteCallback(void *contents, size_t size,
                          size_t nmemb, void *userp)
 {
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
+    return static_cast<Online::HTTPResponseBuffer*>(userp)->write(
+        static_cast<const char*>(contents), size, nmemb);
 }   // curlWriteCallback
 
 // ----------------------------------------------------------------------------
@@ -146,7 +147,22 @@ void Online::HTTPRequest::operation()
     }
 
     curl_easy_setopt(curl_session, CURLOPT_URL, m_url.c_str());
-    curl_easy_setopt(curl_session, CURLOPT_FOLLOWLOCATION, 1L);
+    // A 307/308 redirect can resend an API form (including its credentials)
+    // to another host. Only downloads without API parameters may redirect.
+    const bool allow_redirects = m_download_assets_request || m_parameters.empty();
+    const bool secure_url = StringUtils::toLowerCase(m_url).compare(0, 8,
+                                                                  "https://") == 0;
+    curl_easy_setopt(curl_session, CURLOPT_FOLLOWLOCATION, allow_redirects ? 1L : 0L);
+    curl_easy_setopt(curl_session, CURLOPT_MAXREDIRS, 5L);
+#if LIBCURL_VERSION_NUM >= 0x075500
+    curl_easy_setopt(curl_session, CURLOPT_PROTOCOLS_STR, "http,https");
+    curl_easy_setopt(curl_session, CURLOPT_REDIR_PROTOCOLS_STR,
+                     secure_url ? "https" : "http,https");
+#else
+    curl_easy_setopt(curl_session, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    curl_easy_setopt(curl_session, CURLOPT_REDIR_PROTOCOLS,
+                     secure_url ? CURLPROTO_HTTPS : CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
     curl_easy_setopt(curl_session, CURLOPT_NOPROGRESS, 0);
     curl_easy_setopt(curl_session, PROGRESSDATA, this);
     curl_easy_setopt(curl_session, PROGRESSFUNCTION,
@@ -165,16 +181,19 @@ void Online::HTTPRequest::operation()
     {
         Log::error("HTTPRequest", "Error setting CAINFO to '%s'",
             ci.c_str());
-        Log::error("HTTPRequest", "Error: '%s'.", error,
+        Log::error("HTTPRequest", "Error %d: '%s'.", error,
             curl_easy_strerror(error));
     }
-    std::string host = "Host: " + StringUtils::getHostNameFromURL(m_url);
-    struct curl_slist* http_header = NULL;
-    http_header = curl_slist_append(http_header, host.c_str());
-    assert(http_header != NULL);
-    curl_easy_setopt(curl_session, CURLOPT_HTTPHEADER, http_header);
-    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl_session, CURLOPT_SSL_VERIFYHOST, 2L);
+
+    // API replies are small; asset bundles need a larger, finite disk budget.
+    const uint64_t mib = 1024ULL * 1024ULL;
+    HTTPResponseBuffer response = { &m_string_buffer, NULL, 0,
+        m_filename.empty() ? 8 * mib :
+            (m_download_assets_request ? 4096 * mib : 1024 * mib), false };
+    curl_easy_setopt(curl_session, CURLOPT_MAXFILESIZE_LARGE,
+                     static_cast<curl_off_t>(response.limit));
 
     FILE *fout = NULL;
     if (m_filename.size() > 0)
@@ -186,18 +205,15 @@ void Online::HTTPRequest::operation()
             Log::error("HTTPRequest",
                        "Can't open '%s' for writing, ignored.",
                        (m_filename+".part").c_str());
+            m_result_code = CURLE_WRITE_ERROR;
+            setProgress(-1.0f);
+            curl_easy_cleanup(curl_session);
             return;
         }
-        curl_easy_setopt(curl_session,  CURLOPT_WRITEDATA,     fout  );
-        curl_easy_setopt(curl_session,  CURLOPT_WRITEFUNCTION, fwrite);
+        response.file = fout;
     }
-    else
-    {
-        curl_easy_setopt(curl_session, CURLOPT_WRITEDATA,
-                         &m_string_buffer);
-        curl_easy_setopt(curl_session, CURLOPT_WRITEFUNCTION,
-                         &curlWriteCallback);
-    }
+    curl_easy_setopt(curl_session, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl_session, CURLOPT_WRITEFUNCTION, &curlWriteCallback);
 
     // All parameters added have a '&' added
     if (m_parameters.size() > 0)
@@ -223,11 +239,19 @@ void Online::HTTPRequest::operation()
     curl_easy_setopt(curl_session, CURLOPT_USERAGENT, uagent.c_str());
 
     m_result_code = curl_easy_perform(curl_session);
+    long response_code = 0;
+    curl_easy_getinfo(curl_session, CURLINFO_RESPONSE_CODE, &response_code);
+    if (m_result_code == CURLE_OK && !allow_redirects &&
+        response_code >= 300 && response_code < 400)
+        m_result_code = CURLE_HTTP_RETURNED_ERROR;
+    if (response.limit_exceeded)
+        m_result_code = CURLE_FILESIZE_EXCEEDED;
     Request::operation();
 
     if (fout)
     {
-        fclose(fout);
+        if (fclose(fout) != 0 && m_result_code == CURLE_OK)
+            m_result_code = CURLE_WRITE_ERROR;
         if (m_result_code == CURLE_OK)
         {
             if(UserConfigParams::logAddons())
@@ -255,6 +279,10 @@ void Online::HTTPRequest::operation()
 
     if (m_result_code != CURLE_OK)
     {
+        if (fout)
+            file_manager->removeFile(m_filename + ".part");
+        else
+            m_string_buffer.clear();
         Log::error("HTTPRequest", "Request failed with error code %lld: %s",
             m_result_code, getDownloadErrorMessage());
         setProgress(-1.0f);
@@ -262,7 +290,6 @@ void Online::HTTPRequest::operation()
     else
         setProgress(1.0f);
 
-    curl_slist_free_all(http_header);
     curl_easy_cleanup(curl_session);
 }   // operation
 

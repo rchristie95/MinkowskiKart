@@ -18,10 +18,14 @@
 #ifndef HEADER_ZIP_HPP
 #define HEADER_ZIP_HPP
 
+#include "addons/zip_safety.hpp"
+
 /**
   * Extract a zip.
   * \ingroup addonsgroup
   */
-bool extract_zip(const std::string &from, const std::string &to, bool recursive = false);
+bool extract_zip(const std::string &from, const std::string &to,
+                 bool recursive = false,
+                 const ZipSafety::Limits& limits = ZipSafety::ADDON_LIMITS);
 
 #endif

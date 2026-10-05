@@ -17,6 +17,15 @@
 #include "race/race_manager.hpp"
 
 #include <stdint.h>
+#include <stdexcept>
+
+namespace
+{
+bool clientMaySendGameEvent(uint8_t type)
+{
+    return type == GameEventsProtocol::GE_STARTUP_BOOST;
+}
+}
 
 /** This class handles all 'major' game events. E.g.
  *  finishing a race or goal etc. The game events manager is notified from the
@@ -59,6 +68,14 @@ bool GameEventsProtocol::notifyEvent(Event* event)
         return true;
     }
     uint8_t type = data.getUInt8();
+    // Startup boost is the only game event clients may send. All other event
+    // opcodes represent authoritative server state.
+    if (NetworkConfig::get()->isServer() && !clientMaySendGameEvent(type))
+    {
+        Log::warn("GameEventsProtocol",
+            "Ignoring server-origin game event %u from a client.", type);
+        return true;
+    }
     CaptureTheFlag* ctf = dynamic_cast<CaptureTheFlag*>(World::getWorld());
     FreeForAll* ffa = dynamic_cast<FreeForAll*>(World::getWorld());
     SoccerWorld* sw = dynamic_cast<SoccerWorld*>(World::getWorld());
@@ -151,6 +168,17 @@ bool GameEventsProtocol::notifyEvent(Event* event)
     }
     return true;
 }   // notifyEvent
+
+// ----------------------------------------------------------------------------
+void GameEventsProtocol::unitTesting()
+{
+    if (!clientMaySendGameEvent(GE_STARTUP_BOOST) ||
+        clientMaySendGameEvent(GE_RESET_BALL) ||
+        clientMaySendGameEvent(GE_PLAYER_GOAL) ||
+        clientMaySendGameEvent(GE_CTF_SCORED) ||
+        clientMaySendGameEvent(GE_BATTLE_KART_SCORE))
+        throw std::runtime_error("Game event direction check failed.");
+}   // unitTesting
 
 // ----------------------------------------------------------------------------
 /** This function is called from the server when a kart finishes a race. It

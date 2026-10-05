@@ -27,6 +27,7 @@ private:
 public:
              GameEventsProtocol();
     virtual ~GameEventsProtocol();
+    static void unitTesting();
 
     virtual bool notifyEvent(Event* event) OVERRIDE;
     void kartFinishedRace(AbstractKart *kart, float time);

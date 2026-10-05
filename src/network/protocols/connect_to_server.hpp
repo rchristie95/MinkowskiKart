@@ -62,6 +62,7 @@ private:
     static bool m_done_intecept;
     bool detectPort();
 public:
+    static void unitTesting();
              ConnectToServer(std::shared_ptr<Server> server);
     virtual ~ConnectToServer();
     virtual void setup() OVERRIDE;

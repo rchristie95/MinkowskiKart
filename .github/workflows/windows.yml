@@ -15,7 +15,10 @@ on:
         default: 'preview'
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  TARGET_RELEASE: ${{ github.event.inputs.target_release }}
 
 jobs:
   build:
@@ -29,17 +32,35 @@ jobs:
             os: windows-2022
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
           submodules: false
+      - name: Test archive path and URL launch safety helpers
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.arch == 'i686' }}
+        shell: bash
+        run: |
+          c++ -std=c++11 -Isrc tests/security_path_safety_test.cpp -o security_path_safety_test
+          ./security_path_safety_test
       - name: Configure compiled project version
         shell: bash
         run: |
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/}"
+            if [[ ! "$TAG_VERSION" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+              echo 'Invalid release tag.' >&2
+              exit 1
+            fi
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && ! "$TARGET_RELEASE" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+            echo 'Invalid release name.' >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "project_version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "project_version=${{ github.event.inputs.target_release }}" >> "$GITHUB_ENV"
+            echo "project_version=$TARGET_RELEASE" >> "$GITHUB_ENV"
           elif [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/master" ]]; then
             echo "project_version=preview" >> "$GITHUB_ENV"
           else
@@ -66,10 +87,11 @@ jobs:
           echo "wget=wget" >> $GITHUB_ENV
           echo "unzip=unzip" >> $GITHUB_ENV
       - name: Restore timestamps
+        shell: bash
         run: |
-          ${{ env.wget }} https://github.com/MestreLion/git-tools/archive/refs/heads/main.zip
-          ${{ env.unzip }} main.zip
-          python git-tools-main/git-restore-mtime
+          python tools/ci/download_verified.py git-tools.zip
+          ${{ env.unzip }} git-tools.zip
+          python git-tools-*/git-restore-mtime
       - name: List build cache restore keys
         shell : bash
         run: |
@@ -77,14 +99,14 @@ jobs:
           for number in 1 2 3 4 5 6 7 8 9
           do
             id=$((${{ github.run_number }} - number))
-            echo "cache_$number=windows-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.os }}-$id" >> $GITHUB_ENV
+            echo "cache_$number=windows-locked-${{ hashFiles('.github/build-inputs.json') }}-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.os }}-$id" >> $GITHUB_ENV
           done
       - name: Handle build cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             build
-          key: windows-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.os }}-${{ github.run_number }}
+          key: windows-locked-${{ hashFiles('.github/build-inputs.json') }}-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.os }}-${{ github.run_number }}
           restore-keys: |
             ${{ env.cache_1 }}
             ${{ env.cache_2 }}
@@ -97,13 +119,13 @@ jobs:
             ${{ env.cache_9 }}
       - name: Download dependencies
         run: |
-          ${{ env.wget }} https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-win-${{ matrix.arch }}.zip
+          python tools/ci/download_verified.py dependencies-win-${{ matrix.arch }}.zip
           ${{ env.unzip }} dependencies-win-${{ matrix.arch }}.zip
       - name: Download ISPC for MinGW
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           cd /opt
-          wget https://github.com/supertuxkart/dependencies/releases/download/preview/ispc-cross-1.26.0.tar.xz
+          python "$GITHUB_WORKSPACE/tools/ci/download_verified.py" ispc-cross-1.26.0.tar.xz
           tar xf ispc-cross-1.26.0.tar.xz
           rm ispc-cross-1.26.0.tar.xz
       - name: Install MinGW for i686 or x86_64
@@ -113,7 +135,7 @@ jobs:
           sudo mkdir -p /data/mxe/usr
           cd /data/mxe/usr
           # It's compiled from https://github.com/mxe/mxe
-          sudo wget https://github.com/supertuxkart/dependencies/releases/download/preview/mxe_static_mingw.zip
+          sudo python "$GITHUB_WORKSPACE/tools/ci/download_verified.py" mxe_static_mingw.zip
           sudo unzip mxe_static_mingw.zip
           sudo rm mxe_static_mingw.zip
           # For libfl.so.2
@@ -122,7 +144,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' && ( matrix.arch == 'armv7' || matrix.arch == 'aarch64' ) }}
         run: |
           cd /
-          sudo wget https://github.com/mstorsjo/llvm-mingw/releases/download/20210423/llvm-mingw-20210423-msvcrt-ubuntu-18.04-x86_64.tar.xz
+          sudo python "$GITHUB_WORKSPACE/tools/ci/download_verified.py" llvm-mingw-20210423-msvcrt-ubuntu-18.04-x86_64.tar.xz
           sudo tar xf llvm-mingw-20210423-msvcrt-ubuntu-18.04-x86_64.tar.xz
           sudo mv llvm-mingw-20210423-msvcrt-ubuntu-18.04-x86_64 llvm-mingw
       - name: Set up MinGW Toolchain for i686
@@ -182,21 +204,21 @@ jobs:
           [ -f COPYING ] && mv COPYING tools || true
       - name: Upload binaries of MinGW
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ matrix.arch }}
           path: build/bin/*
       - name: Upload stk-code/data
         # We only need to upload stk-code/data once
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.arch == 'i686'}}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: data
           path: data
       - name: Upload stk-code/tools
         # We only need to upload stk-code/tools once
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.arch == 'i686'}}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: tools
           path: tools
@@ -208,11 +230,15 @@ jobs:
 
   packaging:
     name: Packaging MinkowskiKart
+    if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
     needs: build
     runs-on: windows-2022
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 1
           submodules: false
       - name: Stash custom stk-assets before upstream download overwrites them
@@ -235,8 +261,12 @@ jobs:
         shell : bash
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "release_tag=${{ github.event.inputs.target_release }}" >> $GITHUB_ENV
-          echo "release_name=${{ github.event.inputs.target_release }}" >> $GITHUB_ENV
+          if [[ ! "$TARGET_RELEASE" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+            echo 'Invalid release name.' >&2
+            exit 1
+          fi
+          echo "release_tag=$TARGET_RELEASE" >> $GITHUB_ENV
+          echo "release_name=$TARGET_RELEASE" >> $GITHUB_ENV
       - name: Configure packaging name for non-releasing branch
         shell : bash
         if: ${{ github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
@@ -270,12 +300,13 @@ jobs:
             echo "gh CLI not found, skipping tag update"
           fi
       - name: Download MinGW binaries and data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
       - name: Generate .pdb files
         if: ${{ env.release_tag != '' }}
         shell: pwsh
         run: |
-          curl.exe -L -o cv2pdb-0.50.zip https://github.com/rainers/cv2pdb/releases/download/v0.50/cv2pdb-0.50.zip
+          python tools/ci/download_verified.py cv2pdb-0.50.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Build input verification failed' }
           Expand-Archive -Path cv2pdb-0.50.zip -DestinationPath . -Force
           if (Test-Path i686/MinkowskiKart.exe) { .\cv2pdb.exe i686/MinkowskiKart.exe }
           if (Test-Path x86_64/MinkowskiKart.exe) { .\cv2pdb.exe x86_64/MinkowskiKart.exe }
@@ -283,7 +314,8 @@ jobs:
         if: ${{ env.release_tag != '' }}
         shell: pwsh
         run: |
-          curl.exe -L -o stk-assets-full.zip https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip
+          python tools/ci/download_verified.py stk-assets-full.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Build input verification failed' }
           New-Item -ItemType Directory -Force -Path stk-assets
           Expand-Archive -Path stk-assets-full.zip -DestinationPath stk-assets -Force
       - name: Move folders
@@ -484,9 +516,8 @@ jobs:
           # GDI Generic only provides OpenGL 1.1; STK requires 1.2+.
           # Shadow it with Mesa llvmpipe (software OpenGL 3.x+) by placing
           # opengl32.dll in the exe's working directory, which Windows searches first.
-          $tag = (Invoke-RestMethod "https://api.github.com/repos/pal1000/mesa-dist-win/releases/latest").tag_name
-          $asset = "mesa3d-$tag-release-mingw.7z"
-          curl.exe -L -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/$tag/$asset"
+          python tools/ci/download_verified.py mesa3d-26.2.4-release-mingw.7z mesa.7z
+          if ($LASTEXITCODE -ne 0) { throw 'Build input verification failed' }
           7z x mesa.7z -omesa -y | Out-Null
           Copy-Item mesa\x64\opengl32.dll "$pkg\bin\x86_64\"
           if (Test-Path mesa\x64\libglapi.dll) {
@@ -537,7 +568,7 @@ jobs:
           Write-Host "Smoke test passed: game ran for 20s in race"
       - name: Upload zip artifact
         if: ${{ env.release_tag != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: MinkowskiKart-${{ env.release_tag }}-win
           path: |
@@ -545,7 +576,7 @@ jobs:
             MinkowskiKart-${{ env.release_tag }}-win.zip.sha256
       - name: Create release
         if: ${{ env.release_tag != '' }}
-        uses: ncipollo/release-action@v1.8.8
+        uses: ncipollo/release-action@10c84d509b28aae3903113151bfd832314964f2e # v1.8.8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "MinkowskiKart-${{ env.release_tag }}-win.zip,MinkowskiKart-${{ env.release_tag }}-win.zip.sha256"

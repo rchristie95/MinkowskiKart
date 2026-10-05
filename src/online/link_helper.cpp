@@ -18,6 +18,7 @@
 #include "graphics/irr_driver.hpp"
 #include "utils/log.hpp"
 #include "utils/string_utils.hpp"
+#include "online/url_launcher.hpp"
 #include <string>
 
 #include <GlyphLayout.h>
@@ -92,37 +93,14 @@ namespace Online
 #elif defined(IOS_STK)
         irr::CIrrDeviceiOS::openURLiOS(url.c_str());
 #elif defined(__APPLE__) || defined(__HAIKU__)
-        std::string command = std::string("open ").append(url);
-        if (system(command.c_str()))
+        if (!OnlineURL::launchURL("open", url))
         {
             Log::error("OpenURL", "Command returned non-zero exit status");
         }
 #elif !defined(__ANDROID__) && (defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__))
-        std::string command = std::string("xdg-open ").append(url);
-
-        const char* lib_path = getenv("LD_LIBRARY_PATH");
-        const char* system_lib_path = getenv("SYSTEM_LD_LIBRARY_PATH");
-
-        if (system_lib_path != NULL)
-        {
-            setenv("LD_LIBRARY_PATH", system_lib_path, 1);
-        }
-
-        if (system(command.c_str()))
+        if (!OnlineURL::launchURL("xdg-open", url))
         {
             Log::error("OpenURL", "Command returned non-zero exit status");
-        }
-
-        if (system_lib_path != NULL)
-        {
-            if (lib_path != NULL)
-            {
-                setenv("LD_LIBRARY_PATH", lib_path, 1);
-            }
-            else
-            {
-                unsetenv("LD_LIBRARY_PATH");
-            }
         }
 #elif SDL_VERSION_ATLEAST(2, 0, 14)
         SDL_OpenURL(url.c_str());

@@ -189,6 +189,11 @@ void AddonsManager::initAddons(const XMLNode *xml)
             node->getName()=="arena"                                 )
         {
             Addon addon(*node);
+            if (addon.getId().empty())
+            {
+                Log::warn("addons", "Ignoring add-on with an invalid id.");
+                continue;
+            }
             if (addon.testStatus(Addon::AS_APPROVED) &&
                 addon.getDate() > UserConfigParams::m_latest_addon_time)
             {
@@ -512,6 +517,11 @@ bool AddonsManager::anyAddonsInstalled() const
  */
 bool AddonsManager::install(const Addon &addon)
 {
+    if (addon.getId().empty() || addon.getDataDir().empty())
+    {
+        Log::error("addons", "Refusing to install add-on with an invalid id.");
+        return false;
+    }
 
     //extract the zip in the addons folder called like the addons name
     std::string base_name = StringUtils::getBasename(addon.getZipFileName());
@@ -596,6 +606,11 @@ bool AddonsManager::install(const Addon &addon)
  */
 bool AddonsManager::uninstall(const Addon &addon)
 {
+    if (addon.getId().empty() || addon.getDataDir().empty())
+    {
+        Log::error("addons", "Refusing to uninstall add-on with an invalid id.");
+        return false;
+    }
     Log::info("addons", "Uninstalling '%s'.",
                core::stringc(addon.getName()).c_str());
 

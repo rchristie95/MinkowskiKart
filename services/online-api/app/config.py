@@ -9,6 +9,9 @@ class Settings:
     session_days: int = 30
     listing_ttl_seconds: int = 20
     join_ttl_seconds: int = 45
+    join_max_entries: int = 64
+    join_max_payload_bytes: int = 4096
+    join_max_request_bytes: int = 8192
     allowed_game_version: int = 7
 
     @classmethod
@@ -22,6 +25,15 @@ class Settings:
             ),
             join_ttl_seconds=int(
                 os.getenv("MK_JOIN_TTL_SECONDS", cls.join_ttl_seconds)
+            ),
+            join_max_entries=int(
+                os.getenv("MK_JOIN_MAX_ENTRIES", cls.join_max_entries)
+            ),
+            join_max_payload_bytes=int(
+                os.getenv("MK_JOIN_MAX_PAYLOAD_BYTES", cls.join_max_payload_bytes)
+            ),
+            join_max_request_bytes=int(
+                os.getenv("MK_JOIN_MAX_REQUEST_BYTES", cls.join_max_request_bytes)
             ),
             allowed_game_version=int(
                 os.getenv("MK_ALLOWED_GAME_VERSION", cls.allowed_game_version)

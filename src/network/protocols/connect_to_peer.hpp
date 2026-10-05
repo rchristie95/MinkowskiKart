@@ -23,6 +23,8 @@
 #include "network/socket_address.hpp"
 #include "utils/cpp2011.hpp"
 
+#include <string>
+
 /** One instance of this is started for every peer who tries to
  *  connect to this server.
  */
@@ -30,6 +32,8 @@ class ConnectToPeer : public Protocol
 {
 protected:
     SocketAddress m_peer_address;
+    std::string m_aes_key;
+    std::string m_aes_iv;
 
     /** Timer use for tracking broadcast. */
     uint64_t m_timer = 0;
@@ -45,7 +49,9 @@ protected:
     }  m_state;
 
 public:
-             ConnectToPeer(const SocketAddress &address);
+             ConnectToPeer(const SocketAddress &address,
+                           const std::string& aes_key = "",
+                           const std::string& aes_iv = "");
     virtual ~ConnectToPeer() {}
     virtual void setup() OVERRIDE {}
     virtual void update(int ticks) OVERRIDE {}

@@ -15,7 +15,10 @@ on:
         default: 'preview'
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  TARGET_RELEASE: ${{ github.event.inputs.target_release }}
 
 jobs:
   build:
@@ -30,49 +33,57 @@ jobs:
             arch: x86_64
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
           submodules: true
       - name: Configure compiled project version
         run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/}"
+            if [[ ! "$TAG_VERSION" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+              echo 'Invalid release tag.' >&2
+              exit 1
+            fi
+          fi
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "project_version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
           else
             echo "project_version=git" >> "$GITHUB_ENV"
           fi
       - id: sysroot
-        uses: ASzc/change-string-case-action@v1
+        uses: ASzc/change-string-case-action@84a9d7f751ded04b51ef679752b3e54aea018d55 # v1
         with:
           string: ${{ matrix.platform }}
       - name: Download cctools and ISPC
         run: |
           cd /opt
-          wget https://github.com/supertuxkart/dependencies/releases/download/cctools/cctools-14.1.tar.xz
+          python "$GITHUB_WORKSPACE/tools/ci/download_verified.py" cctools-14.1.tar.xz
           tar xf cctools-14.1.tar.xz
           rm cctools-14.1.tar.xz
-          wget https://github.com/supertuxkart/dependencies/releases/download/preview/ispc-cross-1.26.0.tar.xz
+          python "$GITHUB_WORKSPACE/tools/ci/download_verified.py" ispc-cross-1.26.0.tar.xz
           tar xf ispc-cross-1.26.0.tar.xz
           rm ispc-cross-1.26.0.tar.xz
       - name: Restore timestamps
         run: |
-          wget https://github.com/MestreLion/git-tools/archive/refs/heads/main.zip
-          unzip main.zip
-          python git-tools-main/git-restore-mtime
+          python tools/ci/download_verified.py git-tools.zip
+          unzip git-tools.zip
+          python git-tools-*/git-restore-mtime
       - name: List build cache restore keys
         run: |
           # Look for the last 9 build caches (GitHub supports max 10 including current one)
           for number in 1 2 3 4 5 6 7 8 9
           do
             id=$((${{ github.run_number }} - number))
-            echo "cache_$number=apple-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.platform }}-$id" >> $GITHUB_ENV
+            echo "cache_$number=apple-locked-${{ hashFiles('.github/build-inputs.json') }}-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.platform }}-$id" >> $GITHUB_ENV
           done
       - name: Handle build cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             apple-build
-          key: apple-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.platform }}-${{ github.run_number }}
+          key: apple-locked-${{ hashFiles('.github/build-inputs.json') }}-${{ github.ref }}-${{ matrix.arch }}-${{ matrix.platform }}-${{ github.run_number }}
           restore-keys: |
             ${{ env.cache_1 }}
             ${{ env.cache_2 }}
@@ -85,7 +96,7 @@ jobs:
             ${{ env.cache_9 }}
       - name: Download dependencies
         run: |
-          wget https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-${{ steps.sysroot.outputs.lowercase }}.tar.xz
+          python tools/ci/download_verified.py dependencies-${{ steps.sysroot.outputs.lowercase }}.tar.xz
           tar xf dependencies-${{ steps.sysroot.outputs.lowercase }}.tar.xz
       - name: Configure clang runtime name
         run: |
@@ -114,19 +125,21 @@ jobs:
           make -j4
           mv bin ../${{ steps.sysroot.outputs.lowercase }}-${{ matrix.arch }}
       - name: Upload binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ steps.sysroot.outputs.lowercase }}-${{ matrix.arch }}
           path: ${{ steps.sysroot.outputs.lowercase }}-${{ matrix.arch }}
   packaging:
     name: Packaging MinkowskiKart
+    if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
     needs: build
     runs-on: macos-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 1
           submodules: false
       - name: Configure packaging name for git default branch
@@ -144,8 +157,12 @@ jobs:
       - name: Configure packaging name for manual runs
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "release_tag=${{ github.event.inputs.target_release }}" >> $GITHUB_ENV
-          echo "release_name=${{ github.event.inputs.target_release }}" >> $GITHUB_ENV
+          if [[ ! "$TARGET_RELEASE" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+            echo 'Invalid release name.' >&2
+            exit 1
+          fi
+          echo "release_tag=$TARGET_RELEASE" >> $GITHUB_ENV
+          echo "release_name=$TARGET_RELEASE" >> $GITHUB_ENV
           echo "package_tag=git`date +%Y%m%d`" >> $GITHUB_ENV
       - name: Configure packaging name for non-releasing branch
         if: ${{ github.event_name != 'workflow_dispatch' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/') }}
@@ -180,15 +197,15 @@ jobs:
             echo "gh CLI not found, skipping tag update"
           fi
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
       - name: Download stk-assets
         if: ${{ env.package_tag != '' }}
         run: |
-          wget https://github.com/supertuxkart/stk-assets-mobile/releases/download/git/stk-assets-full.zip
+          python tools/ci/download_verified.py stk-assets-full.zip
       - name: Run dylibbundler and sign macOS build
         if: ${{ env.package_tag != '' }}
         run: |
-          wget https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-macosx.tar.xz
+          python tools/ci/download_verified.py dependencies-macosx.tar.xz
           tar xf dependencies-macosx.tar.xz
           HOMEBREW_NO_AUTO_UPDATE=1 brew install dylibbundler
           lipo -create ./macosx-x86_64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart ./macosx-arm64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart -output ./macosx-arm64/MinkowskiKart.app/Contents/MacOS/MinkowskiKart
@@ -271,19 +288,19 @@ jobs:
           zip -r MinkowskiKart-${{ env.package_tag }}-ios.ipa Payload/
       - name: Upload macOS zip artifact
         if: ${{ env.package_tag != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: MinkowskiKart-mac
           path: MinkowskiKart-${{ env.package_tag }}-mac.zip
       - name: Upload iOS IPA artifact
         if: ${{ env.package_tag != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: MinkowskiKart-ios
           path: MinkowskiKart-${{ env.package_tag }}-ios.ipa
       - name: Create release
         if: ${{ env.release_tag != '' }}
-        uses: ncipollo/release-action@v1.8.8
+        uses: ncipollo/release-action@10c84d509b28aae3903113151bfd832314964f2e # v1.8.8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "MinkowskiKart-${{ env.package_tag }}-mac.zip,MinkowskiKart-${{ env.package_tag }}-ios.ipa"

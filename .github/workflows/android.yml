@@ -22,24 +22,51 @@ on:
         default: ''
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     name: Build Android APK
     runs-on: ubuntu-24.04
+    environment:
+      name: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) && 'android-signing' || 'android-debug' }}
+    outputs:
+      release_tag: ${{ steps.release-target.outputs.release_tag }}
+      release_pre: ${{ steps.release-target.outputs.release_pre }}
     env:
+      TRUSTED_SIGNING: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
+      PRODUCTION_RELEASE_TAG: ${{ github.event.inputs.production_release_tag }}
+      BUILD_RELEASE_ARTIFACT: ${{ github.event.inputs.build_release_artifact }}
       ANDROID_HOME: "/usr/local/lib/android/sdk"
       ANDROID_SDK_ROOT: "/usr/local/lib/android/sdk"
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: 'temurin'
           java-version: '21'
+
+      - name: Verify signing commit belongs to the default branch
+        if: ${{ env.TRUSTED_SIGNING == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --unshallow origin || true
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main' || true
+          git fetch --no-tags origin '+refs/heads/master:refs/remotes/origin/master' || true
+          for branch in main master; do
+            if git show-ref --verify --quiet "refs/remotes/origin/$branch" &&
+               git merge-base --is-ancestor "$GITHUB_SHA" "origin/$branch"; then
+              exit 0
+            fi
+          done
+          echo 'Signing requires a commit already present on main or master.' >&2
+          exit 1
 
       - name: Install dependencies
         run: |
@@ -53,26 +80,26 @@ jobs:
 
       - name: Cache Android Dependencies Source and Prebuilts
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             lib
             android/deps-arm64-v8a
             android/mesa
-          key: ${{ runner.os }}-android-deps-v2-${{ hashFiles('.github/workflows/android.yml', 'android/Android.mk', 'android/build.gradle', 'android/make.sh') }}
+          key: ${{ runner.os }}-android-deps-v2-${{ hashFiles('.github/workflows/android.yml', '.github/build-inputs.json', 'android/Android.mk', 'android/build.gradle', 'android/make.sh') }}
 
       - name: Download and Extract Android Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
         shell: bash
         run: |
           echo "Downloading dependency source archive..."
-          curl -L -o dependencies-android-src.tar.xz https://github.com/supertuxkart/dependencies/releases/download/preview/dependencies-android-src.tar.xz
+          python tools/ci/download_verified.py dependencies-android-src.tar.xz
           echo "Extracting dependency sources into lib/..."
           tar -C 'lib' -xf dependencies-android-src.tar.xz
           
           echo "Downloading missing linkernsbypass dependency..."
           mkdir -p lib/libadrenotools/lib/linkernsbypass
-          curl -L -o linkernsbypass.tar.gz https://github.com/bylaws/liblinkernsbypass/archive/aa3975893d83ef1bc84c321ec60c65fbf1287887.tar.gz
+          python tools/ci/download_verified.py linkernsbypass.tar.gz
           echo "Extracting linkernsbypass..."
           tar -C lib/libadrenotools/lib/linkernsbypass --strip-components=1 -xf linkernsbypass.tar.gz
           rm linkernsbypass.tar.gz
@@ -101,12 +128,23 @@ jobs:
       - name: Build MinkowskiKart APK
         shell: bash
         env:
-          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
-          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
-          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
-          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ env.TRUSTED_SIGNING == 'true' && secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 || '' }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ env.TRUSTED_SIGNING == 'true' && secrets.ANDROID_UPLOAD_STORE_PASSWORD || '' }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ env.TRUSTED_SIGNING == 'true' && secrets.ANDROID_UPLOAD_KEY_ALIAS || '' }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ env.TRUSTED_SIGNING == 'true' && secrets.ANDROID_UPLOAD_KEY_PASSWORD || '' }}
         run: |
           set -euo pipefail
+          if [[ -n "$PRODUCTION_RELEASE_TAG" && ! "$PRODUCTION_RELEASE_TAG" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+            echo 'Invalid production release tag.' >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/}"
+            if [[ ! "$TAG_VERSION" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+              echo 'Invalid release tag.' >&2
+              exit 1
+            fi
+          fi
           export SDK_PATH="$ANDROID_SDK_ROOT"
           export NDK_PATH="$ANDROID_SDK_ROOT/ndk"
           export STK_MIN_ANDROID_SDK=21
@@ -117,13 +155,20 @@ jobs:
           # and validation rejects optional Mesa hook libraries. Do not spend
           # release time compiling a driver that cannot be packaged.
           export SKIP_MESA=1
-          if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" || "${{ github.event.inputs.build_release_artifact }}" == "true" ]]; then
+          if [[ "$TRUSTED_SIGNING" != "true" ]]; then
+            export BUILD_TYPE="debug"
+            export PROJECT_VERSION="git-${GITHUB_SHA::7}"
+            ANDROID_PACKAGE_NAME="org.supertuxkart.stk_dbg"
+            ANDROID_CHANNEL="Debug"
+            ANDROID_APK_VARIANT="debug"
+            ANDROID_GRADLE_VARIANT="Debug"
+          elif [[ "$GITHUB_REF" == refs/tags/* || -n "$PRODUCTION_RELEASE_TAG" || "$BUILD_RELEASE_ARTIFACT" == "true" ]]; then
             export BUILD_TYPE="release"
             if [[ "$GITHUB_REF" == refs/tags/* ]]; then
               export PROJECT_VERSION="${GITHUB_REF#refs/tags/}"
               ANDROID_CHANNEL="Production"
-            elif [[ -n "${{ github.event.inputs.production_release_tag }}" ]]; then
-              export PROJECT_VERSION="${{ github.event.inputs.production_release_tag }}"
+            elif [[ -n "$PRODUCTION_RELEASE_TAG" ]]; then
+              export PROJECT_VERSION="$PRODUCTION_RELEASE_TAG"
               ANDROID_CHANNEL="Production"
             else
               export PROJECT_VERSION="release-test-${GITHUB_RUN_NUMBER}"
@@ -149,9 +194,9 @@ jobs:
           fi
           export PROJECT_CODE="$GITHUB_RUN_NUMBER"
 
-          # Use one stable signing identity for all CI APKs. Debug APKs retain
-          # their separate application ID but must be installable over earlier
-          # CI debug builds.
+          # Production credentials are available only to trusted release refs.
+          # PR/feature builds use Gradle's disposable debug signing identity.
+          if [[ "$TRUSTED_SIGNING" == "true" ]]; then
           if [[ -z "$ANDROID_UPLOAD_KEYSTORE_BASE64" ||
                 -z "$ANDROID_UPLOAD_STORE_PASSWORD" ||
                 -z "$ANDROID_UPLOAD_KEY_ALIAS" ||
@@ -166,6 +211,7 @@ jobs:
           export STK_STOREPASS="$ANDROID_UPLOAD_STORE_PASSWORD"
           export STK_KEYPASS="$ANDROID_UPLOAD_KEY_PASSWORD"
           export STK_ALIAS="$ANDROID_UPLOAD_KEY_ALIAS"
+          fi
 
           echo "android_package_name=$ANDROID_PACKAGE_NAME" >> "$GITHUB_ENV"
           echo "android_channel=$ANDROID_CHANNEL" >> "$GITHUB_ENV"
@@ -257,35 +303,27 @@ jobs:
           done
 
       - name: Set release target
-        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '' }}
+        id: release-target
+        if: ${{ env.TRUSTED_SIGNING == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '') && !(github.event_name == 'workflow_dispatch' && github.event.inputs.build_release_artifact == 'true' && github.event.inputs.production_release_tag == '') }}
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/* || -n "${{ github.event.inputs.production_release_tag }}" ]]; then
+          if [[ "$GITHUB_REF" == refs/tags/* || -n "$PRODUCTION_RELEASE_TAG" ]]; then
             if [[ "$GITHUB_REF" == refs/tags/* ]]; then
               RELEASE_TAG="${GITHUB_REF#refs/tags/}"
             else
-              RELEASE_TAG="${{ github.event.inputs.production_release_tag }}"
+              RELEASE_TAG="$PRODUCTION_RELEASE_TAG"
             fi
             echo "release_tag=$RELEASE_TAG" >> $GITHUB_ENV
+            RELEASE_PRE=false
             echo "release_pre=false" >> $GITHUB_ENV
           else
+            RELEASE_TAG=preview
+            RELEASE_PRE=true
             echo "release_tag=preview" >> $GITHUB_ENV
             echo "release_pre=true" >> $GITHUB_ENV
           fi
-
-      - name: Force update preview tag and release target to current commit
-        if: ${{ env.release_tag == 'preview' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if command -v gh &> /dev/null; then
-            gh api -X PATCH "repos/${{ github.repository }}/git/refs/tags/preview" -F sha="${{ github.sha }}" -F force=true || true
-            gh release edit preview --target "${{ github.sha }}" --prerelease || true
-          else
-            echo "gh CLI not found, skipping tag update"
-          fi
-
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_pre=$RELEASE_PRE" >> "$GITHUB_OUTPUT"
 
       - name: Rename APK with release tag
         if: ${{ env.release_tag != '' }}
@@ -297,7 +335,7 @@ jobs:
           echo "apk_path=$DEST" >> $GITHUB_ENV
 
       - name: Rename production app bundle
-        if: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '' }}
+        if: ${{ env.TRUSTED_SIGNING == 'true' && (startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '') }}
         shell: bash
         run: |
           AAB=$(ls android/build/outputs/bundle/release/*.aab | head -1)
@@ -305,37 +343,59 @@ jobs:
           cp "$AAB" "$DEST"
           echo "aab_path=$DEST" >> $GITHUB_ENV
 
-      - name: Upload beta APK to preview release
-        if: ${{ env.release_tag == 'preview' }}
-        uses: ncipollo/release-action@v1.8.8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "${{ env.apk_path }}"
-          tag: ${{ env.release_tag }}
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          allowUpdates: true
-          replacesArtifacts: true
-          prerelease: ${{ env.release_pre }}
-
-      - name: Upload production APK and app bundle to release
-        if: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.production_release_tag != '' }}
-        uses: ncipollo/release-action@v1.8.8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "${{ env.apk_path }},${{ env.aab_path }}"
-          tag: ${{ env.release_tag }}
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          allowUpdates: true
-          replacesArtifacts: true
-          prerelease: ${{ env.release_pre }}
-
       - name: Upload MinkowskiKart Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: MinkowskiKart-Android-${{ env.android_channel }}
+          name: MinkowskiKart-Android
           path: |
             android/build/outputs/apk/${{ env.android_apk_variant }}/*.apk
             android/build/outputs/bundle/release/*.aab
+            MinkowskiKart-*-android.apk
+            MinkowskiKart-*-android.aab
           if-no-files-found: warn
+
+  publish:
+    name: Publish trusted Android release
+    needs: build
+    if: ${{ github.event_name != 'pull_request' && needs.build.outputs.release_tag != '' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: MinkowskiKart-Android
+      - name: Force update preview tag and release target
+        if: ${{ needs.build.outputs.release_tag == 'preview' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          gh api -X PATCH "repos/$RELEASE_REPOSITORY/git/refs/tags/preview" -F sha="$RELEASE_SHA" -F force=true || true
+          gh release edit preview --repo "$RELEASE_REPOSITORY" --target "$RELEASE_SHA" --prerelease || true
+      - name: Publish preview APK
+        if: ${{ needs.build.outputs.release_tag == 'preview' }}
+        uses: ncipollo/release-action@10c84d509b28aae3903113151bfd832314964f2e # v1.8.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: MinkowskiKart-preview-android.apk
+          tag: preview
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          allowUpdates: true
+          replacesArtifacts: true
+          prerelease: true
+      - name: Publish production APK and app bundle
+        if: ${{ needs.build.outputs.release_tag != '' && needs.build.outputs.release_tag != 'preview' }}
+        uses: ncipollo/release-action@10c84d509b28aae3903113151bfd832314964f2e # v1.8.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "MinkowskiKart-${{ needs.build.outputs.release_tag }}-android.apk,MinkowskiKart-${{ needs.build.outputs.release_tag }}-android.aab"
+          tag: ${{ needs.build.outputs.release_tag }}
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          allowUpdates: true
+          replacesArtifacts: true
+          prerelease: ${{ needs.build.outputs.release_pre }}

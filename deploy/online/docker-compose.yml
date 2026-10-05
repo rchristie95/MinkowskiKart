@@ -25,6 +25,9 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    networks:
+      api_proxy:
+        ipv4_address: 172.30.0.2
 
   api:
     build:
@@ -34,6 +37,10 @@ services:
       MK_DATABASE_URL: postgresql+psycopg://minkowski:${POSTGRES_PASSWORD}@postgres/minkowski
       MK_REDIS_URL: redis://redis:6379/0
       MK_ALLOWED_GAME_VERSION: ${MK_ALLOWED_GAME_VERSION:-7}
+      MK_JOIN_MAX_ENTRIES: ${MK_JOIN_MAX_ENTRIES:-64}
+      MK_JOIN_MAX_PAYLOAD_BYTES: ${MK_JOIN_MAX_PAYLOAD_BYTES:-4096}
+      MK_JOIN_MAX_REQUEST_BYTES: ${MK_JOIN_MAX_REQUEST_BYTES:-8192}
+      MK_TRUSTED_PROXY_IPS: ${MK_TRUSTED_PROXY_IPS:-172.30.0.2}
       # Used by `app.admin ensure-official-host` on boot to idempotently
       # provision the account the dedicated server signs in with.
       MK_OFFICIAL_USERNAME: ${MK_OFFICIAL_USERNAME:-official-host}
@@ -43,6 +50,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      default: {}
+      api_proxy:
+        ipv4_address: 172.30.0.3
     healthcheck:
       test:
         - CMD
@@ -122,3 +133,9 @@ volumes:
   postgres_data:
   redis_data:
   official_server_data:
+
+networks:
+  api_proxy:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/29

@@ -81,6 +81,11 @@ Set `MK_ONLINE_DOMAIN=online.robsonchristie.com` and
 `POSTGRES_PASSWORD`, and choose an official-host password between 8 and 60
 characters.
 
+The API accepts forwarded client addresses only from Caddy at `172.30.0.2` on
+the isolated `api_proxy` network. If you change that network or proxy layout,
+update `MK_TRUSTED_PROXY_IPS` to the exact trusted proxy address or CIDR. Keep
+the online hostname DNS-only at Cloudflare so Caddy sees the player's address.
+
 ## 3. Start The Matchmaker
 
 ```bash
@@ -97,7 +102,8 @@ docker compose exec api python -m app.admin create-user \
   --username official-host --official-host
 ```
 
-Create additional invited player accounts with:
+Public registration is disabled. Create additional invited player accounts
+with:
 
 ```bash
 docker compose exec api python -m app.admin create-user --username PLAYER_NAME

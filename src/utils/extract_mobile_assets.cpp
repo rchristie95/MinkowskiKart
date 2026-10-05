@@ -47,7 +47,8 @@ bool ExtractMobileAssets::extract(const std::string& zip_file,
     // Remove previous stk-assets version and create a new one
     file_manager->removeDirectory(dst);
     file_manager->checkAndCreateDirectory(dst);
-    if (extract_zip(zip_file, dst, true/*recursive*/))
+    if (extract_zip(zip_file, dst, true/*recursive*/,
+                    ZipSafety::MOBILE_ASSET_LIMITS))
     {
         std::string extract_ok = dst + "stk-assets." + STK_VERSION;
         FILE* fp = fopen(extract_ok.c_str(), "wb");

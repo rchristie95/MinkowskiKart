@@ -71,6 +71,59 @@
 #endif
 
 #include <algorithm>
+#include <array>
+#include <cstring>
+#include <exception>
+#include <random>
+
+namespace
+{
+bool decodeDiscoveryReply(const char* bytes, int length,
+                          const std::array<uint64_t, 2>& nonce,
+                          uint16_t& port)
+{
+    if (!bytes || length != 18)
+        return false;
+    BareNetworkString reply(bytes, length);
+    const uint16_t candidate_port = reply.getUInt16();
+    if (reply.getUInt64() != nonce[0] || reply.getUInt64() != nonce[1] ||
+        candidate_port == 0)
+        return false;
+    port = candidate_port;
+    return true;
+}
+
+bool authenticateAloha(const uint8_t* bytes, size_t length,
+                      const std::string& key_text,
+                      const std::string& iv_text)
+{
+    static const uint8_t prefix[] = {
+        0xff, 0xff, 9, 'a', 'l', 'o', 'h', 'a', '-', 's', 't', 'k'
+    };
+    if (!bytes || length != 52 || memcmp(bytes, prefix, sizeof(prefix)) != 0)
+        return false;
+
+    std::vector<uint8_t> client_key, client_iv;
+    if (!decodeAlohaCredentials(key_text, iv_text, client_key, client_iv))
+        return false;
+
+    std::vector<uint8_t> auth_iv(bytes + 12, bytes + 24);
+    BareNetworkString encrypted(
+        reinterpret_cast<const char*>(bytes + 24), 28);
+    try
+    {
+        Crypto auth_crypto(getAlohaAuthKey(client_key), auth_iv, 16);
+        if (!auth_crypto.decryptConnectionRequest(encrypted))
+            return false;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+    return encrypted.getBuffer() == client_iv;
+}
+}
+
 // ============================================================================
 ENetAddress ConnectToServer::m_server_address;
 int ConnectToServer::m_retry_count = 0;
@@ -403,22 +456,21 @@ int ConnectToServer::interceptCallback(ENetHost* host, ENetEvent* event)
 {
     if (m_done_intecept)
         return 0;
-    // The first two bytes of a valid ENet protocol packet will never be 0xFFFF
-    // and then try decode the string "aloha-stk"
-    if (host->receivedDataLength == 12 &&
-        host->receivedData[0] == 0xFF && host->receivedData[1]  == 0xFF &&
-        host->receivedData[2] == 0x09 && host->receivedData[3] == 'a' &&
-        host->receivedData[4]  == 'l' && host->receivedData[5] == 'o' &&
-        host->receivedData[6] == 'h' && host->receivedData[7] == 'a' &&
-        host->receivedData[8] == '-' && host->receivedData[9] == 's' &&
-        host->receivedData[10] == 't' && host->receivedData[11] == 'k')
+    if (host->receivedDataLength == 52 && host->receivedData[0] == 0xff &&
+        host->receivedData[1] == 0xff && host->receivedData[2] == 9 &&
+        memcmp(host->receivedData + 3, "aloha-stk", 9) == 0)
     {
+        if (!authenticateAloha(host->receivedData, host->receivedDataLength,
+                               Crypto::getClientKey(), Crypto::getClientIV()))
+            return 0;
 #if defined(ENABLE_IPV6) || defined(__SWITCH__)
-        if (enet_ip_not_equal(host->receivedAddress.host, m_server_address.host) ||
+        if (enet_ip_not_equal(host->receivedAddress.host,
+                              m_server_address.host) ||
+            host->receivedAddress.port != m_server_address.port)
 #else
         if (host->receivedAddress.host != m_server_address.host ||
-#endif
             host->receivedAddress.port != m_server_address.port)
+#endif
         {
             SocketAddress new_address(host->receivedAddress);
             Log::info("ConnectToServer", "Using new server address %s",
@@ -833,6 +885,13 @@ cleanup:
         /*max_in_bandwidth*/0, /*max_out_bandwidth*/0, &ea,
         true/*change_port_if_bound*/));
     BareNetworkString s(std::string("stk-server-port"));
+    // The reply echoes this per-query unpredictable value so another host
+    // cannot redirect the connection with a forged UDP response.
+    std::random_device secure_random;
+    const std::array<uint64_t, 2> discovery_nonce = {{
+        (uint64_t(secure_random()) << 32) | uint64_t(secure_random()),
+        (uint64_t(secure_random()) << 32) | uint64_t(secure_random()) }};
+    s.addUInt64(discovery_nonce[0]).addUInt64(discovery_nonce[1]);
     SocketAddress address;
     if (m_server->useIPV6Connection())
         address = *m_server->getIPV6Address();
@@ -844,11 +903,15 @@ cleanup:
     const int LEN = 2048;
     char buffer[LEN];
     int len = nw->receiveRawPacket(buffer, LEN, &sender, 2000);
-    if (len == 2)
+    uint16_t discovered_port = 0;
+    bool authenticated_reply = false;
+    if (decodeDiscoveryReply(buffer, len, discovery_nonce, discovered_port))
+        authenticated_reply = true;
+    if (authenticated_reply)
     {
-        BareNetworkString server_port(buffer, len);
-        uint16_t port = server_port.getUInt16();
-        sender.setPort(port);
+        // A unicast discovery probe must be answered by the address it
+        // targeted, unless it echoed our nonce for multicast resolution.
+        sender.setPort(discovered_port);
         // Use the DNS detected port over direct socket one, because only
         // one direct socket exists in a host even they have many stk servers
         if (port_from_dns != 0)
@@ -888,3 +951,79 @@ cleanup:
     }
     return true;
 }   // detectPort
+
+// ----------------------------------------------------------------------------
+void ConnectToServer::unitTesting()
+{
+    const std::array<uint64_t, 2> nonce = {{
+        uint64_t(0x7a91c42de50863bf), uint64_t(0x129f04c795ba2d31) }};
+    BareNetworkString reply;
+    reply.addUInt16(2759).addUInt64(nonce[0]).addUInt64(nonce[1]);
+    uint16_t port = 0;
+    if (!decodeDiscoveryReply(reply.getData(), reply.getTotalSize(),
+                              nonce, port) || port != 2759)
+        throw std::runtime_error("Discovery nonce round trip failed.");
+    std::array<uint64_t, 2> wrong_nonce = nonce;
+    wrong_nonce[1] ^= 1;
+    if (decodeDiscoveryReply(reply.getData(), reply.getTotalSize(),
+                             wrong_nonce, port) ||
+        decodeDiscoveryReply(reply.getData(), 17, nonce, port) ||
+        decodeDiscoveryReply(reply.getData(), 2, nonce, port))
+        throw std::runtime_error("Invalid discovery reply was accepted.");
+    BareNetworkString invalid_reply;
+    invalid_reply.addUInt16(0).addUInt64(nonce[0]).addUInt64(nonce[1]);
+    if (decodeDiscoveryReply(invalid_reply.getData(),
+                             invalid_reply.getTotalSize(), nonce, port))
+        throw std::runtime_error("Zero discovery port was accepted.");
+
+    std::vector<uint8_t> client_key(16, 0x31);
+    std::vector<uint8_t> client_iv(12, 0x62);
+    const std::string key_text = Crypto::base64(client_key);
+    const std::string iv_text = Crypto::base64(client_iv);
+    std::vector<uint8_t> decoded_key, decoded_iv;
+    if (!decodeAlohaCredentials(key_text, iv_text, decoded_key, decoded_iv) ||
+        decoded_key != client_key || decoded_iv != client_iv)
+        throw std::runtime_error("Valid Aloha credentials were rejected.");
+    const std::string malformed_keys[] = {
+        "", "A", "!!!!!!!!!!!!!!!!!!!!!!!!", "AAAAAAAAAAAAAAAAAAAAAB=="
+    };
+    for (const std::string& malformed : malformed_keys)
+    {
+        if (decodeAlohaCredentials(malformed, iv_text,
+                                   decoded_key, decoded_iv))
+            throw std::runtime_error("Malformed Aloha key was accepted.");
+    }
+    const std::string malformed_ivs[] = { "", "A", "AAAAAAAAAAAAAAA!" };
+    for (const std::string& malformed : malformed_ivs)
+    {
+        if (decodeAlohaCredentials(key_text, malformed,
+                                   decoded_key, decoded_iv))
+            throw std::runtime_error("Malformed Aloha IV was accepted.");
+    }
+    std::vector<uint8_t> auth_iv(12, 0x94);
+    Crypto auth(getAlohaAuthKey(client_key), auth_iv, 16);
+    BareNetworkString token(
+        reinterpret_cast<const char*>(client_iv.data()),
+        static_cast<int>(client_iv.size()));
+    if (!auth.encryptConnectionRequest(token))
+        throw std::runtime_error("Could not prepare authenticated Aloha test.");
+    std::vector<uint8_t> aloha = {
+        0xff, 0xff, 9, 'a', 'l', 'o', 'h', 'a', '-', 's', 't', 'k'
+    };
+    aloha.insert(aloha.end(), auth_iv.begin(), auth_iv.end());
+    aloha.insert(aloha.end(), token.getBuffer().begin(),
+                 token.getBuffer().end());
+    if (aloha.size() != 52 || !authenticateAloha(aloha.data(), aloha.size(),
+        key_text, iv_text))
+        throw std::runtime_error("Authenticated Aloha was rejected.");
+    std::vector<uint8_t> wrong_key = client_key;
+    wrong_key[0] ^= 1;
+    if (authenticateAloha(aloha.data(), aloha.size(),
+        Crypto::base64(wrong_key), iv_text))
+        throw std::runtime_error("Aloha accepted the wrong client key.");
+    aloha[24] ^= 1;
+    if (authenticateAloha(aloha.data(), aloha.size(), key_text, iv_text) ||
+        authenticateAloha(aloha.data(), 12, key_text, iv_text) ||
+        authenticateAloha(aloha.data(), 52, "", ""))
+        throw std::runtime_error("Aloha accepted modified or legacy data.");
+}   // unitTesting
