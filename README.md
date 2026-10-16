@@ -34,13 +34,15 @@ Minkowski Kart is a physics-inspired arcade game built for fast, playful racing.
 
 ## Download and play
 
-The latest published release is **version_1.92**, with packages for **Windows, macOS, Linux, and Android**, plus an iOS development-testing IPA. Download the exact assets from the [latest release page](https://github.com/rchristie95/MinkowskiKart/releases/latest).
+The latest stable release is **version_1.92**, published on **26 August 2026**, with packages for **Windows, macOS, Linux, and Android**, plus an iOS development-testing IPA. Download the exact assets from the [latest release page](https://github.com/rchristie95/MinkowskiKart/releases/latest).
 
-The package-validation results below include checks of the earlier **version_1.9** artifacts. The exact version_1.9 Windows archive passes SHA-256, full ZIP integrity, extraction, required gameplay-data and asset checks, and a 44-second headless race-initialisation smoke test. That archive predates the publication-workflow fix and omits a root copy of `COPYING`; the source licence remains available in this repository, and future Windows packages include it. Those checks do not establish validation of the version_1.92 assets. The [download page](https://rchristie95.github.io/MinkowskiKart/download.html) documents platform support and recorded package checks.
+Development packages are available from the [preview release](https://github.com/rchristie95/MinkowskiKart/releases/tag/preview). On 16 October 2026, the [Windows preview workflow](https://github.com/rchristie95/MinkowskiKart/actions/runs/38858720542) passed exact-archive startup verification and a separate graphical race smoke test, including checks for the required licence files and matching data-version marker. Preview packages change as development continues.
 
-### Windows x64: previously validated version_1.9 package
+Earlier checks of the **version_1.9** Windows archive established SHA-256, full ZIP integrity, extraction, required gameplay-data and asset checks, and a 44-second headless race-initialisation smoke test. Those historical checks do not establish validation of the version_1.92 assets. The [download page](https://rchristie95.github.io/MinkowskiKart/download.html) lists current stable-release checksums and recorded package checks.
 
-1. Download [`MinkowskiKart-version_1.9-win.zip`](https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-win.zip).
+### Windows x64: current stable release
+
+1. Download [`MinkowskiKart-version_1.92-win.zip`](https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.92/MinkowskiKart-version_1.92-win.zip) and compare its SHA-256 digest with the [companion checksum file](https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.92/MinkowskiKart-version_1.92-win.zip.sha256).
 2. Extract the complete archive to a writable folder.
 3. Open the extracted folder and run `run_game.bat`.
 4. If Windows displays a security warning, verify the file came from the release link above before choosing whether to continue.
@@ -49,7 +51,7 @@ No minimum CPU, GPU, memory, or Windows version has yet been established. Enhanc
 
 | Package | Current evidence |
 |---|---|
-| Windows | Working x64 build; the exact release archive passes integrity, extraction, gameplay-asset, and headless race-initialisation checks. Its missing root `COPYING` file is fixed for future packages. |
+| Windows | Stable version_1.92 archive with a published SHA-256 file; the 16 October 2026 preview additionally passes exact-archive and graphical race smoke tests. |
 | macOS | Working universal package; headless initialization and unit tests also run in CI. |
 | Android | Working ARM64 APK for Android 5.0+; package structure and alignment are also checked in CI. |
 | Linux | Working x86-64 package that bundles the complete `stk-assets` pack; packaging asserts the required tracks and karts are present before the archive is compressed. CI builds the client and server across GCC/Clang and Debug/Release configurations. |
@@ -77,15 +79,17 @@ cmake -S . -B build -G Ninja `
   -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/Toolchain-llvm-mingw.cmake" `
   -DCHECK_ASSETS=OFF `
   -DUSE_WIIUSE=OFF `
-  -DSTK_RELEASE_VERSION=version_1.9
+  -DSTK_RELEASE_VERSION=version_1.92
 
 cmake --build build --parallel
 ```
 
-The executable is written to `build/bin/MinkowskiKart.exe`. Run it with the repository data root:
+The executable is written to `build/bin/MinkowskiKart.exe`. Match the data marker to the compiled version, then run it with the repository data root:
 
 ```powershell
-./build/bin/MinkowskiKart.exe --root-data="$PWD/data"
+Copy-Item ./data/supertuxkart.git ./data/supertuxkart.version_1.92
+$env:SUPERTUXKART_DATADIR = "$PWD"
+./build/bin/MinkowskiKart.exe
 ```
 
 Linux, Apple, Android, and Switch build recipes remain in their existing workflow and platform directories. See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.

@@ -51,9 +51,9 @@
 
   <main id="main">
     <header class="page-hero">
-      <p class="eyebrow">Current release · 18 July 2026</p>
+      <p class="eyebrow">Stable release · 26 August 2026</p>
       <h1>Download version_1.92</h1>
-      <p class="lede">Working builds are available for Windows, macOS, Linux, and Android. The exact Windows x64 release archive passes integrity, extraction, required gameplay-data and asset checks, and a 44-second headless race-initialisation smoke test.</p>
+      <p class="lede">The latest stable release is version_1.92, with packages for Windows, macOS, Linux, and Android, plus an iOS developer-testing IPA. Download your platform below and compare its SHA-256 digest before installing.</p>
       <div class="actions">
         <a class="button primary" href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.92/MinkowskiKart-version_1.92-win.zip">Download for Windows</a>
         <a class="button" href="https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.92">Release page</a>
@@ -73,14 +73,15 @@
         </ol>
         <div class="actions">
           <a class="button primary" href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.92/MinkowskiKart-version_1.92-win.zip">MinkowskiKart-version_1.92-win.zip</a>
+          <a class="button" href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.92/MinkowskiKart-version_1.92-win.zip.sha256">Windows SHA-256 file</a>
         </div>
       </div>
       <aside class="card success" aria-labelledby="windows-verification-heading">
         <p class="kicker">Verification</p>
-        <h3 id="windows-verification-heading">What the automated test proves</h3>
-        <p>The exact published archive matches GitHub's SHA-256 digest, passes CRC and extraction checks, contains the x64 executable plus required data and assets, and initialises a two-kart Möbius Trip race for more than 44 seconds without an error or crash marker.</p>
-        <p>The publication workflow adds a second archive-level check so future uploads are extracted and inspected exactly as players receive them.</p>
-        <p>The published archive predates the workflow fix that adds a root copy of <code>COPYING</code>; the licence is available in the source repository and future Windows packages include it. The executable is currently unsigned. A graphical launch was not independently repeated because Windows Defender blocked the hidden PowerShell launch command; the safe direct headless test passed, and the game executable itself was not the detected resource.</p>
+        <h3 id="windows-verification-heading">Stable release and development checks</h3>
+        <p>The digests below match GitHub's metadata for version_1.92. The separately recorded ZIP integrity, extraction, required-asset, and 44-second headless race checks apply to the earlier version_1.9 archive; they do not establish those results for version_1.92.</p>
+        <p>On 16 October 2026, the <a href="https://github.com/rchristie95/MinkowskiKart/actions/runs/38858720542">Windows preview build</a> passed the exact-archive startup check and a separate graphical race smoke test. The extracted preview archive includes the required licence files and matching version marker.</p>
+        <p>For development builds, use the <a href="https://github.com/rchristie95/MinkowskiKart/releases/tag/preview">preview release</a>. Preview packages change as development continues; version_1.92 remains the latest stable release. Windows executables are unsigned.</p>
       </aside>
     </section>
 
@@ -121,7 +122,7 @@
     <section class="section" aria-labelledby="checksum-heading">
       <p class="eyebrow">Integrity</p>
       <h2 id="checksum-heading">SHA-256 digests</h2>
-      <p class="section-intro">GitHub reports these digests for the current release assets. Future Windows release automation also publishes a companion checksum file.</p>
+      <p class="section-intro">These digests match GitHub's version_1.92 release metadata, checked on 16 October 2026. The Windows download also has a companion <a href="https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.92/MinkowskiKart-version_1.92-win.zip.sha256">SHA-256 file</a>.</p>
       <div class="card">
         <table class="status-table">
           <thead><tr><th>Asset</th><th>SHA-256</th></tr></thead>
@@ -150,7 +151,7 @@
       <aside class="card" aria-labelledby="source-build-heading">
         <p class="kicker">Source build</p>
         <h3 id="source-build-heading">Build the exact revision</h3>
-        <p>Clone the repository, check out <code>version_1.92</code>, install the platform toolchain and dependencies, and pass <code>-DSTK_RELEASE_VERSION=version_1.92</code> to CMake.</p>
+        <p>Clone the repository, check out <code>version_1.92</code>, install the platform toolchain and dependencies, and pass <code>-DSTK_RELEASE_VERSION=version_1.92</code> to CMake. When running from the source tree, copy <code>data/supertuxkart.git</code> to <code>data/supertuxkart.version_1.92</code> so the data marker matches the executable.</p>
         <p><a href="https://github.com/rchristie95/MinkowskiKart#build-from-source">Read the source-build guide</a></p>
         <p><a href="https://github.com/rchristie95/MinkowskiKart/actions">Inspect build logs</a></p>
       </aside>
