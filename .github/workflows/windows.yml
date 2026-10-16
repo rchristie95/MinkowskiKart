@@ -330,10 +330,10 @@ jobs:
           cp -r stk-assets-custom/. MinkowskiKart-${{ env.release_tag }}-win/stk-assets/
           cp -r data MinkowskiKart-${{ env.release_tag }}-win/data
           cp COPYING ATTRIBUTION.md README.md MinkowskiKart-${{ env.release_tag }}-win/
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            cp "MinkowskiKart-${{ env.release_tag }}-win/data/supertuxkart.git" \
-              "MinkowskiKart-${{ env.release_tag }}-win/data/supertuxkart.${{ env.release_tag }}"
-          fi
+          # Every released binary uses release_tag as STK_VERSION, including
+          # preview and workflow_dispatch builds, so it needs a matching marker.
+          cp "MinkowskiKart-${{ env.release_tag }}-win/data/supertuxkart.git" \
+            "MinkowskiKart-${{ env.release_tag }}-win/data/supertuxkart.${{ env.release_tag }}"
           # replay/ is required by the file manager but upload-artifact strips
           # hidden files so .gitkeep doesn't survive — ensure the dir exists
           mkdir -p MinkowskiKart-${{ env.release_tag }}-win/data/replay
@@ -419,6 +419,7 @@ jobs:
             "README.md",
             "bin\x86_64\MinkowskiKart.exe",
             "data\stk_config.xml",
+            "data\supertuxkart.$env:release_tag",
             "stk-assets\tracks\mobius_track\track.xml",
             "stk-assets\karts\minkowski\kart.xml"
           )
