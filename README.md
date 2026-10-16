@@ -7,13 +7,13 @@ Minkowski Kart is a free, open-source 3D **relativistic kart-racing game** with 
 <p align="center">
   <a href="https://rchristie95.github.io/MinkowskiKart/download.html"><strong>Download Minkowski Kart</strong></a>
   · <a href="https://rchristie95.github.io/MinkowskiKart/">Website</a>
-  · <a href="https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9">Latest release</a>
+  · <a href="https://github.com/rchristie95/MinkowskiKart/releases/latest">Latest release</a>
   · <a href="https://github.com/rchristie95/MinkowskiKart">Source code</a>
   · <a href="marketing/video/capture-checklist.md">Gameplay capture plan</a>
 </p>
 
 <p align="center">
-  <img alt="Current release: version 1.9" src="https://img.shields.io/badge/release-version__1.9-61d8e6">
+  <img alt="Latest GitHub release" src="https://img.shields.io/github/v/release/rchristie95/MinkowskiKart?color=61d8e6">
   <img alt="Project status: experimental" src="https://img.shields.io/badge/status-experimental-f0b35a">
   <img alt="Licence: GNU GPL version 3 or later" src="https://img.shields.io/badge/licence-GPLv3%2B-8bd450">
   <a href="https://github.com/rchristie95/MinkowskiKart/actions/workflows/windows.yml"><img alt="Windows build workflow status" src="https://github.com/rchristie95/MinkowskiKart/actions/workflows/windows.yml/badge.svg"></a>
@@ -34,9 +34,11 @@ Minkowski Kart is a physics-inspired arcade game built for fast, playful racing.
 
 ## Download and play
 
-The current public release is **version_1.9**, with working builds for **Windows, macOS, Linux, and Android**. The exact published Windows archive passes SHA-256, full ZIP integrity, extraction, required gameplay-data and asset checks, and a 44-second headless race-initialisation smoke test. That archive predates the publication-workflow fix and omits a root copy of `COPYING`; the source licence remains available in this repository, and future Windows packages include it. The [download page](https://rchristie95.github.io/MinkowskiKart/download.html) separates confirmed platform support from the exact checks run for each package.
+The latest published release is **version_1.92**, with packages for **Windows, macOS, Linux, and Android**, plus an iOS development-testing IPA. Download the exact assets from the [latest release page](https://github.com/rchristie95/MinkowskiKart/releases/latest).
 
-### Windows x64
+The package-validation results below include checks of the earlier **version_1.9** artifacts. The exact version_1.9 Windows archive passes SHA-256, full ZIP integrity, extraction, required gameplay-data and asset checks, and a 44-second headless race-initialisation smoke test. That archive predates the publication-workflow fix and omits a root copy of `COPYING`; the source licence remains available in this repository, and future Windows packages include it. Those checks do not establish validation of the version_1.92 assets. The [download page](https://rchristie95.github.io/MinkowskiKart/download.html) documents platform support and recorded package checks.
+
+### Windows x64: previously validated version_1.9 package
 
 1. Download [`MinkowskiKart-version_1.9-win.zip`](https://github.com/rchristie95/MinkowskiKart/releases/download/version_1.9/MinkowskiKart-version_1.9-win.zip).
 2. Extract the complete archive to a writable folder.
@@ -53,7 +55,7 @@ No minimum CPU, GPU, memory, or Windows version has yet been established. Enhanc
 | Linux | Working x86-64 package that bundles the complete `stk-assets` pack; packaging asserts the required tracks and karts are present before the archive is compressed. CI builds the client and server across GCC/Clang and Debug/Release configurations. |
 | iOS | Ad-hoc IPA for development testing. Player releases focus on Windows, macOS, Linux, and Android. |
 
-All release files are listed on the [version_1.9 release page](https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9).
+Current release files are listed on the [latest release page](https://github.com/rchristie95/MinkowskiKart/releases/latest). The earlier package described above remains on the [version_1.9 release page](https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.9).
 
 ## Controls
 
