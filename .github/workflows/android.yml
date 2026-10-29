@@ -147,7 +147,7 @@ jobs:
           fi
           export SDK_PATH="$ANDROID_SDK_ROOT"
           export NDK_PATH="$ANDROID_SDK_ROOT/ndk"
-          export STK_MIN_ANDROID_SDK=21
+          export STK_MIN_ANDROID_SDK=24
           export STK_TARGET_ANDROID_SDK=36
           export STK_NDK_VERSION="28.1.13356709"
           export COMPILE_ARCH="aarch64"
@@ -247,6 +247,7 @@ jobs:
           "$AAPT" dump badging "$APK" | grep -q "package: name='${{ env.android_package_name }}'"
           "$AAPT" dump badging "$APK" | grep -q "versionCode='${{ env.android_version_code }}'"
           "$AAPT" dump badging "$APK" | grep -qx "targetSdkVersion:'36'"
+          "$AAPT" dump badging "$APK" | grep -qx "sdkVersion:'24'"
           if [[ "${{ env.android_apk_variant }}" == "release" ]]; then
             AAB=$(ls android/build/outputs/bundle/release/*.aab | head -1)
             BASE_COMPRESSED_BYTES=$(python3 - "$AAB" <<'PY'
