@@ -608,7 +608,7 @@ begin:
                 Relativity::isEnabled() &&
                 !UserConfigParams::m_vk_debug_no_tess;
 #endif
- #if defined(ANDROID)
+#if defined(ANDROID)
             // Mali Vulkan drivers can fail queue submission when the adaptive
             // tessellation pipeline first draws Nürburgring. Keep the existing
             // CPU mesh subdivision and vertex warp on these devices instead.
@@ -620,7 +620,7 @@ begin:
                 Log::info("IrrDriver", "Using CPU subdivision on Android ARM GPU; "
                     "adaptive Vulkan tessellation disabled.");
             }
- #endif
+#endif
             // Sun shadow mapping, per-object glow and light scattering
             // (ported from the SP/OpenGL advanced pipeline).
             GE::getGEConfig()->m_shadow_map_size =
