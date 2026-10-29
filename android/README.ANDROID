@@ -93,9 +93,9 @@ to just run:
     export NDK_PATH=/path/to/your/android/ndk
     # Optional for STK_MIN_ANDROID_SDK, STK_TARGET_ANDROID_SDK and STK_NDK_VERSION
     # If unset it will use the below values
-    export STK_MIN_ANDROID_SDK=16
-    export STK_TARGET_ANDROID_SDK=30
-    export STK_NDK_VERSION=23.1.7779620
+    export STK_MIN_ANDROID_SDK=21
+    export STK_TARGET_ANDROID_SDK=36
+    export STK_NDK_VERSION=28.1.13356709
     ./generate_assets.sh
     ./make_deps.sh
     ./make.sh

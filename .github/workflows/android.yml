@@ -74,9 +74,9 @@ jobs:
           sudo apt-get install -y make ninja-build glslang-tools python3-mako imagemagick pngquant vorbis-tools
           pip install "meson==1.4.0" --break-system-packages
 
-      - name: Install Android NDK 28.1.13356709
+      - name: Install Android 36 SDK and NDK 28.1.13356709
         run: |
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "ndk;28.1.13356709"
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709"
 
       - name: Cache Android Dependencies Source and Prebuilts
         id: cache-deps
@@ -148,7 +148,7 @@ jobs:
           export SDK_PATH="$ANDROID_SDK_ROOT"
           export NDK_PATH="$ANDROID_SDK_ROOT/ndk"
           export STK_MIN_ANDROID_SDK=21
-          export STK_TARGET_ANDROID_SDK=35
+          export STK_TARGET_ANDROID_SDK=36
           export STK_NDK_VERSION="28.1.13356709"
           export COMPILE_ARCH="aarch64"
           # The shipping package uses the system Vulkan driver (STK_VULKAN=0),
@@ -246,6 +246,7 @@ jobs:
           AAPT=$(find "$ANDROID_SDK_ROOT/build-tools" -name aapt -type f | sort -V | tail -1)
           "$AAPT" dump badging "$APK" | grep -q "package: name='${{ env.android_package_name }}'"
           "$AAPT" dump badging "$APK" | grep -q "versionCode='${{ env.android_version_code }}'"
+          "$AAPT" dump badging "$APK" | grep -qx "targetSdkVersion:'36'"
           if [[ "${{ env.android_apk_variant }}" == "release" ]]; then
             AAB=$(ls android/build/outputs/bundle/release/*.aab | head -1)
             BASE_COMPRESSED_BYTES=$(python3 - "$AAB" <<'PY'
