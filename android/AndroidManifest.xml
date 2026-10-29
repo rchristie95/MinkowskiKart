@@ -13,7 +13,10 @@
                  android:hardwareAccelerated="true"
                  android:resizeableActivity="true">
 
+        <!-- SDL handles Back through onBackPressed/KEYCODE_BACK. Retain that
+             route when targeting Android 16 until SDL migrates to predictive Back. -->
         <activity android:name=".SuperTuxKartActivity"
+                  android:enableOnBackInvokedCallback="false"
                   android:label="@string/app_name"
                   android:launchMode="singleTask"
                   android:configChanges="fontScale|keyboard|keyboardHidden|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|uiMode|layoutDirection|grammaticalGender|fontWeightAdjustment|smallestScreenSize"
