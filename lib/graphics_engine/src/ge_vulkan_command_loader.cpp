@@ -266,7 +266,8 @@ void GEVulkanCommandLoader::endSingleTimeCommands(VkCommandBuffer command_buffer
     lock.unlock();
     if (submit_result != VK_SUCCESS)
     {
-        throw std::runtime_error("GEVulkanCommandLoader: vkQueueSubmit failed");
+        throw std::runtime_error("GEVulkanCommandLoader: vkQueueSubmit failed "
+            "with VkResult " + std::to_string((int)submit_result));
     }
 
     VkResult wait_result = vkWaitForFences(g_vk->getDevice(), 1,
