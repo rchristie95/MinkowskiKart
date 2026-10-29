@@ -36,7 +36,7 @@ Minkowski Kart is a physics-inspired arcade game built for fast, playful racing.
 
 The latest cross-platform stable release is **version_1.92**, published on **26 August 2026**, with packages for **Windows, macOS, Linux, and Android**, plus an iOS development-testing IPA. Download the exact assets from the [latest release page](https://github.com/rchristie95/MinkowskiKart/releases/latest).
 
-Android users should use the newer [version_1.93-android update](https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.93-android). It disables adaptive Vulkan tessellation to avoid the Nürburgring startup crash, while retaining CPU mesh subdivision and relativistic vertex warping.
+Android users should use the newer [version_1.94-android update](https://github.com/rchristie95/MinkowskiKart/releases/tag/version_1.94-android), which compiles and targets Android 16 (API 36) while supporting Android 5.0+ (API 21). It retains the Nürburgring fix: adaptive Vulkan tessellation is disabled, while CPU mesh subdivision and relativistic vertex warping remain active.
 
 Development packages are available from the [preview release](https://github.com/rchristie95/MinkowskiKart/releases/tag/preview). On 16 October 2026, the [Windows preview workflow](https://github.com/rchristie95/MinkowskiKart/actions/runs/38858720542) passed exact-archive startup verification and a separate graphical race smoke test, including checks for the required licence files and matching data-version marker. Preview packages change as development continues.
 
@@ -55,7 +55,7 @@ No minimum CPU, GPU, memory, or Windows version has yet been established. Enhanc
 |---|---|
 | Windows | Stable version_1.92 archive with a published SHA-256 file; the 16 October 2026 preview additionally passes exact-archive and graphical race smoke tests. |
 | macOS | Working universal package; headless initialization and unit tests also run in CI. |
-| Android | version_1.93-android ARM64 APK for Android 5.0+; clean-install Nürburgring race tested on Pixel 8, with package structure and alignment checked in CI. |
+| Android | version_1.94-android ARM64 APK for Android 5.0+; clean-install Nürburgring race tested on Pixel 8, with package structure and alignment checked in CI. |
 | Linux | Working x86-64 package that bundles the complete `stk-assets` pack; packaging asserts the required tracks and karts are present before the archive is compressed. CI builds the client and server across GCC/Clang and Debug/Release configurations. |
 | iOS | Ad-hoc IPA for development testing. Player releases focus on Windows, macOS, Linux, and Android. |
 
