@@ -570,6 +570,121 @@
       text-shadow: 0 1px 8px #000;
     }
 
+    /* featured pair: Minkowski Kart + Cosmic Lockdown side by side */
+    .feature-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .feature-pair .game-panel {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+    }
+
+    .feature-pair .game-media {
+      order: -1;
+      min-height: 0;
+      aspect-ratio: 16 / 9;
+      border-left: 0;
+      border-top: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .feature-pair .game-media img {
+      min-height: 0;
+    }
+
+    .feature-pair .game-copy {
+      justify-content: flex-start;
+      padding: clamp(22px, 3vw, 36px);
+    }
+
+    .feature-pair .game-copy h2 {
+      font-size: clamp(2rem, 3.6vw, 3.3rem);
+    }
+
+    .feature-pair .game-actions {
+      margin-top: auto;
+      padding-top: 24px;
+    }
+
+    .video-panel {
+      background:
+        radial-gradient(circle at 10% 10%, rgba(57, 255, 136, 0.12), transparent 24rem),
+        linear-gradient(225deg, rgba(213, 255, 106, 0.08), transparent 56%),
+        var(--panel-strong);
+    }
+
+    .video-thumb {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .video-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: filter 180ms ease;
+    }
+
+    .video-thumb:hover img,
+    .video-thumb:focus-visible img {
+      filter: brightness(1.12);
+    }
+
+    .video-thumb:focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: -4px;
+    }
+
+    .play-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 74px;
+      height: 74px;
+      border: 1px solid var(--green);
+      background: rgba(0, 17, 5, 0.78);
+      box-shadow: 0 0 28px rgba(57, 255, 136, 0.35);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .play-badge::before {
+      content: "";
+      margin-left: 6px;
+      border-top: 14px solid transparent;
+      border-bottom: 14px solid transparent;
+      border-left: 22px solid var(--green);
+    }
+
+    .video-thumb:hover .play-badge,
+    .video-thumb:focus-visible .play-badge {
+      background: rgba(0, 40, 12, 0.9);
+    }
+
+    .press-label {
+      margin: 20px 0 10px;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .press-label span {
+      color: var(--green);
+    }
+
+    @media (max-width: 880px) {
+      .feature-pair {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .footer {
       position: relative;
       z-index: 2;
@@ -709,8 +824,9 @@
       </aside>
     </section>
 
-    <section id="minkowski-kart" class="shell game-feature" aria-labelledby="minkowski-kart-title">
-      <article class="game-panel">
+    <section id="minkowski-kart" class="shell game-feature" aria-label="Featured">
+      <div class="feature-pair">
+      <article class="game-panel" aria-labelledby="minkowski-kart-title">
         <div class="game-copy">
           <span class="tagline">featured_release // version_1.92</span>
           <h2 id="minkowski-kart-title">Minkowski Kart</h2>
@@ -733,12 +849,44 @@
           <figcaption>Mobius Trip // genuine gameplay</figcaption>
         </figure>
       </article>
+        <article id="cosmic-lockdown" class="game-panel video-panel" aria-labelledby="cosmic-lockdown-title">
+          <div class="game-copy">
+            <span class="tagline">featured_video // anton_petrov</span>
+            <h2 id="cosmic-lockdown-title">Cosmic Lockdown</h2>
+            <p class="game-lede">Anton Petrov explains our JCAP paper: decoherence can lock a quantum field into the vacuum it reaches during inflation, strongly suppressing later tunnelling.</p>
+            <p class="game-detail">The Universe Might Not Get Destroyed by False Vacuum After All</p>
+            <p class="press-label"><span>$</span> grep -r "cosmic lockdown" ./press</p>
+            <div class="paper-links" aria-label="Press coverage">
+              <a class="pill" href="https://www.sciencealert.com/the-universe-seems-to-be-stuck-in-place-by-a-strange-quantum-phenomenon">ScienceAlert</a>
+              <a class="pill" href="https://gizmodo.com/a-quantum-bubble-could-end-reality-as-we-know-it-heres-why-it-probably-wont-2000822224">Gizmodo</a>
+              <a class="pill" href="https://phys.org/news/2026-09-cosmic-lockdown-environment-isolate-quantum.html">Phys.org</a>
+              <a class="pill" href="https://phys.org/news/2026-10-quantum-interactions-early-universe-fields.html">Phys.org feature</a>
+              <a class="pill" href="https://thequantuminsider.com/2026/09/28/cosmic-lockdown-how-the-environment-can-isolate-quantum-fields/">The Quantum Insider</a>
+              <a class="pill" href="https://www.port.ac.uk/news-events-and-blogs/news/cosmic-lockdown-new-research-sheds-light-on-one-of-the-universes-deepest-mysteries">University of Portsmouth</a>
+              <a class="pill" href="https://ecs.syracuse.edu/stories/cosmic-lockdown">Syracuse University</a>
+              <a class="pill" href="https://www.science20.com/news_articles/20260925/sorry_higgs_there_may_be_a_new_contender_for_low_energy_states-300120">Science 2.0</a>
+              <a class="pill" href="https://www.eurekalert.org/news-releases/1144584">EurekAlert!</a>
+            </div>
+            <div class="game-actions">
+              <a class="button primary" href="https://youtu.be/9eTMlHxSXD0">watch_video</a>
+              <a class="button" href="https://iopscience.iop.org/article/10.1088/1475-7516/2026/09/125">read_paper (JCAP)</a>
+              <a class="button" href="https://arxiv.org/abs/2512.14204">arxiv</a>
+            </div>
+          </div>
+          <figure class="game-media">
+            <a class="video-thumb" href="https://youtu.be/9eTMlHxSXD0" aria-label="Watch Anton Petrov's video on Cosmic Lockdown on YouTube">
+              <img src="https://i.ytimg.com/vi/9eTMlHxSXD0/maxresdefault.jpg" width="1280" height="720" loading="lazy" alt="YouTube thumbnail for Anton Petrov's video The Universe Will Not Get Destroyed by False Vacuum After All">
+              <span class="play-badge" aria-hidden="true"></span>
+            </a>
+            <figcaption>youtube // what_da_math</figcaption>
+          </figure>
+        </article>
+      </div>
     </section>
 
     <section id="research" class="shell">
       <div class="section-head">
         <h2>research.log</h2>
-        <p>Direct problems, formal models, and simulations that can be checked.</p>
       </div>
       <div class="grid three">
         <article class="card pad">
@@ -754,7 +902,7 @@
         <article class="card pad">
           <span class="tagline">computation</span>
           <h3>Scientific software</h3>
-          <p>Python, MATLAB, Mathematica, C++, Qiskit, QuTiP, HPC workflows, numerical regression and cross-language checks, relativistic rendering, and quantum sonification.</p>
+          <p>Python, MATLAB, Mathematica, C++, Qiskit, QuTiP, HPC workflows, relativistic rendering, and quantum sonification.</p>
         </article>
       </div>
     </section>
