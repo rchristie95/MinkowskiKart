@@ -685,6 +685,59 @@
       }
     }
 
+    /* three featured boxes: 3 across, then 2 + 1 wide, then stacked */
+    .feature-pair {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .feature-pair .game-copy h2 {
+      font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+    }
+
+    @media (max-width: 1180px) {
+      .feature-pair {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .feature-pair .game-copy h2 {
+        font-size: clamp(2rem, 3.6vw, 3.3rem);
+      }
+
+      .feature-pair > :nth-child(3) {
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: auto;
+      }
+
+      .feature-pair > :nth-child(3) .game-media {
+        order: 0;
+        align-self: center;
+        aspect-ratio: 16 / 9;
+        min-height: 0;
+        border-bottom: 0;
+        border-left: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 880px) {
+      .feature-pair {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-pair > :nth-child(3) {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      .feature-pair > :nth-child(3) .game-media {
+        order: -1;
+        aspect-ratio: 16 / 9;
+        min-height: 0;
+        border-left: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
     .footer {
       position: relative;
       z-index: 2;
@@ -879,6 +932,26 @@
               <span class="play-badge" aria-hidden="true"></span>
             </a>
             <figcaption>youtube // what_da_math</figcaption>
+          </figure>
+        </article>
+        <article id="sabine-video" class="game-panel video-panel" aria-labelledby="sabine-video-title">
+          <div class="game-copy">
+            <span class="tagline">featured_video // sabine_hossenfelder</span>
+            <h2 id="sabine-video-title">False Vacuum</h2>
+            <p class="game-lede">Sabine Hossenfelder covers our JCAP paper: how the universe could have ended up in a false vacuum, and why decoherence can keep it there.</p>
+            <p class="game-detail">On the Cosmic Lockdown result and what it means for the stability of the vacuum we live in.</p>
+            <div class="game-actions">
+              <a class="button primary" href="https://www.youtube.com/watch?v=0qqDlqXxzQ8">watch_video</a>
+              <a class="button" href="https://iopscience.iop.org/article/10.1088/1475-7516/2026/09/125">read_paper (JCAP)</a>
+              <a class="button" href="https://arxiv.org/abs/2512.14204">arxiv</a>
+            </div>
+          </div>
+          <figure class="game-media">
+            <a class="video-thumb" href="https://www.youtube.com/watch?v=0qqDlqXxzQ8" aria-label="Watch Sabine Hossenfelder's video on the Cosmic Lockdown paper on YouTube">
+              <img src="https://i.ytimg.com/vi/0qqDlqXxzQ8/maxresdefault.jpg" width="1280" height="720" loading="lazy" alt="YouTube thumbnail for Sabine Hossenfelder's video Physicists Finally Solve Mystery of Universe's Existence">
+              <span class="play-badge" aria-hidden="true"></span>
+            </a>
+            <figcaption>youtube // sabine_hossenfelder</figcaption>
           </figure>
         </article>
       </div>
