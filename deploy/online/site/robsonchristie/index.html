@@ -685,56 +685,60 @@
       }
     }
 
-    /* three featured boxes: 3 across, then 2 + 1 wide, then stacked */
-    .feature-pair {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Cosmic Lockdown box: one panel per video */
+    .feature-pair .game-media.video-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      aspect-ratio: auto;
+      background: var(--line);
     }
 
-    .feature-pair .game-copy h2 {
-      font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+    .video-pair::after {
+      display: none;
     }
 
-    @media (max-width: 1180px) {
-      .feature-pair {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .feature-pair .game-copy h2 {
-        font-size: clamp(2rem, 3.6vw, 3.3rem);
-      }
-
-      .feature-pair > :nth-child(3) {
-        grid-column: 1 / -1;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-rows: auto;
-      }
-
-      .feature-pair > :nth-child(3) .game-media {
-        order: 0;
-        align-self: center;
-        aspect-ratio: 16 / 9;
-        min-height: 0;
-        border-bottom: 0;
-        border-left: 1px solid var(--line);
-      }
+    .video-pair .video-thumb {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #000;
     }
 
-    @media (max-width: 880px) {
-      .feature-pair {
+    .video-pair .video-thumb::after {
+      position: absolute;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+      background: linear-gradient(0deg, rgba(0, 0, 0, 0.78), transparent 45%);
+    }
+
+    .video-pair .play-badge {
+      width: 52px;
+      height: 52px;
+    }
+
+    .video-pair .play-badge::before {
+      margin-left: 4px;
+      border-top-width: 10px;
+      border-bottom-width: 10px;
+      border-left-width: 16px;
+    }
+
+    .video-caption {
+      position: absolute;
+      left: 10px;
+      bottom: 8px;
+      z-index: 1;
+      color: var(--text);
+      font-size: 0.74rem;
+      text-shadow: 0 1px 8px #000;
+      pointer-events: none;
+    }
+
+    @media (max-width: 560px) {
+      .feature-pair .game-media.video-pair {
         grid-template-columns: 1fr;
-      }
-
-      .feature-pair > :nth-child(3) {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-      }
-
-      .feature-pair > :nth-child(3) .game-media {
-        order: -1;
-        aspect-ratio: 16 / 9;
-        min-height: 0;
-        border-left: 0;
-        border-bottom: 1px solid var(--line);
       }
     }
 
@@ -904,9 +908,9 @@
       </article>
         <article id="cosmic-lockdown" class="game-panel video-panel" aria-labelledby="cosmic-lockdown-title">
           <div class="game-copy">
-            <span class="tagline">featured_video // anton_petrov</span>
+            <span class="tagline">featured_videos // anton_petrov + sabine_hossenfelder</span>
             <h2 id="cosmic-lockdown-title">Cosmic Lockdown</h2>
-            <p class="game-lede">Anton Petrov explains our JCAP paper: decoherence can lock a quantum field into the vacuum it reaches during inflation, strongly suppressing later tunnelling.</p>
+            <p class="game-lede">Anton Petrov and Sabine Hossenfelder explain our JCAP paper: decoherence can lock a quantum field into the vacuum it reaches during inflation, strongly suppressing later tunnelling.</p>
             <p class="press-label"><span>$</span> grep -r "cosmic lockdown" ./press</p>
             <div class="paper-links" aria-label="Press coverage">
               <a class="pill" href="https://www.sciencealert.com/the-universe-seems-to-be-stuck-in-place-by-a-strange-quantum-phenomenon">ScienceAlert</a>
@@ -920,37 +924,22 @@
               <a class="pill" href="https://www.eurekalert.org/news-releases/1144584">EurekAlert!</a>
             </div>
             <div class="game-actions">
-              <a class="button primary" href="https://youtu.be/9eTMlHxSXD0">watch_video</a>
-              <a class="button" href="https://iopscience.iop.org/article/10.1088/1475-7516/2026/09/125">read_paper (JCAP)</a>
+              <a class="button primary" href="https://iopscience.iop.org/article/10.1088/1475-7516/2026/09/125">read_paper (JCAP)</a>
               <a class="button" href="https://arxiv.org/abs/2512.14204">arxiv</a>
             </div>
           </div>
-          <figure class="game-media">
+          <div class="game-media video-pair">
             <a class="video-thumb" href="https://youtu.be/9eTMlHxSXD0" aria-label="Watch Anton Petrov's video on Cosmic Lockdown on YouTube">
               <img src="https://i.ytimg.com/vi/9eTMlHxSXD0/maxresdefault.jpg" width="1280" height="720" loading="lazy" alt="YouTube thumbnail for Anton Petrov's video The Universe Will Not Get Destroyed by False Vacuum After All">
               <span class="play-badge" aria-hidden="true"></span>
+              <span class="video-caption">anton_petrov</span>
             </a>
-            <figcaption>youtube // what_da_math</figcaption>
-          </figure>
-        </article>
-        <article id="sabine-video" class="game-panel video-panel" aria-labelledby="sabine-video-title">
-          <div class="game-copy">
-            <span class="tagline">featured_video // sabine_hossenfelder</span>
-            <h2 id="sabine-video-title">Cosmic Lockdown</h2>
-            <p class="game-lede">Sabine Hossenfelder covers our JCAP paper: how the universe could have ended up in a false vacuum, and why decoherence can keep it there.</p>
-            <div class="game-actions">
-              <a class="button primary" href="https://www.youtube.com/watch?v=0qqDlqXxzQ8">watch_video</a>
-              <a class="button" href="https://iopscience.iop.org/article/10.1088/1475-7516/2026/09/125">read_paper (JCAP)</a>
-              <a class="button" href="https://arxiv.org/abs/2512.14204">arxiv</a>
-            </div>
-          </div>
-          <figure class="game-media">
-            <a class="video-thumb" href="https://www.youtube.com/watch?v=0qqDlqXxzQ8" aria-label="Watch Sabine Hossenfelder's video on the Cosmic Lockdown paper on YouTube">
+            <a class="video-thumb" href="https://www.youtube.com/watch?v=0qqDlqXxzQ8" aria-label="Watch Sabine Hossenfelder's video on Cosmic Lockdown on YouTube">
               <img src="https://i.ytimg.com/vi/0qqDlqXxzQ8/maxresdefault.jpg" width="1280" height="720" loading="lazy" alt="YouTube thumbnail for Sabine Hossenfelder's video Physicists Finally Solve Mystery of Universe's Existence">
               <span class="play-badge" aria-hidden="true"></span>
+              <span class="video-caption">sabine_hossenfelder</span>
             </a>
-            <figcaption>youtube // sabine_hossenfelder</figcaption>
-          </figure>
+          </div>
         </article>
       </div>
     </section>
